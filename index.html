@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- ═══ BASE STYLES (trước khi JS/CSS load — quan trọng cho Samsung TV) -->
+    <style>
+      html, body {
+        margin: 0; padding: 0;
+        background-color: #0a0a0f;
+        color: #e2e8f0;
+        font-family: 'Nunito', system-ui, sans-serif;
+        min-height: 100%;
+      }
+      #root { min-height: 100vh; background-color: #0a0a0f; }
+      /* Spinner toàn trang khi JS đang load */
+      #initial-loader {
+        position: fixed;
+        top: 0; right: 0; bottom: 0; left: 0;
+        background: #0a0a0f;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 99999;
+      }
+      #initial-loader .spin {
+        width: 48px; height: 48px;
+        border: 4px solid rgba(34,197,94,0.2);
+        border-top-color: #22c55e;
+        border-radius: 50%;
+        animation: spin-anim 0.9s linear infinite;
+      }
+      @keyframes spin-anim { to { transform: rotate(360deg); } }
+      #initial-loader p {
+        margin-top: 16px;
+        color: rgba(255,255,255,0.4);
+        font-size: 14px;
+        font-family: sans-serif;
+      }
+    </style>
+
+    <!-- ═══ PRIMARY SEO ═══════════════════════════════════════════════════ -->
+    <title>Đảo Bóng 365 - Trực Tiếp Bóng Đá, Lịch Thi Đấu, Tỷ Số World Cup 2026</title>
+    <meta name="description" content="Đảo Bóng 365 - Xem trực tiếp bóng đá, cập nhật lịch thi đấu và tỷ số World Cup 2026 nhanh, chính xác, miễn phí." />
+    <meta name="keywords" content="xem phim miễn phí, phim online, phim vietsub, phim thuyết minh, phim bộ, phim lẻ, hoạt hình, anime, phim chiếu rạp, đảo phim, daophim" />
+    <meta name="author" content="Đảo Bóng 365" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <link rel="canonical" href="https://daophim.lol/" />
+
+    <!-- ═══ FAVICON ════════════════════════════════════════════════════════ -->
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon.png" />
+    <link rel="shortcut icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/favicon.png" />
+    <meta name="theme-color" content="#22c55e" />
+
+    <!-- ═══ OPEN GRAPH ════════════════════════════════════════════════════ -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Đảo Bóng 365" />
+    <meta property="og:title" content="Đảo Bóng 365 - Trực Tiếp Bóng Đá, Lịch Thi Đấu, Tỷ Số World Cup 2026" />
+    <meta property="og:description" content="Xem trực tiếp bóng đá, lịch thi đấu và tỷ số World Cup 2026 cập nhật liên tục." />
+    <meta property="og:url" content="https://daophim.lol/" />
+    <meta property="og:image" content="https://sf-static.upanhlaylink.com/img/image_2026051206bab16347f075d07864efb55a5224ea.jpg" />
+    <meta property="og:locale" content="vi_VN" />
+
+    <!-- ═══ TWITTER CARD ══════════════════════════════════════════════════ -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Đảo Bóng 365 - Trực Tiếp Bóng Đá" />
+    <meta name="twitter:description" content="Xem trực tiếp bóng đá chất lượng cao, cập nhật liên tục." />
+    <meta name="twitter:image" content="https://sf-static.upanhlaylink.com/img/image_2026051206bab16347f075d07864efb55a5224ea.jpg" />
+
+    <!-- ═══ SCHEMA.ORG ════════════════════════════════════════════════════ -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Đảo Bóng 365",
+      "url": "https://daophim.lol",
+      "description": "Trang xem trực tiếp bóng đá, lịch thi đấu và tỷ số World Cup 2026.",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": { "@type": "EntryPoint", "urlTemplate": "https://daophim.lol/search?q={search_term_string}" },
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
+
+    <!-- ═══ GOOGLE ════════════════════════════════════════════════════════ -->
+    <meta name="google-site-verification" content="YElbV7r9_oAbqpIEMYTRF6CiOuDvgduKLLeLCGasjxM" />
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-SPRW1XKQ2L"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-SPRW1XKQ2L');
+    </script>
+  </head>
+  <body>
+    <!-- Loader hiện khi JS chưa chạy xong (Samsung TV cần thêm thời gian) -->
+    <div id="initial-loader">
+      <div class="spin"></div>
+      <p>Đang tải Đảo Bóng 365...</p>
+    </div>
+
+    <div id="root"></div>
+
+    <script>
+      // Ẩn loader khi React đã render xong
+      document.addEventListener('DOMContentLoaded', function() {
+        var checkRoot = setInterval(function() {
+          var root = document.getElementById('root');
+          if (root && root.children.length > 0) {
+            var loader = document.getElementById('initial-loader');
+            if (loader) loader.style.display = 'none';
+            clearInterval(checkRoot);
+          }
+        }, 200);
+        // Buộc ẩn sau 15 giây dù sao
+        setTimeout(function() {
+          var loader = document.getElementById('initial-loader');
+          if (loader) loader.style.display = 'none';
+          clearInterval(checkRoot);
+        }, 15000);
+      });
+    </script>
+
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

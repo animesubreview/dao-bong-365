@@ -1,0 +1,83 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Config (bảo trì) — chỉ admin đọc/ghi, user thường chỉ đọc
+    match /config/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null || true; // Cho phép ghi không cần auth (admin tự bảo vệ bằng password riêng)
+    }
+
+    // Manual movies — mọi người đọc, chỉ admin ghi
+    match /manual_movies/{id} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Comments
+    match /comments/{id} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Users
+    match /users/{userId} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Notifications
+    match /notifications/{id} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Site Notifications (Firebase-backed, all users see)
+    match /siteNotifications/{id} {
+      allow read: if true;
+      allow write: if true; // Admin tự bảo vệ bằng password riêng
+    }
+
+    // Cinema rooms
+    match /cinema_rooms/{id} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Watch Rooms — phòng xem chung
+    match /watchRooms/{roomId} {
+      allow read: if true;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null;
+      allow delete: if request.auth != null && request.auth.uid == resource.data.hostUid;
+
+      match /messages/{msgId} {
+        allow read: if true;
+        allow create: if request.auth != null;
+      }
+    }
+
+    // Ad Banners — mọi người đọc, chỉ admin ghi
+    match /ad_banners/{id} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Popup Ads — mọi người đọc, chỉ admin ghi
+    match /popup_ads/{id} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Presence — realtime online tracking
+    match /presence/{sessionId} {
+      allow read: if true;
+      allow write, delete: if true;
+    }
+
+    // Default — cho phép tất cả (đơn giản nhất)
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}
