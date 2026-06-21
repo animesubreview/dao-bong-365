@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Radio, Calendar, Trophy, RefreshCw, ChevronDown } from 'lucide-react';
+import { Radio, Calendar, Trophy, RefreshCw, ChevronDown, Star } from 'lucide-react';
 import { footballApi, hasApiKey, LEAGUE_WORLD_CUP, SEASON_WORLD_CUP_2026 } from '../services/footballApi';
 import { FixtureItem, isLive, isFinished } from '../types/football';
 import { usePageTitle } from '../lib/utils';
 import BottomNav from '../components/BottomNav';
+import { SiteSettings, DEFAULT_SETTINGS, subscribeSiteSettings } from '../lib/siteSettings';
+import { getAllManualMatches } from '../lib/manualMatches';
 
 const PAGE_SIZE = 10;
 
@@ -127,9 +129,13 @@ export default function Home() {
   const [live, setLive] = useState<FixtureItem[]>([]);
   const [today, setToday] = useState<FixtureItem[]>([]);
   const [worldCup, setWorldCup] = useState<FixtureItem[]>([]);
+  const [featured, setFeatured] = useState<FixtureItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [wcNote, setWcNote] = useState('');
+  const [settings, setSettings] = useState<SiteSettings>(DEFAULT_SETTINGS);
+
+  useEffect(() => subscribeSiteSettings(setSettings), []);
 
   async function loadAll() {
     if (!hasApiKey()) {
@@ -165,6 +171,18 @@ export default function Home() {
       const wcSorted = wcData
         .sort((a, b) => a.fixture.timestamp - b.fixture.timestamp);
       setWorldCup(wcSorted);
+
+      // Trận nổi bật: admin ghim trong /daobong/admin, lấy điểm số/giờ thật theo fixtureId
+      try {
+        const manual = await getAllManualMatches();
+        const featuredManual = manual.filter(m => m.isFeatured);
+        const fixtures = await Promise.all(
+          featuredManual.map(m => footballApi.getFixtureById(m.fixtureId).catch(() => null))
+        );
+        setFeatured(fixtures.filter((f): f is FixtureItem => !!f));
+      } catch {
+        setFeatured([]);
+      }
     } catch (e: any) {
       setError(e.message || 'Không tải được dữ liệu trận đấu');
     } finally {
@@ -192,10 +210,56 @@ export default function Home() {
         </p>
       </div>
 
+      {settings.bannerEnabled && (settings.bannerText || settings.bannerImageUrl) && (
+        <a
+          href={settings.bannerLinkUrl || undefined}
+          target={settings.bannerLinkUrl ? '_blank' : undefined}
+          rel="noopener noreferrer"
+          className="block mb-6 rounded-xl overflow-hidden border border-green-800/50 bg-green-950/30"
+        >
+          {settings.bannerImageUrl && (
+            <img src={settings.bannerImageUrl} alt="" className="w-full object-cover max-h-40" />
+          )}
+          {settings.bannerText && (
+            <p className="px-4 py-3 text-sm text-green-300 font-semibold text-center">{settings.bannerText}</p>
+          )}
+        </a>
+      )}
+
+      {/* Dải thống kê nhanh */}
+      <div className="grid grid-cols-3 gap-2 mb-6">
+        <div className="bg-slate-900/60 border border-slate-800 rounded-xl py-3 text-center">
+          <div className="text-green-400 font-black text-lg flex items-center justify-center gap-1">
+            <Radio size={14} className="animate-pulse" /> {loading ? '–' : live.length}
+          </div>
+          <div className="text-slate-500 text-[11px] uppercase tracking-wide mt-0.5">Đang Live</div>
+        </div>
+        <div className="bg-slate-900/60 border border-slate-800 rounded-xl py-3 text-center">
+          <div className="text-white font-black text-lg">{loading ? '–' : today.length}</div>
+          <div className="text-slate-500 text-[11px] uppercase tracking-wide mt-0.5">Hôm Nay</div>
+        </div>
+        <div className="bg-slate-900/60 border border-slate-800 rounded-xl py-3 text-center">
+          <div className="text-yellow-500 font-black text-lg">{loading ? '–' : worldCup.length}</div>
+          <div className="text-slate-500 text-[11px] uppercase tracking-wide mt-0.5">World Cup</div>
+        </div>
+      </div>
+
       {error && (
         <div className="mb-6 p-4 rounded-xl bg-red-950/50 border border-red-900 text-red-300 text-sm">
           {error}
         </div>
+      )}
+
+      {/* Trận nổi bật do admin ghim */}
+      {(loading || featured.length > 0) && (
+        <Section
+          id="featured"
+          title="Trận nổi bật"
+          icon={<Star size={18} className="text-yellow-400" />}
+          items={featured}
+          loading={loading}
+          empty=""
+        />
       )}
 
       {/* World Cup lên đầu tiên */}

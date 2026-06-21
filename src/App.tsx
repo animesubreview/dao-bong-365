@@ -4,7 +4,7 @@ import Header from './components/Header';
 import Footer from './components/Footer';
 import Home from './pages/Home';
 import MatchDetail from './pages/MatchDetail';
-import AdminMatches from './pages/AdminMatches';
+import Admin from './pages/Admin';
 
 function LoadingScreen({ fadeOut }: { fadeOut: boolean }) {
   return (
@@ -135,7 +135,7 @@ export default function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/tran-dau/:id" element={<MatchDetail />} />
-            <Route path="/daobong/admin" element={<AdminMatches />} />
+            <Route path="/daobong/admin" element={<Admin />} />
           </Routes>
         </div>
         <Footer />
