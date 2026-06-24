@@ -1,296 +1,525 @@
-import React, { useEffect, useState } from 'react';
+import { useSEO } from '../hooks/useSEO';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { Radio, Calendar, Trophy, RefreshCw, ChevronDown, Star } from 'lucide-react';
-import { footballApi, hasApiKey, LEAGUE_WORLD_CUP, SEASON_WORLD_CUP_2026 } from '../services/footballApi';
-import { FixtureItem, isLive, isFinished } from '../types/football';
-import { usePageTitle } from '../lib/utils';
-import BottomNav from '../components/BottomNav';
-import { SiteSettings, DEFAULT_SETTINGS, subscribeSiteSettings } from '../lib/siteSettings';
-import { getAllManualMatches } from '../lib/manualMatches';
+import { ChevronRight, ChevronLeft, Loader2, Calendar } from 'lucide-react';
+import { movieApi } from '../services/api';
+import { Movie } from '../types';
+import { useManualMovies, ManualMovie } from '../components/ManualMoviesSection';
+import { subscribeUpcomingMovies as subscribeOldUpcoming } from '../lib/manualMovies';
+import { subscribeUpcomingMovies, UpcomingMovie } from '../lib/upcomingMovies';
+import { cn } from '../lib/utils';
+import Banner from '../components/Banner';
+import AdBanner from '../components/AdBanner';
 
-const PAGE_SIZE = 10;
-
-function fmtTime(iso: string) {
-  const d = new Date(iso);
-  return d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
-}
-function fmtDate(iso: string) {
-  const d = new Date(iso);
-  return d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
-}
-function todayStr(offsetDays = 0) {
-  const d = new Date();
-  d.setDate(d.getDate() + offsetDays);
-  return d.toISOString().slice(0, 10);
+/* ─── helpers ─────────────────────────────────────────────────── */
+function dec(s: string) {
+  return (s || '').replace(/&#039;/g,"'").replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"');
 }
 
-function StatusBadge({ f }: { f: FixtureItem }) {
-  const s = f.fixture.status.short;
-  if (isLive(s)) {
-    return (
-      <span className="px-2 py-0.5 rounded-md bg-green-600 text-white text-xs font-bold flex items-center gap-1">
-        <Radio size={11} className="animate-pulse" /> {f.fixture.status.elapsed ?? ''}'
-      </span>
-    );
-  }
-  if (isFinished(s)) {
-    return <span className="px-2 py-0.5 rounded-md bg-slate-700 text-slate-300 text-xs font-bold">Kết thúc</span>;
-  }
-  return null;
+/* ─── Badges ──────────────────────────────────────────────────── */
+function EpBadge({ ep }: { ep?: string }) {
+  if (!ep) return null;
+  const c = ep.match(/hoàn tất\s*\((\d+)\/(\d+)\)/i);
+  const n = ep.match(/tập\s*(\d+)/i);
+  const label = c ? `HT (${c[1]}/${c[2]})` : n ? `Tập ${n[1]}` : /^full$/i.test(ep.trim()) ? 'FULL' : /hoàn tất/i.test(ep) ? 'FULL' : '';
+  if (!label) return null;
+  return <span className="absolute top-1 right-1 text-[8px] font-black px-1.5 py-0.5 rounded bg-black/80 text-white z-10 leading-none">{label}</span>;
+}
+function LangBadge({ lang }: { lang?: string }) {
+  if (!lang) return null;
+  const l = lang.toLowerCase();
+  const label = l.includes('vietsub')||l.includes('phụ đề') ? 'P.ĐỀ' : l.includes('thuyết minh') ? 'T.MINH' : l.includes('lồng tiếng') ? 'L.TIẾNG' : null;
+  if (!label) return null;
+  return <span className={`text-[8px] font-black px-1.5 py-0.5 rounded text-white leading-none ${label==='P.ĐỀ'?'bg-red-600':label==='T.MINH'?'bg-blue-600':'bg-green-700'}`}>{label}</span>;
 }
 
-function MatchCard({ f }: { f: FixtureItem }) {
-  const s = f.fixture.status.short;
+/* ─── Card sizes ──────────────────────────────────────────────── */
+const CW = 'clamp(110px,30vw,155px)';
+const SKELETON_H = 220; // px — đủ để tránh layout shift
+
+/* ─── MCard với ảnh fade-in 500ms ────────────────────────────── */
+function MCard({ movie }: { movie: Movie }) {
+  const [ok, setOk] = useState(false);
   return (
-    <Link
-      to={`/tran-dau/${f.fixture.id}`}
-      className="block bg-slate-900/70 border border-slate-800 rounded-2xl overflow-hidden hover:border-green-700/60 transition-colors mb-3"
-    >
-      <div className="flex items-center justify-between px-4 py-2 bg-slate-900 border-b border-slate-800/80">
-        <div className="flex items-center gap-1.5 text-xs text-slate-400 truncate">
-          <img src={f.league.logo} alt="" className="w-4 h-4 object-contain shrink-0" />
-          <span className="truncate">{f.league.name}</span>
-        </div>
-        <div className="shrink-0 text-xs font-semibold text-slate-400">
-          {fmtTime(f.fixture.date)} - {fmtDate(f.fixture.date)}
+    <Link to={`/phim/${movie.slug}`} className="group shrink-0 block" style={{ width: CW, scrollSnapAlign:'start' }}>
+      <div className="relative rounded-lg overflow-hidden bg-slate-800" style={{ aspectRatio:'2/3' }}>
+        <div className="absolute inset-0 bg-slate-800" />
+        <img src={movieApi.getImageUrl(movie.poster_url||movie.thumb_url)} alt={dec(movie.name)}
+          loading="lazy" referrerPolicy="no-referrer" onLoad={() => setOk(true)}
+          className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          style={{ opacity: ok ? 1 : 0, transition: 'opacity 500ms ease' }} />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/40 to-transparent" />
+        <EpBadge ep={movie.episode_current} />
+        <div className="absolute bottom-1 left-1"><LangBadge lang={movie.lang} /></div>
+      </div>
+      <div className="mt-1.5">
+        <div className="font-semibold text-[12px] text-slate-100 group-hover:text-green-400 transition-colors line-clamp-1">{dec(movie.name)}</div>
+        <div className="text-[10px] text-slate-500 mt-0.5 flex items-center gap-1">
+          <span className="truncate">{dec(movie.origin_name)}</span>
+          {movie.year && <span className="shrink-0 text-green-400/50">{movie.year}</span>}
         </div>
       </div>
-
-      <div className="px-4 py-4 flex items-center justify-between gap-2">
-        <div className="flex-1 flex items-center gap-2 min-w-0">
-          <img src={f.teams.home.logo} alt="" className="w-8 h-8 object-contain shrink-0" />
-          <span className="truncate text-sm text-white font-semibold">{f.teams.home.name}</span>
-        </div>
-
-        <div className="shrink-0 px-3 flex flex-col items-center gap-1">
-          <StatusBadge f={f} />
-          <div className="text-lg font-black text-white">
-            {f.goals.home !== null ? `${f.goals.home} - ${f.goals.away}` : 'VS'}
-          </div>
-        </div>
-
-        <div className="flex-1 flex items-center gap-2 min-w-0 justify-end">
-          <span className="truncate text-sm text-white font-semibold text-right">{f.teams.away.name}</span>
-          <img src={f.teams.away.logo} alt="" className="w-8 h-8 object-contain shrink-0" />
-        </div>
-      </div>
-
-      {isLive(s) && (
-        <div className="px-4 pb-3 flex items-center gap-1.5 text-green-400 text-xs font-bold">
-          <Radio size={12} className="animate-pulse" /> Xem trực tiếp
-        </div>
-      )}
     </Link>
   );
 }
 
-function Section({
-  id, title, icon, items, loading, empty,
-}: {
-  id: string; title: string; icon: React.ReactNode; items: FixtureItem[]; loading: boolean; empty: string;
-}) {
-  const [page, setPage] = useState(1);
-  const visible = items.slice(0, page * PAGE_SIZE);
-  const hasMore = visible.length < items.length;
-
+function ManualMCard({ movie }: { movie: ManualMovie }) {
   return (
-    <div id={id} className="mb-8">
-      <div className="flex items-center gap-2 mb-3">
-        {icon}
-        <h2 className="font-black text-white text-base tracking-wide uppercase">{title}</h2>
+    <Link to={`/manual/${movie.id}`} className="group shrink-0 block" style={{ width: CW, scrollSnapAlign:'start' }}>
+      <div className="relative rounded-lg overflow-hidden bg-slate-800" style={{ aspectRatio:'2/3' }}>
+        {movie.posterUrl
+          ? <img src={movie.posterUrl} alt={movie.name} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+          : <div className="w-full h-full flex items-center justify-center text-3xl">🎬</div>}
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/40 to-transparent" />
       </div>
+      <div className="mt-1.5">
+        <div className="font-semibold text-[12px] text-slate-100 group-hover:text-green-400 transition-colors line-clamp-1">{movie.name}</div>
+        <div className="text-[10px] text-slate-500 mt-0.5 truncate">{movie.originName}</div>
+      </div>
+    </Link>
+  );
+}
 
-      {loading ? (
-        <div className="p-10 flex justify-center"><RefreshCw className="animate-spin text-green-500" size={22} /></div>
-      ) : items.length === 0 ? (
-        <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 text-center text-slate-500 text-sm">
-          {empty}
-        </div>
-      ) : (
-        <>
-          {visible.map(f => <MatchCard key={f.fixture.id} f={f} />)}
-          {hasMore && (
-            <button
-              onClick={() => setPage(p => p + 1)}
-              className="w-full flex items-center justify-center gap-1.5 py-3 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 text-sm font-semibold hover:bg-slate-800 transition-colors"
-            >
-              Xem thêm <ChevronDown size={15} />
-            </button>
-          )}
-        </>
-      )}
+
+/* ─── Upcoming Movie Card (Sắp chiếu - từ Admin) ────────────────── */
+function UpcomingCard({ movie }: { movie: ManualMovie }) {
+  const [ok, setOk] = useState(false);
+  return (
+    <Link to={`/manual/${movie.id}`} className="group shrink-0 block" style={{ width: CW, scrollSnapAlign:'start' }}>
+      <div className="relative rounded-lg overflow-hidden bg-slate-800" style={{ aspectRatio:'2/3' }}>
+        <div className="absolute inset-0 bg-slate-800" />
+        {movie.posterUrl && (
+          <img src={movie.posterUrl} alt={movie.name} loading="lazy" referrerPolicy="no-referrer"
+            onLoad={() => setOk(true)}
+            className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            style={{ opacity: ok ? 1 : 0, transition: 'opacity 500ms ease' }} />
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" />
+        {/* Release date badge */}
+        {movie.releaseDate && (
+          <div className="absolute bottom-1.5 left-1 right-1 flex items-center gap-1 bg-green-600/90 rounded-md px-1.5 py-0.5 backdrop-blur-sm">
+            <Calendar size={9} className="text-slate-950 shrink-0" />
+            <span className="text-[9px] font-black text-slate-950 truncate">{movie.releaseDate}</span>
+          </div>
+        )}
+        {!movie.releaseDate && (
+          <div className="absolute top-1 right-1 bg-green-600 text-slate-950 text-[8px] font-black px-1.5 py-0.5 rounded">
+            SẮP RA
+          </div>
+        )}
+      </div>
+      <div className="mt-1.5">
+        <div className="font-semibold text-[12px] text-slate-100 group-hover:text-green-400 transition-colors line-clamp-1">{movie.name}</div>
+        <div className="text-[10px] text-slate-500 mt-0.5 truncate">{movie.originName || movie.year}</div>
+      </div>
+    </Link>
+  );
+}
+
+// Hook lấy phim sắp chiếu từ collection riêng (mới)
+function useUpcomingMoviesHook() {
+  const [movies, setMovies] = useState<UpcomingMovie[]>([]);
+  useEffect(() => {
+    const unsub = subscribeUpcomingMovies(setMovies);
+    return unsub;
+  }, []);
+  return movies;
+}
+
+// Hook lấy phim sắp chiếu từ manualMovies (cũ - giữ tương thích)
+function useOldUpcomingHook() {
+  const [movies, setMovies] = useState<ManualMovie[]>([]);
+  useEffect(() => {
+    const unsub = subscribeOldUpcoming(setMovies);
+    return unsub;
+  }, []);
+  return movies;
+}
+
+/* ─── New Upcoming Card (từ collection riêng) ───────────────────── */
+function UpcomingNewCard({ movie }: { movie: UpcomingMovie }) {
+  const [ok, setOk] = useState(false);
+  return (
+    <div className="group shrink-0 block" style={{ width: CW, scrollSnapAlign:'start' }}>
+      <div className="relative rounded-lg overflow-hidden bg-slate-800" style={{ aspectRatio:'2/3' }}>
+        <div className="absolute inset-0 bg-slate-800" />
+        {movie.posterUrl && (
+          <img src={movie.posterUrl} alt={movie.name} loading="lazy" referrerPolicy="no-referrer"
+            onLoad={() => setOk(true)}
+            className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            style={{ opacity: ok ? 1 : 0, transition: 'opacity 500ms ease' }} />
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" />
+        {/* Release date badge */}
+        {movie.releaseDate ? (
+          <div className="absolute bottom-1.5 left-1 right-1 flex items-center gap-1 bg-green-600/90 rounded-md px-1.5 py-0.5 backdrop-blur-sm">
+            <Calendar size={9} className="text-slate-950 shrink-0" />
+            <span className="text-[9px] font-black text-slate-950 truncate">{movie.releaseDate}</span>
+          </div>
+        ) : (
+          <div className="absolute top-1 right-1 bg-green-600 text-slate-950 text-[8px] font-black px-1.5 py-0.5 rounded">
+            SẮP RA
+          </div>
+        )}
+      </div>
+      <div className="mt-1.5">
+        <div className="font-semibold text-[12px] text-slate-100 group-hover:text-green-400 transition-colors line-clamp-1">{movie.name}</div>
+        <div className="text-[10px] text-slate-500 mt-0.5 truncate">{movie.originName || movie.year}</div>
+      </div>
     </div>
   );
 }
 
-export default function Home() {
-  usePageTitle('Đảo Bóng 365 - Trực tiếp bóng đá, lịch thi đấu, tỷ số World Cup 2026');
+function Top10Card({ movie, rank }: { movie: Movie; rank: number }) {
+  const [ok, setOk] = useState(false);
+  return (
+    <Link to={`/phim/${movie.slug}`} className="group shrink-0 block" style={{ width: CW, scrollSnapAlign:'start' }}>
+      <div className="relative rounded-lg overflow-hidden bg-slate-800" style={{ aspectRatio:'2/3' }}>
+        <div className="absolute inset-0 bg-slate-800" />
+        <img src={movieApi.getImageUrl(movie.poster_url||movie.thumb_url)} alt={dec(movie.name)}
+          loading="lazy" referrerPolicy="no-referrer" onLoad={() => setOk(true)}
+          className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          style={{ opacity: ok ? 1 : 0, transition: 'opacity 500ms ease' }} />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" />
+      </div>
+      <div className="flex items-start gap-1.5 mt-1">
+        <span className={cn('text-3xl font-black leading-none shrink-0 mt-0.5', rank<=3?'text-green-400':'text-slate-600')} style={{fontStyle:'italic'}}>{rank}</span>
+        <div className="flex-1 min-w-0">
+          <div className="font-semibold text-[12px] text-slate-100 group-hover:text-green-400 transition-colors line-clamp-2 leading-snug">{dec(movie.name)}</div>
+          {movie.year && <div className="text-[10px] text-slate-500 mt-0.5">{movie.year}</div>}
+        </div>
+      </div>
+    </Link>
+  );
+}
 
-  const [live, setLive] = useState<FixtureItem[]>([]);
-  const [today, setToday] = useState<FixtureItem[]>([]);
-  const [worldCup, setWorldCup] = useState<FixtureItem[]>([]);
-  const [featured, setFeatured] = useState<FixtureItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [wcNote, setWcNote] = useState('');
-  const [settings, setSettings] = useState<SiteSettings>(DEFAULT_SETTINGS);
+/* ─── HRow ────────────────────────────────────────────────────── */
+function HRow({ children }: { children: React.ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [canL, setCanL] = useState(false);
+  const [canR, setCanR] = useState(false);
+  const check = useCallback(() => {
+    const el = ref.current; if (!el) return;
+    setCanL(el.scrollLeft > 10);
+    setCanR(el.scrollLeft + el.clientWidth < el.scrollWidth - 10);
+  }, []);
+  useEffect(() => {
+    check();
+    const el = ref.current;
+    el?.addEventListener('scroll', check, { passive:true });
+    window.addEventListener('resize', check);
+    return () => { el?.removeEventListener('scroll', check); window.removeEventListener('resize', check); };
+  }, [check]);
+  const scroll = (d: 'left'|'right') => ref.current?.scrollBy({ left: d==='right'?500:-500, behavior:'smooth' });
+  return (
+    <div className="relative group/row">
+      {canL && <button onClick={() => scroll('left')} className="absolute left-0 top-[35%] -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-slate-800/95 border border-slate-700 text-white flex items-center justify-center opacity-0 group-hover/row:opacity-100 transition-all hover:bg-green-500 hover:text-slate-950 shadow-xl -translate-x-1/2"><ChevronLeft size={16}/></button>}
+      <div ref={ref} className="flex gap-2 overflow-x-auto -mx-4 md:-mx-0 px-4 md:px-0"
+        style={{ scrollSnapType:'x mandatory', scrollbarWidth:'none', msOverflowStyle:'none', WebkitOverflowScrolling:'touch' }}>
+        {children}
+      </div>
+      {canR && <button onClick={() => scroll('right')} className="absolute right-0 top-[35%] -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-slate-800/95 border border-slate-700 text-white flex items-center justify-center opacity-0 group-hover/row:opacity-100 transition-all hover:bg-green-500 hover:text-slate-950 shadow-xl translate-x-1/2"><ChevronRight size={16}/></button>}
+    </div>
+  );
+}
 
-  useEffect(() => subscribeSiteSettings(setSettings), []);
+/* ─── SecHeader ───────────────────────────────────────────────── */
+function SecHeader({ title, to, label='Tất cả' }: { title:string; to?:string; label?:string }) {
+  return (
+    <div className="flex items-center justify-between mb-3">
+      <h2 className="text-base font-black text-white flex items-center gap-2">
+        <span className="w-1 h-4 bg-green-500 rounded-full inline-block shrink-0" />{title}
+      </h2>
+      {to && <Link to={to} className="flex items-center gap-1 text-xs font-semibold text-slate-400 hover:text-green-400 transition-colors bg-slate-800/60 border border-slate-700/60 px-2.5 py-1.5 rounded-full shrink-0">{label} <ChevronRight size={11}/></Link>}
+    </div>
+  );
+}
 
-  async function loadAll() {
-    if (!hasApiKey()) {
-      setError('Chưa cấu hình VITE_API_FOOTBALL_KEY trong file .env');
-      setLoading(false);
-      return;
-    }
-    try {
-      const [liveData, todayData] = await Promise.all([
-        footballApi.getLiveFixtures(),
-        footballApi.getFixturesByDate(todayStr()),
-      ]);
-      setLive(liveData);
-      setToday(todayData);
+/* ─── Skeleton row (không bao giờ biến mất → no black screen) ── */
+function SkeletonRow() {
+  return (
+    <div className="flex gap-2 overflow-hidden">
+      {Array.from({length:8}).map((_,i) => (
+        <div key={i} className="shrink-0 rounded-lg bg-slate-800/50 animate-pulse"
+          style={{ width: CW, height: SKELETON_H }} />
+      ))}
+    </div>
+  );
+}
 
-      // World Cup: thử lấy theo league/season trước
-      let wcData = await footballApi.getFixturesByLeague(LEAGUE_WORLD_CUP, SEASON_WORLD_CUP_2026);
-
-      // Fallback: nếu rỗng, thử quét theo từng ngày trong giai đoạn World Cup (11/6 - 19/7/2026)
-      // và lọc theo league id = 1, vì 1 số gói API chỉ trả dữ liệu khi truy vấn theo ngày.
-      if (wcData.length === 0) {
-        const sampleDates = ['2026-06-21', '2026-06-22', '2026-06-23', '2026-06-24', '2026-06-25'];
-        const results = await Promise.all(sampleDates.map(d => footballApi.getFixturesByDate(d).catch(() => [])));
-        wcData = results.flat().filter(f => f.league.id === LEAGUE_WORLD_CUP);
-      }
-
-      if (wcData.length === 0) {
-        setWcNote('Gói API hiện tại có thể chưa cấp quyền truy cập dữ liệu World Cup 2026 (một số gói free chỉ hỗ trợ vài giải nhất định). Bạn kiểm tra lại trên dashboard API-Football xem giải "World Cup" có nằm trong danh sách được phép truy cập của gói mình không.');
-      } else {
-        setWcNote('');
-      }
-
-      const wcSorted = wcData
-        .sort((a, b) => a.fixture.timestamp - b.fixture.timestamp);
-      setWorldCup(wcSorted);
-
-      // Trận nổi bật: admin ghim trong /daobong/admin, lấy điểm số/giờ thật theo fixtureId
-      try {
-        const manual = await getAllManualMatches();
-        const featuredManual = manual.filter(m => m.isFeatured);
-        const fixtures = await Promise.all(
-          featuredManual.map(m => footballApi.getFixtureById(m.fixtureId).catch(() => null))
-        );
-        setFeatured(fixtures.filter((f): f is FixtureItem => !!f));
-      } catch {
-        setFeatured([]);
-      }
-    } catch (e: any) {
-      setError(e.message || 'Không tải được dữ liệu trận đấu');
-    } finally {
-      setLoading(false);
-    }
-  }
+/* ─── LazySection — scroll trigger, 500ms delay, KHÔNG bị đen ── */
+function LazySection({ title, to, fetch: fetchFn, label }: {
+  title: string; to: string; label?: string;
+  fetch: () => Promise<Movie[]>;
+}) {
+  const [movies, setMovies] = useState<Movie[] | null>(null); // null = chưa fetch
+  const [fetching, setFetching] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const done = useRef(false);
 
   useEffect(() => {
-    loadAll();
-    const t = setInterval(loadAll, 60_000);
-    return () => clearInterval(t);
+    const obs = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting || done.current) return;
+      done.current = true;
+      obs.disconnect();
+      setFetching(true);
+      // Delay 500ms trước khi fetch để tránh quá nhiều request đồng thời
+      setTimeout(() => {
+        fetchFn()
+          .then(data => setMovies(data))
+          .catch(() => setMovies([]))
+          .finally(() => setFetching(false));
+      }, 500);
+    }, { rootMargin: '400px' }); // Trigger sớm khi còn cách 400px
+    if (ref.current) obs.observe(ref.current);
+    return () => obs.disconnect();
   }, []);
 
   return (
-    <div className="max-w-4xl mx-auto px-3 md:px-6 py-6 pb-20 md:pb-6">
-      <div className="relative rounded-2xl overflow-hidden mb-6 bg-gradient-to-br from-green-900/40 via-slate-900 to-slate-950 border border-green-900/40 p-6 md:p-8">
-        <div className="flex items-center gap-3 mb-2">
-          <span className="text-3xl">⚽</span>
-          <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight">
-            ĐẢO <span className="text-green-400">BÓNG 365</span>
-          </h1>
-        </div>
-        <p className="text-slate-400 text-sm md:text-base">
-          Trực tiếp bóng đá, lịch thi đấu &amp; tỷ số cập nhật real-time — đồng hành cùng World Cup 2026.
-        </p>
+    // min-height cố định → layout KHÔNG bao giờ collapse → không bị đen
+    <section ref={ref} style={{ minHeight: SKELETON_H + 60 }}>
+      <SecHeader title={title} to={to} label={label} />
+      {movies && movies.length > 0
+        ? <HRow>{movies.map(m => <MCard key={m._id} movie={m} />)}</HRow>
+        : <SkeletonRow />
+      }
+    </section>
+  );
+}
+
+/* ─── Interest cards ──────────────────────────────────────────── */
+const INTEREST = [
+  { label:'Hàn Quốc', sub:'Phim Bộ', to:'/type/phim-bo', g:'from-purple-600/70 via-blue-500/60 to-blue-400/50' },
+  { label:'Trung Quốc', sub:'Hoa Ngữ', to:'/type/phim-bo', g:'from-pink-500/70 via-rose-400/60 to-pink-300/50' },
+  { label:'Thái Lan', sub:'Cực Hay', to:'/type/phim-le', g:'from-blue-500/70 via-cyan-400/60 to-teal-400/50' },
+  { label:'Sitcom', sub:'TV Shows', to:'/type/tv-shows', g:'from-emerald-500/70 via-teal-400/60 to-cyan-400/50' },
+  { label:'Âu Mỹ', sub:'Hollywood', to:'/type/phim-le', g:'from-green-600/70 via-orange-400/60 to-yellow-400/50' },
+  { label:'Hoạt Hình', sub:'Anime', to:'/type/hoat-hinh', g:'from-indigo-500/70 via-purple-400/60 to-violet-400/50' },
+];
+
+/* ─── Top tabs config ─────────────────────────────────────────── */
+const TOP_TABS = ['Top ngày','Top tuần','Top tháng','Top bộ','Top lẻ'];
+const TOP_TITLES = ['Top 10 Hôm Nay','Top 10 Tuần Này','Top 10 Tháng Này','Top 10 Phim Bộ','Top 10 Phim Lẻ'];
+const TOP_SRCS = [null,'phim-moi','phim-chieu-rap','phim-bo','phim-le'] as const;
+
+/* ─── All lazy sections từ KKPhim API ────────────────────────── */
+const LAZY_SECTIONS = [
+  { title:'Phim Hàn Quốc',    to:'/type/phim-bo',       fetch: () => movieApi.searchMovies('hàn quốc',1,24).then(r=>r.items) },
+  { title:'Phim Trung Quốc',  to:'/type/phim-bo',       fetch: () => movieApi.searchMovies('trung quốc',1,24).then(r=>r.items) },
+  { title:'Phim Hành Động',   to:'/type/phim-le',       fetch: () => movieApi.searchMovies('hành động',1,24).then(r=>r.items) },
+  { title:'Phim Bộ Đang Chiếu',to:'/type/phim-bo',      fetch: () => movieApi.getMoviesByType('phim-bo',1,24).then(r=>r.items) },
+  { title:'Phim Lẻ Mới',      to:'/type/phim-le',       fetch: () => movieApi.getMoviesByType('phim-le',1,24).then(r=>r.items) },
+  { title:'Phim Hoạt Hình',   to:'/type/hoat-hinh',     fetch: () => movieApi.getMoviesByType('hoat-hinh',1,24).then(r=>r.items) },
+  { title:'Tâm Lý - Tình Cảm',to:'/type/phim-bo',       fetch: () => movieApi.searchMovies('tình cảm',1,24).then(r=>r.items) },
+  { title:'Phim Kinh Dị',     to:'/type/phim-le',       fetch: () => movieApi.searchMovies('kinh dị',1,24).then(r=>r.items) },
+  { title:'Phim Âu Mỹ',       to:'/type/phim-le',       fetch: () => movieApi.filterMovies({ type:'phim-le', country:'au-my', page:1, limit:24 }).then(r=>r.items) },
+  { title:'Phim Nhật Bản',    to:'/type/phim-bo',       fetch: () => movieApi.searchMovies('nhật bản',1,24).then(r=>r.items) },
+  { title:'Phim Thái Lan',    to:'/type/phim-bo',       fetch: () => movieApi.searchMovies('thái lan',1,24).then(r=>r.items) },
+  { title:'Phim Viễn Tưởng',  to:'/type/phim-le',       fetch: () => movieApi.filterMovies({ type:'phim-le', category:'vien-tuong', page:1, limit:24 }).then(r=>r.items) },
+  { title:'Phim Hài Hước',    to:'/type/phim-le',       fetch: () => movieApi.searchMovies('hài hước',1,24).then(r=>r.items) },
+  { title:'TV Shows',          to:'/type/tv-shows',      fetch: () => movieApi.getMoviesByType('tv-shows',1,24).then(r=>r.items) },
+  { title:'Phim Hoạt Hình Nhiều Người Xem',to:'/type/hoat-hinh',fetch: () => movieApi.getMoviesByType('hoat-hinh',2,24).then(r=>r.items) },
+  { title:'Phim Cổ Trang',    to:'/type/phim-bo',       fetch: () => movieApi.searchMovies('cổ trang',1,24).then(r=>r.items) },
+  { title:'Phim Hình Sự',     to:'/type/phim-le',       fetch: () => movieApi.searchMovies('hình sự',1,24).then(r=>r.items) },
+  { title:'Phim Việt Nam',    to:'/type/phim-bo',       fetch: () => movieApi.searchMovies('việt nam',1,24).then(r=>r.items) },
+];
+
+/* ════════════════════════════════════════════════════════════════
+   MAIN HOME
+   ════════════════════════════════════════════════════════════════ */
+export default function Home() {
+  const [bannerMovies, setBannerMovies] = useState<Movie[]>([]);
+  const [top10, setTop10] = useState<Movie[]>([]);
+  const [topTabMovies, setTopTabMovies] = useState<Movie[]>([]);
+  const [topTabLoading, setTopTabLoading] = useState(false);
+  const [topTab, setTopTab] = useState(0);
+  const [cinema, setCinema] = useState<Movie[]>([]);
+  const [newUpdates, setNewUpdates] = useState<Movie[]>([]);
+  const [loading, setLoading] = useState(true);
+  const manualMovies = useManualMovies();
+  const upcomingMovies = useUpcomingMoviesHook();
+  const oldUpcoming = useOldUpcomingHook();
+
+  useSEO({
+    title: 'Xem Phim Miễn Phí - Phim Hay Cả Đảo',
+    description: 'Đảo Phim - Xem phim online miễn phí chất lượng HD. Phim bộ, phim lẻ, hoạt hình, anime, phim chiếu rạp Vietsub, thuyết minh, lồng tiếng. Cập nhật liên tục mỗi ngày.',
+    url: '/',
+    type: 'website',
+  });
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const [r1, r2] = await Promise.all([
+          movieApi.getNewUpdates(1),
+          movieApi.getMoviesByType('phim-chieu-rap', 1, 20),
+        ]);
+        if (cancelled) return;
+        const t10 = r1.items.slice(0, 10);
+        setBannerMovies(t10);
+        setTop10(t10);
+        setTopTabMovies(t10);
+        setCinema(r2.items);
+        setNewUpdates(r1.items.slice(0, 30));
+      } catch (e) { console.error(e); }
+      finally { if (!cancelled) setLoading(false); }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const handleTopTab = async (i: number) => {
+    setTopTab(i);
+    if (i === 0) { setTopTabMovies(top10); return; }
+    setTopTabLoading(true);
+    try {
+      const src = TOP_SRCS[i];
+      const res = src === 'phim-moi'
+        ? await movieApi.getNewUpdates(2)
+        : await movieApi.getMoviesByType(src!, 1, 10);
+      setTopTabMovies(res.items.slice(0, 10));
+    } catch { setTopTabMovies(top10); }
+    finally { setTopTabLoading(false); }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center" style={{ paddingTop:'56px' }}>
+        <div className="w-8 h-8 border-t-transparent rounded-full animate-spin border-green-500" style={{ borderWidth:3, borderStyle:'solid' }} />
       </div>
+    );
+  }
 
-      {settings.bannerEnabled && (settings.bannerText || settings.bannerImageUrl) && (
-        <a
-          href={settings.bannerLinkUrl || undefined}
-          target={settings.bannerLinkUrl ? '_blank' : undefined}
-          rel="noopener noreferrer"
-          className="block mb-6 rounded-xl overflow-hidden border border-green-800/50 bg-green-950/30"
-        >
-          {settings.bannerImageUrl && (
-            <img src={settings.bannerImageUrl} alt="" className="w-full object-cover max-h-40" />
-          )}
-          {settings.bannerText && (
-            <p className="px-4 py-3 text-sm text-green-300 font-semibold text-center">{settings.bannerText}</p>
-          )}
-        </a>
-      )}
+  return (
+    <div className="pb-20 bg-slate-950 min-h-screen">
+      <Banner movies={bannerMovies} />
+      <AdBanner position="top" className="max-w-2xl md:max-w-5xl lg:max-w-[1400px] mx-auto px-4 md:px-6 lg:px-8 mt-3" />
 
-      {/* Dải thống kê nhanh */}
-      <div className="grid grid-cols-3 gap-2 mb-6">
-        <div className="bg-slate-900/60 border border-slate-800 rounded-xl py-3 text-center">
-          <div className="text-green-400 font-black text-lg flex items-center justify-center gap-1">
-            <Radio size={14} className="animate-pulse" /> {loading ? '–' : live.length}
+      <main className="max-w-2xl md:max-w-5xl lg:max-w-[1400px] mx-auto px-4 md:px-6 lg:px-8 mt-6 flex flex-col gap-8">
+
+        {/* Quan tâm gì */}
+        <section>
+          <SecHeader title="Bạn đang quan tâm gì?" />
+          <div className="flex gap-2 overflow-x-auto -mx-4 md:-mx-0 px-4 md:px-0 pb-1"
+            style={{ scrollbarWidth:'none', msOverflowStyle:'none' }}>
+            {INTEREST.map(card => (
+              <Link key={card.label} to={card.to}
+                className={cn('shrink-0 relative rounded-xl overflow-hidden hover:scale-[1.02] transition-transform', `bg-gradient-to-br ${card.g}`)}
+                style={{ width:'clamp(120px,38vw,180px)', height:'clamp(65px,14vw,90px)', flexShrink:0 }}>
+                <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-black/20" />
+                <div className="absolute bottom-0 left-0 p-2.5">
+                  <p className="text-white font-black text-sm leading-tight">{card.label}</p>
+                  <p className="text-white/80 text-[10px] font-semibold flex items-center gap-0.5">{card.sub} <ChevronRight size={9}/></p>
+                </div>
+              </Link>
+            ))}
           </div>
-          <div className="text-slate-500 text-[11px] uppercase tracking-wide mt-0.5">Đang Live</div>
-        </div>
-        <div className="bg-slate-900/60 border border-slate-800 rounded-xl py-3 text-center">
-          <div className="text-white font-black text-lg">{loading ? '–' : today.length}</div>
-          <div className="text-slate-500 text-[11px] uppercase tracking-wide mt-0.5">Hôm Nay</div>
-        </div>
-        <div className="bg-slate-900/60 border border-slate-800 rounded-xl py-3 text-center">
-          <div className="text-yellow-500 font-black text-lg">{loading ? '–' : worldCup.length}</div>
-          <div className="text-slate-500 text-[11px] uppercase tracking-wide mt-0.5">World Cup</div>
-        </div>
-      </div>
+        </section>
 
-      {error && (
-        <div className="mb-6 p-4 rounded-xl bg-red-950/50 border border-red-900 text-red-300 text-sm">
-          {error}
-        </div>
-      )}
+        {/* Top 10 */}
+        {top10.length > 0 && (
+          <section>
+            <div className="flex items-center gap-1.5 mb-3 overflow-x-auto" style={{ scrollbarWidth:'none' }}>
+              {TOP_TABS.map((t,i) => (
+                <button key={t} onClick={() => handleTopTab(i)}
+                  className={cn('shrink-0 text-xs font-bold px-3.5 py-2 rounded-full border transition-all',
+                    topTab===i ? 'bg-slate-800 border-slate-600 text-white' : 'border-transparent text-slate-500 hover:text-slate-300')}>
+                  {t}
+                </button>
+              ))}
+            </div>
+            <SecHeader title={TOP_TITLES[topTab]} to="/type/phim-moi" label="Xem tất cả" />
+            {topTabLoading
+              ? <div className="flex items-center justify-center py-8"><Loader2 size={24} className="animate-spin text-green-400"/></div>
+              : <HRow>{topTabMovies.map((m,i) => <Top10Card key={m._id} movie={m} rank={i+1}/>)}</HRow>
+            }
+          </section>
+        )}
 
-      {/* Trận nổi bật do admin ghim */}
-      {(loading || featured.length > 0) && (
-        <Section
-          id="featured"
-          title="Trận nổi bật"
-          icon={<Star size={18} className="text-yellow-400" />}
-          items={featured}
-          loading={loading}
-          empty=""
-        />
-      )}
+        {/* Phim Chiếu Rạp — load ngay */}
+        {cinema.length > 0 && (
+          <section>
+            <SecHeader title="Phim Chiếu Rạp Mới" to="/type/phim-chieu-rap" label="Tất cả" />
+            <HRow>{cinema.map(m => <MCard key={m._id} movie={m}/>)}</HRow>
+          </section>
+        )}
 
-      {/* World Cup lên đầu tiên */}
-      <Section
-        id="worldcup"
-        title="World Cup 2026"
-        icon={<Trophy size={18} className="text-yellow-500" />}
-        items={worldCup}
-        loading={loading}
-        empty={wcNote || 'Chưa có dữ liệu lịch thi đấu World Cup'}
-      />
+        {/* Phim Mới Cập Nhật — load ngay */}
+        {(newUpdates.length > 0 || manualMovies.length > 0) && (
+          <section>
+            <SecHeader title="Phim Mới Cập Nhật" to="/type/phim-moi" label="Tất cả" />
+            <HRow>
+              {manualMovies.slice(0,4).map(m => <ManualMCard key={m.id} movie={m}/>)}
+              {newUpdates.map(m => <MCard key={m._id} movie={m}/>)}
+            </HRow>
+          </section>
+        )}
 
-      <Section
-        id="live"
-        title="Đang diễn ra"
-        icon={<Radio size={18} className="text-green-500" />}
-        items={live}
-        loading={loading}
-        empty="Hiện không có trận nào đang diễn ra"
-      />
+        {/* Phim Sắp Chiếu Rạp — từ collection riêng */}
+        {upcomingMovies.filter(m => m.upcomingType === 'movie').length > 0 && (
+          <section>
+            <SecHeader title="Phim Sắp Chiếu Rạp" to="/type/phim-chieu-rap" label="Tất cả" />
+            <HRow>
+              {upcomingMovies
+                .filter(m => m.upcomingType === 'movie')
+                .map(m => <UpcomingNewCard key={m.id} movie={m} />)}
+            </HRow>
+          </section>
+        )}
 
-      <Section
-        id="today"
-        title="Lịch thi đấu hôm nay"
-        icon={<Calendar size={18} className="text-green-500" />}
-        items={today}
-        loading={loading}
-        empty="Không có trận đấu hôm nay"
-      />
+        {/* Anime Sắp Chiếu — từ collection riêng */}
+        {upcomingMovies.filter(m => m.upcomingType === 'anime').length > 0 && (
+          <section>
+            <SecHeader title="Anime Sắp Chiếu" to="/type/hoat-hinh" label="Tất cả" />
+            <HRow>
+              {upcomingMovies
+                .filter(m => m.upcomingType === 'anime')
+                .map(m => <UpcomingNewCard key={m.id} movie={m} />)}
+            </HRow>
+          </section>
+        )}
 
-      <BottomNav />
+        {/* Phim Bộ Sắp Chiếu — từ collection riêng */}
+        {upcomingMovies.filter(m => m.upcomingType === 'series').length > 0 && (
+          <section>
+            <SecHeader title="Phim Bộ Sắp Chiếu" to="/type/phim-bo" label="Tất cả" />
+            <HRow>
+              {upcomingMovies
+                .filter(m => m.upcomingType === 'series')
+                .map(m => <UpcomingNewCard key={m.id} movie={m} />)}
+            </HRow>
+          </section>
+        )}
+
+        {/* Fallback: sắp chiếu cũ từ manualMovies (isUpcoming=true) nếu chưa migrate */}
+        {oldUpcoming.filter(m => m.upcomingType === 'anime' || !m.upcomingType).length > 0 && (
+          <section>
+            <SecHeader title="Anime Sắp Chiếu" to="/type/hoat-hinh" label="Tất cả" />
+            <HRow>
+              {oldUpcoming
+                .filter(m => m.upcomingType === 'anime' || !m.upcomingType)
+                .map(m => <UpcomingCard key={m.id} movie={m} />)}
+            </HRow>
+          </section>
+        )}
+        {oldUpcoming.filter(m => m.upcomingType === 'movie').length > 0 && (
+          <section>
+            <SecHeader title="Phim Sắp Chiếu Rạp" to="/type/phim-chieu-rap" label="Tất cả" />
+            <HRow>
+              {oldUpcoming
+                .filter(m => m.upcomingType === 'movie')
+                .map(m => <UpcomingCard key={m.id} movie={m} />)}
+            </HRow>
+          </section>
+        )}
+
+        {/* Tất cả lazy sections từ KKPhim API */}
+        {LAZY_SECTIONS.map(s => (
+          <LazySection key={s.title} title={s.title} to={s.to} fetch={s.fetch} />
+        ))}
+
+      </main>
+      <AdBanner position="bottom" className="max-w-2xl md:max-w-5xl lg:max-w-[1400px] mx-auto px-4 md:px-6 lg:px-8 mt-4" />
     </div>
   );
 }
