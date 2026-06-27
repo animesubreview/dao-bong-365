@@ -24,7 +24,7 @@ export const CARD_TELCOS: { value: CardTelco; label: string; color: string }[] =
   { value: 'VIETTEL',      label: 'Viettel',      color: 'bg-red-500' },
   { value: 'MOBIFONE',     label: 'Mobifone',     color: 'bg-blue-500' },
   { value: 'VINAPHONE',    label: 'Vinaphone',    color: 'bg-yellow-500' },
-  { value: 'VIETNAMOBILE', label: 'Vietnamobile', color: 'bg-sky-500' },
+  { value: 'VIETNAMOBILE', label: 'Vietnamobile', color: 'bg-green-500' },
   { value: 'GMOBILE',      label: 'Gmobile',      color: 'bg-purple-500' },
 ];
 
@@ -123,7 +123,7 @@ export function formatVND(amount: number): string {
 export function getStatusInfo(status: TopupStatus) {
   switch (status) {
     case 'success':     return { label: 'Thành công',    color: 'text-emerald-400', bg: 'bg-emerald-950/60 border-emerald-500/30' };
-    case 'pending':     return { label: 'Đang xử lý',   color: 'text-sky-400',   bg: 'bg-green-950/60 border-sky-600/30' };
+    case 'pending':     return { label: 'Đang xử lý',   color: 'text-green-400',   bg: 'bg-green-950/60 border-green-600/30' };
     case 'failed':      return { label: 'Thất bại',      color: 'text-red-400',     bg: 'bg-red-950/60 border-red-500/30' };
     case 'wrong_value': return { label: 'Sai mệnh giá',  color: 'text-orange-400',  bg: 'bg-orange-950/60 border-orange-500/30' };
   }

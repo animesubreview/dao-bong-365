@@ -35,7 +35,7 @@ function Logo({ settings }: { settings: any }) {
   if (settings.logoType === 'image' && settings.logoImage)
     return (
       <div className="flex items-center gap-2">
-        <img src={SITE_LOGO_URL} alt="logo" className="h-7 w-7 rounded-full object-cover ring-1 ring-sky-500/40 shrink-0" />
+        <img src={SITE_LOGO_URL} alt="logo" className="h-7 w-7 rounded-full object-cover ring-1 ring-green-500/40 shrink-0" />
         <img src={settings.logoImage} alt={name} className="h-8 w-auto object-contain max-w-[130px]" />
       </div>
     );
@@ -45,10 +45,10 @@ function Logo({ settings }: { settings: any }) {
   if (parts.length >= 2) {
     return (
       <div className="flex items-center gap-2">
-        <img src={SITE_LOGO_URL} alt="logo" className="h-7 w-7 rounded-full object-cover ring-1 ring-sky-500/40 shrink-0" />
+        <img src={SITE_LOGO_URL} alt="logo" className="h-7 w-7 rounded-full object-cover ring-1 ring-green-500/40 shrink-0" />
         <span className="text-xl font-black tracking-tight">
           <span className="text-white">{parts[0]}</span>
-          <span className="text-sky-400">.</span>
+          <span className="text-green-400">.</span>
           <span className="text-white">{parts.slice(1).join('.')}</span>
         </span>
       </div>
@@ -58,10 +58,10 @@ function Logo({ settings }: { settings: any }) {
   const words = name.trim().split(' ');
   return (
     <div className="flex items-center gap-2">
-      <img src={SITE_LOGO_URL} alt="logo" className="h-7 w-7 rounded-full object-cover ring-1 ring-sky-500/40 shrink-0" />
+      <img src={SITE_LOGO_URL} alt="logo" className="h-7 w-7 rounded-full object-cover ring-1 ring-green-500/40 shrink-0" />
       <span className="text-xl font-black tracking-tight">
         <span className="text-white">{words[0]}</span>
-        {words.length > 1 && <span className="text-sky-400"> {words.slice(1).join(' ')}</span>}
+        {words.length > 1 && <span className="text-green-400"> {words.slice(1).join(' ')}</span>}
       </span>
     </div>
   );
@@ -253,7 +253,7 @@ export default function Header() {
     <>
       {/* ── HEADER BAR ── */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-transparent backdrop-blur-0 border-b border-transparent transition-all duration-300" id="main-header" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, transparent 100%)' }}>
-        <div className="max-w-7xl mx-auto px-3 md:px-6 h-14 flex items-center gap-2 md:gap-3">
+        <div className="max-w-7xl mx-auto px-3 md:px-6 h-16 flex items-center gap-2 md:gap-3">
 
           {/* Hamburger — 3 gạch, KHÔNG icon clapperboard */}
           <button
@@ -280,7 +280,7 @@ export default function Header() {
             ].map(l => (
               <Link key={l.to} to={l.to}
                 className={cn('px-3 py-1.5 rounded-lg text-sm font-semibold transition-all whitespace-nowrap',
-                  location.pathname === l.to ? 'text-sky-400' : 'text-slate-400 hover:text-white')}>
+                  location.pathname === l.to ? 'text-green-400' : 'text-slate-400 hover:text-white')}>
                 {l.label}
               </Link>
             ))}
@@ -295,7 +295,7 @@ export default function Header() {
                 <input type="text" placeholder="Tìm kiếm phim..."
                   value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
                   onFocus={() => searchQuery.length >= 2 && setShowSuggestions(true)}
-                  className="w-48 bg-slate-800/70 border border-slate-700/60 rounded-full py-1.5 pl-9 pr-3 text-sm focus:outline-none focus:border-sky-500/50 text-white placeholder:text-slate-500 focus:w-64 transition-all" />
+                  className="w-48 bg-slate-800/70 border border-slate-700/60 rounded-full py-1.5 pl-9 pr-3 text-sm focus:outline-none focus:border-green-500/50 text-white placeholder:text-slate-500 focus:w-64 transition-all" />
                 <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none">
                   {isSearching ? <Loader2 className="animate-spin" size={14} /> : <Search size={14} />}
                 </div>
@@ -312,7 +312,7 @@ export default function Header() {
                   <input ref={mobileInputRef} type="text" placeholder="Tìm phim..."
                     value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
                     onFocus={() => searchQuery.length >= 2 && setShowSuggestions(true)}
-                    className="w-40 bg-slate-800 border border-slate-700 rounded-full py-1.5 pl-8 pr-7 text-sm focus:outline-none focus:border-sky-500/60 text-white placeholder:text-slate-500" />
+                    className="w-40 bg-slate-800 border border-slate-700 rounded-full py-1.5 pl-8 pr-7 text-sm focus:outline-none focus:border-green-500/60 text-white placeholder:text-slate-500" />
                   <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500" />
                   <button type="button" onClick={() => { setShowSearch(false); setSearchQuery(''); setShowSuggestions(false); }}
                     className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white"><X size={12} /></button>
@@ -334,7 +334,7 @@ export default function Header() {
           {session ? (
             <div ref={userMenuRef} className="relative shrink-0">
               <button onClick={() => setShowUserMenu(v => !v)}
-                className="flex items-center gap-1.5 pl-1 pr-2 py-1 rounded-full bg-slate-800/80 border border-slate-700/50 hover:border-sky-500/40 transition-all">
+                className="flex items-center gap-1.5 pl-1 pr-2 py-1 rounded-full bg-slate-800/80 border border-slate-700/50 hover:border-green-500/40 transition-all">
                 <img src={session.avatar} alt={session.username} className="w-7 h-7 rounded-full bg-slate-700" />
                 <ChevronDown size={12} className="text-slate-500" />
               </button>
@@ -425,7 +425,7 @@ export default function Header() {
                     <item.icon size={17} className="text-slate-500 shrink-0" />
                     <span className="flex-1">{item.label}</span>
                     {item.badge && (
-                      <span className={cn('text-[9px] font-black text-white px-1.5 py-0.5 rounded', item.badgeRed ? 'bg-red-500' : 'bg-sky-600')}>
+                      <span className={cn('text-[9px] font-black text-white px-1.5 py-0.5 rounded', item.badgeRed ? 'bg-red-500' : 'bg-green-600')}>
                         {item.badge}
                       </span>
                     )}
@@ -448,9 +448,9 @@ export default function Header() {
                   onClick={openWatchRoomModal}
                   className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold text-slate-200 hover:text-white hover:bg-slate-800/60 transition-all w-full text-left"
                 >
-                  <Users size={17} className="text-sky-400 shrink-0" />
+                  <Users size={17} className="text-green-400 shrink-0" />
                   <span className="flex-1">Xem Chung</span>
-                  <span className="text-[9px] font-black text-white px-1.5 py-0.5 rounded bg-sky-600">NEW</span>
+                  <span className="text-[9px] font-black text-white px-1.5 py-0.5 rounded bg-green-600">NEW</span>
                 </button>
 
                 {/* ── Nạp Thẻ & VIP ── */}
@@ -460,7 +460,7 @@ export default function Header() {
                   {/* Nạp thẻ → /nap-tien */}
                   <Link to="/nap-tien" onClick={() => setIsMenuOpen(false)}
                     className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold text-slate-200 hover:text-white hover:bg-slate-800/60 transition-all">
-                    <CreditCard size={17} className="text-sky-400 shrink-0" />
+                    <CreditCard size={17} className="text-green-400 shrink-0" />
                     <span className="flex-1">Nạp thẻ cào</span>
                     <ChevronRight size={14} className="text-slate-600" />
                   </Link>
@@ -531,7 +531,7 @@ export default function Header() {
             <div className="mx-3 mb-5 mt-4 shrink-0">
               <div className="bg-slate-900 rounded-2xl border border-slate-800 p-4">
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 bg-sky-500 rounded-xl flex items-center justify-center shrink-0">
+                  <div className="w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center shrink-0">
                     <Clapperboard className="text-slate-950" size={18} strokeWidth={2.5} />
                   </div>
                   <div>
@@ -559,8 +559,8 @@ export default function Header() {
           >
             {/* Header modal */}
             <div className="flex items-center gap-3 px-5 pt-5 pb-4 border-b border-slate-800/60 shrink-0">
-              <div className="w-9 h-9 rounded-xl bg-sky-500/15 border border-sky-500/30 flex items-center justify-center shrink-0">
-                <Users size={18} className="text-sky-400" />
+              <div className="w-9 h-9 rounded-xl bg-green-500/15 border border-green-500/30 flex items-center justify-center shrink-0">
+                <Users size={18} className="text-green-400" />
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="text-white font-black text-base leading-tight">Tạo phòng Xem Chung</h3>
@@ -587,7 +587,7 @@ export default function Header() {
                       placeholder="Nhập tên phim muốn xem chung..."
                       value={modalSearch}
                       onChange={e => setModalSearch(e.target.value)}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-xl py-2.5 pl-9 pr-4 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-sky-500/60"
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl py-2.5 pl-9 pr-4 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-green-500/60"
                     />
                     <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none">
                       {modalSearching ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} />}
@@ -612,7 +612,7 @@ export default function Header() {
                         <button
                           key={movie._id}
                           onClick={() => { setSelectedMovie(movie); setModalStep('confirm'); }}
-                          className="group flex flex-col rounded-xl overflow-hidden bg-slate-900 border border-slate-800 hover:border-sky-500/50 transition-all text-left"
+                          className="group flex flex-col rounded-xl overflow-hidden bg-slate-900 border border-slate-800 hover:border-green-500/50 transition-all text-left"
                         >
                           <div className="relative w-full bg-slate-800" style={{ aspectRatio: '2/3' }}>
                             <img
@@ -622,7 +622,7 @@ export default function Header() {
                               referrerPolicy="no-referrer"
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center pb-2">
-                              <span className="text-[10px] font-bold text-sky-400">Chọn</span>
+                              <span className="text-[10px] font-bold text-green-400">Chọn</span>
                             </div>
                           </div>
                           <div className="p-1.5">
@@ -655,7 +655,7 @@ export default function Header() {
                     <p className="text-slate-500 text-xs mt-1">{selectedMovie.origin_name} · {selectedMovie.year}</p>
                     <button
                       onClick={() => { setModalStep('search'); setSelectedMovie(null); }}
-                      className="mt-2 text-[10px] text-sky-400 hover:text-sky-300 font-semibold text-left"
+                      className="mt-2 text-[10px] text-green-400 hover:text-green-300 font-semibold text-left"
                     >
                       ← Đổi phim khác
                     </button>
@@ -686,7 +686,7 @@ export default function Header() {
                         setWatchRoomMax(clamped);
                         setWatchRoomMaxInput(String(clamped));
                       }}
-                      className="flex-1 text-center bg-slate-900 border border-slate-700 rounded-xl py-2 text-white font-black text-lg focus:outline-none focus:border-sky-500/60"
+                      className="flex-1 text-center bg-slate-900 border border-slate-700 rounded-xl py-2 text-white font-black text-lg focus:outline-none focus:border-green-500/60"
                     />
                     <button
                       onClick={() => { const v = Math.min(20, watchRoomMax + 1); setWatchRoomMax(v); setWatchRoomMaxInput(String(v)); }}
@@ -728,7 +728,7 @@ export default function Header() {
                       setModalStep('done');
                     } finally { setCreatingRoom(false); }
                   }}
-                  className="w-full py-3 rounded-xl bg-sky-500 text-white font-bold text-sm hover:bg-sky-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                  className="w-full py-3 rounded-xl bg-green-500 text-white font-bold text-sm hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
                 >
                   {creatingRoom ? <Loader2 size={16} className="animate-spin" /> : <Users size={16} />}
                   {creatingRoom ? 'Đang tạo phòng...' : `Tạo phòng · ${watchRoomMax} người`}
@@ -740,8 +740,8 @@ export default function Header() {
             {modalStep === 'done' && createdRoomId && (
               <div className="px-5 py-5 flex flex-col gap-4">
                 <div className="text-center">
-                  <div className="w-14 h-14 rounded-full bg-sky-500/15 flex items-center justify-center mx-auto mb-3">
-                    <Check size={26} className="text-sky-400" />
+                  <div className="w-14 h-14 rounded-full bg-green-500/15 flex items-center justify-center mx-auto mb-3">
+                    <Check size={26} className="text-green-400" />
                   </div>
                   <h3 className="text-white font-bold text-base">Phòng đã được tạo!</h3>
                   <p className="text-slate-400 text-xs mt-1">Chia sẻ link cho bạn bè · Tối đa {watchRoomMax} người</p>
@@ -758,8 +758,8 @@ export default function Header() {
                 )}
 
                 {/* Link box */}
-                <div className="bg-slate-900 rounded-xl p-3 flex items-center gap-2 border border-sky-500/20">
-                  <p className="flex-1 text-sky-300 text-xs font-mono truncate">
+                <div className="bg-slate-900 rounded-xl p-3 flex items-center gap-2 border border-green-500/20">
+                  <p className="flex-1 text-green-300 text-xs font-mono truncate">
                     {window.location.origin}/watch-room/{createdRoomId}
                   </p>
                   <button onClick={() => {
@@ -769,7 +769,7 @@ export default function Header() {
                   }}
                     className={cn(
                       'shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-all',
-                      roomLinkCopied ? 'bg-sky-500 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                      roomLinkCopied ? 'bg-green-500 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
                     )}>
                     {roomLinkCopied ? <Check size={12} /> : <Copy size={12} />}
                     {roomLinkCopied ? 'Đã copy!' : 'Copy'}
@@ -782,7 +782,7 @@ export default function Header() {
                     Đóng
                   </button>
                   <button onClick={() => { navigate(`/watch-room/${createdRoomId}`); setShowWatchRoomModal(false); }}
-                    className="flex-1 py-2.5 rounded-xl bg-sky-500 text-white font-bold text-sm hover:bg-sky-600 transition-colors flex items-center justify-center gap-1.5">
+                    className="flex-1 py-2.5 rounded-xl bg-green-500 text-white font-bold text-sm hover:bg-green-600 transition-colors flex items-center justify-center gap-1.5">
                     <Users size={14} /> Vào phòng
                   </button>
                 </div>

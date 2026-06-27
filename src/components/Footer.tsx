@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Clapperboard, Mail } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
+import { Home, Search, Film, Calendar, User, Clapperboard, Mail } from 'lucide-react';
 
 function useSiteSettings() {
   const [s, setS] = useState(() => {
@@ -15,53 +15,85 @@ function useSiteSettings() {
   return s;
 }
 
+const NAV = [
+  { to: '/',          label: 'Trang chủ', icon: Home },
+  { to: '/search',    label: 'Tìm kiếm',  icon: Search },
+  { to: '/type/phim-chieu-rap', label: 'Reviews', icon: Film },
+  { to: '/lich-chieu', label: 'Lịch chiếu', icon: Calendar },
+  { to: '/profile',   label: 'Tài khoản', icon: User },
+];
+
 export default function Footer() {
+  const location = useLocation();
   const settings = useSiteSettings();
   const siteName = settings.siteName || 'ĐẢO PHIM';
-  const adsEmail  = settings.adsEmail  || 'adsdaophim@gmail.com';
+  const adsEmail = settings.adsEmail || 'adsdaophim@gmail.com';
+
+  // Hide bottom nav on watch & admin pages
+  const hideNav = location.pathname.startsWith('/watch') || location.pathname.startsWith('/admin') || location.pathname.startsWith('/player-studio');
 
   return (
-    <footer className="border-t border-slate-800/60 bg-slate-950 mt-10">
-      <div className="max-w-4xl mx-auto px-4 py-10 flex flex-col items-center gap-6 text-center">
-        {/* Logo */}
-        <div className="flex items-center gap-2">
-          <div className="w-10 h-10 bg-sky-500 rounded-full flex items-center justify-center">
-            <Clapperboard className="text-slate-950" size={18} strokeWidth={2.5} />
+    <>
+      {/* ── Full footer (mobile hidden, desktop shown) ── */}
+      <footer className="hidden md:block border-t border-slate-800/60 bg-slate-950 mt-10">
+        <div className="max-w-4xl mx-auto px-4 py-8 flex flex-col items-center gap-5 text-center">
+          <div className="flex items-center gap-2">
+            <div className="w-9 h-9 bg-green-500 rounded-full flex items-center justify-center">
+              <Clapperboard className="text-slate-950" size={16} strokeWidth={2.5} />
+            </div>
+            <span className="text-base font-black text-white">{siteName}</span>
           </div>
-          <span className="text-lg font-black text-white">{siteName}</span>
+          <p className="text-slate-500 text-xs max-w-sm leading-relaxed">
+            Trang xem phim online chất lượng cao miễn phí. Vietsub – Thuyết minh – Lồng tiếng.
+          </p>
+          <div className="flex flex-wrap justify-center gap-x-5 gap-y-1.5 text-sm text-slate-500">
+            {[['/', 'Trang chủ'], ['/type/phim-bo', 'Phim bộ'], ['/type/phim-le', 'Phim lẻ'], ['/type/hoat-hinh', 'Hoạt hình'], ['/type/phim-chieu-rap', 'Chiếu rạp']].map(([to, label]) => (
+              <Link key={to} to={to} className="hover:text-white transition-colors">{label}</Link>
+            ))}
+          </div>
+          <div className="flex items-center gap-2 text-slate-500 text-xs">
+            <span>📢 Quảng cáo:</span>
+            <a href={`mailto:${adsEmail}`} className="flex items-center gap-1 text-green-400 hover:text-green-300 font-semibold transition-colors">
+              <Mail size={11} />{adsEmail}
+            </a>
+          </div>
+          <div className="bg-red-600 text-white text-xs font-bold px-4 py-1.5 rounded-full">
+            🇻🇳 Hoàng Sa &amp; Trường Sa là của Việt Nam!
+          </div>
+          <p className="text-slate-700 text-[10px]">© {new Date().getFullYear()} {siteName}. Không lưu trữ phim trên máy chủ.</p>
         </div>
-        <p className="text-slate-500 text-xs max-w-sm leading-relaxed">
-          Trang xem phim online chất lượng cao miễn phí Vietsub, thuyết minh, lồng tiếng full HD.
-        </p>
+      </footer>
 
-        {/* Links */}
-        <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-slate-500">
-          <Link to="/" className="hover:text-white transition-colors">Trang chủ</Link>
-          <Link to="/type/phim-bo" className="hover:text-white transition-colors">Phim bộ</Link>
-          <Link to="/type/phim-le" className="hover:text-white transition-colors">Phim lẻ</Link>
-          <Link to="/type/hoat-hinh" className="hover:text-white transition-colors">Hoạt hình</Link>
-          <Link to="/type/phim-chieu-rap" className="hover:text-white transition-colors">Chiếu rạp</Link>
-        </div>
+      {/* ── BOTTOM NAV (mobile) ── */}
+      {!hideNav && (
+        <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden"
+          style={{ background: 'rgba(13,13,15,0.97)', borderTop: '1px solid rgba(255,255,255,0.07)', paddingBottom: 'env(safe-area-inset-bottom,0px)' }}>
+          <div className="flex items-center">
+            {NAV.map(item => {
+              const active = item.to === '/'
+                ? location.pathname === '/'
+                : location.pathname.startsWith(item.to);
+              return (
+                <Link key={item.to} to={item.to}
+                  className="flex-1 flex flex-col items-center justify-center gap-1 py-2.5 transition-colors"
+                  style={{ color: active ? '#22c55e' : '#64748b' }}>
+                  {/* icon with active bg circle */}
+                  <div className="relative">
+                    <item.icon size={22} strokeWidth={active ? 2.5 : 1.8} />
+                    {active && (
+                      <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-green-500" />
+                    )}
+                  </div>
+                  <span className="text-[9px] font-bold leading-none">{item.label}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </nav>
+      )}
 
-        {/* Liên hệ đặt quảng cáo */}
-        <div className="flex items-center gap-2 text-slate-500 text-xs">
-          <span>📢 Liên hệ đặt quảng cáo:</span>
-          <a
-            href={`mailto:${adsEmail}`}
-            className="flex items-center gap-1 text-sky-400 hover:text-sky-300 font-semibold transition-colors"
-          >
-            <Mail size={12} />
-            {adsEmail}
-          </a>
-        </div>
-
-        {/* Sovereign note */}
-        <div className="bg-red-600 text-white text-xs font-bold px-5 py-2 rounded-full flex items-center gap-2">
-          🇻🇳 Hoàng Sa &amp; Trường Sa là của Việt Nam!
-        </div>
-
-        <p className="text-slate-600 text-xs">© {new Date().getFullYear()} {siteName}</p>
-      </div>
-    </footer>
+      {/* spacer cho mobile */}
+      {!hideNav && <div className="md:hidden h-16" />}
+    </>
   );
 }

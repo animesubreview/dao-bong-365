@@ -45,7 +45,7 @@ export function ManualMovieCard({ movie, className }: { movie: ManualMovie; clas
           </div>
         </div>
         <div className="mt-2 px-0.5">
-          <div className="font-bold text-[13px] text-slate-100 group-hover:text-sky-400 transition-colors line-clamp-1 leading-tight">{movie.name}</div>
+          <div className="font-bold text-[13px] text-slate-100 group-hover:text-green-400 transition-colors line-clamp-1 leading-tight">{movie.name}</div>
           <div className="text-[11px] text-slate-500 mt-0.5 line-clamp-1">{movie.originName}</div>
         </div>
       </Link>

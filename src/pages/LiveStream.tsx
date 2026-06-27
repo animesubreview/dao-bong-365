@@ -27,7 +27,7 @@ export default function LiveStreamPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="w-10 h-10 border-t-transparent rounded-full animate-spin border-sky-500" style={{ borderWidth: 3, borderStyle: 'solid' }} />
+        <div className="w-10 h-10 border-t-transparent rounded-full animate-spin border-green-500" style={{ borderWidth: 3, borderStyle: 'solid' }} />
       </div>
     );
   }
@@ -82,7 +82,7 @@ export default function LiveStreamPage() {
           <h3 className="text-slate-400 text-sm font-bold uppercase tracking-wider">Danh sách phát</h3>
           {streams.map(s => (
             <button key={s.id} onClick={() => setSelected(s)}
-              className={`flex gap-3 p-3 rounded-xl border text-left transition-all ${selected?.id === s.id ? 'border-sky-500 bg-sky-500/10' : 'border-slate-800 bg-slate-900/60 hover:border-slate-600'}`}>
+              className={`flex gap-3 p-3 rounded-xl border text-left transition-all ${selected?.id === s.id ? 'border-green-500 bg-green-500/10' : 'border-slate-800 bg-slate-900/60 hover:border-slate-600'}`}>
               {s.thumbnail ? (
                 <img src={s.thumbnail} alt={s.title} className="w-20 h-14 object-cover rounded-lg shrink-0" />
               ) : (

@@ -6,10 +6,12 @@ import { Movie } from '../types';
 import MovieCard from '../components/MovieCard';
 import { ManualMovieCard, ManualMovie } from '../components/ManualMoviesSection';
 import { subscribeManualMovies } from '../lib/manualMovies';
-import { Search as SearchIcon, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
-import { cn, usePageTitle } from '../lib/utils';
+import { Search as SearchIcon, Loader2, ChevronLeft, ChevronRight, SlidersHorizontal } from 'lucide-react';
 
-// Movie từ NguonC có _id bắt đầu bằng "nc-"
+function dec(s: string) {
+  return (s||'').replace(/&#039;/g,"'").replace(/&amp;/g,'&');
+}
+
 const isNguonC = (movie: Movie) => movie._id?.startsWith('nc-');
 
 export default function Search() {
@@ -20,185 +22,175 @@ export default function Search() {
   const [results, setResults] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(false);
   const [pagination, setPagination] = useState<any>(null);
-  const [nguoncCount, setNguoncCount] = useState(0);
   const [manualResults, setManualResults] = useState<ManualMovie[]>([]);
   const [allManual, setAllManual] = useState<ManualMovie[]>([]);
 
   useSEO({
     title: query ? `Tìm kiếm: ${query}` : 'Tìm kiếm phim',
-    description: query
-      ? `Kết quả tìm kiếm phim "${query}" tại Đảo Phim. Xem phim online miễn phí HD Vietsub.`
-      : 'Tìm kiếm phim online tại Đảo Phim. Hơn 50,000 bộ phim Vietsub HD miễn phí.',
+    description: query ? `Kết quả tìm kiếm "${query}" tại Đảo Phim.` : 'Tìm kiếm phim tại Đảo Phim.',
     url: query ? `/search?q=${encodeURIComponent(query)}` : '/search',
     noIndex: true,
   });
 
-  // Load manual movies from Firestore
   useEffect(() => {
     const unsub = subscribeManualMovies(setAllManual);
     return unsub;
   }, []);
 
   useEffect(() => {
-    if (!query) {
-      setResults([]);
-      setManualResults([]);
-      setPagination(null);
-      return;
-    }
-
-    // Search manual movies
+    if (!query) { setResults([]); setManualResults([]); setPagination(null); return; }
     const q = query.toLowerCase();
-    setManualResults(
-      allManual.filter(m =>
-        m.name?.toLowerCase().includes(q) ||
-        m.originName?.toLowerCase().includes(q) ||
-        m.description?.toLowerCase().includes(q)
-      )
-    );
-
-    // Search API (KKPhim + NguonC song song)
-    const fetchResults = async () => {
+    setManualResults(allManual.filter(m =>
+      m.name?.toLowerCase().includes(q) || m.originName?.toLowerCase().includes(q)
+    ));
+    const fetch = async () => {
       setLoading(true);
       try {
-        const res = await movieApi.searchMoviesCombined(query, page);
+        const res = await (movieApi as any).searchMoviesCombined?.(query, page) || await movieApi.searchMovies(query, page, 24);
         setResults(res.items || []);
         setPagination(res.pagination || null);
-        setNguoncCount(res.nguoncCount || 0);
-      } catch {
-        setResults([]);
-        setPagination(null);
-        setNguoncCount(0);
-      } finally {
-        setLoading(false);
-      }
+      } catch { setResults([]); setPagination(null); }
+      finally { setLoading(false); }
     };
-    fetchResults();
+    fetch();
     window.scrollTo(0, 0);
   }, [query, page, allManual]);
 
-  const handlePageChange = (newPage: number) => {
-    setSearchParams({ q: query, page: newPage.toString() });
-  };
+  const setQuery = (q: string) => setSearchParams(q ? { q } : {});
+  const handlePage = (p: number) => setSearchParams(query ? { q: query, page: String(p) } : { page: String(p) });
 
-  const totalCount = (pagination?.totalItems || results.length) + manualResults.length + nguoncCount;
-  const hasResults = results.length > 0 || manualResults.length > 0;
+  const browseMovies = results.slice(0, 4);
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] pb-24 pt-20">
-      <div className="max-w-7xl mx-auto px-4">
-
-        {/* Header */}
-        <div className="py-8">
-          <div className="flex items-center gap-3 mb-2">
-            <SearchIcon size={22} className="text-sky-400" />
-            <h1 className="text-2xl font-black text-white tracking-tight">
-              {query ? `Kết quả cho "${query}"` : 'Tìm kiếm phim'}
-            </h1>
+    <div className="min-h-screen bg-slate-950 pb-20 px-4">
+      {/* Search bar - big, like CôBePhim */}
+      <div className="pt-4 pb-5">
+        <div className="flex gap-2">
+          <div className="flex-1 relative">
+            <SearchIcon size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
+            <input
+              type="text"
+              placeholder="Tìm phim, diễn viên..."
+              defaultValue={query}
+              onKeyDown={e => e.key === 'Enter' && setQuery((e.target as HTMLInputElement).value.trim())}
+              className="w-full bg-slate-800/80 border border-slate-700/60 rounded-2xl py-3.5 pl-10 pr-4 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-green-500/40 focus:border-green-500/40 transition-all"
+            />
           </div>
-          {query && !loading && (
-            <p className="text-slate-500 text-sm ml-9">
-              Tìm thấy <span className="text-sky-400 font-bold">{totalCount}</span> kết quả
-              {nguoncCount > 0 && (
-                <span className="ml-2 text-xs text-slate-600">
-                  (bao gồm <span className="text-amber-400 font-semibold">{nguoncCount}</span> từ{' '}
-                  <span className="text-amber-400 font-semibold">NguonC</span>)
-                </span>
-              )}
-            </p>
-          )}
+          <button
+            onClick={() => {
+              const inp = document.querySelector<HTMLInputElement>('input[placeholder="Tìm phim, diễn viên..."]');
+              if (inp) setQuery(inp.value.trim());
+            }}
+            className="bg-green-500 hover:bg-green-400 text-white font-black px-5 py-3 rounded-2xl text-sm transition-all shrink-0">
+            Tìm
+          </button>
         </div>
+      </div>
 
-        {/* Loading */}
-        {loading && (
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
-            {Array.from({ length: 12 }).map((_, i) => (
-              <div key={i} className="aspect-[2/3] bg-[#181818] rounded-xl animate-pulse" />
+      {/* Loading */}
+      {loading && (
+        <div className="flex items-center justify-center py-20">
+          <Loader2 size={28} className="animate-spin text-green-500" />
+        </div>
+      )}
+
+      {/* Results */}
+      {!loading && query && (
+        <>
+          {(manualResults.length > 0 || results.length > 0) ? (
+            <>
+              {/* Section header */}
+              <div className="flex items-center gap-2 mb-4">
+                <SlidersHorizontal size={15} className="text-slate-400" />
+                <span className="text-base font-black text-white">Kết quả tìm kiếm</span>
+                <span className="text-sm text-slate-500 ml-1">"{query}"</span>
+              </div>
+
+              {/* 2-col grid like CôBePhim */}
+              <div className="grid grid-cols-2 gap-x-3 gap-y-5 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                {manualResults.map(m => (
+                  <ManualMovieCard key={m.id} movie={m} />
+                ))}
+                {results.map(m => (
+                  <MovieCard key={m._id} movie={m} />
+                ))}
+              </div>
+
+              {/* Pagination */}
+              {pagination && pagination.totalPages > 1 && (
+                <div className="flex justify-center items-center gap-3 mt-8">
+                  <button onClick={() => handlePage(page - 1)} disabled={page <= 1}
+                    className="flex items-center gap-1 px-4 py-2 rounded-full bg-slate-800 border border-slate-700 text-sm font-bold text-slate-300 disabled:opacity-40 hover:border-green-500/50 hover:text-green-400 transition-all">
+                    <ChevronLeft size={15}/> Trước
+                  </button>
+                  <span className="text-sm text-slate-400 font-semibold">
+                    {page} / {pagination.totalPages}
+                  </span>
+                  <button onClick={() => handlePage(page + 1)} disabled={page >= pagination.totalPages}
+                    className="flex items-center gap-1 px-4 py-2 rounded-full bg-slate-800 border border-slate-700 text-sm font-bold text-slate-300 disabled:opacity-40 hover:border-green-500/50 hover:text-green-400 transition-all">
+                    Sau <ChevronRight size={15}/>
+                  </button>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="py-20 text-center">
+              <SearchIcon size={40} className="mx-auto text-slate-700 mb-3" />
+              <p className="text-slate-500 font-semibold">Không tìm thấy kết quả</p>
+              <p className="text-slate-600 text-sm mt-1">Thử tên khác hoặc tên gốc tiếng Anh</p>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Browse section (no query) - like CôBePhim */}
+      {!query && !loading && (
+        <>
+          <div className="flex items-center gap-2 mb-4">
+            <div className="grid grid-cols-2 gap-1 text-slate-500">
+              <div className="w-2 h-2 rounded-sm bg-current" />
+              <div className="w-2 h-2 rounded-sm bg-current" />
+              <div className="w-2 h-2 rounded-sm bg-current" />
+              <div className="w-2 h-2 rounded-sm bg-current" />
+            </div>
+            <span className="text-lg font-black text-white">Duyệt tìm</span>
+          </div>
+          <div className="flex items-center gap-1.5 mb-4">
+            <SlidersHorizontal size={13} className="text-slate-500" />
+            <span className="text-sm text-slate-500 font-semibold">Bộ lọc</span>
+          </div>
+          {/* Quick category filters */}
+          <div className="flex gap-2 flex-wrap mb-5">
+            {[
+              { label: 'Phim bộ', to: '/type/phim-bo' },
+              { label: 'Phim lẻ', to: '/type/phim-le' },
+              { label: 'Anime', to: '/type/hoat-hinh' },
+              { label: 'Chiếu rạp', to: '/type/phim-chieu-rap' },
+              { label: 'TV Shows', to: '/type/tv-shows' },
+            ].map(cat => (
+              <Link key={cat.label} to={cat.to}
+                className="px-4 py-2 rounded-full bg-slate-800/80 border border-slate-700/60 text-sm font-semibold text-slate-300 hover:border-green-500/50 hover:text-green-400 transition-all">
+                {cat.label}
+              </Link>
             ))}
           </div>
-        )}
+          {/* Browse latest movies 2 col */}
+          <BrowseLatest />
+        </>
+      )}
+    </div>
+  );
+}
 
-        {/* Results */}
-        {!loading && hasResults && (
-          <>
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
-              {manualResults.map(movie => (
-                <ManualMovieCard key={movie.id} movie={movie} />
-              ))}
-              {results.map(movie => (
-                <div key={movie._id} className="relative">
-                  <MovieCard movie={movie} />
-                  {isNguonC(movie) && (
-                    <span className="absolute top-1.5 left-1.5 z-10 bg-amber-500/90 text-black text-[9px] font-black px-1.5 py-0.5 rounded-md leading-tight pointer-events-none shadow">
-                      NguonC
-                    </span>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            {/* Pagination */}
-            {pagination && pagination.totalPages > 1 && (
-              <div className="flex items-center justify-center gap-2 mt-10">
-                <button onClick={() => handlePageChange(page - 1)} disabled={page === 1}
-                  className="w-9 h-9 rounded-xl border border-white/10 flex items-center justify-center text-slate-400 disabled:opacity-30 hover:border-sky-500/50 hover:text-sky-400 transition-all">
-                  <ChevronLeft size={16} />
-                </button>
-                {[...Array(Math.min(5, pagination.totalPages))].map((_, idx) => {
-                  let p = page <= 3 ? idx + 1 : page >= pagination.totalPages - 2 ? pagination.totalPages - 4 + idx : page - 2 + idx;
-                  if (p <= 0 || p > pagination.totalPages) return null;
-                  return (
-                    <button key={p} onClick={() => handlePageChange(p)}
-                      className={cn('w-9 h-9 rounded-xl text-sm font-bold transition-all border',
-                        page === p ? 'bg-sky-500 text-black border-sky-500' : 'border-white/10 text-slate-400 hover:border-sky-500/50 hover:text-sky-400'
-                      )}>
-                      {p}
-                    </button>
-                  );
-                })}
-                <button onClick={() => handlePageChange(page + 1)} disabled={page === pagination.totalPages}
-                  className="w-9 h-9 rounded-xl border border-white/10 flex items-center justify-center text-slate-400 disabled:opacity-30 hover:border-sky-500/50 hover:text-sky-400 transition-all">
-                  <ChevronRight size={16} />
-                </button>
-              </div>
-            )}
-          </>
-        )}
-
-        {/* Empty state - không tìm thấy */}
-        {!loading && !hasResults && query && (
-          <div className="flex flex-col items-center justify-center py-24 gap-5 text-center">
-            <div className="w-20 h-20 bg-[#181818] border border-white/8 rounded-full flex items-center justify-center text-slate-600">
-              <SearchIcon size={36} />
-            </div>
-            <div>
-              <h3 className="text-lg font-bold text-white mb-2">Không tìm thấy phim nào</h3>
-              <p className="text-slate-500 text-sm max-w-xs">
-                Không có kết quả cho <span className="text-white font-semibold">"{query}"</span>. Thử tìm với từ khóa khác.
-              </p>
-            </div>
-            <div className="flex gap-2 flex-wrap justify-center">
-              <Link to="/" className="px-5 py-2.5 bg-sky-500 text-black font-bold rounded-xl text-sm hover:bg-sky-400 transition-all">
-                Về trang chủ
-              </Link>
-              <Link to="/type/phim-bo" className="px-5 py-2.5 bg-[#181818] border border-white/10 text-white font-bold rounded-xl text-sm hover:border-sky-500/50 transition-all">
-                Xem phim bộ
-              </Link>
-            </div>
-          </div>
-        )}
-
-        {/* No query state */}
-        {!query && (
-          <div className="flex flex-col items-center justify-center py-24 gap-4 text-center">
-            <div className="w-20 h-20 bg-[#181818] border border-white/8 rounded-full flex items-center justify-center text-slate-600">
-              <SearchIcon size={36} />
-            </div>
-            <p className="text-slate-500 text-sm">Nhập từ khóa vào ô tìm kiếm phía trên</p>
-          </div>
-        )}
-
-      </div>
+function BrowseLatest() {
+  const [movies, setMovies] = useState<Movie[]>([]);
+  useEffect(() => {
+    movieApi.getNewUpdates(1).then(r => setMovies(r.items.slice(0,10))).catch(()=>{});
+  }, []);
+  if (!movies.length) return null;
+  return (
+    <div className="grid grid-cols-2 gap-x-3 gap-y-5 md:grid-cols-3 lg:grid-cols-4">
+      {movies.map(m => <MovieCard key={m._id} movie={m} />)}
     </div>
   );
 }

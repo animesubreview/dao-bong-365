@@ -128,7 +128,7 @@ export default function PopupAd({ movieKey }: { movieKey: string }) {
         <div className="bg-slate-900 px-4 py-3 flex items-center justify-between gap-3">
           <a
             href={ad.linkUrl} target="_blank" rel="noopener noreferrer" onClick={close}
-            className="flex items-center gap-1.5 text-sky-400 text-xs font-bold hover:text-sky-300 transition-colors truncate"
+            className="flex items-center gap-1.5 text-green-400 text-xs font-bold hover:text-green-300 transition-colors truncate"
           >
             <ExternalLink size={13} />
             <span className="truncate">{ad.title || 'Xem thêm'}</span>

@@ -48,7 +48,7 @@ export default function MuaVip() {
   };
 
   const VIP_FEATURES = [
-    { icon: ShieldCheck, label: 'Chặn toàn bộ quảng cáo', color: 'text-sky-400' },
+    { icon: ShieldCheck, label: 'Chặn toàn bộ quảng cáo', color: 'text-green-400' },
     { icon: Zap, label: 'Tốc độ tải nhanh hơn', color: 'text-yellow-400' },
     { icon: Crown, label: 'Badge VIP trên hồ sơ', color: 'text-amber-400' },
   ];
@@ -139,7 +139,7 @@ export default function MuaVip() {
                       <span className="text-xl">{meta.icon}</span>
                       <span className={`text-base font-black ${meta.color}`}>{meta.label}</span>
                       {isActive && (
-                        <span className="text-[9px] font-black text-white bg-sky-600 px-1.5 py-0.5 rounded-full">ĐANG DÙNG</span>
+                        <span className="text-[9px] font-black text-white bg-green-600 px-1.5 py-0.5 rounded-full">ĐANG DÙNG</span>
                       )}
                     </div>
                     <p className="text-slate-400 text-xs">{meta.days} ngày · Chặn quảng cáo</p>
@@ -177,7 +177,7 @@ export default function MuaVip() {
         {vipMsg && (
           <div className={`rounded-xl px-4 py-3 text-sm font-bold text-center ${
             vipMsg.ok
-              ? 'bg-green-950/60 border border-sky-500/30 text-sky-300'
+              ? 'bg-green-950/60 border border-green-500/30 text-green-300'
               : 'bg-red-950/60 border border-red-500/30 text-red-300'
           }`}>
             {vipMsg.text}

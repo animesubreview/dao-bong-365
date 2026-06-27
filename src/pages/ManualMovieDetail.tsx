@@ -64,7 +64,7 @@ export default function ManualMovieDetail() {
 
   if (!movie) return (
     <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-      <div className="w-10 h-10 border-4 border-sky-500 border-t-transparent rounded-full animate-spin" />
+      <div className="w-10 h-10 border-4 border-green-500 border-t-transparent rounded-full animate-spin" />
     </div>
   );
 
@@ -98,7 +98,7 @@ export default function ManualMovieDetail() {
         {/* dot indicators */}
         <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
           {[0,1,2,3].map(i => (
-            <span key={i} className={cn('h-0.5 rounded-full', i === 0 ? 'w-8 bg-sky-500' : 'w-4 bg-slate-600')} />
+            <span key={i} className={cn('h-0.5 rounded-full', i === 0 ? 'w-8 bg-green-500' : 'w-4 bg-slate-600')} />
           ))}
         </div>
       </div>
@@ -133,7 +133,7 @@ export default function ManualMovieDetail() {
               <div className="pb-1">
                 <h1 className="text-lg font-black text-white leading-tight line-clamp-2">{movie.name}</h1>
                 {movie.originName && (
-                  <p className="text-sky-400 text-xs font-semibold mt-0.5 line-clamp-1">{movie.originName}</p>
+                  <p className="text-green-400 text-xs font-semibold mt-0.5 line-clamp-1">{movie.originName}</p>
                 )}
               </div>
             </div>
@@ -142,7 +142,7 @@ export default function ManualMovieDetail() {
             <div className="flex items-center gap-4 md:gap-6 mb-4">
               <button
                 onClick={() => navigate(`/watch-manual/${movie.id}/full`)}
-                className="flex items-center gap-2 bg-sky-500 hover:bg-sky-400 text-slate-950 font-black px-7 py-3 rounded-full text-sm shadow-lg shadow-sky-500/25 transition-all active:scale-95 shrink-0"
+                className="flex items-center gap-2 bg-green-500 hover:bg-green-400 text-slate-950 font-black px-7 py-3 rounded-full text-sm shadow-lg shadow-green-500/25 transition-all active:scale-95 shrink-0"
               >
                 <Play className="fill-current" size={16} /> Xem Ngay
               </button>
@@ -167,8 +167,8 @@ export default function ManualMovieDetail() {
               </div>
 
               {/* Rating chip PC */}
-              <div className="hidden md:flex items-center gap-2 ml-auto bg-sky-600/80 border border-indigo-500/50 text-white text-xs font-black px-3 py-2 rounded-xl">
-                <Star size={14} className="fill-current text-sky-400" />
+              <div className="hidden md:flex items-center gap-2 ml-auto bg-green-600/80 border border-indigo-500/50 text-white text-xs font-black px-3 py-2 rounded-xl">
+                <Star size={14} className="fill-current text-green-400" />
                 <span>0</span>
                 <span className="font-normal text-indigo-300">Đánh giá</span>
               </div>
@@ -181,13 +181,13 @@ export default function ManualMovieDetail() {
           <div className="hidden md:block mb-3">
             <h1 className="text-2xl lg:text-3xl font-black text-white leading-tight">{movie.name}</h1>
             {movie.originName && (
-              <p className="text-sky-400 text-sm font-semibold mt-1">{movie.originName}</p>
+              <p className="text-green-400 text-sm font-semibold mt-1">{movie.originName}</p>
             )}
           </div>
 
           {/* Badges */}
           <div className="flex flex-wrap items-center gap-2 mb-5">
-            <span className="text-[11px] font-black px-2.5 py-1 rounded-md bg-sky-500 text-slate-950">IMDb</span>
+            <span className="text-[11px] font-black px-2.5 py-1 rounded-md bg-green-500 text-slate-950">IMDb</span>
             <span className="text-[11px] font-bold px-2.5 py-1 rounded-md border border-slate-600 text-slate-300">{movie.quality}</span>
             {movie.year && <span className="text-[11px] font-bold px-2.5 py-1 rounded-md border border-slate-600 text-slate-300">{movie.year}</span>}
             {movie.status && <span className="text-[11px] font-bold px-2.5 py-1 rounded-md border border-slate-600 text-slate-300">{movie.status}</span>}
@@ -203,7 +203,7 @@ export default function ManualMovieDetail() {
                   {movie.airingDay}{movie.airingDay && movie.airingTime ? ' ' : ''}{movie.airingTime ? `(${movie.airingTime})` : ''}
                 </span>
               </div>
-              <button className="flex items-center gap-2 bg-sky-500 hover:bg-sky-400 text-slate-950 font-black text-xs px-4 py-2 rounded-full transition-all active:scale-95 shadow-lg shadow-sky-500/20">
+              <button className="flex items-center gap-2 bg-green-500 hover:bg-green-400 text-slate-950 font-black text-xs px-4 py-2 rounded-full transition-all active:scale-95 shadow-lg shadow-green-500/20">
                 <Bell size={13} className="fill-current" />
                 Lịch chiếu
               </button>
@@ -220,7 +220,7 @@ export default function ManualMovieDetail() {
                   className={cn(
                     'px-4 py-3 text-sm font-bold border-b-2 transition-all -mb-px',
                     activeTab === tab.key
-                      ? 'border-sky-500 text-white'
+                      ? 'border-green-500 text-white'
                       : 'border-transparent text-slate-500 hover:text-slate-300'
                   )}
                 >
@@ -246,8 +246,8 @@ export default function ManualMovieDetail() {
                   <div className="bg-slate-900/60 border border-slate-800/60 rounded-2xl p-5">
                     {/* Server */}
                     <div className="flex flex-wrap gap-2 mb-4">
-                      <button className="text-[11px] font-black px-3 py-1.5 rounded-lg border flex items-center gap-1.5 bg-sky-500/10 border-sky-500/60 text-sky-400">
-                        <span className="w-1.5 h-1.5 rounded-full bg-sky-400 shrink-0" />
+                      <button className="text-[11px] font-black px-3 py-1.5 rounded-lg border flex items-center gap-1.5 bg-green-500/10 border-green-500/60 text-green-400">
+                        <span className="w-1.5 h-1.5 rounded-full bg-green-400 shrink-0" />
                         {serverLabel}
                       </button>
                     </div>
@@ -260,7 +260,7 @@ export default function ManualMovieDetail() {
                         <button
                           key={idx}
                           onClick={() => navigate(`/watch-manual/${movie.id}/${idx}`)}
-                          className="bg-sky-500 border-sky-500 text-slate-950 py-2 rounded-lg text-center text-[11px] font-bold transition-all border shadow-md shadow-sky-500/30 truncate px-1"
+                          className="bg-green-500 border-green-500 text-slate-950 py-2 rounded-lg text-center text-[11px] font-bold transition-all border shadow-md shadow-green-500/30 truncate px-1"
                         >
                           {ep.label}
                         </button>
@@ -284,7 +284,7 @@ export default function ManualMovieDetail() {
                       { icon: <Star size={15} />, label: 'Trạng thái', value: movie.status || 'Hoàn thành' },
                     ].map(({ icon, label, value }) => (
                       <div key={label} className="flex items-center gap-2.5 bg-slate-800/60 rounded-xl p-3">
-                        <div className="text-sky-400 shrink-0">{icon}</div>
+                        <div className="text-green-400 shrink-0">{icon}</div>
                         <div>
                           <div className="text-[9px] text-slate-500 font-bold uppercase">{label}</div>
                           <div className="text-xs font-bold text-white mt-0.5 line-clamp-1">{value}</div>
@@ -301,7 +301,7 @@ export default function ManualMovieDetail() {
                         {movie.description}
                       </p>
                       <button onClick={() => setShowFullDesc(!showFullDesc)}
-                        className="mt-2 text-xs text-sky-400 font-bold flex items-center gap-1 hover:text-sky-300 transition-colors">
+                        className="mt-2 text-xs text-green-400 font-bold flex items-center gap-1 hover:text-green-300 transition-colors">
                         {showFullDesc ? <><ChevronUp size={13} />Thu gọn</> : <><ChevronDown size={13} />Xem thêm</>}
                       </button>
                     </div>
@@ -323,14 +323,14 @@ export default function ManualMovieDetail() {
                     <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
                       {related.map(m => (
                         <Link key={m.id} to={`/manual/${m.id}`} className="group block">
-                          <div className="rounded-xl overflow-hidden bg-slate-800 border border-slate-700/40 group-hover:border-sky-500/40 transition-all" style={{ aspectRatio: '2/3' }}>
+                          <div className="rounded-xl overflow-hidden bg-slate-800 border border-slate-700/40 group-hover:border-green-500/40 transition-all" style={{ aspectRatio: '2/3' }}>
                             {m.posterUrl
                               ? <img src={m.posterUrl} alt={m.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" referrerPolicy="no-referrer" />
                               : <div className="w-full h-full flex items-center justify-center"><Film size={24} className="text-slate-600" /></div>
                             }
                           </div>
                           <div className="mt-1.5 px-0.5">
-                            <div className="truncate font-bold text-[12px] text-slate-200 group-hover:text-sky-400 transition-colors">{m.name}</div>
+                            <div className="truncate font-bold text-[12px] text-slate-200 group-hover:text-green-400 transition-colors">{m.name}</div>
                             <div className="text-[10px] text-slate-500">{m.year}</div>
                           </div>
                         </Link>

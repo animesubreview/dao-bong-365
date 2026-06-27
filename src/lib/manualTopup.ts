@@ -28,7 +28,7 @@ export const CARD_TELCOS: { value: CardTelco; label: string; color: string }[] =
   { value: 'VIETTEL',      label: 'Viettel',      color: 'bg-red-500' },
   { value: 'MOBIFONE',     label: 'Mobifone',     color: 'bg-blue-500' },
   { value: 'VINAPHONE',    label: 'Vinaphone',    color: 'bg-yellow-500' },
-  { value: 'VIETNAMOBILE', label: 'Vietnamobile', color: 'bg-sky-500' },
+  { value: 'VIETNAMOBILE', label: 'Vietnamobile', color: 'bg-green-500' },
   { value: 'GMOBILE',      label: 'Gmobile',      color: 'bg-purple-500' },
 ];
 

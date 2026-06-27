@@ -206,7 +206,7 @@ export default function CommentSection({ movieSlug }: Props) {
               {currentUser && profile && !profile.isBanned && (
                 <button
                   onClick={() => openReply(c)}
-                  className="flex items-center gap-1 text-[11px] font-bold px-2 py-1 rounded-lg text-slate-500 hover:text-sky-400 hover:bg-sky-500/10 transition-all"
+                  className="flex items-center gap-1 text-[11px] font-bold px-2 py-1 rounded-lg text-slate-500 hover:text-green-400 hover:bg-green-500/10 transition-all"
                 >
                   <CornerDownRight size={12} />
                   Trả lời
@@ -227,7 +227,7 @@ export default function CommentSection({ movieSlug }: Props) {
           </div>
           <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap break-words">
             {c.replyToUsername && (
-              <span className="text-sky-400 font-bold mr-1">@{c.replyToUsername}</span>
+              <span className="text-green-400 font-bold mr-1">@{c.replyToUsername}</span>
             )}
             {c.content}
           </p>
@@ -247,7 +247,7 @@ export default function CommentSection({ movieSlug }: Props) {
         initial={{ opacity: 0, height: 0 }}
         animate={{ opacity: 1, height: 'auto' }}
         exit={{ opacity: 0, height: 0 }}
-        className="ml-6 pl-4 border-l-2 border-sky-500/40"
+        className="ml-6 pl-4 border-l-2 border-green-500/40"
       >
         <div className={`rounded-2xl p-3 ${
           isAdmin
@@ -264,7 +264,7 @@ export default function CommentSection({ movieSlug }: Props) {
                   </span>
                   <RoleBadge role={profile.role} />
                   <span className="text-[10px] text-slate-500">
-                    → <span className="text-sky-400 font-bold">@{replyTo.replyToUsername}</span>
+                    → <span className="text-green-400 font-bold">@{replyTo.replyToUsername}</span>
                   </span>
                 </div>
                 <button
@@ -288,7 +288,7 @@ export default function CommentSection({ movieSlug }: Props) {
                 className={`w-full bg-slate-800/60 border rounded-xl px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 resize-none transition-all ${
                   isAdmin
                     ? 'border-amber-500/30 focus:ring-amber-500/30 focus:border-amber-500/40'
-                    : 'border-slate-700/50 focus:ring-sky-500/40 focus:border-sky-500/30'
+                    : 'border-slate-700/50 focus:ring-green-500/40 focus:border-green-500/30'
                 }`}
               />
               <div className="flex items-center justify-between">
@@ -299,7 +299,7 @@ export default function CommentSection({ movieSlug }: Props) {
                   className={`flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed font-black text-xs px-4 py-1.5 rounded-full transition-all active:scale-95 ${
                     isAdmin
                       ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-sm shadow-amber-500/30 hover:from-amber-400 hover:to-orange-400'
-                      : 'bg-sky-500 hover:bg-sky-400 text-slate-950'
+                      : 'bg-green-500 hover:bg-green-400 text-slate-950'
                   }`}
                 >
                   <Send size={12} />
@@ -317,8 +317,8 @@ export default function CommentSection({ movieSlug }: Props) {
     <div className="mt-8 mb-6">
       {/* Header */}
       <div className="flex items-center gap-2 mb-5">
-        <span className="w-1 h-5 bg-sky-500 rounded-full shrink-0" />
-        <MessageCircle size={18} className="text-sky-400" />
+        <span className="w-1 h-5 bg-green-500 rounded-full shrink-0" />
+        <MessageCircle size={18} className="text-green-400" />
         <h3 className="text-base font-black text-white">
           Bình luận <span className="text-slate-500 font-bold text-sm">({comments.length})</span>
         </h3>
@@ -341,7 +341,7 @@ export default function CommentSection({ movieSlug }: Props) {
                 placeholder="Nhập bình luận... (Enter để gửi)"
                 rows={3}
                 maxLength={500}
-                className="w-full bg-slate-800/60 border border-slate-700/50 rounded-xl px-4 py-3 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/40 focus:border-sky-500/30 resize-none transition-all"
+                className="w-full bg-slate-800/60 border border-slate-700/50 rounded-xl px-4 py-3 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-green-500/40 focus:border-green-500/30 resize-none transition-all"
               />
               <div className="flex items-center justify-between">
                 <span className="text-[10px] text-slate-600">{text.length}/500</span>
@@ -350,7 +350,7 @@ export default function CommentSection({ movieSlug }: Props) {
                   <button
                     onClick={handleSubmit}
                     disabled={submitting || !text.trim()}
-                    className="flex items-center gap-1.5 bg-sky-500 hover:bg-sky-400 disabled:opacity-50 disabled:cursor-not-allowed text-slate-950 font-black text-xs px-4 py-2 rounded-full transition-all active:scale-95"
+                    className="flex items-center gap-1.5 bg-green-500 hover:bg-green-400 disabled:opacity-50 disabled:cursor-not-allowed text-slate-950 font-black text-xs px-4 py-2 rounded-full transition-all active:scale-95"
                   >
                     <Send size={13} />
                     {submitting ? 'Đang gửi...' : 'Gửi'}
@@ -367,7 +367,7 @@ export default function CommentSection({ movieSlug }: Props) {
           <Link
             to="/auth"
             state={{ tab: 'login' }}
-            className="inline-flex items-center gap-2 bg-sky-500 hover:bg-sky-400 text-slate-950 font-black text-sm px-5 py-2 rounded-full transition-all"
+            className="inline-flex items-center gap-2 bg-green-500 hover:bg-green-400 text-slate-950 font-black text-sm px-5 py-2 rounded-full transition-all"
           >
             <LogIn size={14} /> Đăng nhập
           </Link>
@@ -377,7 +377,7 @@ export default function CommentSection({ movieSlug }: Props) {
       {/* Danh sách bình luận */}
       {loading ? (
         <div className="flex justify-center py-8">
-          <div className="w-6 h-6 border-2 border-sky-500 border-t-transparent rounded-full animate-spin" />
+          <div className="w-6 h-6 border-2 border-green-500 border-t-transparent rounded-full animate-spin" />
         </div>
       ) : topLevel.length === 0 ? (
         <div className="text-center py-10 text-slate-600">

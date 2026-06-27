@@ -91,11 +91,11 @@ function Toast({ message, type, onClose }: { message: string; type: 'success' | 
 function SectionCard({ id, title, icon: Icon, children, color = 'indigo' }: any) {
   const [open, setOpen] = useState(true);
   const accents: Record<string, string> = {
-    indigo: 'from-sky-500 to-blue-600 shadow-sky-500/20',
+    indigo: 'from-green-500 to-green-700 shadow-green-500/20',
     emerald: 'from-emerald-500 to-teal-500 shadow-emerald-500/20',
     orange: 'from-orange-500 to-amber-500 shadow-orange-500/20',
     pink: 'from-pink-500 to-rose-500 shadow-pink-500/20',
-    green: 'from-green-500 to-emerald-500 shadow-sky-500/20',
+    green: 'from-green-500 to-emerald-500 shadow-green-500/20',
     blue: 'from-blue-500 to-indigo-500 shadow-blue-500/20',
     cyan: 'from-cyan-500 to-blue-500 shadow-cyan-500/20',
     red: 'from-red-500 to-orange-500 shadow-red-500/20',
@@ -166,7 +166,7 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
     <div className="min-h-screen bg-slate-950 flex items-center justify-center px-4">
       {/* Background glow */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-sky-600/8 rounded-full blur-3xl" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-green-600/8 rounded-full blur-3xl" />
         <div className="absolute top-1/3 left-1/3 w-[300px] h-[300px] bg-yellow-500/6 rounded-full blur-3xl" />
       </div>
 
@@ -183,11 +183,11 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
 
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-gradient-to-br from-sky-500 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-2xl shadow-sky-500/30">
+          <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-green-700 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-2xl shadow-green-500/30">
             <Shield size={28} className="text-slate-950" />
           </div>
           <h1 className="text-3xl font-black text-white tracking-wider" style={{ fontFamily: 'Bebas Neue, sans-serif', letterSpacing: '0.08em' }}>
-            ĐẢO PHIM <span className="text-sky-400">ADMIN</span>
+            ĐẢO PHIM <span className="text-green-400">ADMIN</span>
           </h1>
           <p className="text-slate-500 text-sm mt-1">Đăng nhập để quản lý website</p>
         </div>
@@ -209,7 +209,7 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
                 type="text"
                 value={username}
                 onChange={e => { setUsername(e.target.value); setError(''); }}
-                className="w-full bg-slate-800/60 border border-slate-700/60 rounded-xl py-3 pl-10 pr-4 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-sky-500/50 focus:border-sky-500/40 transition-all"
+                className="w-full bg-slate-800/60 border border-slate-700/60 rounded-xl py-3 pl-10 pr-4 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500/40 transition-all"
                 placeholder="Nhập tên đăng nhập"
                 autoComplete="username"
               />
@@ -224,7 +224,7 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
                 type={showPass ? 'text' : 'password'}
                 value={password}
                 onChange={e => { setPassword(e.target.value); setError(''); }}
-                className="w-full bg-slate-800/60 border border-slate-700/60 rounded-xl py-3 pl-10 pr-10 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-sky-500/50 focus:border-sky-500/40 transition-all"
+                className="w-full bg-slate-800/60 border border-slate-700/60 rounded-xl py-3 pl-10 pr-10 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500/40 transition-all"
                 placeholder="Nhập mật khẩu"
                 autoComplete="current-password"
               />
@@ -236,7 +236,7 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
 
           <button
             type="submit"
-            className="w-full mt-2 bg-sky-500 hover:bg-sky-400 active:scale-95 text-slate-950 font-black py-3.5 rounded-xl transition-all shadow-lg shadow-sky-500/25 flex items-center justify-center gap-2"
+            className="w-full mt-2 bg-green-500 hover:bg-green-400 active:scale-95 text-slate-950 font-black py-3.5 rounded-xl transition-all shadow-lg shadow-green-500/25 flex items-center justify-center gap-2"
           >
             <Lock size={16} />
             Đăng nhập
@@ -342,7 +342,7 @@ function MembersSection({ onToast }: { onToast: (msg: string, t: 'success' | 'er
           <p className="text-sm text-slate-400">
             Tổng: <span className="text-white font-bold">{users.length}</span> thành viên
             {users.filter(u => u.role === 'admin').length > 0 && (
-              <span className="ml-2 text-sky-400">· {users.filter(u => u.role === 'admin').length} admin</span>
+              <span className="ml-2 text-green-400">· {users.filter(u => u.role === 'admin').length} admin</span>
             )}
             {users.filter(u => u.isBanned).length > 0 && (
               <span className="ml-2 text-red-400">· {users.filter(u => u.isBanned).length} bị khóa</span>
@@ -371,7 +371,7 @@ function MembersSection({ onToast }: { onToast: (msg: string, t: 'success' | 'er
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-bold text-white truncate">{u.username}</span>
                     {u.isBanned && <span className="text-[10px] font-black bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded">KHÓA</span>}
-                    {u.role === 'admin' && <span className="text-[10px] font-black bg-sky-500/20 text-sky-400 px-1.5 py-0.5 rounded">ADMIN</span>}
+                    {u.role === 'admin' && <span className="text-[10px] font-black bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded">ADMIN</span>}
                   </div>
                   <div className="text-xs text-slate-500 truncate">{u.email}</div>
                   <div className="text-[10px] mt-0.5 flex items-center gap-2">
@@ -380,7 +380,7 @@ function MembersSection({ onToast }: { onToast: (msg: string, t: 'success' | 'er
                       {new Date(u.createdAt).toLocaleDateString('vi-VN')}
                     </span>
                     {/* Số dư */}
-                    <span className="flex items-center gap-1 text-sky-400 font-bold">
+                    <span className="flex items-center gap-1 text-green-400 font-bold">
                       <Wallet size={9} />
                       {formatVND(u.balance || 0)}
                     </span>
@@ -390,7 +390,7 @@ function MembersSection({ onToast }: { onToast: (msg: string, t: 'success' | 'er
                   {/* Cộng / Trừ tiền */}
                   <button
                     onClick={() => openBalanceModal(u)}
-                    className="btn-icon p-2.5 text-xs hover:border-sky-500/40 hover:text-sky-400"
+                    className="btn-icon p-2.5 text-xs hover:border-green-500/40 hover:text-green-400"
                     title="Cộng / Trừ số dư"
                   >
                     <Wallet size={14} />
@@ -398,7 +398,7 @@ function MembersSection({ onToast }: { onToast: (msg: string, t: 'success' | 'er
                   {/* Cấp / Thu hồi Admin */}
                   <button
                     onClick={() => handleRole(u)}
-                    className={`btn-icon p-2.5 text-xs ${u.role === 'admin' ? 'border-sky-500/40 text-sky-400 hover:border-red-500/40 hover:text-red-400' : 'hover:border-sky-500/40 hover:text-sky-400'}`}
+                    className={`btn-icon p-2.5 text-xs ${u.role === 'admin' ? 'border-green-500/40 text-green-400 hover:border-red-500/40 hover:text-red-400' : 'hover:border-green-500/40 hover:text-green-400'}`}
                     title={u.role === 'admin' ? 'Thu hồi Admin' : 'Cấp quyền Admin'}
                   >
                     <Shield size={14} />
@@ -448,7 +448,7 @@ function MembersSection({ onToast }: { onToast: (msg: string, t: 'success' | 'er
                   : <button
                       key={p}
                       onClick={() => setPage(p as number)}
-                      className={`btn-icon w-8 h-8 text-sm font-bold ${page === p ? 'border-sky-500/60 text-sky-400' : ''}`}
+                      className={`btn-icon w-8 h-8 text-sm font-bold ${page === p ? 'border-green-500/60 text-green-400' : ''}`}
                     >{p}</button>
               )
             }
@@ -473,7 +473,7 @@ function MembersSection({ onToast }: { onToast: (msg: string, t: 'success' | 'er
             {/* Header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800">
               <div className="flex items-center gap-2">
-                <Wallet size={18} className="text-sky-400" />
+                <Wallet size={18} className="text-green-400" />
                 <span className="text-white font-black">Cập nhật số dư</span>
               </div>
               <button onClick={() => setBalanceModal(null)} className="text-slate-500 hover:text-white transition-colors">
@@ -486,7 +486,7 @@ function MembersSection({ onToast }: { onToast: (msg: string, t: 'success' | 'er
               <div className="bg-slate-800/60 rounded-xl px-4 py-3">
                 <p className="text-xs text-slate-500 mb-0.5">Tài khoản</p>
                 <p className="text-white font-bold">{balanceModal.username}</p>
-                <p className="text-sky-400 text-sm font-black mt-1">
+                <p className="text-green-400 text-sm font-black mt-1">
                   Số dư hiện tại: {formatVND(balanceModal.balance)}
                 </p>
               </div>
@@ -525,8 +525,8 @@ function MembersSection({ onToast }: { onToast: (msg: string, t: 'success' | 'er
                       onClick={() => setBalanceAmount(String(a))}
                       className={`py-1.5 rounded-lg text-xs font-bold border transition-all ${
                         balanceAmount === String(a)
-                          ? 'bg-sky-500 text-slate-950 border-sky-500'
-                          : 'bg-slate-800/60 text-slate-400 border-slate-700/40 hover:border-sky-500/30'
+                          ? 'bg-green-500 text-slate-950 border-green-500'
+                          : 'bg-slate-800/60 text-slate-400 border-slate-700/40 hover:border-green-500/30'
                       }`}
                     >
                       {a >= 1000000 ? `${a / 1000000}M` : `${a / 1000}K`}
@@ -544,7 +544,7 @@ function MembersSection({ onToast }: { onToast: (msg: string, t: 'success' | 'er
                   onChange={e => setBalanceAmount(e.target.value)}
                   placeholder="Nhập số tiền..."
                   min={1}
-                  className="w-full bg-slate-800/80 border border-slate-700/50 rounded-xl px-3 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-sky-500/50 transition-colors"
+                  className="w-full bg-slate-800/80 border border-slate-700/50 rounded-xl px-3 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-green-500/50 transition-colors"
                 />
                 {balanceAmount && parseInt(balanceAmount) > 0 && (
                   <p className={`text-xs mt-1 font-bold ${balanceType === 'add' ? 'text-emerald-400' : 'text-red-400'}`}>
@@ -564,7 +564,7 @@ function MembersSection({ onToast }: { onToast: (msg: string, t: 'success' | 'er
                   value={balanceNote}
                   onChange={e => setBalanceNote(e.target.value)}
                   placeholder="Lý do cộng/trừ tiền..."
-                  className="w-full bg-slate-800/80 border border-slate-700/50 rounded-xl px-3 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-sky-500/50 transition-colors"
+                  className="w-full bg-slate-800/80 border border-slate-700/50 rounded-xl px-3 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-green-500/50 transition-colors"
                 />
               </div>
 
@@ -661,7 +661,7 @@ function NotificationsSection({ onToast }: { onToast: (msg: string, t: 'success'
   const TYPE_LABELS = { info: '📘 Thông tin', warning: '⚠️ Cảnh báo', success: '✅ Thành công', error: '🚨 Khẩn cấp' };
   const TYPE_COLORS: Record<string, string> = {
     info: 'text-blue-400 bg-blue-500/10',
-    warning: 'text-sky-400 bg-sky-600/10',
+    warning: 'text-green-400 bg-green-600/10',
     success: 'text-emerald-400 bg-emerald-500/10',
     error: 'text-red-400 bg-red-500/10',
   };
@@ -1228,7 +1228,7 @@ function AdsSection({ onToast }: { onToast: (msg: string, t: 'success' | 'error'
         <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <p className="text-sm text-slate-400">
-              Popup xuất hiện <span className="text-sky-400 font-bold">1 lần</span> khi người dùng bấm vào phim muốn xem. &nbsp;
+              Popup xuất hiện <span className="text-green-400 font-bold">1 lần</span> khi người dùng bấm vào phim muốn xem. &nbsp;
               <span className="text-emerald-400">{popups.filter(p => p.active).length} đang bật</span>
             </p>
             <button
@@ -1240,7 +1240,7 @@ function AdsSection({ onToast }: { onToast: (msg: string, t: 'success' | 'error'
             </button>
           </div>
 
-          <div className="bg-sky-600/5 border border-sky-600/20 rounded-xl px-4 py-3 text-[12px] text-sky-300/80">
+          <div className="bg-green-600/5 border border-green-600/20 rounded-xl px-4 py-3 text-[12px] text-green-300/80">
             ℹ️ Popup hiện <strong>1 lần duy nhất mỗi phiên</strong> khi người dùng nhấn vào chi tiết phim. Chỉ popup đầu tiên đang <strong>bật</strong> sẽ được hiển thị.
           </div>
 
@@ -1336,7 +1336,7 @@ function AdsSection({ onToast }: { onToast: (msg: string, t: 'success' | 'error'
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      {idx === 0 && p.active && <span className="text-[10px] font-black bg-sky-500/20 text-sky-400 px-1.5 py-0.5 rounded">ĐANG DÙNG</span>}
+                      {idx === 0 && p.active && <span className="text-[10px] font-black bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded">ĐANG DÙNG</span>}
                       <span className="text-sm font-bold text-white truncate">{p.title || 'Popup QC'}</span>
                       <span className="text-[10px] font-bold bg-orange-500/10 text-orange-400 px-1.5 py-0.5 rounded">{p.mediaType.toUpperCase()}</span>
                       {!p.active && <span className="text-[10px] font-black text-slate-600 bg-slate-800 px-1.5 py-0.5 rounded">TẮT</span>}
@@ -1412,8 +1412,8 @@ function CinemaSection({ onToast }: { onToast: (msg: string, t: 'success' | 'err
         <div className="grid grid-cols-3 gap-3">
           {[
             { label: 'Phòng chiếu', value: rooms.length, color: 'text-white' },
-            { label: 'Đang chiếu', value: activeCount, color: 'text-sky-400' },
-            { label: 'Đang xem', value: totalViewers, color: 'text-sky-400' },
+            { label: 'Đang chiếu', value: activeCount, color: 'text-green-400' },
+            { label: 'Đang xem', value: totalViewers, color: 'text-green-400' },
           ].map(stat => (
             <div key={stat.label} className="bg-slate-800/50 rounded-xl p-3 text-center border border-slate-700/40">
               <div className={`text-2xl font-black ${stat.color}`}>{stat.value}</div>
@@ -1459,7 +1459,7 @@ function CinemaSection({ onToast }: { onToast: (msg: string, t: 'success' | 'err
             </div>
 
             <label className="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" checked={form.isActive} onChange={e => setForm(p => ({ ...p, isActive: e.target.checked }))} className="accent-sky-500" />
+              <input type="checkbox" checked={form.isActive} onChange={e => setForm(p => ({ ...p, isActive: e.target.checked }))} className="accent-green-500" />
               <span className="text-sm text-slate-300">Đang hoạt động (hiển thị ngay)</span>
             </label>
             <button onClick={save} className="btn-primary flex items-center gap-2 self-start">
@@ -1476,7 +1476,7 @@ function CinemaSection({ onToast }: { onToast: (msg: string, t: 'success' | 'err
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-white font-bold text-sm truncate">{r.title}</span>
-                    <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full shrink-0 ${r.isActive ? 'bg-sky-600 text-white' : 'bg-slate-700 text-slate-400'}`}>
+                    <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full shrink-0 ${r.isActive ? 'bg-green-600 text-white' : 'bg-slate-700 text-slate-400'}`}>
                       {r.isActive ? 'ĐANG CHIẾU' : 'TẮT'}
                     </span>
                   </div>
@@ -1487,12 +1487,12 @@ function CinemaSection({ onToast }: { onToast: (msg: string, t: 'success' | 'err
                   </div>
                   {/* Seat fill bar */}
                   <div className="mt-1.5 w-full h-1 bg-slate-700 rounded-full overflow-hidden">
-                    <div className="h-full bg-sky-500 rounded-full transition-all" style={{ width: `${Math.round(((r.bookedSeats?.length || 0) / (r.totalSeats || 40)) * 100)}%` }} />
+                    <div className="h-full bg-green-500 rounded-full transition-all" style={{ width: `${Math.round(((r.bookedSeats?.length || 0) / (r.totalSeats || 40)) * 100)}%` }} />
                   </div>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
                   <button onClick={() => resetSeats(r)} title="Reset ghế" className="p-2 rounded-lg text-slate-400 hover:text-blue-400 hover:bg-blue-400/10 transition-all text-xs font-bold">🔄</button>
-                  <button onClick={() => startEdit(r)} className="p-2 rounded-lg text-slate-400 hover:text-sky-400 hover:bg-sky-500/10 transition-all"><Edit3 size={14} /></button>
+                  <button onClick={() => startEdit(r)} className="p-2 rounded-lg text-slate-400 hover:text-green-400 hover:bg-green-500/10 transition-all"><Edit3 size={14} /></button>
                   <button onClick={() => del(r.id)} className="p-2 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-400/10 transition-all"><Trash2 size={14} /></button>
                 </div>
               </div>
@@ -1595,7 +1595,7 @@ function RealtimeUsersSection() {
   }, []);
 
   const devices = [
-    { key: 'mobile', label: 'Mobile', color: 'text-sky-400', bg: 'bg-sky-500/20 border-sky-500/30', icon: '📱' },
+    { key: 'mobile', label: 'Mobile', color: 'text-green-400', bg: 'bg-green-500/20 border-green-500/30', icon: '📱' },
     { key: 'desktop', label: 'Desktop', color: 'text-emerald-400', bg: 'bg-emerald-500/20 border-emerald-500/30', icon: '🖥️' },
     { key: 'tablet', label: 'Tablet', color: 'text-purple-400', bg: 'bg-purple-500/20 border-purple-500/30', icon: '📲' },
     { key: 'other', label: 'Khác', color: 'text-slate-400', bg: 'bg-slate-700/40 border-slate-600/30', icon: '🔌' },
@@ -1656,7 +1656,7 @@ function RealtimeUsersSection() {
               {/* progress bar */}
               <div className="w-full h-1 bg-slate-800 rounded-full overflow-hidden">
                 <div
-                  className={`h-full rounded-full transition-all duration-700 ${d.key === 'mobile' ? 'bg-sky-400' : d.key === 'desktop' ? 'bg-emerald-400' : d.key === 'tablet' ? 'bg-purple-400' : 'bg-slate-500'}`}
+                  className={`h-full rounded-full transition-all duration-700 ${d.key === 'mobile' ? 'bg-green-400' : d.key === 'desktop' ? 'bg-emerald-400' : d.key === 'tablet' ? 'bg-purple-400' : 'bg-slate-500'}`}
                   style={{ width: `${pct}%` }}
                 />
               </div>
@@ -1748,7 +1748,7 @@ function MaintenanceSection() {
           <input type="datetime-local" value={cfg.endTime ? cfg.endTime.slice(0,16) : ''}
             onChange={e => setCfg(c => ({ ...c, endTime: e.target.value ? new Date(e.target.value).toISOString() : '' }))}
             className="input-field text-sm" />
-          {cfg.endTime && <p className="text-[11px] text-sky-400 mt-1">⏱ Sẽ đếm ngược đến: {new Date(cfg.endTime).toLocaleString('vi-VN')}</p>}
+          {cfg.endTime && <p className="text-[11px] text-green-400 mt-1">⏱ Sẽ đếm ngược đến: {new Date(cfg.endTime).toLocaleString('vi-VN')}</p>}
         </div>
 
         {/* Media type */}
@@ -1757,7 +1757,7 @@ function MaintenanceSection() {
           <div className="grid grid-cols-3 gap-2">
             {(['none','image','video'] as const).map(type => (
               <button key={type} onClick={() => setCfg(c => ({ ...c, mediaType: type }))}
-                className={`py-2 rounded-xl text-xs font-bold border transition-all ${cfg.mediaType === type ? 'bg-sky-600/20 border-sky-600/60 text-sky-300' : 'bg-slate-800/60 border-slate-700/40 text-slate-400 hover:border-slate-600'}`}>
+                className={`py-2 rounded-xl text-xs font-bold border transition-all ${cfg.mediaType === type ? 'bg-green-600/20 border-green-600/60 text-green-300' : 'bg-slate-800/60 border-slate-700/40 text-slate-400 hover:border-slate-600'}`}>
                 {type === 'none' ? '🚫 Không có' : type === 'image' ? '🖼 Ảnh' : '🎬 Video'}
               </button>
             ))}
@@ -1775,7 +1775,7 @@ function MaintenanceSection() {
             {cfg.mediaType === 'image' && (
               <>
                 <button onClick={() => fileRef.current?.click()}
-                  className="flex items-center justify-center gap-2 w-full py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-xs text-slate-300 hover:border-sky-600/40 transition-all">
+                  className="flex items-center justify-center gap-2 w-full py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-xs text-slate-300 hover:border-green-600/40 transition-all">
                   📁 Tải ảnh từ máy
                 </button>
                 <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
@@ -1797,7 +1797,7 @@ function MaintenanceSection() {
 
         {/* Save button */}
         <button onClick={save} disabled={saving}
-          className={`w-full py-3 rounded-2xl font-black text-sm transition-all ${saved ? 'bg-sky-500 text-white' : 'bg-sky-600 hover:bg-sky-500 text-slate-950'} disabled:opacity-60`}>
+          className={`w-full py-3 rounded-2xl font-black text-sm transition-all ${saved ? 'bg-green-500 text-white' : 'bg-green-600 hover:bg-green-500 text-slate-950'} disabled:opacity-60`}>
           {saving ? '⏳ Đang lưu...' : saved ? '✅ Đã lưu!' : '💾 Lưu cài đặt bảo trì'}
         </button>
       </div>
@@ -1862,7 +1862,7 @@ function GeoblockSection() {
       <button
         onClick={save}
         disabled={saving}
-        className={`w-full py-3 rounded-2xl font-black text-sm transition-all ${saved ? 'bg-sky-500 text-white' : 'bg-cyan-600 hover:bg-cyan-500 text-slate-950'} disabled:opacity-60`}
+        className={`w-full py-3 rounded-2xl font-black text-sm transition-all ${saved ? 'bg-green-500 text-white' : 'bg-cyan-600 hover:bg-cyan-500 text-slate-950'} disabled:opacity-60`}
       >
         {saving ? '⏳ Đang lưu...' : saved ? '✅ Đã lưu!' : '💾 Lưu cài đặt'}
       </button>
@@ -1908,7 +1908,7 @@ interface ScheduleEntry {
 const DAYS = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
 const DAY_FULL: Record<string, string> = { T2: 'Thứ 2', T3: 'Thứ 3', T4: 'Thứ 4', T5: 'Thứ 5', T6: 'Thứ 6', T7: 'Thứ 7', CN: 'Chủ nhật' };
 const SCHEDULE_TYPE_COLORS: Record<string, string> = {
-  'phim-le': 'bg-sky-500/20 text-sky-300 border-sky-500/30',
+  'phim-le': 'bg-green-500/20 text-green-300 border-green-500/30',
   'phim-bo': 'bg-purple-500/20 text-purple-300 border-purple-500/30',
   'anime': 'bg-pink-500/20 text-pink-300 border-pink-500/30',
   'hoat-hinh': 'bg-orange-500/20 text-orange-300 border-orange-500/30',
@@ -2000,7 +2000,7 @@ function ScheduleSection({ onToast }: { onToast: (msg: string, t: 'success' | 'e
         <div className="grid grid-cols-4 gap-3">
           {[
             { label: 'Tổng lịch', value: schedules.length, color: 'text-white' },
-            { label: 'Đang bật', value: schedules.filter(s => s.isActive).length, color: 'text-sky-400' },
+            { label: 'Đang bật', value: schedules.filter(s => s.isActive).length, color: 'text-green-400' },
             { label: 'Phim bộ', value: schedules.filter(s => s.type === 'phim-bo').length, color: 'text-purple-400' },
             { label: 'Anime', value: schedules.filter(s => s.type === 'anime').length, color: 'text-pink-400' },
           ].map(stat => (
@@ -2015,11 +2015,11 @@ function ScheduleSection({ onToast }: { onToast: (msg: string, t: 'success' | 'e
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div className="flex items-center gap-2">
             <button onClick={() => setViewMode('grid')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${viewMode === 'grid' ? 'bg-sky-500/20 border-sky-500/50 text-sky-300' : 'bg-slate-800/60 border-slate-700/40 text-slate-400'}`}>
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${viewMode === 'grid' ? 'bg-green-500/20 border-green-500/50 text-green-300' : 'bg-slate-800/60 border-slate-700/40 text-slate-400'}`}>
               📅 Lịch tuần
             </button>
             <button onClick={() => setViewMode('list')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${viewMode === 'list' ? 'bg-sky-500/20 border-sky-500/50 text-sky-300' : 'bg-slate-800/60 border-slate-700/40 text-slate-400'}`}>
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${viewMode === 'list' ? 'bg-green-500/20 border-green-500/50 text-green-300' : 'bg-slate-800/60 border-slate-700/40 text-slate-400'}`}>
               📋 Danh sách
             </button>
           </div>
@@ -2032,7 +2032,7 @@ function ScheduleSection({ onToast }: { onToast: (msg: string, t: 'success' | 'e
 
         {/* Form */}
         {showForm && (
-          <div className="bg-slate-800/40 border border-sky-500/20 rounded-2xl p-5 flex flex-col gap-4">
+          <div className="bg-slate-800/40 border border-green-500/20 rounded-2xl p-5 flex flex-col gap-4">
             <h3 className="font-bold text-white text-sm flex items-center gap-2">
               {editId ? '✏️ Sửa lịch chiếu' : '➕ Thêm lịch chiếu mới'}
             </h3>
@@ -2049,7 +2049,7 @@ function ScheduleSection({ onToast }: { onToast: (msg: string, t: 'success' | 'e
                 <div className="flex gap-1.5 flex-wrap">
                   {DAYS.map(d => (
                     <button key={d} onClick={() => setForm(f => ({ ...f, dayOfWeek: d }))}
-                      className={`px-2.5 py-1.5 rounded-lg text-xs font-bold border transition-all ${form.dayOfWeek === d ? 'bg-sky-500 border-sky-400 text-white' : 'bg-slate-800/60 border-slate-700/40 text-slate-400 hover:border-sky-500/40'}`}>
+                      className={`px-2.5 py-1.5 rounded-lg text-xs font-bold border transition-all ${form.dayOfWeek === d ? 'bg-green-500 border-green-400 text-white' : 'bg-slate-800/60 border-slate-700/40 text-slate-400 hover:border-green-500/40'}`}>
                       {d}
                     </button>
                   ))}
@@ -2064,7 +2064,7 @@ function ScheduleSection({ onToast }: { onToast: (msg: string, t: 'success' | 'e
                   <div className="flex flex-col gap-1">
                     {['20:00', '21:00', '09:00'].map(t => (
                       <button key={t} onClick={() => setForm(f => ({ ...f, timeSlot: t }))}
-                        className={`text-[10px] px-2 py-0.5 rounded border font-bold transition-all ${form.timeSlot === t ? 'bg-sky-500/30 border-sky-500/50 text-sky-300' : 'bg-slate-800 border-slate-700 text-slate-500 hover:border-sky-500/30'}`}>
+                        className={`text-[10px] px-2 py-0.5 rounded border font-bold transition-all ${form.timeSlot === t ? 'bg-green-500/30 border-green-500/50 text-green-300' : 'bg-slate-800 border-slate-700 text-slate-500 hover:border-green-500/30'}`}>
                         {t}
                       </button>
                     ))}
@@ -2109,7 +2109,7 @@ function ScheduleSection({ onToast }: { onToast: (msg: string, t: 'success' | 'e
               <div className="flex items-center gap-3">
                 <label className="text-xs text-slate-400 font-semibold">Hiển thị</label>
                 <button onClick={() => setForm(f => ({ ...f, isActive: !f.isActive }))}
-                  className={`relative w-10 h-5 rounded-full border transition-all ${form.isActive ? 'bg-sky-500 border-sky-400' : 'bg-slate-700 border-slate-600'}`}>
+                  className={`relative w-10 h-5 rounded-full border transition-all ${form.isActive ? 'bg-green-500 border-green-400' : 'bg-slate-700 border-slate-600'}`}>
                   <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all ${form.isActive ? 'left-5' : 'left-0.5'}`} />
                 </button>
               </div>
@@ -2142,12 +2142,12 @@ function ScheduleSection({ onToast }: { onToast: (msg: string, t: 'success' | 'e
                     <p className="text-xs font-black text-white">{day}</p>
                     <p className="text-[10px] text-slate-500">{DAY_FULL[day]}</p>
                     {byDay[day].length > 0 && (
-                      <span className="text-[9px] bg-sky-500/20 text-sky-400 px-1.5 py-0.5 rounded-full font-bold">{byDay[day].length}</span>
+                      <span className="text-[9px] bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded-full font-bold">{byDay[day].length}</span>
                     )}
                   </div>
                   {byDay[day].map(entry => (
                     <div key={entry.id}
-                      className={`relative rounded-xl overflow-hidden border transition-all group cursor-pointer ${entry.isActive ? 'border-slate-700/40 bg-slate-800/60 hover:border-sky-500/40' : 'border-slate-800/30 bg-slate-900/40 opacity-50'}`}
+                      className={`relative rounded-xl overflow-hidden border transition-all group cursor-pointer ${entry.isActive ? 'border-slate-700/40 bg-slate-800/60 hover:border-green-500/40' : 'border-slate-800/30 bg-slate-900/40 opacity-50'}`}
                       onClick={() => startEdit(entry)}>
                       {entry.posterUrl && (
                         <img src={entry.posterUrl} alt={entry.movieName}
@@ -2156,7 +2156,7 @@ function ScheduleSection({ onToast }: { onToast: (msg: string, t: 'success' | 'e
                       <div className={`p-1.5 ${!entry.posterUrl ? 'min-h-[60px] flex flex-col justify-between' : 'absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent'}`}>
                         <p className="text-[10px] font-bold text-white leading-tight truncate">{entry.movieName}</p>
                         <div className="flex items-center justify-between mt-0.5">
-                          <span className="text-[9px] text-sky-300 font-bold">{entry.timeSlot}</span>
+                          <span className="text-[9px] text-green-300 font-bold">{entry.timeSlot}</span>
                           {entry.episode && <span className="text-[9px] text-slate-400">{entry.episode}</span>}
                         </div>
                       </div>
@@ -2188,12 +2188,12 @@ function ScheduleSection({ onToast }: { onToast: (msg: string, t: 'success' | 'e
             {/* Filter by day */}
             <div className="flex gap-1.5 flex-wrap">
               <button onClick={() => setFilterDay('all')}
-                className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-all ${filterDay === 'all' ? 'bg-sky-500/20 border-sky-500/50 text-sky-300' : 'bg-slate-800/60 border-slate-700/40 text-slate-400'}`}>
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-all ${filterDay === 'all' ? 'bg-green-500/20 border-green-500/50 text-green-300' : 'bg-slate-800/60 border-slate-700/40 text-slate-400'}`}>
                 Tất cả ({schedules.length})
               </button>
               {DAYS.filter(d => byDay[d].length > 0).map(d => (
                 <button key={d} onClick={() => setFilterDay(d)}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-all ${filterDay === d ? 'bg-sky-500/20 border-sky-500/50 text-sky-300' : 'bg-slate-800/60 border-slate-700/40 text-slate-400'}`}>
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-all ${filterDay === d ? 'bg-green-500/20 border-green-500/50 text-green-300' : 'bg-slate-800/60 border-slate-700/40 text-slate-400'}`}>
                   {d} ({byDay[d].length})
                 </button>
               ))}
@@ -2201,7 +2201,7 @@ function ScheduleSection({ onToast }: { onToast: (msg: string, t: 'success' | 'e
 
             {sorted.map(entry => (
               <div key={entry.id}
-                className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${entry.isActive ? 'bg-slate-800/40 border-slate-700/30 hover:border-sky-500/30' : 'bg-slate-900/30 border-slate-800/20 opacity-60'}`}>
+                className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${entry.isActive ? 'bg-slate-800/40 border-slate-700/30 hover:border-green-500/30' : 'bg-slate-900/30 border-slate-800/20 opacity-60'}`}>
                 {entry.posterUrl ? (
                   <img src={entry.posterUrl} alt={entry.movieName} className="w-10 h-14 object-cover rounded-lg shrink-0" />
                 ) : (
@@ -2217,13 +2217,13 @@ function ScheduleSection({ onToast }: { onToast: (msg: string, t: 'success' | 'e
                     </span>
                   </div>
                   <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                    <span className="text-xs text-sky-400 font-bold">{DAY_FULL[entry.dayOfWeek]}</span>
-                    <span className="text-xs text-sky-300 font-black">{entry.timeSlot}</span>
+                    <span className="text-xs text-green-400 font-bold">{DAY_FULL[entry.dayOfWeek]}</span>
+                    <span className="text-xs text-green-300 font-black">{entry.timeSlot}</span>
                     {entry.episode && <span className="text-[11px] text-slate-400">{entry.episode}</span>}
                     {entry.note && <span className="text-[11px] text-slate-500 italic truncate max-w-[120px]">{entry.note}</span>}
                   </div>
                   {entry.embedUrl && (
-                    <p className="text-[10px] text-sky-600 mt-0.5 truncate">🔗 {entry.embedUrl}</p>
+                    <p className="text-[10px] text-green-600 mt-0.5 truncate">🔗 {entry.embedUrl}</p>
                   )}
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
@@ -2232,7 +2232,7 @@ function ScheduleSection({ onToast }: { onToast: (msg: string, t: 'success' | 'e
                     title={entry.isActive ? 'Tắt' : 'Bật'}>
                     {entry.isActive ? <Eye size={13} /> : <EyeOff size={13} />}
                   </button>
-                  <button onClick={() => startEdit(entry)} className="btn-icon p-2 hover:border-sky-500/40 hover:text-sky-400"><Edit3 size={13} /></button>
+                  <button onClick={() => startEdit(entry)} className="btn-icon p-2 hover:border-green-500/40 hover:text-green-400"><Edit3 size={13} /></button>
                   <button onClick={() => del(entry.id)} className="btn-icon p-2 hover:border-red-500/40 hover:text-red-400"><Trash2 size={13} /></button>
                 </div>
               </div>
@@ -2430,7 +2430,7 @@ function AdminSidebar({ activeSection, onNavigate, onLogout, onSave, onReset, dr
       {/* Logo */}
       <div className="px-4 py-4 border-b border-slate-800/70 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-gradient-to-br from-sky-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-sky-500/25 shrink-0">
+          <div className="w-9 h-9 bg-gradient-to-br from-green-500 to-green-700 rounded-xl flex items-center justify-center shadow-lg shadow-green-500/25 shrink-0">
             <Shield size={17} className="text-slate-950" />
           </div>
           <div>
@@ -2454,13 +2454,13 @@ function AdminSidebar({ activeSection, onNavigate, onLogout, onSave, onReset, dr
               onClick={() => onNavigate(item.id)}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all mb-0.5 text-left ${
                 isActive
-                  ? 'bg-sky-500/15 text-sky-400 border border-sky-500/20'
+                  ? 'bg-green-500/15 text-green-400 border border-green-500/20'
                   : 'text-slate-500 hover:text-slate-200 hover:bg-slate-800/60 border border-transparent'
               }`}
             >
               <Icon size={15} className="shrink-0" />
               <span className="truncate">{item.label}</span>
-              {isActive && <span className="ml-auto w-1.5 h-1.5 bg-sky-400 rounded-full shrink-0" />}
+              {isActive && <span className="ml-auto w-1.5 h-1.5 bg-green-400 rounded-full shrink-0" />}
             </button>
           );
         })}
@@ -2470,7 +2470,7 @@ function AdminSidebar({ activeSection, onNavigate, onLogout, onSave, onReset, dr
       <div className="p-3 border-t border-slate-800/70 flex flex-col gap-2">
         <button
           onClick={onSave}
-          className="w-full bg-sky-500 hover:bg-sky-400 active:scale-95 text-slate-950 font-black py-2.5 rounded-xl text-sm flex items-center justify-center gap-2 transition-all shadow-lg shadow-sky-500/20"
+          className="w-full bg-green-500 hover:bg-green-400 active:scale-95 text-slate-950 font-black py-2.5 rounded-xl text-sm flex items-center justify-center gap-2 transition-all shadow-lg shadow-green-500/20"
         >
           <Save size={14} /> Lưu tất cả
         </button>
@@ -2836,7 +2836,7 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
             <span className="text-white font-black text-sm tracking-widest" style={{ fontFamily: 'Bebas Neue, sans-serif' }}>
               {NAV_SECTIONS.find(s => s.id === activeSection)?.label?.toUpperCase() || 'ADMIN PANEL'}
             </span>
-            <button onClick={saveSettings} className="px-3 py-1.5 bg-sky-500 hover:bg-sky-400 text-slate-950 font-black text-xs rounded-xl flex items-center gap-1.5 transition-colors">
+            <button onClick={saveSettings} className="px-3 py-1.5 bg-green-500 hover:bg-green-400 text-slate-950 font-black text-xs rounded-xl flex items-center gap-1.5 transition-colors">
               <Save size={12} /> Lưu
             </button>
           </div>
@@ -2851,7 +2851,7 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
                   onClick={() => { setActiveSection(item.id); window.scrollTo({ top: 0 }); }}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap border transition-all shrink-0 ${
                     isActive
-                      ? 'bg-sky-500/20 border-sky-500/50 text-sky-400'
+                      ? 'bg-green-500/20 border-green-500/50 text-green-400'
                       : 'bg-slate-800/60 border-slate-700/40 text-slate-500 hover:text-slate-300'
                   }`}
                 >
@@ -2898,7 +2898,7 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
                     <button
                       key={opt.value}
                       onClick={() => setSettings(s => ({ ...s, logoType: opt.value as any }))}
-                      className={`py-2.5 px-3 rounded-xl text-xs font-bold border transition-all ${settings.logoType === opt.value ? 'bg-sky-500/20 border-sky-500/60 text-sky-300' : 'bg-slate-800/60 border-slate-700/40 text-slate-400 hover:border-slate-600'}`}
+                      className={`py-2.5 px-3 rounded-xl text-xs font-bold border transition-all ${settings.logoType === opt.value ? 'bg-green-500/20 border-green-500/60 text-green-300' : 'bg-slate-800/60 border-slate-700/40 text-slate-400 hover:border-slate-600'}`}
                     >
                       {opt.label}
                     </button>
@@ -2971,7 +2971,7 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
               </div>
 
               {showMovieForm && (
-                <div id="movie-form-section" className="bg-slate-800/40 border border-sky-500/30 rounded-2xl p-5 flex flex-col gap-4">
+                <div id="movie-form-section" className="bg-slate-800/40 border border-green-500/30 rounded-2xl p-5 flex flex-col gap-4">
                   <h3 className="font-bold text-white text-base">{editingId ? '✏️ Chỉnh sửa phim' : '➕ Thêm phim mới'}</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
@@ -3019,12 +3019,12 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
                     <div className="flex items-center justify-between mb-2">
                       <label className="text-xs text-slate-400 font-semibold flex items-center gap-1">
                         Danh sách tập *
-                        <span className="text-[10px] text-sky-400 bg-sky-500/10 px-1.5 py-0.5 rounded">Bắt buộc</span>
+                        <span className="text-[10px] text-green-400 bg-green-500/10 px-1.5 py-0.5 rounded">Bắt buộc</span>
                       </label>
                       <button
                         type="button"
                         onClick={() => setMovieEpisodes(eps => [...eps, { label: `Tập ${eps.length + 1}`, embedUrl: '' }])}
-                        className="text-[11px] bg-sky-500/20 hover:bg-sky-500/30 text-sky-400 border border-sky-500/40 px-2.5 py-1 rounded-lg font-bold flex items-center gap-1 transition-colors"
+                        className="text-[11px] bg-green-500/20 hover:bg-green-500/30 text-green-400 border border-green-500/40 px-2.5 py-1 rounded-lg font-bold flex items-center gap-1 transition-colors"
                       >
                         + Thêm tập
                       </button>
@@ -3071,9 +3071,9 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
                   </div>
 
                   {/* ── Phim sắp chiếu ── */}
-                  <div className="border border-sky-600/30 rounded-xl p-4 bg-sky-600/5 flex flex-col gap-3">
+                  <div className="border border-green-600/30 rounded-xl p-4 bg-green-600/5 flex flex-col gap-3">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-sky-400 text-sm font-black">🎬 Phim Sắp Chiếu</span>
+                      <span className="text-green-400 text-sm font-black">🎬 Phim Sắp Chiếu</span>
                       <span className="text-[10px] text-slate-500">(Hiển thị vào section "Anime/Phim Sắp Chiếu")</span>
                     </div>
                     {/* Toggle sắp chiếu */}
@@ -3081,7 +3081,7 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
                       <label className="text-xs text-slate-400 font-semibold">Đánh dấu là Sắp Chiếu</label>
                       <button
                         onClick={() => setMovieForm(f => ({ ...f, isUpcoming: !f.isUpcoming }))}
-                        className={`w-11 h-6 rounded-full border transition-all relative ${movieForm.isUpcoming ? 'bg-sky-600 border-sky-500' : 'bg-slate-700 border-slate-600'}`}>
+                        className={`w-11 h-6 rounded-full border transition-all relative ${movieForm.isUpcoming ? 'bg-green-600 border-green-500' : 'bg-slate-700 border-slate-600'}`}>
                         <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all ${movieForm.isUpcoming ? 'left-5' : 'left-0.5'}`} />
                       </button>
                     </div>
@@ -3225,7 +3225,7 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
                     <div
                       key={movie.id}
                       onClick={() => editMovie(movie)}
-                      className={`flex items-center gap-3 p-3 border rounded-xl transition-all cursor-pointer active:scale-[0.98] ${editingId === movie.id ? 'bg-sky-500/10 border-sky-500/50' : 'bg-slate-800/40 border-slate-700/30 hover:border-sky-500/40 hover:bg-slate-800/70'}`}
+                      className={`flex items-center gap-3 p-3 border rounded-xl transition-all cursor-pointer active:scale-[0.98] ${editingId === movie.id ? 'bg-green-500/10 border-green-500/50' : 'bg-slate-800/40 border-slate-700/30 hover:border-green-500/40 hover:bg-slate-800/70'}`}
                     >
                       {movie.posterUrl ? (
                         <img src={movie.posterUrl} alt={movie.name} className="w-10 h-14 object-cover rounded-lg shrink-0" />
@@ -3238,17 +3238,17 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
                         <div className="text-sm font-bold text-white truncate">{movie.name}</div>
                         <div className="text-[11px] text-slate-500 flex items-center gap-2 mt-0.5 flex-wrap">
                           <span>{movie.year}</span>
-                          <span className="text-sky-400 bg-sky-500/10 px-1.5 py-0.5 rounded text-[10px] font-bold">{movie.quality}</span>
+                          <span className="text-green-400 bg-green-500/10 px-1.5 py-0.5 rounded text-[10px] font-bold">{movie.quality}</span>
                           <span>{movie.lang}</span>
                         </div>
-                        <div className="text-[10px] text-sky-400 mt-1 font-bold">
+                        <div className="text-[10px] text-green-400 mt-1 font-bold">
                           {editingId === movie.id ? '✏️ Đang chỉnh sửa...' : 'Nhấn để sửa'}
                         </div>
                       </div>
                       <div className="flex items-center gap-1 shrink-0">
                         <button
                           onClick={e => { e.stopPropagation(); editMovie(movie); }}
-                          className="btn-icon p-2.5 hover:border-sky-500/40 hover:text-sky-400"
+                          className="btn-icon p-2.5 hover:border-green-500/40 hover:text-green-400"
                           title="Sửa"
                         >
                           <Edit3 size={15} />
@@ -3285,7 +3285,7 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
               <div className="flex items-center justify-between">
                 <p className="text-sm text-slate-400">
                   Tổng: <span className="text-white font-bold">{upcomingMovies.length}</span> phim sắp chiếu
-                  <span className="text-xs text-sky-400 ml-2">• Hiển thị trên trang chủ cho mọi người</span>
+                  <span className="text-xs text-green-400 ml-2">• Hiển thị trên trang chủ cho mọi người</span>
                 </p>
                 <button onClick={() => { setUpcomingForm({ upcomingType: 'movie' }); setEditingUpcomingId(null); setShowUpcomingForm(v => !v); }} className="btn-primary flex items-center gap-2 text-sm py-2">
                   {showUpcomingForm ? <X size={16} /> : <Plus size={16} />}
@@ -3294,7 +3294,7 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
               </div>
 
               {showUpcomingForm && (
-                <div id="upcoming-form-section" className="bg-slate-800/40 border border-sky-500/30 rounded-2xl p-5 flex flex-col gap-4">
+                <div id="upcoming-form-section" className="bg-slate-800/40 border border-green-500/30 rounded-2xl p-5 flex flex-col gap-4">
                   <h3 className="font-bold text-white text-base">{editingUpcomingId ? '✏️ Chỉnh sửa' : '🎬 Thêm phim sắp chiếu'}</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
@@ -3349,7 +3349,7 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
                 <div className="flex flex-col gap-2">
                   {upcomingMovies.map(movie => (
                     <div key={movie.id} onClick={() => editUpcoming(movie)}
-                      className={`flex items-center gap-3 p-3 border rounded-xl transition-all cursor-pointer active:scale-[0.98] ${editingUpcomingId === movie.id ? 'bg-sky-500/10 border-sky-500/50' : 'bg-slate-800/40 border-slate-700/30 hover:border-sky-500/40 hover:bg-slate-800/70'}`}>
+                      className={`flex items-center gap-3 p-3 border rounded-xl transition-all cursor-pointer active:scale-[0.98] ${editingUpcomingId === movie.id ? 'bg-green-500/10 border-green-500/50' : 'bg-slate-800/40 border-slate-700/30 hover:border-green-500/40 hover:bg-slate-800/70'}`}>
                       {movie.posterUrl ? (
                         <img src={movie.posterUrl} alt={movie.name} className="w-10 h-14 object-cover rounded-lg shrink-0" />
                       ) : (
@@ -3360,17 +3360,17 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
                       <div className="flex-1 min-w-0">
                         <div className="text-sm font-bold text-white truncate">{movie.name}</div>
                         <div className="text-[11px] text-slate-500 flex items-center gap-2 mt-0.5 flex-wrap">
-                          {movie.releaseDate && <span className="text-sky-400 font-bold">📅 {movie.releaseDate}</span>}
-                          <span className="text-[10px] bg-sky-500/10 text-sky-400 border border-sky-500/20 px-1.5 py-0.5 rounded font-bold">
+                          {movie.releaseDate && <span className="text-green-400 font-bold">📅 {movie.releaseDate}</span>}
+                          <span className="text-[10px] bg-green-500/10 text-green-400 border border-green-500/20 px-1.5 py-0.5 rounded font-bold">
                             {movie.upcomingType === 'movie' ? '🎬 Chiếu rạp' : movie.upcomingType === 'anime' ? '🌸 Anime' : '📺 Phim bộ'}
                           </span>
                         </div>
-                        <div className="text-[10px] text-sky-400 mt-1 font-bold">
+                        <div className="text-[10px] text-green-400 mt-1 font-bold">
                           {editingUpcomingId === movie.id ? '✏️ Đang chỉnh sửa...' : 'Nhấn để sửa'}
                         </div>
                       </div>
                       <div className="flex items-center gap-1 shrink-0">
-                        <button onClick={e => { e.stopPropagation(); editUpcoming(movie); }} className="btn-icon p-2.5 hover:border-sky-500/40 hover:text-sky-400"><Edit3 size={15} /></button>
+                        <button onClick={e => { e.stopPropagation(); editUpcoming(movie); }} className="btn-icon p-2.5 hover:border-green-500/40 hover:text-green-400"><Edit3 size={15} /></button>
                         <button onClick={e => { e.stopPropagation(); deleteUpcomingItem(movie.id); }} className="btn-icon p-2.5 hover:border-red-500/40 hover:text-red-400"><Trash2 size={15} /></button>
                       </div>
                     </div>
@@ -3524,7 +3524,7 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
                         <p className="text-[10px] text-slate-500 font-mono truncate">{ov.slug}</p>
                         <div className="flex gap-1.5 flex-wrap mt-1">
                           {ov.name && <span className="text-[9px] bg-blue-500/10 text-blue-400 border border-blue-500/20 px-1.5 py-0.5 rounded">Tên</span>}
-                          {ov.content && <span className="text-[9px] bg-sky-500/10 text-sky-400 border border-sky-500/20 px-1.5 py-0.5 rounded">Mô tả</span>}
+                          {ov.content && <span className="text-[9px] bg-green-500/10 text-green-400 border border-green-500/20 px-1.5 py-0.5 rounded">Mô tả</span>}
                           {ov.actor?.length && <span className="text-[9px] bg-purple-500/10 text-purple-400 border border-purple-500/20 px-1.5 py-0.5 rounded">Diễn viên</span>}
                           {ov.quality && <span className="text-[9px] bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 px-1.5 py-0.5 rounded">{ov.quality}</span>}
                           {ov.lang && <span className="text-[9px] bg-orange-500/10 text-orange-400 border border-orange-500/20 px-1.5 py-0.5 rounded">{ov.lang}</span>}
@@ -3550,7 +3550,7 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
           {activeSection === 'section-override' && (
           <div className="flex justify-center">
             <a href="/daophim/player-studio" target="_blank"
-              className="flex items-center gap-2 px-6 py-3 bg-sky-500/10 border border-sky-500/30 rounded-xl text-sky-400 font-bold text-sm hover:bg-sky-500/20 transition-all">
+              className="flex items-center gap-2 px-6 py-3 bg-green-500/10 border border-green-500/30 rounded-xl text-green-400 font-bold text-sm hover:bg-green-500/20 transition-all">
               🎬 Mở Player Studio — Chỉnh logo & giao diện player
             </a>
           </div>
@@ -3623,8 +3623,8 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
           <div id="section-guide">
             <SectionCard title="Hướng dẫn & Thông tin" icon={Info} color="pink">
               <div className="flex flex-col gap-4 text-sm text-slate-400">
-              <div className="bg-sky-500/5 border border-sky-500/20 rounded-xl p-4">
-                <h4 className="text-sky-300 font-bold mb-2">🎬 Về logo</h4>
+              <div className="bg-green-500/5 border border-green-500/20 rounded-xl p-4">
+                <h4 className="text-green-300 font-bold mb-2">🎬 Về logo</h4>
                 <ul className="flex flex-col gap-1.5 text-slate-500 text-[13px]">
                   <li>• <strong className="text-slate-400">Icon mặc định</strong>: Dùng icon clapperboard có gradient đẹp</li>
                   <li>• <strong className="text-slate-400">Hình ảnh</strong>: Upload ảnh PNG/SVG hoặc dán URL (max 2MB)</li>

@@ -35,7 +35,7 @@ export const VIP_META: Record<VipTier, { label: string; color: string; gradient:
   UVIP: {
     label: 'UVIP',
     color: 'text-sky-300',
-    gradient: 'from-sky-500 to-blue-600',
+    gradient: 'from-green-500 to-blue-600',
     days: 3,
     icon: '🔵',
   },

@@ -44,11 +44,11 @@ export default function PlayerStudio() {
         style={{ backgroundImage: 'linear-gradient(rgba(34,197,94,1) 1px, transparent 1px), linear-gradient(90deg, rgba(34,197,94,1) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
 
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-sky-500/10 bg-[#060a06]/90 backdrop-blur-xl px-6 h-14 flex items-center justify-between">
+      <header className="sticky top-0 z-50 border-b border-green-500/10 bg-[#060a06]/90 backdrop-blur-xl px-6 h-14 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-sky-500 rounded-lg flex items-center justify-center text-base">🎬</div>
-          <span className="font-bold text-white text-base">Player <span className="text-sky-400">Studio</span></span>
-          <span className="text-[10px] uppercase tracking-widest text-sky-400/60 border border-sky-500/20 px-2 py-0.5 rounded-full">Config</span>
+          <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center text-base">🎬</div>
+          <span className="font-bold text-white text-base">Player <span className="text-green-400">Studio</span></span>
+          <span className="text-[10px] uppercase tracking-widest text-green-400/60 border border-green-500/20 px-2 py-0.5 rounded-full">Config</span>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={handleReset}
@@ -57,9 +57,9 @@ export default function PlayerStudio() {
           </button>
           <button onClick={handleSave} disabled={saving}
             className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
-              saved ? 'bg-sky-500/20 border border-sky-500/50 text-sky-400' :
-              saving ? 'bg-sky-500/50 text-black cursor-wait' :
-              'bg-sky-500 text-black hover:bg-sky-400'
+              saved ? 'bg-green-500/20 border border-green-500/50 text-green-400' :
+              saving ? 'bg-green-500/50 text-black cursor-wait' :
+              'bg-green-500 text-black hover:bg-green-400'
             }`}>
             {saved ? <><Check size={12} /> Đã lưu!</> : saving ? '⏳ Đang lưu...' : 'Lưu cho tất cả'}
           </button>
@@ -70,12 +70,12 @@ export default function PlayerStudio() {
 
         {/* ── LEFT: Preview ── */}
         <div className="flex flex-col gap-4">
-          <h2 className="text-sm font-semibold text-sky-400 uppercase tracking-widest flex items-center gap-2">
+          <h2 className="text-sm font-semibold text-green-400 uppercase tracking-widest flex items-center gap-2">
             <Eye size={14} /> Xem trước
           </h2>
 
           {/* Player preview */}
-          <div className="relative bg-black rounded-2xl overflow-hidden border border-sky-500/15" style={{ aspectRatio: '16/9' }}>
+          <div className="relative bg-black rounded-2xl overflow-hidden border border-green-500/15" style={{ aspectRatio: '16/9' }}>
             {/* Fake video bg */}
             <div className="absolute inset-0 bg-gradient-to-br from-slate-900 to-slate-950 flex items-center justify-center">
               <div className="text-slate-700 text-center">
@@ -134,11 +134,11 @@ export default function PlayerStudio() {
           </div>
 
           {/* Info */}
-          <div className="bg-[#0d140d] border border-sky-500/10 rounded-xl p-4 text-xs text-slate-400 space-y-1">
+          <div className="bg-[#0d140d] border border-green-500/10 rounded-xl p-4 text-xs text-slate-400 space-y-1">
             <div>🔥 Config lưu trên <strong className="text-white">Firebase Firestore</strong> — mọi người thấy cùng logo</div>
             <div>⚡ Realtime — thay đổi logo ngay khi nhấn lưu, <strong className="text-white">không cần reload</strong></div>
             <div>📱 Hoạt động trên <strong className="text-white">cả mobile lẫn desktop</strong></div>
-            <div>⌨️ Phím tắt: <strong className="text-sky-400">Space</strong> phát/dừng, <strong className="text-sky-400">← →</strong> tua ±10s, <strong className="text-sky-400">F</strong> fullscreen</div>
+            <div>⌨️ Phím tắt: <strong className="text-green-400">Space</strong> phát/dừng, <strong className="text-green-400">← →</strong> tua ±10s, <strong className="text-green-400">F</strong> fullscreen</div>
           </div>
         </div>
 
@@ -146,10 +146,10 @@ export default function PlayerStudio() {
         <div className="flex flex-col gap-4">
 
           {/* Logo Config */}
-          <div className="bg-[#0d140d] border border-sky-500/15 rounded-2xl overflow-hidden">
-            <div className="px-4 py-3 border-b border-sky-500/10 bg-[#111a11] flex items-center gap-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-sky-500 shadow-[0_0_6px_#22c55e]" />
-              <h3 className="text-[11px] font-bold uppercase tracking-widest text-sky-400">Logo Overlay</h3>
+          <div className="bg-[#0d140d] border border-green-500/15 rounded-2xl overflow-hidden">
+            <div className="px-4 py-3 border-b border-green-500/10 bg-[#111a11] flex items-center gap-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_6px_#22c55e]" />
+              <h3 className="text-[11px] font-bold uppercase tracking-widest text-green-400">Logo Overlay</h3>
             </div>
             <div className="p-4 space-y-4">
 
@@ -173,7 +173,7 @@ export default function PlayerStudio() {
                     <label className={labelCls}>Màu nửa đầu</label>
                     <div className="flex items-center gap-2">
                       <input type="color" value={config.logoColor1} onChange={e => update('logoColor1', e.target.value)}
-                        className="w-10 h-9 rounded-lg border border-sky-500/20 bg-[#060a06] cursor-pointer p-1" />
+                        className="w-10 h-9 rounded-lg border border-green-500/20 bg-[#060a06] cursor-pointer p-1" />
                       <span className="text-xs font-mono text-slate-400">{config.logoColor1}</span>
                     </div>
                   </div>
@@ -181,7 +181,7 @@ export default function PlayerStudio() {
                     <label className={labelCls}>Màu nửa sau</label>
                     <div className="flex items-center gap-2">
                       <input type="color" value={config.logoColor2} onChange={e => update('logoColor2', e.target.value)}
-                        className="w-10 h-9 rounded-lg border border-sky-500/20 bg-[#060a06] cursor-pointer p-1" />
+                        className="w-10 h-9 rounded-lg border border-green-500/20 bg-[#060a06] cursor-pointer p-1" />
                       <span className="text-xs font-mono text-slate-400">{config.logoColor2}</span>
                     </div>
                   </div>
@@ -208,8 +208,8 @@ export default function PlayerStudio() {
                     <button key={p.val} onClick={() => update('logoPosition', p.val)}
                       className={`py-2 px-3 rounded-lg text-xs font-semibold border transition-all ${
                         config.logoPosition === p.val
-                          ? 'bg-sky-500/15 border-sky-500/50 text-sky-400'
-                          : 'bg-[#060a06] border-sky-500/10 text-slate-400 hover:border-sky-500/30'
+                          ? 'bg-green-500/15 border-green-500/50 text-green-400'
+                          : 'bg-[#060a06] border-green-500/10 text-slate-400 hover:border-green-500/30'
                       }`}>
                       {p.label}
                     </button>
@@ -219,12 +219,12 @@ export default function PlayerStudio() {
 
               {/* Size + Opacity */}
               <div>
-                <label className={labelCls}>Cỡ chữ: <span className="text-sky-400 font-mono">{config.logoSize}px</span></label>
+                <label className={labelCls}>Cỡ chữ: <span className="text-green-400 font-mono">{config.logoSize}px</span></label>
                 <input type="range" min="10" max="36" value={config.logoSize} onChange={e => update('logoSize', parseInt(e.target.value))}
                   className="w-full accent-green-500 h-1 cursor-pointer" />
               </div>
               <div>
-                <label className={labelCls}>Độ mờ: <span className="text-sky-400 font-mono">{config.logoOpacity}%</span></label>
+                <label className={labelCls}>Độ mờ: <span className="text-green-400 font-mono">{config.logoOpacity}%</span></label>
                 <input type="range" min="10" max="100" value={config.logoOpacity} onChange={e => update('logoOpacity', parseInt(e.target.value))}
                   className="w-full accent-green-500 h-1 cursor-pointer" />
               </div>
@@ -232,17 +232,17 @@ export default function PlayerStudio() {
           </div>
 
           {/* Player Config */}
-          <div className="bg-[#0d140d] border border-sky-500/15 rounded-2xl overflow-hidden">
-            <div className="px-4 py-3 border-b border-sky-500/10 bg-[#111a11] flex items-center gap-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-sky-500 shadow-[0_0_6px_#22c55e]" />
-              <h3 className="text-[11px] font-bold uppercase tracking-widest text-sky-400">Cài Đặt Player</h3>
+          <div className="bg-[#0d140d] border border-green-500/15 rounded-2xl overflow-hidden">
+            <div className="px-4 py-3 border-b border-green-500/10 bg-[#111a11] flex items-center gap-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_6px_#22c55e]" />
+              <h3 className="text-[11px] font-bold uppercase tracking-widest text-green-400">Cài Đặt Player</h3>
             </div>
             <div className="p-4 space-y-4">
               <div>
                 <label className={labelCls}>Màu nhấn (accent): <span className="font-mono" style={{ color: config.accentColor }}>{config.accentColor}</span></label>
                 <div className="flex items-center gap-3">
                   <input type="color" value={config.accentColor} onChange={e => update('accentColor', e.target.value)}
-                    className="w-10 h-9 rounded-lg border border-sky-500/20 bg-[#060a06] cursor-pointer p-1" />
+                    className="w-10 h-9 rounded-lg border border-green-500/20 bg-[#060a06] cursor-pointer p-1" />
                   <div className="flex gap-2 flex-wrap">
                     {['#22c55e','#3b82f6','#f59e0b','#ef4444','#a855f7','#ec4899'].map(c => (
                       <button key={c} onClick={() => update('accentColor', c)}
@@ -253,7 +253,7 @@ export default function PlayerStudio() {
               </div>
 
               <div>
-                <label className={labelCls}>Âm lượng mặc định: <span className="text-sky-400 font-mono">{config.defaultVolume}%</span></label>
+                <label className={labelCls}>Âm lượng mặc định: <span className="text-green-400 font-mono">{config.defaultVolume}%</span></label>
                 <input type="range" min="0" max="100" value={config.defaultVolume} onChange={e => update('defaultVolume', parseInt(e.target.value))}
                   className="w-full accent-green-500 h-1 cursor-pointer" />
               </div>
@@ -261,7 +261,7 @@ export default function PlayerStudio() {
               <div className="flex items-center justify-between">
                 <label className={labelCls + ' mb-0'}>Tự động phát</label>
                 <button onClick={() => update('autoplay', !config.autoplay)}
-                  className={`w-10 h-5 rounded-full relative transition-colors ${config.autoplay ? 'bg-sky-500' : 'bg-slate-700'}`}>
+                  className={`w-10 h-5 rounded-full relative transition-colors ${config.autoplay ? 'bg-green-500' : 'bg-slate-700'}`}>
                   <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform shadow ${config.autoplay ? 'translate-x-5' : 'translate-x-0.5'}`} />
                 </button>
               </div>
@@ -271,9 +271,9 @@ export default function PlayerStudio() {
           {/* Save button */}
           <button onClick={handleSave} disabled={saving}
             className={`w-full py-3 rounded-xl font-bold text-sm transition-all ${
-              saved ? 'bg-sky-500/20 border border-sky-500/50 text-sky-400' :
-              saving ? 'bg-sky-500/50 text-black cursor-wait' :
-              'bg-sky-500 text-black hover:bg-sky-400'
+              saved ? 'bg-green-500/20 border border-green-500/50 text-green-400' :
+              saving ? 'bg-green-500/50 text-black cursor-wait' :
+              'bg-green-500 text-black hover:bg-green-400'
             }`}>
             {saved ? '✓ Đã lưu — Mọi người thấy ngay!' : saving ? '⏳ Đang lưu lên Firestore...' : '💾 Lưu và áp dụng cho tất cả'}
           </button>
@@ -288,5 +288,5 @@ export default function PlayerStudio() {
 }
 
 const labelCls = "block text-[11px] font-semibold text-slate-500 uppercase tracking-[0.6px] mb-1.5";
-const inputCls = "w-full bg-[#060a06] border border-sky-500/15 text-white font-sans text-[13px] px-3 py-2 rounded-lg outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500/20 transition-all";
-const selectCls = "w-full bg-[#060a06] border border-sky-500/15 text-white font-sans text-[13px] px-3 py-2 rounded-lg outline-none focus:border-sky-500 transition-all";
+const inputCls = "w-full bg-[#060a06] border border-green-500/15 text-white font-sans text-[13px] px-3 py-2 rounded-lg outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500/20 transition-all";
+const selectCls = "w-full bg-[#060a06] border border-green-500/15 text-white font-sans text-[13px] px-3 py-2 rounded-lg outline-none focus:border-green-500 transition-all";

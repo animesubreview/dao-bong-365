@@ -209,7 +209,7 @@ export default function WatchRoomPage() {
     return (
       <div className="min-h-screen bg-[#0d0d0d] flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <Loader2 className="animate-spin text-sky-400" size={36} />
+          <Loader2 className="animate-spin text-green-400" size={36} />
           <p className="text-slate-400 text-sm">Đang tải phòng xem...</p>
         </div>
       </div>
@@ -227,7 +227,7 @@ export default function WatchRoomPage() {
           <h2 className="text-white font-bold text-lg mb-2">Phòng không tồn tại</h2>
           <p className="text-slate-400 text-sm mb-6">Phòng đã bị xóa hoặc link không hợp lệ.</p>
           <button onClick={() => navigate('/')}
-            className="w-full py-2.5 rounded-xl bg-sky-500 text-white font-bold text-sm hover:bg-sky-600 transition-colors">
+            className="w-full py-2.5 rounded-xl bg-green-500 text-white font-bold text-sm hover:bg-green-600 transition-colors">
             Về trang chủ
           </button>
         </motion.div>
@@ -240,16 +240,16 @@ export default function WatchRoomPage() {
       <div className="min-h-screen bg-[#0d0d0d] flex items-center justify-center p-4">
         <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
           className="text-center bg-[#181818] rounded-2xl p-8 max-w-sm w-full border border-white/5">
-          <div className="w-16 h-16 rounded-full bg-sky-500/10 flex items-center justify-center mx-auto mb-4">
-            <UserPlus size={28} className="text-sky-400" />
+          <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center mx-auto mb-4">
+            <UserPlus size={28} className="text-green-400" />
           </div>
           <h2 className="text-white font-bold text-lg mb-2">Đăng nhập để vào phòng</h2>
           <p className="text-slate-400 text-sm mb-2">
             <span className="text-white font-semibold">{room.hostName}</span> mời bạn xem phim cùng
           </p>
-          <p className="text-sky-400 text-sm font-medium mb-6">🎬 {room.movieName}</p>
+          <p className="text-green-400 text-sm font-medium mb-6">🎬 {room.movieName}</p>
           <Link to="/auth"
-            className="w-full py-2.5 rounded-xl bg-sky-500 text-white font-bold text-sm hover:bg-sky-600 transition-colors flex items-center justify-center gap-2">
+            className="w-full py-2.5 rounded-xl bg-green-500 text-white font-bold text-sm hover:bg-green-600 transition-colors flex items-center justify-center gap-2">
             Đăng nhập ngay
           </Link>
         </motion.div>
@@ -296,14 +296,14 @@ export default function WatchRoomPage() {
             <div className="flex items-center gap-2">
               <p className="text-white font-bold text-sm line-clamp-1">{room.movieName}</p>
               {canSync && (
-                <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-400 border border-sky-500/30 shrink-0">
+                <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-green-500/20 text-green-400 border border-green-500/30 shrink-0">
                   SYNC
                 </span>
               )}
             </div>
             <p className="text-slate-500 text-xs">
               Tập {room.episodeName} •{' '}
-              <span className="text-sky-400 font-medium">{memberCount}/{room.maxMembers} người</span>
+              <span className="text-green-400 font-medium">{memberCount}/{room.maxMembers} người</span>
             </p>
           </div>
 
@@ -324,7 +324,7 @@ export default function WatchRoomPage() {
             className={cn(
               'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border shrink-0',
               copied
-                ? 'bg-sky-500/20 border-sky-500/50 text-sky-400'
+                ? 'bg-green-500/20 border-green-500/50 text-green-400'
                 : 'bg-[#2a2a2a] border-slate-700 text-slate-300 hover:text-white'
             )}>
             {copied ? <Check size={12} /> : <Copy size={12} />}
@@ -357,7 +357,7 @@ export default function WatchRoomPage() {
                 <p className="text-slate-400 text-xs mt-0.5">
                   Tập {room.episodeName} • {room.serverName}
                   {canSync
-                    ? <span className="ml-1.5 text-sky-400">• 🟢 Đồng bộ realtime</span>
+                    ? <span className="ml-1.5 text-green-400">• 🟢 Đồng bộ realtime</span>
                     : <span className="ml-1.5 text-yellow-400">• ⚠️ Iframe - không sync được</span>
                   }
                 </p>
@@ -380,7 +380,7 @@ export default function WatchRoomPage() {
                 <button onClick={() => setShowChat(v => !v)}
                   className={cn(
                     'lg:hidden flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-all',
-                    showChat ? 'bg-sky-500/20 border-sky-500/50 text-sky-400' : 'bg-[#2a2a2a] border-slate-700 text-slate-400'
+                    showChat ? 'bg-green-500/20 border-green-500/50 text-green-400' : 'bg-[#2a2a2a] border-slate-700 text-slate-400'
                   )}>
                   <MessageCircle size={14} />
                   Chat
@@ -462,16 +462,16 @@ export default function WatchRoomPage() {
             {/* Invite banner */}
             {memberCount < room.maxMembers && (
               <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
-                className="mt-3 flex items-center gap-2 bg-sky-500/10 border border-sky-500/20 rounded-xl px-3 py-2.5">
-                <LinkIcon size={14} className="text-sky-400 shrink-0" />
+                className="mt-3 flex items-center gap-2 bg-green-500/10 border border-green-500/20 rounded-xl px-3 py-2.5">
+                <LinkIcon size={14} className="text-green-400 shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sky-300 text-xs font-semibold">Chia sẻ link để mời bạn bè!</p>
+                  <p className="text-green-300 text-xs font-semibold">Chia sẻ link để mời bạn bè!</p>
                   <p className="text-slate-500 text-[10px] truncate mt-0.5">{roomUrl}</p>
                 </div>
                 <button onClick={handleCopyLink}
                   className={cn(
                     'shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all',
-                    copied ? 'bg-sky-500 text-white' : 'bg-[#2a2a2a] text-slate-300 hover:bg-[#333]'
+                    copied ? 'bg-green-500 text-white' : 'bg-[#2a2a2a] text-slate-300 hover:bg-[#333]'
                   )}>
                   {copied ? <Check size={11} /> : <Copy size={11} />}
                   {copied ? 'Copied!' : 'Copy'}
@@ -517,7 +517,7 @@ export default function WatchRoomPage() {
               style={{ height: 'calc(100vh - 116px)', minHeight: 300 }}
             >
               <div className="flex items-center gap-2 px-4 py-3 border-b border-white/5 shrink-0">
-                <MessageCircle size={15} className="text-sky-400" />
+                <MessageCircle size={15} className="text-green-400" />
                 <span className="text-white font-bold text-sm">Trò chuyện</span>
                 <span className="ml-auto text-slate-500 text-xs">{messages.length} tin nhắn</span>
               </div>
@@ -548,7 +548,7 @@ export default function WatchRoomPage() {
                         <div className={cn(
                           'px-3 py-2 rounded-2xl text-xs leading-relaxed break-words',
                           isMe
-                            ? 'bg-sky-500 text-white rounded-tr-sm'
+                            ? 'bg-green-500 text-white rounded-tr-sm'
                             : 'bg-[#2a2a2a] text-slate-200 rounded-tl-sm border border-white/5'
                         )}>
                           {msg.text}
@@ -569,11 +569,11 @@ export default function WatchRoomPage() {
                     onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
                     placeholder="Nhập tin nhắn..."
                     rows={1}
-                    className="flex-1 bg-[#1e1e1e] border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-600 resize-none outline-none focus:border-sky-500/50 transition-colors"
+                    className="flex-1 bg-[#1e1e1e] border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-600 resize-none outline-none focus:border-green-500/50 transition-colors"
                     style={{ maxHeight: 80 }}
                   />
                   <button onClick={handleSend} disabled={!text.trim() || sendingMsg}
-                    className="w-9 h-9 rounded-xl bg-sky-500 flex items-center justify-center text-white disabled:opacity-40 hover:bg-sky-600 transition-colors shrink-0">
+                    className="w-9 h-9 rounded-xl bg-green-500 flex items-center justify-center text-white disabled:opacity-40 hover:bg-green-600 transition-colors shrink-0">
                     {sendingMsg ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
                   </button>
                 </div>

@@ -27,8 +27,8 @@ function Countdown({ endTime }: { endTime: string }) {
         { val: s, label: 'Giây' },
       ].map(({ val, label }) => (
         <div key={label} className="flex flex-col items-center">
-          <div className="w-16 h-16 bg-sky-600/20 border border-sky-600/40 rounded-2xl flex items-center justify-center">
-            <span className="text-2xl font-black text-sky-400 tabular-nums">
+          <div className="w-16 h-16 bg-green-600/20 border border-green-600/40 rounded-2xl flex items-center justify-center">
+            <span className="text-2xl font-black text-green-400 tabular-nums">
               {String(val).padStart(2, '0')}
             </span>
           </div>
@@ -55,7 +55,7 @@ export default function MaintenancePage({ config }: { config: MaintenanceConfig 
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {Array.from({ length: 20 }).map((_, i) => (
           <div key={i}
-            className="absolute rounded-full bg-sky-500/5 animate-pulse"
+            className="absolute rounded-full bg-green-500/5 animate-pulse"
             style={{
               width: Math.random() * 200 + 50,
               height: Math.random() * 200 + 50,
@@ -86,11 +86,11 @@ export default function MaintenancePage({ config }: { config: MaintenanceConfig 
       <div className="relative z-10 flex flex-col items-center text-center max-w-sm">
         {/* Animated wrench icon */}
         <div className="relative mb-5">
-          <div className="w-20 h-20 bg-sky-600/10 border border-sky-600/30 rounded-3xl flex items-center justify-center">
-            <Wrench size={36} className="text-sky-400 animate-bounce" />
+          <div className="w-20 h-20 bg-green-600/10 border border-green-600/30 rounded-3xl flex items-center justify-center">
+            <Wrench size={36} className="text-green-400 animate-bounce" />
           </div>
           {/* Spinning ring */}
-          <div className="absolute inset-0 rounded-3xl border-2 border-sky-500/20 animate-spin"
+          <div className="absolute inset-0 rounded-3xl border-2 border-green-500/20 animate-spin"
             style={{ animationDuration: '3s' }} />
         </div>
 
@@ -103,7 +103,7 @@ export default function MaintenancePage({ config }: { config: MaintenanceConfig 
         </p>
 
         {/* Animated dots */}
-        <p className="text-sky-400 font-bold text-sm mb-1">
+        <p className="text-green-400 font-bold text-sm mb-1">
           Vui lòng quay lại sau{dots}
         </p>
 
@@ -113,7 +113,7 @@ export default function MaintenancePage({ config }: { config: MaintenanceConfig 
         {/* Refresh button */}
         <button
           onClick={() => window.location.reload()}
-          className="mt-6 flex items-center gap-2 bg-sky-600 hover:bg-sky-500 text-slate-950 font-black px-6 py-3 rounded-full transition-all active:scale-95 text-sm"
+          className="mt-6 flex items-center gap-2 bg-green-600 hover:bg-green-500 text-slate-950 font-black px-6 py-3 rounded-full transition-all active:scale-95 text-sm"
         >
           <RefreshCw size={15} /> Thử lại ngay
         </button>
@@ -121,7 +121,7 @@ export default function MaintenancePage({ config }: { config: MaintenanceConfig 
         {/* Progress bar */}
         {config.endTime && new Date(config.endTime).getTime() > Date.now() && (
           <div className="mt-5 w-full h-1 bg-slate-800 rounded-full overflow-hidden">
-            <div className="h-full bg-sky-500 rounded-full animate-pulse"
+            <div className="h-full bg-green-500 rounded-full animate-pulse"
               style={{ width: `${Math.min(100, Math.max(5, 100 - (new Date(config.endTime).getTime() - Date.now()) / 36000))}%` }} />
           </div>
         )}

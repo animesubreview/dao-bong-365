@@ -17,12 +17,12 @@ const TYPE_CONFIG = {
   },
   warning: {
     bg: 'bg-green-950/90',
-    border: 'border-sky-600/40',
+    border: 'border-green-600/40',
     text: 'text-green-200',
     icon: AlertTriangle,
-    iconColor: 'text-sky-400',
+    iconColor: 'text-green-400',
     bannerBg: 'bg-green-700/15',
-    dot: 'bg-sky-500',
+    dot: 'bg-green-500',
   },
   success: {
     bg: 'bg-emerald-950/90',
@@ -110,7 +110,7 @@ function ImageLinkPopup({ notif, onDismiss }: { notif: SiteNotification; onDismi
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={onDismiss}
-                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-black bg-sky-500 hover:bg-sky-400 text-slate-950 transition-colors"
+                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-black bg-green-500 hover:bg-green-400 text-slate-950 transition-colors"
               >
                 <ExternalLink size={14} /> Xem ngay
               </a>
@@ -164,7 +164,7 @@ function NotificationPopup({ notif, onDismiss }: { notif: SiteNotification; onDi
             </a>
           )}
           <button onClick={onDismiss}
-            className="flex-1 py-2.5 rounded-xl text-sm font-black bg-sky-500 hover:bg-sky-400 text-slate-950 transition-colors">
+            className="flex-1 py-2.5 rounded-xl text-sm font-black bg-green-500 hover:bg-green-400 text-slate-950 transition-colors">
             Đã hiểu
           </button>
         </div>

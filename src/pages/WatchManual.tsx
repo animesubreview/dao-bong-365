@@ -374,14 +374,14 @@ export default function WatchManual() {
 
   if (loading) return (
     <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-      <div className="w-10 h-10 border-4 border-sky-500 border-t-transparent rounded-full animate-spin" />
+      <div className="w-10 h-10 border-4 border-green-500 border-t-transparent rounded-full animate-spin" />
     </div>
   );
 
   if (!movie) return (
     <div className="min-h-screen bg-slate-950 flex items-center justify-center flex-col gap-4">
       <p className="text-slate-400">Không tìm thấy phim</p>
-      <Link to="/" className="text-sky-400 font-bold">← Về trang chủ</Link>
+      <Link to="/" className="text-green-400 font-bold">← Về trang chủ</Link>
     </div>
   );
 
@@ -419,7 +419,7 @@ export default function WatchManual() {
           <div className="flex items-start justify-between gap-3 mb-3">
             <div className="flex-1 min-w-0">
               <h1 className="text-white font-bold text-base leading-snug line-clamp-2">{movie.name}</h1>
-              <p className="text-sky-400 text-sm font-medium mt-0.5">{currentEp?.label || 'Full'}</p>
+              <p className="text-green-400 text-sm font-medium mt-0.5">{currentEp?.label || 'Full'}</p>
             </div>
           </div>
           {/* Action bar */}
@@ -440,7 +440,7 @@ export default function WatchManual() {
               </a>
             )}
           </div>
-          <div className="h-[2px] bg-sky-500 rounded-full mt-2 w-16" />
+          <div className="h-[2px] bg-green-500 rounded-full mt-2 w-16" />
         </motion.div>
 
         {/* ── Movie detail mini card ── */}
@@ -455,7 +455,7 @@ export default function WatchManual() {
             <div className="flex flex-wrap gap-1.5 mt-2">
               {movie.year && <span className="text-xs text-slate-300">• {movie.year}</span>}
               {movie.quality && (
-                <span className="text-[10px] font-black bg-sky-500/20 text-sky-400 border border-sky-500/30 px-1.5 py-0.5 rounded">
+                <span className="text-[10px] font-black bg-green-500/20 text-green-400 border border-green-500/30 px-1.5 py-0.5 rounded">
                   {movie.quality}
                 </span>
               )}
@@ -492,13 +492,13 @@ export default function WatchManual() {
               <Server size={12} className="text-slate-500" />
               <span className="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Máy chủ:</span>
             </div>
-            <button className="px-3 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-wide bg-sky-500/20 border border-sky-500/50 text-sky-400">
+            <button className="px-3 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-wide bg-green-500/20 border border-green-500/50 text-green-400">
               {serverLabel} | 1
             </button>
           </div>
 
           <div className="px-4 py-2.5 flex items-center justify-between">
-            <button className="flex items-center gap-1.5 text-sky-400 border-b-2 border-sky-500 pb-1 text-xs font-bold uppercase tracking-wide">
+            <button className="flex items-center gap-1.5 text-green-400 border-b-2 border-green-500 pb-1 text-xs font-bold uppercase tracking-wide">
               Phụ đề
             </button>
             <span className="text-slate-500 text-xs">Danh sách tập ({epIdx + 1} / {episodes.length})</span>
@@ -507,7 +507,7 @@ export default function WatchManual() {
           <div className="flex items-center gap-2 px-4 pb-3">
             <button
               onClick={() => setShowThumbs(v => !v)}
-              className={cn('w-9 h-5 rounded-full transition-colors relative', showThumbs ? 'bg-sky-500' : 'bg-slate-700')}
+              className={cn('w-9 h-5 rounded-full transition-colors relative', showThumbs ? 'bg-green-500' : 'bg-slate-700')}
             >
               <span className={cn('absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform shadow', showThumbs ? 'translate-x-4' : 'translate-x-0.5')} />
             </button>
@@ -524,7 +524,7 @@ export default function WatchManual() {
                   className={cn(
                     'py-2 px-1 rounded-lg text-center text-[11px] font-bold transition-all border truncate',
                     i === epIdx
-                      ? 'bg-sky-500 border-sky-500 text-slate-950 shadow-md shadow-sky-500/30'
+                      ? 'bg-green-500 border-green-500 text-slate-950 shadow-md shadow-green-500/30'
                       : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700 hover:border-slate-600'
                   )}
                 >
@@ -560,7 +560,7 @@ export default function WatchManual() {
           <motion.div initial={{ y: 16, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }}
             className="bg-[#181818] rounded-xl overflow-hidden">
             <div className="flex items-center gap-2 px-4 py-3 border-b border-white/5">
-              <Info size={15} className="text-sky-400" />
+              <Info size={15} className="text-green-400" />
               <span className="text-white font-bold text-sm uppercase tracking-wide">Lưu ý</span>
             </div>
             <div className="p-4">

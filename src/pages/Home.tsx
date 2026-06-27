@@ -30,7 +30,7 @@ function LangBadge({ lang }: { lang?: string }) {
   const l = lang.toLowerCase();
   const label = l.includes('vietsub')||l.includes('phụ đề') ? 'P.ĐỀ' : l.includes('thuyết minh') ? 'T.MINH' : l.includes('lồng tiếng') ? 'L.TIẾNG' : null;
   if (!label) return null;
-  return <span className={`text-[8px] font-black px-1.5 py-0.5 rounded text-white leading-none ${label==='P.ĐỀ'?'bg-red-600':label==='T.MINH'?'bg-blue-600':'bg-sky-700'}`}>{label}</span>;
+  return <span className={`text-[8px] font-black px-1.5 py-0.5 rounded text-white leading-none ${label==='P.ĐỀ'?'bg-red-600':label==='T.MINH'?'bg-blue-600':'bg-green-700'}`}>{label}</span>;
 }
 
 /* ─── Card sizes ──────────────────────────────────────────────── */
@@ -53,10 +53,10 @@ function MCard({ movie }: { movie: Movie }) {
         <div className="absolute bottom-1 left-1"><LangBadge lang={movie.lang} /></div>
       </div>
       <div className="mt-1.5">
-        <div className="font-semibold text-[12px] text-slate-100 group-hover:text-sky-400 transition-colors line-clamp-1">{dec(movie.name)}</div>
+        <div className="font-semibold text-[12px] text-slate-100 group-hover:text-green-400 transition-colors line-clamp-1">{dec(movie.name)}</div>
         <div className="text-[10px] text-slate-500 mt-0.5 flex items-center gap-1">
           <span className="truncate">{dec(movie.origin_name)}</span>
-          {movie.year && <span className="shrink-0 text-sky-400/50">{movie.year}</span>}
+          {movie.year && <span className="shrink-0 text-green-400/50">{movie.year}</span>}
         </div>
       </div>
     </Link>
@@ -73,7 +73,7 @@ function ManualMCard({ movie }: { movie: ManualMovie }) {
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/40 to-transparent" />
       </div>
       <div className="mt-1.5">
-        <div className="font-semibold text-[12px] text-slate-100 group-hover:text-sky-400 transition-colors line-clamp-1">{movie.name}</div>
+        <div className="font-semibold text-[12px] text-slate-100 group-hover:text-green-400 transition-colors line-clamp-1">{movie.name}</div>
         <div className="text-[10px] text-slate-500 mt-0.5 truncate">{movie.originName}</div>
       </div>
     </Link>
@@ -97,19 +97,19 @@ function UpcomingCard({ movie }: { movie: ManualMovie }) {
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" />
         {/* Release date badge */}
         {movie.releaseDate && (
-          <div className="absolute bottom-1.5 left-1 right-1 flex items-center gap-1 bg-sky-600/90 rounded-md px-1.5 py-0.5 backdrop-blur-sm">
+          <div className="absolute bottom-1.5 left-1 right-1 flex items-center gap-1 bg-green-600/90 rounded-md px-1.5 py-0.5 backdrop-blur-sm">
             <Calendar size={9} className="text-slate-950 shrink-0" />
             <span className="text-[9px] font-black text-slate-950 truncate">{movie.releaseDate}</span>
           </div>
         )}
         {!movie.releaseDate && (
-          <div className="absolute top-1 right-1 bg-sky-600 text-slate-950 text-[8px] font-black px-1.5 py-0.5 rounded">
+          <div className="absolute top-1 right-1 bg-green-600 text-slate-950 text-[8px] font-black px-1.5 py-0.5 rounded">
             SẮP RA
           </div>
         )}
       </div>
       <div className="mt-1.5">
-        <div className="font-semibold text-[12px] text-slate-100 group-hover:text-sky-400 transition-colors line-clamp-1">{movie.name}</div>
+        <div className="font-semibold text-[12px] text-slate-100 group-hover:text-green-400 transition-colors line-clamp-1">{movie.name}</div>
         <div className="text-[10px] text-slate-500 mt-0.5 truncate">{movie.originName || movie.year}</div>
       </div>
     </Link>
@@ -152,18 +152,18 @@ function UpcomingNewCard({ movie }: { movie: UpcomingMovie }) {
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" />
         {/* Release date badge */}
         {movie.releaseDate ? (
-          <div className="absolute bottom-1.5 left-1 right-1 flex items-center gap-1 bg-sky-600/90 rounded-md px-1.5 py-0.5 backdrop-blur-sm">
+          <div className="absolute bottom-1.5 left-1 right-1 flex items-center gap-1 bg-green-600/90 rounded-md px-1.5 py-0.5 backdrop-blur-sm">
             <Calendar size={9} className="text-slate-950 shrink-0" />
             <span className="text-[9px] font-black text-slate-950 truncate">{movie.releaseDate}</span>
           </div>
         ) : (
-          <div className="absolute top-1 right-1 bg-sky-600 text-slate-950 text-[8px] font-black px-1.5 py-0.5 rounded">
+          <div className="absolute top-1 right-1 bg-green-600 text-slate-950 text-[8px] font-black px-1.5 py-0.5 rounded">
             SẮP RA
           </div>
         )}
       </div>
       <div className="mt-1.5">
-        <div className="font-semibold text-[12px] text-slate-100 group-hover:text-sky-400 transition-colors line-clamp-1">{movie.name}</div>
+        <div className="font-semibold text-[12px] text-slate-100 group-hover:text-green-400 transition-colors line-clamp-1">{movie.name}</div>
         <div className="text-[10px] text-slate-500 mt-0.5 truncate">{movie.originName || movie.year}</div>
       </div>
     </div>
@@ -183,9 +183,9 @@ function Top10Card({ movie, rank }: { movie: Movie; rank: number }) {
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" />
       </div>
       <div className="flex items-start gap-1.5 mt-1">
-        <span className={cn('text-3xl font-black leading-none shrink-0 mt-0.5', rank<=3?'text-sky-400':'text-slate-600')} style={{fontStyle:'italic'}}>{rank}</span>
+        <span className={cn('text-3xl font-black leading-none shrink-0 mt-0.5', rank<=3?'text-green-400':'text-slate-600')} style={{fontStyle:'italic'}}>{rank}</span>
         <div className="flex-1 min-w-0">
-          <div className="font-semibold text-[12px] text-slate-100 group-hover:text-sky-400 transition-colors line-clamp-2 leading-snug">{dec(movie.name)}</div>
+          <div className="font-semibold text-[12px] text-slate-100 group-hover:text-green-400 transition-colors line-clamp-2 leading-snug">{dec(movie.name)}</div>
           {movie.year && <div className="text-[10px] text-slate-500 mt-0.5">{movie.year}</div>}
         </div>
       </div>
@@ -213,12 +213,12 @@ function HRow({ children }: { children: React.ReactNode }) {
   const scroll = (d: 'left'|'right') => ref.current?.scrollBy({ left: d==='right'?500:-500, behavior:'smooth' });
   return (
     <div className="relative group/row">
-      {canL && <button onClick={() => scroll('left')} className="absolute left-0 top-[35%] -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-slate-800/95 border border-slate-700 text-white flex items-center justify-center opacity-0 group-hover/row:opacity-100 transition-all hover:bg-sky-500 hover:text-slate-950 shadow-xl -translate-x-1/2"><ChevronLeft size={16}/></button>}
+      {canL && <button onClick={() => scroll('left')} className="absolute left-0 top-[35%] -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-slate-800/95 border border-slate-700 text-white flex items-center justify-center opacity-0 group-hover/row:opacity-100 transition-all hover:bg-green-500 hover:text-slate-950 shadow-xl -translate-x-1/2"><ChevronLeft size={16}/></button>}
       <div ref={ref} className="flex gap-2 overflow-x-auto -mx-4 md:-mx-0 px-4 md:px-0"
         style={{ scrollSnapType:'x mandatory', scrollbarWidth:'none', msOverflowStyle:'none', WebkitOverflowScrolling:'touch' }}>
         {children}
       </div>
-      {canR && <button onClick={() => scroll('right')} className="absolute right-0 top-[35%] -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-slate-800/95 border border-slate-700 text-white flex items-center justify-center opacity-0 group-hover/row:opacity-100 transition-all hover:bg-sky-500 hover:text-slate-950 shadow-xl translate-x-1/2"><ChevronRight size={16}/></button>}
+      {canR && <button onClick={() => scroll('right')} className="absolute right-0 top-[35%] -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-slate-800/95 border border-slate-700 text-white flex items-center justify-center opacity-0 group-hover/row:opacity-100 transition-all hover:bg-green-500 hover:text-slate-950 shadow-xl translate-x-1/2"><ChevronRight size={16}/></button>}
     </div>
   );
 }
@@ -228,9 +228,9 @@ function SecHeader({ title, to, label='Tất cả' }: { title:string; to?:string
   return (
     <div className="flex items-center justify-between mb-3">
       <h2 className="text-base font-black text-white flex items-center gap-2">
-        <span className="w-1 h-4 bg-sky-500 rounded-full inline-block shrink-0" />{title}
+        <span className="w-1 h-4 bg-green-500 rounded-full inline-block shrink-0" />{title}
       </h2>
-      {to && <Link to={to} className="flex items-center gap-1 text-xs font-semibold text-slate-400 hover:text-sky-400 transition-colors bg-slate-800/60 border border-slate-700/60 px-2.5 py-1.5 rounded-full shrink-0">{label} <ChevronRight size={11}/></Link>}
+      {to && <Link to={to} className="flex items-center gap-1 text-xs font-semibold text-slate-400 hover:text-green-400 transition-colors bg-slate-800/60 border border-slate-700/60 px-2.5 py-1.5 rounded-full shrink-0">{label} <ChevronRight size={11}/></Link>}
     </div>
   );
 }
@@ -385,7 +385,7 @@ export default function Home() {
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center" style={{ paddingTop:'56px' }}>
-        <div className="w-8 h-8 border-t-transparent rounded-full animate-spin border-sky-500" style={{ borderWidth:3, borderStyle:'solid' }} />
+        <div className="w-8 h-8 border-t-transparent rounded-full animate-spin border-green-500" style={{ borderWidth:3, borderStyle:'solid' }} />
       </div>
     );
   }
@@ -430,7 +430,7 @@ export default function Home() {
             </div>
             <SecHeader title={TOP_TITLES[topTab]} to="/type/phim-moi" label="Xem tất cả" />
             {topTabLoading
-              ? <div className="flex items-center justify-center py-8"><Loader2 size={24} className="animate-spin text-sky-400"/></div>
+              ? <div className="flex items-center justify-center py-8"><Loader2 size={24} className="animate-spin text-green-400"/></div>
               : <HRow>{topTabMovies.map((m,i) => <Top10Card key={m._id} movie={m} rank={i+1}/>)}</HRow>
             }
           </section>

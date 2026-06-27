@@ -9,7 +9,7 @@ function LangBadge({ lang }: { lang?: string }) {
   const cleaned = movieApi.cleanLang(lang || '');
   if (!cleaned) return null;
   const label = cleaned === 'Vietsub' ? 'P.Đề' : cleaned === 'Lồng Tiếng' ? 'L.Tiếng' : cleaned === 'Thuyết Minh' ? 'T.Minh' : cleaned.slice(0,5);
-  const color = cleaned === 'Vietsub' ? 'bg-slate-700' : cleaned === 'Lồng Tiếng' ? 'bg-blue-600' : 'bg-sky-700';
+  const color = cleaned === 'Vietsub' ? 'bg-slate-700' : cleaned === 'Lồng Tiếng' ? 'bg-blue-600' : 'bg-green-700';
   return <span className={cn('movie-card-badge', color)}>{label}</span>;
 }
 
@@ -42,7 +42,7 @@ export default function MovieCard({ movie, className }: any) {
         </div>
         {/* Info below */}
         <div className="mt-2 px-0.5">
-          <div className="font-bold text-[13px] text-slate-100 group-hover:text-sky-400 transition-colors line-clamp-1 leading-tight">
+          <div className="font-bold text-[13px] text-slate-100 group-hover:text-green-400 transition-colors line-clamp-1 leading-tight">
             {movie.name}
           </div>
           <div className="text-[11px] text-slate-500 mt-0.5 line-clamp-1">

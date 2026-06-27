@@ -25,7 +25,7 @@ export default function Footer() {
       <div className="max-w-4xl mx-auto px-4 py-10 flex flex-col items-center gap-6 text-center">
         {/* Logo */}
         <div className="flex items-center gap-2">
-          <div className="w-10 h-10 bg-sky-500 rounded-full flex items-center justify-center">
+          <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
             <Clapperboard className="text-slate-950" size={18} strokeWidth={2.5} />
           </div>
           <span className="text-lg font-black text-white">{siteName}</span>
@@ -48,7 +48,7 @@ export default function Footer() {
           <span>📢 Liên hệ đặt quảng cáo:</span>
           <a
             href={`mailto:${adsEmail}`}
-            className="flex items-center gap-1 text-sky-400 hover:text-sky-300 font-semibold transition-colors"
+            className="flex items-center gap-1 text-green-400 hover:text-green-300 font-semibold transition-colors"
           >
             <Mail size={12} />
             {adsEmail}

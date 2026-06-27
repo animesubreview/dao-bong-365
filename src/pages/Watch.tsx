@@ -213,8 +213,8 @@ export default function Watch() {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-10 h-10 border-4 border-sky-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-sky-400 font-bold text-sm">Đang tải phim...</p>
+          <div className="w-10 h-10 border-4 border-green-500 border-t-transparent rounded-full animate-spin" />
+          <p className="text-green-400 font-bold text-sm">Đang tải phim...</p>
         </div>
       </div>
     );
@@ -224,7 +224,7 @@ export default function Watch() {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center flex-col gap-4">
         <p className="text-slate-400">Không tìm thấy tập phim</p>
-        <Link to="/" className="text-sky-400 font-bold">← Về trang chủ</Link>
+        <Link to="/" className="text-green-400 font-bold">← Về trang chủ</Link>
       </div>
     );
   }
@@ -239,7 +239,7 @@ export default function Watch() {
             initial={{ opacity: 0, y: -40 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -40 }}
-            className="sticky top-0 z-40 bg-sky-600/95 backdrop-blur border-b border-indigo-500/50 px-4 py-2.5 flex items-center gap-3"
+            className="sticky top-0 z-40 bg-green-600/95 backdrop-blur border-b border-indigo-500/50 px-4 py-2.5 flex items-center gap-3"
           >
             <ArrowRightCircle size={16} className="text-white shrink-0" />
             <span className="text-white text-sm flex-1 truncate">
@@ -286,7 +286,7 @@ export default function Watch() {
               <h1 className="text-white font-bold text-base leading-snug line-clamp-2">
                 {movie.name}
               </h1>
-              <p className="text-sky-400 text-sm font-medium mt-0.5">
+              <p className="text-green-400 text-sm font-medium mt-0.5">
                 {isFullMovie ? 'Tập Full' : `Tập ${currentEpisode.name}`}
               </p>
             </div>
@@ -322,12 +322,12 @@ export default function Watch() {
             <button
               onClick={() => setAutoNext(v => !v)}
               className={cn('flex flex-col items-center gap-1 px-3 py-1.5 rounded-lg min-w-[56px] transition-colors',
-                autoNext ? 'text-sky-400' : 'text-slate-400 hover:text-white')}
+                autoNext ? 'text-green-400' : 'text-slate-400 hover:text-white')}
             >
               <SkipForward size={20} />
               <div className="flex items-center gap-1">
                 <span className="text-[10px] font-semibold">Chuyển tập</span>
-                <span className={cn('text-[9px] font-black px-1 rounded', autoNext ? 'bg-sky-500 text-white' : 'bg-slate-700 text-slate-400')}>
+                <span className={cn('text-[9px] font-black px-1 rounded', autoNext ? 'bg-green-500 text-white' : 'bg-slate-700 text-slate-400')}>
                   {autoNext ? 'ON' : 'OFF'}
                 </span>
               </div>
@@ -346,7 +346,7 @@ export default function Watch() {
             {/* Xem chung button */}
             <button
               onClick={() => setShowRoomModal(true)}
-              className="flex flex-col items-center gap-1 px-3 py-1.5 rounded-lg min-w-[56px] text-slate-400 hover:text-sky-400 transition-colors"
+              className="flex flex-col items-center gap-1 px-3 py-1.5 rounded-lg min-w-[56px] text-slate-400 hover:text-green-400 transition-colors"
             >
               <Users size={20} />
               <span className="text-[10px] font-semibold">Xem chung</span>
@@ -354,7 +354,7 @@ export default function Watch() {
           </div>
 
           {/* Underline nav indicator */}
-          <div className="h-[2px] bg-sky-500 rounded-full mt-2 w-16" />
+          <div className="h-[2px] bg-green-500 rounded-full mt-2 w-16" />
         </motion.div>
 
         {/* ── Movie detail mini card ── */}
@@ -373,7 +373,7 @@ export default function Watch() {
             <div className="flex flex-wrap gap-1.5 mt-2">
               {movie.year && <span className="text-xs text-slate-300">• {movie.year}</span>}
               {movie.quality && (
-                <span className="text-[10px] font-black bg-sky-500/20 text-sky-400 border border-sky-500/30 px-1.5 py-0.5 rounded">
+                <span className="text-[10px] font-black bg-green-500/20 text-green-400 border border-green-500/30 px-1.5 py-0.5 rounded">
                   {movie.quality}
                 </span>
               )}
@@ -425,7 +425,7 @@ export default function Watch() {
                       className={cn(
                         'px-3 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-wide transition-all border',
                         activeServerIdx === idx
-                          ? 'bg-sky-500/20 border-sky-500/50 text-sky-400'
+                          ? 'bg-green-500/20 border-green-500/50 text-green-400'
                           : 'bg-[#2a2a2a] border-slate-700 text-slate-400 hover:text-white'
                       )}
                     >
@@ -439,7 +439,7 @@ export default function Watch() {
             {/* Sub tab + episode count */}
             <div className="px-4 py-2.5 flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <button className="flex items-center gap-1.5 text-sky-400 border-b-2 border-sky-500 pb-1 text-xs font-bold uppercase tracking-wide">
+                <button className="flex items-center gap-1.5 text-green-400 border-b-2 border-green-500 pb-1 text-xs font-bold uppercase tracking-wide">
                   Phụ đề
                 </button>
               </div>
@@ -454,7 +454,7 @@ export default function Watch() {
                 onClick={() => setShowThumbs(v => !v)}
                 className={cn(
                   'w-9 h-5 rounded-full transition-colors relative',
-                  showThumbs ? 'bg-sky-500' : 'bg-slate-700'
+                  showThumbs ? 'bg-green-500' : 'bg-slate-700'
                 )}
               >
                 <span className={cn(
@@ -481,8 +481,8 @@ export default function Watch() {
                         ? 'flex items-center gap-3 px-3 py-2.5 text-left'
                         : 'py-2.5',
                       ep.slug === episodeSlug
-                        ? 'bg-sky-500/20 border-sky-500/60 text-sky-400'
-                        : 'bg-[#2a2a2a] border-slate-700/50 text-slate-400 hover:border-sky-500/40 hover:text-sky-300'
+                        ? 'bg-green-500/20 border-green-500/60 text-green-400'
+                        : 'bg-[#2a2a2a] border-slate-700/50 text-slate-400 hover:border-green-500/40 hover:text-green-300'
                     )}
                   >
                     {showThumbs && (
@@ -501,7 +501,7 @@ export default function Watch() {
         <motion.div initial={{ y: 16, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }}
           className="bg-[#181818] rounded-xl overflow-hidden">
           <div className="flex items-center gap-2 px-4 py-3 border-b border-white/5">
-            <Info size={15} className="text-sky-400" />
+            <Info size={15} className="text-green-400" />
             <span className="text-white font-bold text-sm uppercase tracking-wide">Nội dung</span>
           </div>
           <div className="p-4 flex flex-col gap-3">
@@ -567,8 +567,8 @@ export default function Watch() {
                   {/* Header */}
                   <div className="flex items-center justify-between mb-5">
                     <div className="flex items-center gap-2">
-                      <div className="w-9 h-9 rounded-xl bg-sky-500/15 flex items-center justify-center">
-                        <Users size={18} className="text-sky-400" />
+                      <div className="w-9 h-9 rounded-xl bg-green-500/15 flex items-center justify-center">
+                        <Users size={18} className="text-green-400" />
                       </div>
                       <div>
                         <h3 className="text-white font-bold text-sm">Tạo phòng xem chung</h3>
@@ -589,7 +589,7 @@ export default function Watch() {
                     )}
                     <div className="min-w-0">
                       <p className="text-white text-xs font-bold line-clamp-1">{movie?.name}</p>
-                      <p className="text-sky-400 text-[11px] mt-0.5">Tập {currentEpisode?.name}</p>
+                      <p className="text-green-400 text-[11px] mt-0.5">Tập {currentEpisode?.name}</p>
                     </div>
                   </div>
 
@@ -602,7 +602,7 @@ export default function Watch() {
                           className={cn(
                             'py-2.5 rounded-xl border-2 text-sm font-black transition-all flex flex-col items-center gap-0.5',
                             roomMaxMembers === n
-                              ? 'bg-sky-500/15 border-sky-500 text-sky-400'
+                              ? 'bg-green-500/15 border-green-500 text-green-400'
                               : 'bg-[#2a2a2a] border-transparent text-slate-400 hover:border-slate-600'
                           )}>
                           <span className="text-base leading-none">
@@ -647,7 +647,7 @@ export default function Watch() {
                         setCreatingRoom(false);
                       }
                     }}
-                    className="w-full py-3 rounded-xl bg-sky-500 text-white font-bold text-sm hover:bg-sky-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                    className="w-full py-3 rounded-xl bg-green-500 text-white font-bold text-sm hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
                   >
                     {creatingRoom ? <Loader2 size={16} className="animate-spin" /> : <Users size={16} />}
                     {creatingRoom ? 'Đang tạo phòng...' : 'Tạo phòng xem'}
@@ -657,16 +657,16 @@ export default function Watch() {
                 <>
                   {/* Room created success */}
                   <div className="text-center mb-5">
-                    <div className="w-14 h-14 rounded-full bg-sky-500/15 flex items-center justify-center mx-auto mb-3">
-                      <Check size={26} className="text-sky-400" />
+                    <div className="w-14 h-14 rounded-full bg-green-500/15 flex items-center justify-center mx-auto mb-3">
+                      <Check size={26} className="text-green-400" />
                     </div>
                     <h3 className="text-white font-bold text-base">Phòng đã được tạo!</h3>
                     <p className="text-slate-400 text-xs mt-1">Chia sẻ link bên dưới cho bạn bè</p>
                   </div>
 
                   {/* Link box */}
-                  <div className="bg-[#0d0d0d] rounded-xl p-3 flex items-center gap-2 mb-4 border border-sky-500/20">
-                    <p className="flex-1 text-sky-300 text-xs font-mono truncate">
+                  <div className="bg-[#0d0d0d] rounded-xl p-3 flex items-center gap-2 mb-4 border border-green-500/20">
+                    <p className="flex-1 text-green-300 text-xs font-mono truncate">
                       {window.location.origin}/watch-room/{roomCreated}
                     </p>
                     <button onClick={() => {
@@ -676,7 +676,7 @@ export default function Watch() {
                     }}
                       className={cn(
                         'shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-all',
-                        roomLinkCopied ? 'bg-sky-500 text-white' : 'bg-[#2a2a2a] text-slate-300 hover:bg-[#333]'
+                        roomLinkCopied ? 'bg-green-500 text-white' : 'bg-[#2a2a2a] text-slate-300 hover:bg-[#333]'
                       )}>
                       {roomLinkCopied ? <Check size={12} /> : <Copy size={12} />}
                       {roomLinkCopied ? 'Đã copy!' : 'Copy'}
@@ -689,7 +689,7 @@ export default function Watch() {
                       Đóng
                     </button>
                     <button onClick={() => navigate(`/watch-room/${roomCreated}`)}
-                      className="flex-1 py-2.5 rounded-xl bg-sky-500 text-white font-bold text-sm hover:bg-sky-600 transition-colors flex items-center justify-center gap-1.5">
+                      className="flex-1 py-2.5 rounded-xl bg-green-500 text-white font-bold text-sm hover:bg-green-600 transition-colors flex items-center justify-center gap-1.5">
                       <Users size={14} />
                       Vào phòng
                     </button>

@@ -95,7 +95,7 @@ function FilterDropdown({ label, options, value, onChange }: {
         className={cn(
           'w-full flex items-center justify-between gap-2 px-4 py-3 rounded-xl border text-sm font-semibold transition-all',
           value
-            ? 'bg-sky-500/10 border-sky-500/50 text-sky-400'
+            ? 'bg-green-500/10 border-green-500/50 text-green-400'
             : 'bg-[#111] border-white/10 text-slate-300 hover:border-white/20'
         )}
       >
@@ -112,7 +112,7 @@ function FilterDropdown({ label, options, value, onChange }: {
               className={cn(
                 'w-full text-left px-4 py-2.5 text-sm transition-colors',
                 opt.value === value
-                  ? 'bg-sky-500/15 text-sky-400 font-bold'
+                  ? 'bg-green-500/15 text-green-400 font-bold'
                   : 'text-slate-300 hover:bg-white/5 hover:text-white'
               )}
             >
@@ -239,8 +239,8 @@ export default function MovieList() {
                 className={cn(
                   'px-4 py-2 rounded-xl text-sm font-bold transition-all border',
                   filterFormat === f.value
-                    ? 'bg-sky-500 text-black border-sky-500'
-                    : 'bg-transparent text-slate-400 border-white/10 hover:border-sky-500/40 hover:text-sky-400'
+                    ? 'bg-green-500 text-black border-green-500'
+                    : 'bg-transparent text-slate-400 border-white/10 hover:border-green-500/40 hover:text-green-400'
                 )}
               >
                 {f.label}
@@ -280,7 +280,7 @@ export default function MovieList() {
           <div className="flex items-center justify-between gap-2">
             <div className="flex flex-wrap gap-1.5">
               {filterCategory && (
-                <span className="flex items-center gap-1 text-[11px] bg-sky-500/10 text-sky-400 border border-sky-500/20 px-2 py-1 rounded-full font-semibold">
+                <span className="flex items-center gap-1 text-[11px] bg-green-500/10 text-green-400 border border-green-500/20 px-2 py-1 rounded-full font-semibold">
                   {CATEGORIES.find(c => c.value === filterCategory)?.label}
                   <button onClick={() => setFilterCategory('')}><X size={10} /></button>
                 </span>
@@ -335,7 +335,7 @@ export default function MovieList() {
                 <button
                   onClick={() => handlePageChange(page - 1)}
                   disabled={page <= 1}
-                  className="w-9 h-9 rounded-xl border border-white/10 flex items-center justify-center text-slate-400 disabled:opacity-30 hover:border-sky-500/50 hover:text-sky-400 transition-all"
+                  className="w-9 h-9 rounded-xl border border-white/10 flex items-center justify-center text-slate-400 disabled:opacity-30 hover:border-green-500/50 hover:text-green-400 transition-all"
                 >
                   <ChevronLeft size={16} />
                 </button>
@@ -354,8 +354,8 @@ export default function MovieList() {
                       className={cn(
                         'w-9 h-9 rounded-xl text-sm font-bold transition-all border',
                         p === page
-                          ? 'bg-sky-500 text-black border-sky-500'
-                          : 'border-white/10 text-slate-400 hover:border-sky-500/50 hover:text-sky-400'
+                          ? 'bg-green-500 text-black border-green-500'
+                          : 'border-white/10 text-slate-400 hover:border-green-500/50 hover:text-green-400'
                       )}
                     >
                       {p}
@@ -366,7 +366,7 @@ export default function MovieList() {
                 <button
                   onClick={() => handlePageChange(page + 1)}
                   disabled={page >= pagination.totalPages}
-                  className="w-9 h-9 rounded-xl border border-white/10 flex items-center justify-center text-slate-400 disabled:opacity-30 hover:border-sky-500/50 hover:text-sky-400 transition-all"
+                  className="w-9 h-9 rounded-xl border border-white/10 flex items-center justify-center text-slate-400 disabled:opacity-30 hover:border-green-500/50 hover:text-green-400 transition-all"
                 >
                   <ChevronRight size={16} />
                 </button>
@@ -378,7 +378,7 @@ export default function MovieList() {
             <div className="text-6xl">🎬</div>
             <p className="text-white font-bold text-lg">Không tìm thấy phim</p>
             <p className="text-slate-500 text-sm max-w-xs">Thử thay đổi bộ lọc hoặc chọn thể loại khác.</p>
-            <button onClick={resetFilters} className="mt-2 px-6 py-2.5 bg-sky-500 text-black font-bold rounded-xl text-sm">
+            <button onClick={resetFilters} className="mt-2 px-6 py-2.5 bg-green-500 text-black font-bold rounded-xl text-sm">
               Xóa bộ lọc
             </button>
           </div>

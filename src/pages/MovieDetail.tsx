@@ -98,8 +98,8 @@ export default function MovieDetail() {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-10 h-10 border-4 border-sky-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-sky-400 font-bold text-sm">Đang tải phim...</p>
+          <div className="w-10 h-10 border-4 border-green-500 border-t-transparent rounded-full animate-spin" />
+          <p className="text-green-400 font-bold text-sm">Đang tải phim...</p>
         </div>
       </div>
     );
@@ -109,7 +109,7 @@ export default function MovieDetail() {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center flex-col gap-4">
         <p className="text-slate-400">Phim không tồn tại</p>
-        <Link to="/" className="text-sky-400 font-bold">← Về trang chủ</Link>
+        <Link to="/" className="text-green-400 font-bold">← Về trang chủ</Link>
       </div>
     );
   }
@@ -143,7 +143,7 @@ export default function MovieDetail() {
         {/* dot indicators */}
         <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
           {[0,1,2,3].map(i => (
-            <span key={i} className={cn('h-0.5 rounded-full', i === 0 ? 'w-8 bg-sky-500' : 'w-4 bg-slate-600')} />
+            <span key={i} className={cn('h-0.5 rounded-full', i === 0 ? 'w-8 bg-green-500' : 'w-4 bg-slate-600')} />
           ))}
         </div>
       </div>
@@ -172,7 +172,7 @@ export default function MovieDetail() {
               <div className="pb-1">
                 <h1 className="text-lg font-black text-white leading-tight line-clamp-2">{movie.name}</h1>
                 {movie.origin_name && movie.origin_name !== movie.name && (
-                  <p className="text-sky-400 text-xs font-semibold mt-0.5">{movie.origin_name}</p>
+                  <p className="text-green-400 text-xs font-semibold mt-0.5">{movie.origin_name}</p>
                 )}
               </div>
             </div>
@@ -182,7 +182,7 @@ export default function MovieDetail() {
               {firstEpisode ? (
                 <Link
                   to={`/watch/${movie.slug}/${firstEpisode.slug}?server=${encodeURIComponent(episodes[0]?.server_name || '')}`}
-                  className="flex items-center gap-2 bg-sky-500 hover:bg-sky-400 text-slate-950 font-black px-7 py-3 rounded-full text-sm shadow-lg shadow-sky-500/25 transition-all active:scale-95 shrink-0"
+                  className="flex items-center gap-2 bg-green-500 hover:bg-green-400 text-slate-950 font-black px-7 py-3 rounded-full text-sm shadow-lg shadow-green-500/25 transition-all active:scale-95 shrink-0"
                 >
                   <Play className="fill-current" size={16} /> Xem Ngay
                 </Link>
@@ -212,8 +212,8 @@ export default function MovieDetail() {
               </div>
 
               {/* Rating chip – PC right */}
-              <div className="hidden md:flex items-center gap-2 ml-auto bg-sky-600/80 border border-indigo-500/50 text-white text-xs font-black px-3 py-2 rounded-xl">
-                <Star size={14} className="fill-current text-sky-400" />
+              <div className="hidden md:flex items-center gap-2 ml-auto bg-green-600/80 border border-indigo-500/50 text-white text-xs font-black px-3 py-2 rounded-xl">
+                <Star size={14} className="fill-current text-green-400" />
                 <span>0</span>
                 <span className="font-normal text-indigo-300">Đánh giá</span>
               </div>
@@ -229,14 +229,14 @@ export default function MovieDetail() {
           <div className="hidden md:block mb-3">
             <h1 className="text-2xl lg:text-3xl font-black text-white leading-tight">{movie.name}</h1>
             {movie.origin_name && movie.origin_name !== movie.name && (
-              <p className="text-sky-400 text-sm font-semibold mt-1">{movie.origin_name}</p>
+              <p className="text-green-400 text-sm font-semibold mt-1">{movie.origin_name}</p>
             )}
           </div>
 
           {/* Badges */}
           <div className="flex flex-wrap items-center gap-2 mb-5">
             {movie.quality && (
-              <span className="text-[11px] font-black px-2.5 py-1 rounded-md bg-sky-500 text-slate-950">IMDb</span>
+              <span className="text-[11px] font-black px-2.5 py-1 rounded-md bg-green-500 text-slate-950">IMDb</span>
             )}
             {movie.quality && (
               <span className="text-[11px] font-bold px-2.5 py-1 rounded-md border border-slate-600 text-slate-300">{movie.quality}</span>
@@ -262,7 +262,7 @@ export default function MovieDetail() {
                   className={cn(
                     'px-4 py-3 text-sm font-bold border-b-2 transition-all -mb-px',
                     activeTab === tab.key
-                      ? 'border-sky-500 text-white'
+                      ? 'border-green-500 text-white'
                       : 'border-transparent text-slate-500 hover:text-slate-300'
                   )}
                 >
@@ -293,10 +293,10 @@ export default function MovieDetail() {
                               className={cn(
                                 'text-[11px] font-black px-3 py-1.5 rounded-lg border transition-all flex items-center gap-1.5',
                                 selectedServer === idx
-                                  ? 'bg-sky-500/10 border-sky-500/60 text-sky-400'
+                                  ? 'bg-green-500/10 border-green-500/60 text-green-400'
                                   : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500'
                               )}>
-                              {idx === 0 && <span className="w-1.5 h-1.5 rounded-full bg-sky-400 shrink-0" />}
+                              {idx === 0 && <span className="w-1.5 h-1.5 rounded-full bg-green-400 shrink-0" />}
                               {movieApi.cleanServerName(ep.server_name)}
                             </button>
                           ))}
@@ -306,7 +306,7 @@ export default function MovieDetail() {
                         {currentServer?.server_data.map((ep, eIdx) => (
                           <Link key={eIdx}
                             to={`/watch/${movie.slug}/${ep.slug}?server=${encodeURIComponent(currentServer.server_name)}`}
-                            className="bg-slate-800 border border-slate-700 hover:border-sky-500 hover:bg-sky-500/10 text-slate-400 hover:text-sky-400 py-2 rounded-lg text-center text-[11px] font-bold transition-all">
+                            className="bg-slate-800 border border-slate-700 hover:border-green-500 hover:bg-green-500/10 text-slate-400 hover:text-green-400 py-2 rounded-lg text-center text-[11px] font-bold transition-all">
                             {ep.name}
                           </Link>
                         ))}
@@ -334,7 +334,7 @@ export default function MovieDetail() {
                       { icon: <Film size={15} />, label: 'Chất lượng', value: movie.quality || 'N/A' },
                     ].map(({ icon, label, value }) => (
                       <div key={label} className="flex items-center gap-2.5 bg-slate-800/60 rounded-xl p-3">
-                        <div className="text-sky-400 shrink-0">{icon}</div>
+                        <div className="text-green-400 shrink-0">{icon}</div>
                         <div>
                           <div className="text-[9px] text-slate-500 font-bold uppercase">{label}</div>
                           <div className="text-xs font-bold text-white mt-0.5 line-clamp-1">{value}</div>
@@ -345,12 +345,12 @@ export default function MovieDetail() {
                   {(movie.category?.length ?? 0) > 0 && (
                     <div>
                       <h3 className="text-sm font-black text-white mb-2 flex items-center gap-2">
-                        <span className="w-1 h-4 bg-sky-500 rounded-full shrink-0" />Thể loại
+                        <span className="w-1 h-4 bg-green-500 rounded-full shrink-0" />Thể loại
                       </h3>
                       <div className="flex flex-wrap gap-1.5">
                         {movie.category!.map(cat => (
                           <Link key={cat.id} to={`/type/${cat.slug}`}
-                            className="text-[11px] bg-slate-800 border border-slate-700 hover:border-sky-500/50 hover:text-sky-400 px-2.5 py-1 rounded-lg text-slate-300 transition-all">
+                            className="text-[11px] bg-slate-800 border border-slate-700 hover:border-green-500/50 hover:text-green-400 px-2.5 py-1 rounded-lg text-slate-300 transition-all">
                             {cat.name}
                           </Link>
                         ))}
@@ -365,7 +365,7 @@ export default function MovieDetail() {
                       <div className={cn('text-slate-400 text-sm leading-relaxed', !showFullDesc && 'line-clamp-4')}
                         dangerouslySetInnerHTML={{ __html: movie.content }} />
                       <button onClick={() => setShowFullDesc(!showFullDesc)}
-                        className="mt-2 text-xs text-sky-400 font-bold flex items-center gap-1 hover:text-sky-300 transition-colors">
+                        className="mt-2 text-xs text-green-400 font-bold flex items-center gap-1 hover:text-green-300 transition-colors">
                         {showFullDesc ? <><ChevronUp size={13} />Thu gọn</> : <><ChevronDown size={13} />Xem thêm</>}
                       </button>
                     </div>
@@ -379,7 +379,7 @@ export default function MovieDetail() {
                   {(movie.actor?.length ?? 0) > 0 && (
                     <div>
                       <h3 className="text-sm font-black text-white mb-3 flex items-center gap-2">
-                        <span className="w-1 h-4 bg-sky-500 rounded-full shrink-0" />Diễn viên
+                        <span className="w-1 h-4 bg-green-500 rounded-full shrink-0" />Diễn viên
                       </h3>
                       <div className="flex flex-wrap gap-2">
                         {movie.actor!.map((a, i) => (

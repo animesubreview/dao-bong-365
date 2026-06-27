@@ -90,7 +90,7 @@ function ComicCard({ comic, onClick }: { comic: Comic; onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className="group flex flex-col bg-slate-900 rounded-xl overflow-hidden border border-slate-800/60 hover:border-sky-500/50 transition-all duration-200 hover:scale-[1.03] hover:shadow-xl hover:shadow-sky-500/10 text-left"
+      className="group flex flex-col bg-slate-900 rounded-xl overflow-hidden border border-slate-800/60 hover:border-green-500/50 transition-all duration-200 hover:scale-[1.03] hover:shadow-xl hover:shadow-green-500/10 text-left"
     >
       <div className="relative w-full bg-slate-800" style={{ aspectRatio: '2/3' }}>
         {!allFailed ? (
@@ -106,20 +106,20 @@ function ComicCard({ comic, onClick }: { comic: Comic; onClick: () => void }) {
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
         <div className={cn(
           'absolute top-1.5 left-1.5 text-[9px] font-black px-1.5 py-0.5 rounded-md',
-          isCompleted ? 'bg-blue-600 text-white' : 'bg-sky-600 text-white'
+          isCompleted ? 'bg-blue-600 text-white' : 'bg-green-600 text-white'
         )}>
           {isCompleted ? 'Full' : 'Đang ra'}
         </div>
         {latestChap && (
           <div className="absolute bottom-1.5 right-1.5">
-            <span className="text-[10px] font-bold bg-black/75 text-sky-400 px-1.5 py-0.5 rounded">
+            <span className="text-[10px] font-bold bg-black/75 text-green-400 px-1.5 py-0.5 rounded">
               Ch.{latestChap}
             </span>
           </div>
         )}
       </div>
       <div className="px-2 py-2">
-        <p className="text-white text-[11px] font-bold line-clamp-2 leading-snug group-hover:text-sky-400 transition-colors">
+        <p className="text-white text-[11px] font-bold line-clamp-2 leading-snug group-hover:text-green-400 transition-colors">
           {comic.name}
         </p>
         {comic.origin_name?.[0] && (
@@ -164,7 +164,7 @@ function ReaderView({
           </button>
           <div className="flex-1 text-center min-w-0 px-2">
             <p className="text-white text-xs font-bold truncate">{detail.name}</p>
-            <p className="text-sky-400 text-[11px]">Chương {chap?.chapter_name}</p>
+            <p className="text-green-400 text-[11px]">Chương {chap?.chapter_name}</p>
           </div>
           {/* Chapter picker button */}
           <button
@@ -180,7 +180,7 @@ function ReaderView({
           <button
             disabled={!hasPrev}
             onClick={() => goChapter(currentIndex + 1)}
-            className="flex-1 flex items-center justify-center gap-2 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700/60 hover:border-sky-500/40 rounded-xl text-xs font-bold text-slate-300 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+            className="flex-1 flex items-center justify-center gap-2 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700/60 hover:border-green-500/40 rounded-xl text-xs font-bold text-slate-300 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all"
           >
             <SkipBack size={13} /> Chương trước
           </button>
@@ -190,7 +190,7 @@ function ReaderView({
           <button
             disabled={!hasNext}
             onClick={() => goChapter(currentIndex - 1)}
-            className="flex-1 flex items-center justify-center gap-2 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700/60 hover:border-sky-500/40 rounded-xl text-xs font-bold text-slate-300 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+            className="flex-1 flex items-center justify-center gap-2 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700/60 hover:border-green-500/40 rounded-xl text-xs font-bold text-slate-300 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all"
           >
             Chương sau <SkipForward size={13} />
           </button>
@@ -212,7 +212,7 @@ function ReaderView({
                       className={cn(
                         'px-2 py-2 rounded-lg text-xs font-bold transition-all text-center',
                         currentIndex === displayIndex
-                          ? 'bg-sky-600 text-white'
+                          ? 'bg-green-600 text-white'
                           : 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white border border-slate-700/50'
                       )}
                     >
@@ -239,13 +239,13 @@ function ReaderView({
       <div className="max-w-2xl mx-auto px-4 py-6">
         <div className="bg-slate-900 border border-slate-800/60 rounded-2xl p-4">
           <p className="text-center text-slate-400 text-xs mb-3">
-            <span className="text-white font-bold">{detail.name}</span> · Chương <span className="text-sky-400 font-bold">{chap?.chapter_name}</span>
+            <span className="text-white font-bold">{detail.name}</span> · Chương <span className="text-green-400 font-bold">{chap?.chapter_name}</span>
           </p>
           <div className="flex items-center gap-3">
             <button
               disabled={!hasPrev}
               onClick={() => goChapter(currentIndex + 1)}
-              className="flex-1 flex items-center justify-center gap-2 py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-sky-500/40 rounded-xl text-sm font-bold text-slate-300 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              className="flex-1 flex items-center justify-center gap-2 py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-green-500/40 rounded-xl text-sm font-bold text-slate-300 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all"
             >
               <SkipBack size={15} /> Chương trước
             </button>
@@ -259,7 +259,7 @@ function ReaderView({
             <button
               disabled={!hasNext}
               onClick={() => goChapter(currentIndex - 1)}
-              className="flex-1 flex items-center justify-center gap-2 py-3 bg-sky-600 hover:bg-sky-500 border border-sky-500 rounded-xl text-sm font-bold text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-lg shadow-sky-600/20"
+              className="flex-1 flex items-center justify-center gap-2 py-3 bg-green-600 hover:bg-green-500 border border-green-500 rounded-xl text-sm font-bold text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-lg shadow-green-600/20"
             >
               Chương sau <SkipForward size={15} />
             </button>
@@ -336,7 +336,7 @@ function DetailView({ slug, onBack }: { slug: string; onBack: () => void }) {
   if (readingIndex !== null && detail) {
     if (chapLoading) return (
       <div className="min-h-screen bg-black flex items-center justify-center gap-3">
-        <Loader2 className="animate-spin text-sky-400" size={28} />
+        <Loader2 className="animate-spin text-green-400" size={28} />
         <span className="text-slate-400">Đang tải chương...</span>
       </div>
     );
@@ -354,7 +354,7 @@ function DetailView({ slug, onBack }: { slug: string; onBack: () => void }) {
 
   if (loading) return (
     <div className="flex items-center justify-center py-32">
-      <Loader2 className="animate-spin text-sky-400" size={36} />
+      <Loader2 className="animate-spin text-green-400" size={36} />
     </div>
   );
   if (!detail) return <div className="text-center py-20 text-slate-400">Không tìm thấy truyện</div>;
@@ -399,7 +399,7 @@ function DetailView({ slug, onBack }: { slug: string; onBack: () => void }) {
             <span className={cn('text-xs font-bold px-2.5 py-1 rounded-full border',
               isCompleted
                 ? 'bg-blue-500/15 text-blue-300 border-blue-500/30'
-                : 'bg-sky-500/15 text-sky-300 border-sky-500/30')}>
+                : 'bg-green-500/15 text-green-300 border-green-500/30')}>
               {isCompleted ? '✓ Hoàn thành' : '⟳ Đang cập nhật'}
             </span>
             {detail.author?.map(a => (
@@ -420,7 +420,7 @@ function DetailView({ slug, onBack }: { slug: string; onBack: () => void }) {
           <p className={cn('text-slate-300 text-sm leading-relaxed', !expanded && 'line-clamp-3')}>
             {detail.content.replace(/<[^>]*>/g, '')}
           </p>
-          <button onClick={() => setExpanded(v => !v)} className="text-sky-400 text-xs mt-2 hover:text-sky-300 font-semibold">
+          <button onClick={() => setExpanded(v => !v)} className="text-green-400 text-xs mt-2 hover:text-green-300 font-semibold">
             {expanded ? '▲ Thu gọn' : '▼ Xem thêm'}
           </button>
         </div>
@@ -431,13 +431,13 @@ function DetailView({ slug, onBack }: { slug: string; onBack: () => void }) {
         <div className="flex gap-3 mb-5">
           <button
             onClick={() => handleReadChapter(0)}
-            className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-sky-500/40 rounded-xl text-sm font-bold text-slate-300 hover:text-white transition-all"
+            className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-green-500/40 rounded-xl text-sm font-bold text-slate-300 hover:text-white transition-all"
           >
             📖 Đọc từ đầu
           </button>
           <button
             onClick={() => handleReadChapter(allChapters.length - 1)}
-            className="flex-1 py-3 bg-sky-600 hover:bg-sky-500 rounded-xl text-sm font-bold text-white transition-all shadow-lg shadow-sky-600/20"
+            className="flex-1 py-3 bg-green-600 hover:bg-green-500 rounded-xl text-sm font-bold text-white transition-all shadow-lg shadow-green-600/20"
           >
             🔥 Đọc mới nhất
           </button>
@@ -447,7 +447,7 @@ function DetailView({ slug, onBack }: { slug: string; onBack: () => void }) {
       {/* Chapters */}
       <div className="bg-slate-900 rounded-2xl border border-slate-800/60 overflow-hidden">
         <div className="flex items-center gap-2 px-4 py-3.5 border-b border-slate-800/60">
-          <Layers size={15} className="text-sky-400" />
+          <Layers size={15} className="text-green-400" />
           <h2 className="text-white font-black text-sm">Danh sách chương</h2>
           <span className="text-slate-500 text-sm font-normal">({allChapters.length})</span>
         </div>
@@ -457,8 +457,8 @@ function DetailView({ slug, onBack }: { slug: string; onBack: () => void }) {
             const originalIndex = allChapters.length - 1 - i;
             return (
               <button key={i} onClick={() => handleReadChapter(originalIndex)}
-                className="px-3 py-2.5 bg-slate-800/50 hover:bg-sky-500/15 border border-slate-700/50 hover:border-sky-500/40 rounded-xl text-left transition-all group">
-                <p className="text-slate-200 text-xs font-semibold group-hover:text-sky-400 transition-colors truncate">
+                className="px-3 py-2.5 bg-slate-800/50 hover:bg-green-500/15 border border-slate-700/50 hover:border-green-500/40 rounded-xl text-left transition-all group">
+                <p className="text-slate-200 text-xs font-semibold group-hover:text-green-400 transition-colors truncate">
                   Chương {chap.chapter_name}
                 </p>
                 {chap.chapter_title && (
@@ -581,8 +581,8 @@ export default function TruyenTranh() {
 
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 rounded-xl bg-sky-500/20 border border-sky-500/30 flex items-center justify-center shrink-0">
-          <BookOpen size={20} className="text-sky-400" />
+        <div className="w-10 h-10 rounded-xl bg-green-500/20 border border-green-500/30 flex items-center justify-center shrink-0">
+          <BookOpen size={20} className="text-green-400" />
         </div>
         <div>
           <h1 className="text-white font-black text-xl">Truyện Tranh</h1>
@@ -596,7 +596,7 @@ export default function TruyenTranh() {
           <div className="relative">
             <input type="text" placeholder="Tìm tên truyện..." value={searchInput}
               onChange={e => setSearchInput(e.target.value)}
-              className="w-full bg-slate-800/70 border border-slate-700/60 rounded-full py-2.5 pl-10 pr-9 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-sky-500/50 transition-colors"
+              className="w-full bg-slate-800/70 border border-slate-700/60 rounded-full py-2.5 pl-10 pr-9 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-green-500/50 transition-colors"
             />
             <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
             {searchInput && (
@@ -612,7 +612,7 @@ export default function TruyenTranh() {
             className={cn(
               'flex items-center gap-2 px-3.5 py-2.5 rounded-full text-sm font-semibold whitespace-nowrap transition-all border',
               activeGenre
-                ? 'bg-sky-500/20 text-sky-300 border-sky-500/40'
+                ? 'bg-green-500/20 text-green-300 border-green-500/40'
                 : 'bg-slate-800/70 text-slate-400 border-slate-700/60 hover:text-white'
             )}>
             <SlidersHorizontal size={14} />
@@ -626,13 +626,13 @@ export default function TruyenTranh() {
                 <div className="max-h-72 overflow-y-auto py-1.5">
                   <button onClick={() => handleGenre('')}
                     className={cn('w-full text-left px-4 py-2.5 text-sm transition-colors hover:bg-slate-800',
-                      !activeGenre ? 'text-sky-400 font-bold' : 'text-slate-300')}>
+                      !activeGenre ? 'text-green-400 font-bold' : 'text-slate-300')}>
                     Tất cả thể loại
                   </button>
                   {genres.map(g => (
                     <button key={g._id} onClick={() => handleGenre(g.slug)}
                       className={cn('w-full text-left px-4 py-2.5 text-sm transition-colors hover:bg-slate-800',
-                        activeGenre === g.slug ? 'text-sky-400 font-bold bg-sky-500/10' : 'text-slate-300')}>
+                        activeGenre === g.slug ? 'text-green-400 font-bold bg-green-500/10' : 'text-slate-300')}>
                       {g.name}
                     </button>
                   ))}
@@ -654,7 +654,7 @@ export default function TruyenTranh() {
                 className={cn(
                   'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-all shrink-0',
                   active
-                    ? 'bg-sky-600 text-white shadow-lg shadow-sky-600/30'
+                    ? 'bg-green-600 text-white shadow-lg shadow-green-600/30'
                     : 'bg-slate-900 text-slate-400 border border-slate-800 hover:text-white hover:border-slate-700'
                 )}>
                 <Icon size={14} /> {t.label}
@@ -666,11 +666,11 @@ export default function TruyenTranh() {
 
       {/* Active filter */}
       {(searchQuery || activeGenre) && (
-        <div className="flex items-center gap-3 mb-4 px-4 py-2.5 bg-sky-500/10 border border-sky-500/20 rounded-xl">
-          <p className="text-sky-300 text-sm flex-1">
+        <div className="flex items-center gap-3 mb-4 px-4 py-2.5 bg-green-500/10 border border-green-500/20 rounded-xl">
+          <p className="text-green-300 text-sm flex-1">
             {searchQuery ? <>🔍 "<strong>{searchQuery}</strong>"</> : <>🏷 <strong>{activeGenreName}</strong></>}
           </p>
-          <button onClick={resetFilters} className="flex items-center gap-1 text-xs font-bold text-sky-400 hover:text-sky-300 transition-colors">
+          <button onClick={resetFilters} className="flex items-center gap-1 text-xs font-bold text-green-400 hover:text-green-300 transition-colors">
             <X size={11} /> Xóa
           </button>
         </div>
@@ -708,7 +708,7 @@ export default function TruyenTranh() {
             {pageNums.map(p => (
               <button key={p} onClick={() => setPage(p)}
                 className={cn('w-9 h-9 rounded-lg text-sm font-bold transition-all border',
-                  page === p ? 'bg-sky-600 text-white border-transparent shadow-lg shadow-sky-600/30' : 'bg-slate-900 text-slate-400 hover:text-white border-slate-800 hover:border-slate-700')}>
+                  page === p ? 'bg-green-600 text-white border-transparent shadow-lg shadow-green-600/30' : 'bg-slate-900 text-slate-400 hover:text-white border-slate-800 hover:border-slate-700')}>
                 {p}
               </button>
             ))}
