@@ -1,8 +1,39 @@
 [build]
-  publish = "."
-  command = "echo done"
+  command = "npm install && npm run build"
+  publish = "dist"
 
-[[headers]]
-  for = "/*"
-  [headers.values]
-    Cache-Control = "no-cache"
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "nft"
+
+# ── Edge Functions (SEO Prerender cho bot) ────────────────────────
+[[edge_functions]]
+  path = "/phim/*"
+  function = "seo-prerender"
+
+# ── Sitemap động (PHẢI đứng trước SPA fallback) ──────────────────
+[[redirects]]
+  from = "/sitemap-movies.xml"
+  to = "/.netlify/functions/sitemap-dynamic"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/sitemap-index.xml"
+  to = "/sitemap-index.xml"
+  status = 200
+  force = false
+
+# ── Telegram notify webhook ───────────────────────────────────────
+[[redirects]]
+  from = "/api/telegram-notify"
+  to = "/.netlify/functions/telegram-notify"
+  status = 200
+  force = true
+
+# ── SPA fallback (PHẢI đứng cuối cùng) ───────────────────────────
+# Không dùng force=true để file tĩnh (.xml, robots.txt) vẫn được phục vụ
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

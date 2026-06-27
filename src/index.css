@@ -1,0 +1,54 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
+
+@theme {
+  --font-sans: "Nunito", ui-sans-serif, system-ui, sans-serif;
+  --color-slate-950: #0d0d0f;
+  --color-slate-900: #141416;
+  --color-slate-800: #1c1c20;
+  --color-slate-700: #26262c;
+  --color-sky-500: #0ea5e9;
+}
+
+@layer base {
+  * { box-sizing: border-box; }
+  body {
+    @apply bg-slate-950 text-slate-300 font-sans;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-xl px-5 py-3 transition-all shadow-lg shadow-sky-600/20 flex items-center;
+  }
+  .btn-icon {
+    @apply rounded-full bg-slate-800/80 border border-slate-700/50 p-2.5 hover:bg-slate-700 transition-all duration-200;
+  }
+  .glass-card {
+    @apply bg-slate-900/80 border border-slate-800/60 rounded-xl overflow-hidden;
+  }
+  .input-field {
+    @apply w-full bg-slate-800/80 border border-slate-700/50 rounded-xl py-3 px-4 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/50 transition-all;
+  }
+  .admin-card {
+    @apply bg-slate-900/80 border border-slate-800/80 rounded-2xl p-6;
+  }
+  .section-title {
+    @apply text-xl font-black text-white;
+  }
+  .movie-card-badge {
+    @apply text-[9px] font-black uppercase px-1.5 py-0.5 rounded text-white;
+  }
+  .admin-input {
+    @apply w-full bg-slate-800/80 border border-slate-700/50 rounded-xl py-2.5 px-3.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/50 focus:border-sky-500/40 transition-all;
+  }
+  .schedule-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0.5rem;
+  }
+}
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: #0d0d0f; }
+::-webkit-scrollbar-thumb { background: #0ea5e9; border-radius: 9999px; }

@@ -1,378 +1,132 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="vi">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Đảo Phim – Tạm Dừng Hoạt Động</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    :root {
-      --ocean:   #060d1f;
-      --navy:    #0c1630;
-      --teal:    #00c9a7;
-      --gold:    #e4b96a;
-      --text:    #dde3ef;
-      --muted:   #5a6a8a;
-      --film:    #1a2540;
-    }
+    <!-- ═══ BASE STYLES (trước khi JS/CSS load — quan trọng cho Samsung TV) -->
+    <style>
+      html, body {
+        margin: 0; padding: 0;
+        background-color: #0a0a0f;
+        color: #e2e8f0;
+        font-family: 'Nunito', system-ui, sans-serif;
+        min-height: 100%;
+      }
+      #root { min-height: 100vh; background-color: #0a0a0f; }
+      /* Spinner toàn trang khi JS đang load */
+      #initial-loader {
+        position: fixed;
+        top: 0; right: 0; bottom: 0; left: 0;
+        background: #0a0a0f;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 99999;
+      }
+      #initial-loader .spin {
+        width: 48px; height: 48px;
+        border: 4px solid rgba(34,197,94,0.2);
+        border-top-color: #22c55e;
+        border-radius: 50%;
+        animation: spin-anim 0.9s linear infinite;
+      }
+      @keyframes spin-anim { to { transform: rotate(360deg); } }
+      #initial-loader p {
+        margin-top: 16px;
+        color: rgba(255,255,255,0.4);
+        font-size: 14px;
+        font-family: sans-serif;
+      }
+    </style>
 
-    html, body {
-      height: 100%;
-      background: var(--ocean);
-      color: var(--text);
-      font-family: 'DM Sans', sans-serif;
-      overflow-x: hidden;
-    }
+    <!-- ═══ PRIMARY SEO ═══════════════════════════════════════════════════ -->
+    <title>Đảo Phim - Xem Phim Miễn Phí | Phim Hay Cả Đảo</title>
+    <meta name="description" content="Đảo Phim - Xem phim online miễn phí chất lượng cao HD. Phim bộ, phim lẻ, hoạt hình, anime, phim chiếu rạp Vietsub, thuyết minh, lồng tiếng. Cập nhật liên tục mỗi ngày." />
+    <meta name="keywords" content="xem phim miễn phí, phim online, phim vietsub, phim thuyết minh, phim bộ, phim lẻ, hoạt hình, anime, phim chiếu rạp, đảo phim, daophim" />
+    <meta name="author" content="Đảo Phim" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <link rel="canonical" href="https://daophim.lol/" />
 
-    /* ── Stars ─────────────────────────────── */
-    .stars {
-      position: fixed; inset: 0; z-index: 0;
-      pointer-events: none;
-    }
-    .star {
-      position: absolute;
-      border-radius: 50%;
-      background: #fff;
-      opacity: 0;
-      animation: twinkle var(--d, 3s) ease-in-out infinite var(--delay, 0s);
-    }
-    @keyframes twinkle {
-      0%,100% { opacity: 0; transform: scale(.7); }
-      50%      { opacity: var(--op, .7); transform: scale(1); }
-    }
+    <!-- ═══ FAVICON ════════════════════════════════════════════════════════ -->
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon.png" />
+    <link rel="shortcut icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/favicon.png" />
+    <meta name="theme-color" content="#22c55e" />
 
-    /* ── Waves ─────────────────────────────── */
-    .waves-wrap {
-      position: fixed; bottom: 0; left: 0; right: 0;
-      height: 120px; z-index: 0; overflow: hidden; pointer-events: none;
-    }
-    .wave {
-      position: absolute; bottom: 0; left: -50%; width: 200%;
-      border-radius: 40%;
-    }
-    .wave1 {
-      height: 80px;
-      background: rgba(0,201,167,.10);
-      animation: wave 7s linear infinite;
-    }
-    .wave2 {
-      height: 60px;
-      background: rgba(0,201,167,.06);
-      animation: wave 10s linear infinite reverse;
-    }
-    @keyframes wave {
-      from { transform: rotate(0deg) translateY(8px); }
-      to   { transform: rotate(360deg) translateY(8px); }
-    }
+    <!-- ═══ OPEN GRAPH ════════════════════════════════════════════════════ -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Đảo Phim" />
+    <meta property="og:title" content="Đảo Phim - Xem Phim Miễn Phí | Phim Hay Cả Đảo" />
+    <meta property="og:description" content="Xem phim online miễn phí chất lượng cao HD. Phim bộ, phim lẻ, hoạt hình, anime Vietsub, thuyết minh, lồng tiếng. Cập nhật liên tục." />
+    <meta property="og:url" content="https://daophim.lol/" />
+    <meta property="og:image" content="https://sf-static.upanhlaylink.com/img/image_2026051206bab16347f075d07864efb55a5224ea.jpg" />
+    <meta property="og:locale" content="vi_VN" />
 
-    /* ── Layout ─────────────────────────────── */
-    .page {
-      position: relative; z-index: 1;
-      min-height: 100dvh;
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      padding: 24px 20px 140px;
-    }
+    <!-- ═══ TWITTER CARD ══════════════════════════════════════════════════ -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Đảo Phim - Xem Phim Miễn Phí" />
+    <meta name="twitter:description" content="Xem phim online miễn phí chất lượng cao HD." />
+    <meta name="twitter:image" content="https://sf-static.upanhlaylink.com/img/image_2026051206bab16347f075d07864efb55a5224ea.jpg" />
 
-    /* ── Film-strip card ─────────────────────── */
-    .card-wrap {
-      width: 100%; max-width: 500px;
-      position: relative;
+    <!-- ═══ SCHEMA.ORG ════════════════════════════════════════════════════ -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Đảo Phim",
+      "url": "https://daophim.lol",
+      "description": "Trang xem phim online miễn phí chất lượng cao Vietsub, thuyết minh, lồng tiếng full HD.",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": { "@type": "EntryPoint", "urlTemplate": "https://daophim.lol/search?q={search_term_string}" },
+        "query-input": "required name=search_term_string"
+      }
     }
+    </script>
 
-    /* sprocket holes top & bottom */
-    .sprockets {
-      display: flex; gap: 10px; justify-content: center;
-      padding: 8px 0;
-      background: var(--film);
-    }
-    .hole {
-      width: 14px; height: 10px;
-      border-radius: 3px;
-      background: var(--ocean);
-      flex-shrink: 0;
-    }
-
-    .card {
-      background: var(--navy);
-      border-left: 6px solid var(--film);
-      border-right: 6px solid var(--film);
-      padding: 36px 32px 28px;
-      position: relative;
-      overflow: hidden;
-    }
-
-    /* film grain overlay */
-    .card::before {
-      content: '';
-      position: absolute; inset: 0;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.04'/%3E%3C/svg%3E");
-      background-size: 150px;
-      opacity: .6;
-      pointer-events: none;
-    }
-
-    /* ── Logo / title area ─────────────────── */
-    .eyebrow {
-      font-family: 'DM Sans', sans-serif;
-      font-size: 11px; font-weight: 600;
-      letter-spacing: .25em;
-      text-transform: uppercase;
-      color: var(--teal);
-      margin-bottom: 10px;
-    }
-    .logo-text {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: clamp(52px, 14vw, 80px);
-      line-height: .9;
-      letter-spacing: .04em;
-      background: linear-gradient(135deg, #fff 0%, var(--gold) 55%, #c49040 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-    .domain {
-      font-size: 12px; color: var(--muted);
-      letter-spacing: .12em;
-      margin-top: 4px;
-    }
-
-    /* ── Divider ─────────────────────────────── */
-    .divider {
-      display: flex; align-items: center; gap: 12px;
-      margin: 22px 0;
-    }
-    .divider-line { flex: 1; height: 1px; background: rgba(255,255,255,.08); }
-    .divider-icon { font-size: 18px; opacity: .5; }
-
-    /* ── Body copy ─────────────────────────── */
-    .headline {
-      font-size: 17px; font-weight: 600;
-      color: var(--text); line-height: 1.45;
-      margin-bottom: 10px;
-    }
-    .body-text {
-      font-size: 14px; font-weight: 300;
-      color: #8fa0c0; line-height: 1.7;
-    }
-
-    /* ── Countdown ─────────────────────────── */
-    .countdown-label {
-      font-size: 11px; font-weight: 600; letter-spacing: .2em;
-      text-transform: uppercase; color: var(--teal);
-      margin: 24px 0 10px;
-    }
-    .countdown {
-      display: flex; gap: 10px;
-    }
-    .cd-block {
-      flex: 1; text-align: center;
-      background: rgba(0,201,167,.07);
-      border: 1px solid rgba(0,201,167,.18);
-      border-radius: 10px;
-      padding: 12px 6px 8px;
-    }
-    .cd-num {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: clamp(28px, 8vw, 40px);
-      line-height: 1;
-      color: var(--teal);
-      display: block;
-      letter-spacing: .04em;
-    }
-    .cd-unit {
-      font-size: 10px; color: var(--muted);
-      letter-spacing: .12em; text-transform: uppercase;
-      margin-top: 4px;
-    }
-
-    /* ── Notice box ─────────────────────────── */
-    .notice {
-      margin-top: 20px;
-      background: rgba(228,185,106,.06);
-      border: 1px solid rgba(228,185,106,.22);
-      border-radius: 10px;
-      padding: 12px 14px;
-      font-size: 13px; color: #b8a070; line-height: 1.6;
-    }
-    .notice strong { color: var(--gold); }
-
-    /* ── CTA button ─────────────────────────── */
-    .cta-wrap { margin-top: 24px; }
-    .cta-btn {
-      display: flex; align-items: center; justify-content: center;
-      gap: 10px; width: 100%;
-      padding: 14px 20px;
-      border-radius: 12px;
-      background: linear-gradient(135deg, #1a1a2e 0%, #010101 100%);
-      border: 1.5px solid rgba(255,255,255,.12);
-      color: #fff;
-      font-family: 'DM Sans', sans-serif;
-      font-size: 14px; font-weight: 600;
-      cursor: pointer; text-decoration: none;
-      transition: border-color .25s, box-shadow .25s, transform .15s;
-      position: relative; overflow: hidden;
-    }
-    .cta-btn::before {
-      content: '';
-      position: absolute; inset: 0;
-      background: linear-gradient(135deg, #ff0050 0%, #ee1d52 50%, #69c9d0 100%);
-      opacity: 0;
-      transition: opacity .3s;
-    }
-    .cta-btn:hover::before { opacity: 1; }
-    .cta-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(238,29,82,.35); border-color: transparent; }
-    .cta-btn:active { transform: translateY(0); }
-    .cta-btn > * { position: relative; z-index: 1; }
-    .tiktok-icon {
-      width: 20px; height: 20px;
-      background: #fff;
-      border-radius: 5px;
-      display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0;
-    }
-    .tiktok-icon svg { width: 13px; height: 13px; }
-    .cta-sub {
-      margin-top: 8px;
-      text-align: center;
-      font-size: 11px; color: var(--muted);
-    }
-
-    /* ── Footer ─────────────────────────────── */
-    .footer-note {
-      margin-top: 20px;
-      text-align: center;
-      font-size: 12px; color: var(--muted);
-      line-height: 1.7;
-    }
-
-    @media (max-width: 380px) {
-      .card { padding: 28px 18px 22px; }
-    }
-  </style>
-</head>
-<body>
-
-<!-- Stars -->
-<div class="stars" id="stars"></div>
-
-<!-- Waves -->
-<div class="waves-wrap">
-  <div class="wave wave1"></div>
-  <div class="wave wave2"></div>
-</div>
-
-<div class="page">
-  <div class="card-wrap">
-    <!-- Top sprockets -->
-    <div class="sprockets" id="sp-top"></div>
-
-    <!-- Main card -->
-    <div class="card">
-      <p class="eyebrow">🎬 Thông Báo Quan Trọng</p>
-      <div class="logo-text">Đảo Phim</div>
-      <p class="domain">daophim.online</p>
-
-      <div class="divider">
-        <div class="divider-line"></div>
-        <span class="divider-icon">🏝️</span>
-        <div class="divider-line"></div>
-      </div>
-
-      <p class="headline">Trang web đang tạm dừng hoạt động</p>
-      <p class="body-text">
-        Cảm ơn tất cả mọi người đã theo dõi và xem phim trên Đảo Phim trong thời gian qua.
-        Hiện tại chúng mình cần tạm dừng để sắp xếp lại — hẹn gặp lại các bạn sớm nhất có thể! 🙏
-      </p>
-
-      <p class="countdown-label">⏳ Dự kiến hoạt động trở lại sau</p>
-      <div class="countdown">
-        <div class="cd-block"><span class="cd-num" id="cd-d">--</span><div class="cd-unit">Ngày</div></div>
-        <div class="cd-block"><span class="cd-num" id="cd-h">--</span><div class="cd-unit">Giờ</div></div>
-        <div class="cd-block"><span class="cd-num" id="cd-m">--</span><div class="cd-unit">Phút</div></div>
-        <div class="cd-block"><span class="cd-num" id="cd-s">--</span><div class="cd-unit">Giây</div></div>
-      </div>
-
-      <div class="notice">
-        ⚠️ <strong>Lưu ý:</strong> Trang web sẽ tạm dừng đến <strong>01/07/2026</strong>
-        hoặc có thể hơn thế. Thời gian có thể thay đổi tùy tình hình thực tế.
-      </div>
-
-      <div class="cta-wrap">
-        <a href="https://tiktok.me/group/ZS9KPEXUP/" target="_blank" rel="noopener noreferrer" class="cta-btn">
-          <span class="tiktok-icon">
-            <svg viewBox="0 0 24 24" fill="#010101" xmlns="http://www.w3.org/2000/svg">
-              <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V9.69a8.16 8.16 0 004.77 1.52V7.68a4.85 4.85 0 01-1-.99z"/>
-            </svg>
-          </span>
-          <span>Vào nhóm TikTok để nhận thông báo</span>
-        </a>
-        <p class="cta-sub">Nhấn để theo dõi cập nhật mới nhất từ Đảo Phim</p>
-      </div>
+    <!-- ═══ GOOGLE ════════════════════════════════════════════════════════ -->
+    <meta name="google-site-verification" content="YElbV7r9_oAbqpIEMYTRF6CiOuDvgduKLLeLCGasjxM" />
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-SPRW1XKQ2L"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-SPRW1XKQ2L');
+    </script>
+  </head>
+  <body>
+    <!-- Loader hiện khi JS chưa chạy xong (Samsung TV cần thêm thời gian) -->
+    <div id="initial-loader">
+      <div class="spin"></div>
+      <p>Đang tải Đảo Phim...</p>
     </div>
 
-    <!-- Bottom sprockets -->
-    <div class="sprockets" id="sp-bot"></div>
+    <div id="root"></div>
 
-    <p class="footer-note">
-      © 2026 Đảo Phim · daophim.online<br>
-      Cảm ơn cộng đồng đã đồng hành ❤️
-    </p>
-  </div>
-</div>
+    <script>
+      // Ẩn loader khi React đã render xong
+      document.addEventListener('DOMContentLoaded', function() {
+        var checkRoot = setInterval(function() {
+          var root = document.getElementById('root');
+          if (root && root.children.length > 0) {
+            var loader = document.getElementById('initial-loader');
+            if (loader) loader.style.display = 'none';
+            clearInterval(checkRoot);
+          }
+        }, 200);
+        // Buộc ẩn sau 15 giây dù sao
+        setTimeout(function() {
+          var loader = document.getElementById('initial-loader');
+          if (loader) loader.style.display = 'none';
+          clearInterval(checkRoot);
+        }, 15000);
+      });
+    </script>
 
-<script>
-  /* ── Generate stars ── */
-  const starsEl = document.getElementById('stars');
-  for (let i = 0; i < 120; i++) {
-    const s = document.createElement('div');
-    s.className = 'star';
-    const size = Math.random() * 2.5 + .5;
-    s.style.cssText = `
-      width:${size}px; height:${size}px;
-      left:${Math.random()*100}%; top:${Math.random()*75}%;
-      --d:${(Math.random()*4+2).toFixed(1)}s;
-      --delay:${(Math.random()*5).toFixed(1)}s;
-      --op:${(Math.random()*.6+.2).toFixed(2)};
-    `;
-    starsEl.appendChild(s);
-  }
-
-  /* ── Generate sprocket holes ── */
-  function makeSprockets(el) {
-    for (let i = 0; i < 18; i++) {
-      const h = document.createElement('div');
-      h.className = 'hole';
-      el.appendChild(h);
-    }
-  }
-  makeSprockets(document.getElementById('sp-top'));
-  makeSprockets(document.getElementById('sp-bot'));
-
-  /* ── Countdown ── */
-  const target = new Date('2026-07-01T00:00:00+07:00').getTime();
-  function pad(n){ return String(Math.max(0, n)).padStart(2,'0'); }
-  function tick() {
-    const now = Date.now();
-    const diff = target - now;
-    if (diff <= 0) {
-      ['cd-d','cd-h','cd-m','cd-s'].forEach(id => document.getElementById(id).textContent = '00');
-      return;
-    }
-    const d = Math.floor(diff / 86400000);
-    const h = Math.floor((diff % 86400000) / 3600000);
-    const m = Math.floor((diff % 3600000) / 60000);
-    const s = Math.floor((diff % 60000) / 1000);
-    document.getElementById('cd-d').textContent = pad(d);
-    document.getElementById('cd-h').textContent = pad(h);
-    document.getElementById('cd-m').textContent = pad(m);
-    document.getElementById('cd-s').textContent = pad(s);
-  }
-  tick();
-  setInterval(tick, 1000);
-</script>
-</body>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>
