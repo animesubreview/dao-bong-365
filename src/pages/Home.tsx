@@ -334,7 +334,7 @@ function LazySection({ title, to, fetch: fetchFn, color }: {
 
 /* ─── Interest chips — "Bạn đang quan tâm gì?" ──────────────── */
 const INTEREST = [
-  { label:'Top ImDb',   to:'/search?q=imdb',       g:'from-amber-500 to-orange-400' },
+  { label:'Top ImDb',   to:'/search?q=imdb',       g:'from-green-500 to-emerald-400' },
   { label:'Thuyết Minh',to:'/search?q=thuyết minh',g:'from-teal-500 to-cyan-400' },
   { label:'Phim 4K',    to:'/search?q=4k',          g:'from-purple-500 to-pink-400' },
   { label:'Anime Hot',  to:'/type/hoat-hinh',        g:'from-pink-500 to-rose-400' },
@@ -357,7 +357,7 @@ const LAZY_SECTIONS = [
   { title:'Phim Hài Hước',         to:'/type/phim-le',    color:'text-white',       fetch: () => movieApi.searchMovies('hài hước',1,24).then(r=>r.items) },
   { title:'Phim Việt Nam',         to:'/type/phim-bo',    color:'text-yellow-300',  fetch: () => movieApi.searchMovies('việt nam',1,24).then(r=>r.items) },
   { title:'TV Shows',               to:'/type/tv-shows',   color:'text-white',       fetch: () => movieApi.getMoviesByType('tv-shows',1,24).then(r=>r.items) },
-  { title:'Phim Cổ Trang',         to:'/type/phim-bo',    color:'text-amber-300',   fetch: () => movieApi.searchMovies('cổ trang',1,24).then(r=>r.items) },
+  { title:'Phim Cổ Trang',         to:'/type/phim-bo',    color:'text-green-300',   fetch: () => movieApi.searchMovies('cổ trang',1,24).then(r=>r.items) },
   { title:'Phim Hình Sự',          to:'/type/phim-le',    color:'text-white',       fetch: () => movieApi.searchMovies('hình sự',1,24).then(r=>r.items) },
 ];
 

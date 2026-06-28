@@ -76,7 +76,7 @@ export default function Footer() {
               return (
                 <Link key={item.to} to={item.to}
                   className="flex-1 flex flex-col items-center justify-center gap-1 py-2.5 transition-colors"
-                  style={{ color: active ? '#f59e0b' : '#64748b' }}>
+                  style={{ color: active ? '#22c55e' : '#64748b' }}>
                   {/* icon with active bg circle */}
                   <div className="relative">
                     <item.icon size={22} strokeWidth={active ? 2.5 : 1.8} />

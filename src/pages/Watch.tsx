@@ -400,9 +400,9 @@ export default function Watch() {
             <div className="flex items-center gap-2 px-4 py-3 border-b border-white/5">
               <div className="flex items-center gap-2">
                 <div className="flex flex-col gap-0.5 shrink-0">
-                  <span className="w-4 h-0.5 bg-amber-400 rounded-full block" />
-                  <span className="w-4 h-0.5 bg-amber-400 rounded-full block" />
-                  <span className="w-4 h-0.5 bg-amber-400 rounded-full block" />
+                  <span className="w-4 h-0.5 bg-green-500 rounded-full block" />
+                  <span className="w-4 h-0.5 bg-green-500 rounded-full block" />
+                  <span className="w-4 h-0.5 bg-green-500 rounded-full block" />
                 </div>
                 <span className="text-white font-black text-base">Phần 1</span>
                 <ChevronDown size={16} className="text-slate-400 mt-0.5" />
@@ -462,7 +462,7 @@ export default function Watch() {
                   onClick={() => setShowThumbs(v => !v)}
                   className={cn(
                     'w-11 h-6 rounded-full transition-all relative border',
-                    showThumbs ? 'bg-amber-400 border-amber-400' : 'bg-slate-700 border-slate-600'
+                    showThumbs ? 'bg-green-500 border-green-500' : 'bg-slate-700 border-slate-600'
                   )}
                 >
                   <span className={cn(
@@ -491,8 +491,8 @@ export default function Watch() {
                         ? 'flex items-center gap-3 px-3 py-2.5 text-left'
                         : 'py-2.5',
                       ep.slug === episodeSlug
-                        ? 'bg-amber-400 border-amber-400 text-slate-950 shadow-lg shadow-amber-500/30'
-                        : 'bg-[#2a2a2a] border-slate-700/50 text-slate-400 hover:border-amber-400/40 hover:text-amber-300'
+                        ? 'bg-green-500 border-green-500 text-white shadow-lg shadow-green-500/30'
+                        : 'bg-[#2a2a2a] border-slate-700/50 text-slate-400 hover:border-green-500/40 hover:text-green-300'
                     )}
                   >
                     {showThumbs && (

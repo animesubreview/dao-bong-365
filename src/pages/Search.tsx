@@ -81,7 +81,7 @@ export default function Search() {
               const inp = document.querySelector<HTMLInputElement>('input[placeholder="Tìm phim, diễn viên..."]');
               if (inp) setQuery(inp.value.trim());
             }}
-            className="bg-amber-400 hover:bg-amber-300 text-slate-950 font-black px-5 py-3 rounded-2xl text-sm transition-all shrink-0">
+            className="bg-green-500 hover:bg-green-400 text-slate-950 font-black px-5 py-3 rounded-2xl text-sm transition-all shrink-0">
             Tìm
           </button>
         </div>

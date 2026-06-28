@@ -26,42 +26,36 @@ function useSiteSettings() {
   return settings;
 }
 
-// Logo chỉ hiện 1 lần — text style giống khoiphim, kèm ảnh nhỏ logo
+// ── Logo Đảo Phim — image 2 style: circle logo + ĐẢO white + PHIM green ──
 const SITE_LOGO_URL = 'https://sf-static.upanhlaylink.com/img/image_202606278a6e7d9058c777bdc68dcd15405544b5.jpg';
 
 function Logo({ settings }: { settings: any }) {
   const name: string = settings.siteName || 'ĐẢO PHIM';
 
+  // If custom image logo
   if (settings.logoType === 'image' && settings.logoImage)
     return (
       <div className="flex items-center gap-2">
-        <img src={SITE_LOGO_URL} alt="logo" className="h-7 w-7 rounded-full object-cover ring-1 ring-green-500/40 shrink-0" />
+        <img src={SITE_LOGO_URL} alt="Đảo Phim" className="h-9 w-9 rounded-full object-cover ring-2 ring-green-500/60 shrink-0" />
         <img src={settings.logoImage} alt={name} className="h-8 w-auto object-contain max-w-[130px]" />
       </div>
     );
 
-  // Tách chữ đầu tiên để tô màu green
-  const parts = name.split('.');
-  if (parts.length >= 2) {
-    return (
-      <div className="flex items-center gap-2">
-        <img src={SITE_LOGO_URL} alt="logo" className="h-7 w-7 rounded-full object-cover ring-1 ring-green-500/40 shrink-0" />
-        <span className="text-xl font-black tracking-tight">
-          <span className="text-white">{parts[0]}</span>
-          <span className="text-green-400">.</span>
-          <span className="text-white">{parts.slice(1).join('.')}</span>
-        </span>
-      </div>
-    );
-  }
-
+  // Default: "ĐẢO" white + "PHIM" green — matching image 2 & 3
   const words = name.trim().split(' ');
+  const first = words[0] || 'ĐẢO';
+  const rest = words.slice(1).join(' ') || 'PHIM';
+
   return (
-    <div className="flex items-center gap-2">
-      <img src={SITE_LOGO_URL} alt="logo" className="h-7 w-7 rounded-full object-cover ring-1 ring-green-500/40 shrink-0" />
-      <span className="text-xl font-black tracking-tight">
-        <span className="text-white">{words[0]}</span>
-        {words.length > 1 && <span className="text-green-400"> {words.slice(1).join(' ')}</span>}
+    <div className="flex items-center gap-2.5">
+      <img
+        src={SITE_LOGO_URL}
+        alt="Đảo Phim"
+        className="h-9 w-9 rounded-full object-cover ring-2 ring-green-500/50 shrink-0 shadow-lg shadow-green-500/20"
+      />
+      <span className="text-[18px] font-black tracking-wide leading-none">
+        <span className="text-white">{first} </span>
+        <span className="text-green-400">{rest}</span>
       </span>
     </div>
   );
@@ -467,10 +461,10 @@ export default function Header() {
 
                   {/* VIP → /mua-vip */}
                   <Link to="/mua-vip" onClick={() => setIsMenuOpen(false)}
-                    className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold text-amber-200 hover:text-white hover:bg-amber-500/10 transition-all">
-                    <Crown size={17} className="text-amber-400 shrink-0" />
+                    className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold text-yellow-300 hover:text-white hover:bg-green-500/10 transition-all">
+                    <Crown size={17} className="text-green-400 shrink-0" />
                     <span className="flex-1">Mua VIP · Chặn QC</span>
-                    <ChevronRight size={14} className="text-amber-600" />
+                    <ChevronRight size={14} className="text-yellow-500" />
                   </Link>
                 </div>
 

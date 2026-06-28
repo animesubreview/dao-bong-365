@@ -48,8 +48,8 @@ export const VIP_META: Record<VipTier, { label: string; color: string; gradient:
   },
   SSVIP: {
     label: 'SSVIP',
-    color: 'text-amber-300',
-    gradient: 'from-amber-400 to-orange-500',
+    color: 'text-green-300',
+    gradient: 'from-green-500 to-orange-500',
     days: 30,
     icon: '👑',
   },

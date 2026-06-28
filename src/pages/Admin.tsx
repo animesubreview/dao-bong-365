@@ -99,7 +99,7 @@ function SectionCard({ id, title, icon: Icon, children, color = 'indigo' }: any)
     blue: 'from-blue-500 to-indigo-500 shadow-blue-500/20',
     cyan: 'from-cyan-500 to-blue-500 shadow-cyan-500/20',
     red: 'from-red-500 to-orange-500 shadow-red-500/20',
-    amber: 'from-amber-500 to-yellow-500 shadow-amber-500/20',
+    amber: 'from-amber-500 to-yellow-500 shadow-green-500/20',
   };
   const accent = accents[color] || accents.indigo;
   return (
@@ -1525,7 +1525,7 @@ function VipSection({ onToast }: { onToast: (msg: string, t: 'success' | 'error'
     <SectionCard title="Gói VIP · Chặn Quảng Cáo" icon={Crown} color="orange">
       <div className="flex flex-col gap-5">
         <p className="text-sm text-slate-400">
-          User mua VIP bằng số dư tài khoản sẽ được <span className="text-amber-400 font-bold">tắt hoàn toàn quảng cáo</span> trong thời hạn gói.
+          User mua VIP bằng số dư tài khoản sẽ được <span className="text-green-400 font-bold">tắt hoàn toàn quảng cáo</span> trong thời hạn gói.
           Admin luôn miễn QC. Thay đổi giá có hiệu lực ngay.
         </p>
 
@@ -1558,14 +1558,14 @@ function VipSection({ onToast }: { onToast: (msg: string, t: 'success' | 'error'
         <button
           onClick={save}
           disabled={saving}
-          className="flex items-center gap-2 px-5 py-2.5 bg-amber-500 hover:bg-amber-400 disabled:opacity-60 text-white font-bold rounded-xl transition-colors w-fit"
+          className="flex items-center gap-2 px-5 py-2.5 bg-green-500 hover:bg-green-500 disabled:opacity-60 text-white font-bold rounded-xl transition-colors w-fit"
         >
           <Save size={15} />
           {saving ? 'Đang lưu...' : 'Lưu giá VIP'}
         </button>
 
         <div className="bg-slate-800/40 border border-amber-500/20 rounded-xl p-4 text-xs text-slate-500 flex flex-col gap-1">
-          <p className="font-bold text-amber-400 mb-1">📌 Lưu ý</p>
+          <p className="font-bold text-green-400 mb-1">📌 Lưu ý</p>
           <p>• Giá VIP tính bằng VNĐ, trừ từ số dư tài khoản người dùng.</p>
           <p>• Người dùng nạp tiền qua thẻ cào, sau đó dùng số dư để mua gói.</p>
           <p>• Gói VIP cộng dồn thời gian nếu user còn VIP hạn cũ.</p>
