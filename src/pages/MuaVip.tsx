@@ -50,15 +50,15 @@ export default function MuaVip() {
   const VIP_FEATURES = [
     { icon: ShieldCheck, label: 'Chặn toàn bộ quảng cáo', color: 'text-green-400' },
     { icon: Zap, label: 'Tốc độ tải nhanh hơn', color: 'text-yellow-400' },
-    { icon: Crown, label: 'Badge VIP trên hồ sơ', color: 'text-green-400' },
+    { icon: Crown, label: 'Badge VIP trên hồ sơ', color: 'text-amber-400' },
   ];
 
   return (
     <div className="min-h-screen bg-[#0f1117] text-white pb-24">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-[#0f1117]/95 backdrop-blur border-b border-slate-800/60 px-4 py-3 flex items-center gap-3">
-        <div className="w-8 h-8 bg-green-500/20 border border-amber-500/40 rounded-xl flex items-center justify-center">
-          <Crown size={16} className="text-green-400" />
+        <div className="w-8 h-8 bg-amber-500/20 border border-amber-500/40 rounded-xl flex items-center justify-center">
+          <Crown size={16} className="text-amber-400" />
         </div>
         <h1 className="text-base font-black text-white tracking-wide">MUA VIP · CHẶN QC</h1>
       </div>
@@ -67,14 +67,14 @@ export default function MuaVip() {
 
         {/* Hero banner */}
         <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-950/60 via-slate-900 to-slate-900 border border-amber-500/25 p-5">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-green-500/10 rounded-full blur-2xl -translate-y-8 translate-x-8 pointer-events-none" />
+          <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl -translate-y-8 translate-x-8 pointer-events-none" />
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-green-500 to-orange-500 flex items-center justify-center shadow-lg">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg">
               <Crown size={24} className="text-white" strokeWidth={2.5} />
             </div>
             <div>
               <p className="text-lg font-black text-white leading-tight">Nâng cấp VIP</p>
-              <p className="text-xs text-green-300/70">Trải nghiệm xem phim không giới hạn</p>
+              <p className="text-xs text-amber-300/70">Trải nghiệm xem phim không giới hạn</p>
             </div>
           </div>
           <div className="flex flex-col gap-1.5">
@@ -98,11 +98,11 @@ export default function MuaVip() {
               </div>
             </div>
             {isVipActive(session.vipExpiry) && session.vipTier ? (
-              <div className="flex items-center gap-2 bg-green-500/15 border border-amber-500/30 rounded-xl px-3 py-2">
-                <Crown size={13} className="text-green-400" />
+              <div className="flex items-center gap-2 bg-amber-500/15 border border-amber-500/30 rounded-xl px-3 py-2">
+                <Crown size={13} className="text-amber-400" />
                 <div>
-                  <p className="text-xs font-black text-green-300">{VIP_META[session.vipTier].label} đang hoạt động</p>
-                  <p className="text-[10px] text-green-400/60">{vipExpiryText(session.vipExpiry)}</p>
+                  <p className="text-xs font-black text-amber-300">{VIP_META[session.vipTier].label} đang hoạt động</p>
+                  <p className="text-[10px] text-amber-400/60">{vipExpiryText(session.vipExpiry)}</p>
                 </div>
               </div>
             ) : (

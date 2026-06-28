@@ -25,8 +25,8 @@ function RoleBadge({ role, isAdminReply }: { role?: string; isAdminReply?: boole
   if (role === 'admin' || isAdminReply) {
     return (
       <span className="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full
-        bg-gradient-to-r from-green-500 to-green-600 text-white shadow-sm shadow-green-500/40
-        border border-green-500/40">
+        bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-sm shadow-amber-500/40
+        border border-amber-400/40">
         <Shield size={9} className="fill-current" />
         ADMIN
       </span>
@@ -166,7 +166,7 @@ export default function CommentSection({ movieSlug }: Props) {
         exit={{ opacity: 0, x: -20 }}
         className={`flex gap-3 rounded-2xl p-4 ${
           isAdminComment
-            ? 'bg-gradient-to-r from-green-500/8 to-green-600/5 border border-green-500/25 shadow-sm shadow-green-500/10'
+            ? 'bg-gradient-to-r from-amber-500/8 to-orange-500/5 border border-amber-500/25 shadow-sm shadow-amber-500/10'
             : isReply
             ? 'bg-slate-900/30 border border-slate-800/30'
             : 'bg-slate-900/50 border border-slate-800/40'
@@ -175,7 +175,7 @@ export default function CommentSection({ movieSlug }: Props) {
         <div className="relative shrink-0">
           <img src={c.avatar} alt={c.username} className="w-9 h-9 rounded-full bg-slate-700" />
           {isAdminComment && (
-            <span className="absolute -bottom-1 -right-1 w-4 h-4 bg-gradient-to-br from-green-500 to-orange-500 rounded-full flex items-center justify-center shadow">
+            <span className="absolute -bottom-1 -right-1 w-4 h-4 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center shadow">
               <Shield size={9} className="text-white fill-current" />
             </span>
           )}
@@ -183,7 +183,7 @@ export default function CommentSection({ movieSlug }: Props) {
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2 mb-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className={`text-sm font-bold ${isAdminComment ? 'text-green-300' : 'text-white'}`}>
+              <span className={`text-sm font-bold ${isAdminComment ? 'text-amber-300' : 'text-white'}`}>
                 {c.username}
               </span>
               {isAdminComment && <RoleBadge isAdminReply />}
@@ -251,7 +251,7 @@ export default function CommentSection({ movieSlug }: Props) {
       >
         <div className={`rounded-2xl p-3 ${
           isAdmin
-            ? 'bg-gradient-to-r from-green-500/10 to-green-600/5 border border-green-500/30'
+            ? 'bg-gradient-to-r from-amber-500/10 to-orange-500/5 border border-amber-500/30'
             : 'bg-slate-900/60 border border-slate-800/50'
         }`}>
           <div className="flex gap-2 items-start">
@@ -259,7 +259,7 @@ export default function CommentSection({ movieSlug }: Props) {
             <div className="flex-1 flex flex-col gap-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className={`text-xs font-bold ${isAdmin ? 'text-green-300' : 'text-white'}`}>
+                  <span className={`text-xs font-bold ${isAdmin ? 'text-amber-300' : 'text-white'}`}>
                     {profile.username}
                   </span>
                   <RoleBadge role={profile.role} />
@@ -287,7 +287,7 @@ export default function CommentSection({ movieSlug }: Props) {
                 maxLength={500}
                 className={`w-full bg-slate-800/60 border rounded-xl px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 resize-none transition-all ${
                   isAdmin
-                    ? 'border-green-500/30 focus:ring-green-500/30 focus:border-green-500/40'
+                    ? 'border-amber-500/30 focus:ring-amber-500/30 focus:border-amber-500/40'
                     : 'border-slate-700/50 focus:ring-green-500/40 focus:border-green-500/30'
                 }`}
               />
@@ -298,7 +298,7 @@ export default function CommentSection({ movieSlug }: Props) {
                   disabled={replySubmitting || !replyText.trim()}
                   className={`flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed font-black text-xs px-4 py-1.5 rounded-full transition-all active:scale-95 ${
                     isAdmin
-                      ? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-sm shadow-green-500/30 hover:from-green-400 hover:to-green-500'
+                      ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-sm shadow-amber-500/30 hover:from-amber-400 hover:to-orange-400'
                       : 'bg-green-500 hover:bg-green-400 text-slate-950'
                   }`}
                 >

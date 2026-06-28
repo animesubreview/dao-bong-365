@@ -26,7 +26,7 @@ function useSiteSettings() {
   return settings;
 }
 
-// ── Logo Đảo Phim — ảnh local, nền trong suốt thật (icon + chữ + tagline) ──
+// ── Logo Đảo Phim — ảnh local duy nhất, nền trong suốt (icon + chữ + tagline) ──
 const SITE_LOGO_URL = '/assets/logo-daophim.png';
 
 function Logo({ settings }: { settings: any }) {
@@ -37,7 +37,7 @@ function Logo({ settings }: { settings: any }) {
       <img
         src={SITE_LOGO_URL}
         alt={name}
-        className="h-12 sm:h-14 w-auto object-contain shrink-0"
+        className="h-10 sm:h-12 w-auto object-contain shrink-0"
       />
     </div>
   );
@@ -131,7 +131,25 @@ export default function Header() {
     return () => { document.body.style.overflow = ''; };
   }, [isMenuOpen]);
 
-  // Header luôn nền đen đặc — không còn hiệu ứng trong suốt khi ở đầu trang
+  // Header scroll effect
+  useEffect(() => {
+    const header = document.getElementById('main-header');
+    if (!header) return;
+    const onScroll = () => {
+      if (window.scrollY > 60) {
+        header.style.background = 'rgba(10,10,10,0.97)';
+        header.style.backdropFilter = 'blur(20px)';
+        header.style.borderBottomColor = 'rgba(255,255,255,0.06)';
+      } else {
+        header.style.background = 'linear-gradient(to bottom, rgba(0,0,0,0.65) 0%, transparent 100%)';
+        header.style.backdropFilter = 'blur(0px)';
+        header.style.borderBottomColor = 'transparent';
+      }
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   useEffect(() => {
     const t = setTimeout(async () => {
@@ -209,9 +227,9 @@ export default function Header() {
 
   return (
     <>
-      {/* ── HEADER BAR — nền đen đặc, giống CôBePhim ── */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-slate-950 border-b border-white/5 transition-all duration-300" id="main-header">
-        <div className="max-w-7xl mx-auto px-3 md:px-6 h-16 flex items-center gap-2 md:gap-3">
+      {/* ── HEADER BAR ── */}
+      <header className="fixed top-0 left-0 right-0 z-50 bg-transparent backdrop-blur-0 border-b border-transparent transition-all duration-300" id="main-header" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, transparent 100%)' }}>
+        <div className="max-w-7xl mx-auto px-3 md:px-6 h-14 flex items-center gap-2 md:gap-3">
 
           {/* Hamburger — 3 gạch, KHÔNG icon clapperboard */}
           <button
@@ -425,10 +443,10 @@ export default function Header() {
 
                   {/* VIP → /mua-vip */}
                   <Link to="/mua-vip" onClick={() => setIsMenuOpen(false)}
-                    className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold text-yellow-300 hover:text-white hover:bg-green-500/10 transition-all">
-                    <Crown size={17} className="text-green-400 shrink-0" />
+                    className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold text-amber-200 hover:text-white hover:bg-amber-500/10 transition-all">
+                    <Crown size={17} className="text-amber-400 shrink-0" />
                     <span className="flex-1">Mua VIP · Chặn QC</span>
-                    <ChevronRight size={14} className="text-yellow-500" />
+                    <ChevronRight size={14} className="text-amber-600" />
                   </Link>
                 </div>
 
@@ -489,11 +507,8 @@ export default function Header() {
             <div className="mx-3 mb-5 mt-4 shrink-0">
               <div className="bg-slate-900 rounded-2xl border border-slate-800 p-4">
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center shrink-0">
-                    <Clapperboard className="text-slate-950" size={18} strokeWidth={2.5} />
-                  </div>
+                  <img src="/assets/logo-daophim.png" alt={settings.siteName || 'ĐẢO PHIM'} className="h-9 w-auto object-contain shrink-0" />
                   <div>
-                    <p className="text-sm font-black text-white">{settings.siteName || 'ĐẢO PHIM'}</p>
                     <p className="text-[10px] text-slate-500">Xem phim mọi lúc, mọi nơi</p>
                   </div>
                 </div>

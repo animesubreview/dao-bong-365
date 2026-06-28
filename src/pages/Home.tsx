@@ -1,7 +1,7 @@
 import { useSEO } from '../hooks/useSEO';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronRight, ChevronLeft, Loader2, Calendar, Play } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Loader2, Calendar } from 'lucide-react';
 import { movieApi } from '../services/api';
 import { Movie } from '../types';
 import { useManualMovies, ManualMovie } from '../components/ManualMoviesSection';
@@ -11,238 +11,190 @@ import { cn } from '../lib/utils';
 import Banner from '../components/Banner';
 import AdBanner from '../components/AdBanner';
 
+/* ─── helpers ─────────────────────────────────────────────────── */
 function dec(s: string) {
   return (s || '').replace(/&#039;/g,"'").replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"');
 }
 
-/* ─── Lang/Ep badges ─────────────────────────────────────────── */
+/* ─── Badges ──────────────────────────────────────────────────── */
 function EpBadge({ ep }: { ep?: string }) {
   if (!ep) return null;
   const c = ep.match(/hoàn tất\s*\((\d+)\/(\d+)\)/i);
   const n = ep.match(/tập\s*(\d+)/i);
   const label = c ? `HT (${c[1]}/${c[2]})` : n ? `Tập ${n[1]}` : /^full$/i.test(ep.trim()) ? 'FULL' : /hoàn tất/i.test(ep) ? 'FULL' : '';
   if (!label) return null;
-  return <span className="absolute top-1.5 right-1.5 text-[8px] font-black px-1.5 py-0.5 rounded-md bg-black/75 text-white z-10 leading-none backdrop-blur-sm">{label}</span>;
+  return <span className="absolute top-1 right-1 text-[8px] font-black px-1.5 py-0.5 rounded bg-black/80 text-white z-10 leading-none">{label}</span>;
 }
 function LangBadge({ lang }: { lang?: string }) {
   if (!lang) return null;
   const l = lang.toLowerCase();
-  const label = l.includes('vietsub')||l.includes('phụ đề') ? 'P.Đề' : l.includes('thuyết minh') ? 'T.Minh' : l.includes('lồng tiếng') ? 'L.Tiếng' : null;
+  const label = l.includes('vietsub')||l.includes('phụ đề') ? 'P.ĐỀ' : l.includes('thuyết minh') ? 'T.MINH' : l.includes('lồng tiếng') ? 'L.TIẾNG' : null;
   if (!label) return null;
-  const color = label==='P.Đề' ? 'bg-red-500' : label==='T.Minh' ? 'bg-blue-500' : 'bg-green-600';
-  return <span className={`text-[8px] font-black px-1.5 py-0.5 rounded-md text-white leading-none ${color}`}>{label}</span>;
-}
-function EpCountBadge({ ep }: { ep?: string }) {
-  if (!ep) return null;
-  const n = ep.match(/tập\s*(\d+)/i);
-  const ht = ep.match(/hoàn tất\s*\((\d+)/i);
-  const num = ht ? ht[1] : n ? n[1] : null;
-  if (!num) return null;
-  return <span className="text-[8px] font-black px-1.5 py-0.5 rounded-md bg-slate-700/90 text-slate-200 leading-none">LT. {num}</span>;
+  return <span className={`text-[8px] font-black px-1.5 py-0.5 rounded text-white leading-none ${label==='P.ĐỀ'?'bg-red-600':label==='T.MINH'?'bg-blue-600':'bg-green-700'}`}>{label}</span>;
 }
 
-/* ─── Card size ──────────────────────────────────────────────── */
-const CW = 'clamp(108px,29vw,148px)';
-const CW_WIDE = 'clamp(160px,44vw,220px)'; // for cinema/2-col style
-const SKELETON_H = 200;
+/* ─── Card sizes ──────────────────────────────────────────────── */
+const CW = 'clamp(110px,30vw,155px)';
+const SKELETON_H = 220; // px — đủ để tránh layout shift
 
-/* ─── Standard Movie Card (portrait 2:3) ────────────────────── */
+/* ─── MCard với ảnh fade-in 500ms ────────────────────────────── */
 function MCard({ movie }: { movie: Movie }) {
   const [ok, setOk] = useState(false);
   return (
     <Link to={`/phim/${movie.slug}`} className="group shrink-0 block" style={{ width: CW, scrollSnapAlign:'start' }}>
-      <div className="relative rounded-xl overflow-hidden bg-slate-800/80" style={{ aspectRatio:'2/3' }}>
+      <div className="relative rounded-lg overflow-hidden bg-slate-800" style={{ aspectRatio:'2/3' }}>
         <div className="absolute inset-0 bg-slate-800" />
         <img src={movieApi.getImageUrl(movie.poster_url||movie.thumb_url)} alt={dec(movie.name)}
           loading="lazy" referrerPolicy="no-referrer" onLoad={() => setOk(true)}
           className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-          style={{ opacity: ok ? 1 : 0, transition: 'opacity 400ms ease' }} />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+          style={{ opacity: ok ? 1 : 0, transition: 'opacity 500ms ease' }} />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/40 to-transparent" />
         <EpBadge ep={movie.episode_current} />
-        <div className="absolute bottom-1.5 left-1.5 flex flex-col gap-0.5">
-          <LangBadge lang={movie.lang} />
-          <EpCountBadge ep={movie.episode_current} />
-        </div>
+        <div className="absolute bottom-1 left-1"><LangBadge lang={movie.lang} /></div>
       </div>
-      <div className="mt-1.5 px-0.5">
-        <div className="font-bold text-[12px] text-slate-100 group-hover:text-green-400 transition-colors line-clamp-1 leading-snug">{dec(movie.name)}</div>
-        <div className="text-[10px] text-slate-500 mt-0.5 truncate">{dec(movie.origin_name)}</div>
+      <div className="mt-1.5">
+        <div className="font-semibold text-[12px] text-slate-100 group-hover:text-green-400 transition-colors line-clamp-1">{dec(movie.name)}</div>
+        <div className="text-[10px] text-slate-500 mt-0.5 flex items-center gap-1">
+          <span className="truncate">{dec(movie.origin_name)}</span>
+          {movie.year && <span className="shrink-0 text-green-400/50">{movie.year}</span>}
+        </div>
       </div>
     </Link>
   );
 }
 
-/* ─── Wide Card (16:9 thumb) — for cinema 2-col ─────────────── */
-function WideCard({ movie }: { movie: Movie }) {
-  const [ok, setOk] = useState(false);
-  return (
-    <Link to={`/phim/${movie.slug}`} className="group shrink-0 block" style={{ width: CW_WIDE, scrollSnapAlign:'start' }}>
-      <div className="relative rounded-xl overflow-hidden bg-slate-800" style={{ aspectRatio:'16/9' }}>
-        <div className="absolute inset-0 bg-slate-800" />
-        <img src={movieApi.getImageUrl(movie.thumb_url||movie.poster_url)} alt={dec(movie.name)}
-          loading="lazy" referrerPolicy="no-referrer" onLoad={() => setOk(true)}
-          className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-          style={{ opacity: ok ? 1 : 0, transition: 'opacity 400ms ease' }} />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-        <div className="absolute top-1.5 right-1.5">
-          {movie.quality && <span className="text-[8px] font-black bg-green-500 text-white px-1.5 py-0.5 rounded-md">{movie.quality}</span>}
-        </div>
-        <div className="absolute bottom-1.5 left-1.5">
-          <LangBadge lang={movie.lang} />
-        </div>
-      </div>
-      <div className="mt-1.5 px-0.5">
-        <div className="font-bold text-[12px] text-slate-100 group-hover:text-green-400 transition-colors line-clamp-1 leading-snug">{dec(movie.name)}</div>
-        <div className="text-[10px] text-slate-500 mt-0.5 truncate">{dec(movie.origin_name)}</div>
-      </div>
-    </Link>
-  );
-}
-
-/* ─── Manual Movie Card ──────────────────────────────────────── */
 function ManualMCard({ movie }: { movie: ManualMovie }) {
   return (
     <Link to={`/manual/${movie.id}`} className="group shrink-0 block" style={{ width: CW, scrollSnapAlign:'start' }}>
-      <div className="relative rounded-xl overflow-hidden bg-slate-800" style={{ aspectRatio:'2/3' }}>
+      <div className="relative rounded-lg overflow-hidden bg-slate-800" style={{ aspectRatio:'2/3' }}>
         {movie.posterUrl
           ? <img src={movie.posterUrl} alt={movie.name} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-          : <div className="w-full h-full flex items-center justify-center text-3xl bg-slate-800">🎬</div>}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+          : <div className="w-full h-full flex items-center justify-center text-3xl">🎬</div>}
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/40 to-transparent" />
       </div>
-      <div className="mt-1.5 px-0.5">
-        <div className="font-bold text-[12px] text-slate-100 group-hover:text-green-400 transition-colors line-clamp-1">{movie.name}</div>
+      <div className="mt-1.5">
+        <div className="font-semibold text-[12px] text-slate-100 group-hover:text-green-400 transition-colors line-clamp-1">{movie.name}</div>
         <div className="text-[10px] text-slate-500 mt-0.5 truncate">{movie.originName}</div>
       </div>
     </Link>
   );
 }
 
-/* ─── Upcoming Card ──────────────────────────────────────────── */
-function UpcomingNewCard({ movie }: { movie: UpcomingMovie }) {
-  const [ok, setOk] = useState(false);
-  return (
-    <div className="group shrink-0 block" style={{ width: CW_WIDE, scrollSnapAlign:'start' }}>
-      <div className="relative rounded-xl overflow-hidden bg-slate-800" style={{ aspectRatio:'16/9' }}>
-        <div className="absolute inset-0 bg-slate-800" />
-        {movie.posterUrl && (
-          <img src={movie.posterUrl} alt={movie.name} loading="lazy" referrerPolicy="no-referrer"
-            onLoad={() => setOk(true)}
-            className="absolute inset-0 w-full h-full object-cover"
-            style={{ opacity: ok ? 1 : 0, transition: 'opacity 400ms ease' }} />
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-        <div className="absolute bottom-2 left-2">
-          <span className="text-[9px] font-black bg-slate-800/90 text-white px-2 py-0.5 rounded-full backdrop-blur-sm">Sắp chiếu</span>
-        </div>
-      </div>
-      <div className="mt-1.5 px-0.5">
-        <div className="font-bold text-[12px] text-slate-100 line-clamp-1">{movie.name}</div>
-        <div className="text-[10px] text-slate-500 mt-0.5 truncate">{movie.originName}</div>
-      </div>
-    </div>
-  );
-}
 
+/* ─── Upcoming Movie Card (Sắp chiếu - từ Admin) ────────────────── */
 function UpcomingCard({ movie }: { movie: ManualMovie }) {
   const [ok, setOk] = useState(false);
   return (
-    <div className="group shrink-0 block" style={{ width: CW, scrollSnapAlign:'start' }}>
-      <div className="relative rounded-xl overflow-hidden bg-slate-800" style={{ aspectRatio:'2/3' }}>
+    <Link to={`/manual/${movie.id}`} className="group shrink-0 block" style={{ width: CW, scrollSnapAlign:'start' }}>
+      <div className="relative rounded-lg overflow-hidden bg-slate-800" style={{ aspectRatio:'2/3' }}>
         <div className="absolute inset-0 bg-slate-800" />
         {movie.posterUrl && (
           <img src={movie.posterUrl} alt={movie.name} loading="lazy" referrerPolicy="no-referrer"
             onLoad={() => setOk(true)}
-            className="absolute inset-0 w-full h-full object-cover"
-            style={{ opacity: ok ? 1 : 0, transition: 'opacity 400ms ease' }} />
+            className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            style={{ opacity: ok ? 1 : 0, transition: 'opacity 500ms ease' }} />
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-        <div className="absolute bottom-2 left-2 right-2">
-          {movie.releaseDate && (
-            <span className="text-[8px] font-black bg-green-500/90 text-white px-1.5 py-0.5 rounded-md">{movie.releaseDate}</span>
-          )}
-        </div>
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" />
+        {/* Release date badge */}
+        {movie.releaseDate && (
+          <div className="absolute bottom-1.5 left-1 right-1 flex items-center gap-1 bg-green-600/90 rounded-md px-1.5 py-0.5 backdrop-blur-sm">
+            <Calendar size={9} className="text-slate-950 shrink-0" />
+            <span className="text-[9px] font-black text-slate-950 truncate">{movie.releaseDate}</span>
+          </div>
+        )}
+        {!movie.releaseDate && (
+          <div className="absolute top-1 right-1 bg-green-600 text-slate-950 text-[8px] font-black px-1.5 py-0.5 rounded">
+            SẮP RA
+          </div>
+        )}
       </div>
-      <div className="mt-1.5 px-0.5">
-        <div className="font-bold text-[12px] text-slate-100 line-clamp-1">{movie.name}</div>
+      <div className="mt-1.5">
+        <div className="font-semibold text-[12px] text-slate-100 group-hover:text-green-400 transition-colors line-clamp-1">{movie.name}</div>
+        <div className="text-[10px] text-slate-500 mt-0.5 truncate">{movie.originName || movie.year}</div>
+      </div>
+    </Link>
+  );
+}
+
+// Hook lấy phim sắp chiếu từ collection riêng (mới)
+function useUpcomingMoviesHook() {
+  const [movies, setMovies] = useState<UpcomingMovie[]>([]);
+  useEffect(() => {
+    const unsub = subscribeUpcomingMovies(setMovies);
+    return unsub;
+  }, []);
+  return movies;
+}
+
+// Hook lấy phim sắp chiếu từ manualMovies (cũ - giữ tương thích)
+function useOldUpcomingHook() {
+  const [movies, setMovies] = useState<ManualMovie[]>([]);
+  useEffect(() => {
+    const unsub = subscribeOldUpcoming(setMovies);
+    return unsub;
+  }, []);
+  return movies;
+}
+
+/* ─── New Upcoming Card (từ collection riêng) ───────────────────── */
+function UpcomingNewCard({ movie }: { movie: UpcomingMovie }) {
+  const [ok, setOk] = useState(false);
+  return (
+    <div className="group shrink-0 block" style={{ width: CW, scrollSnapAlign:'start' }}>
+      <div className="relative rounded-lg overflow-hidden bg-slate-800" style={{ aspectRatio:'2/3' }}>
+        <div className="absolute inset-0 bg-slate-800" />
+        {movie.posterUrl && (
+          <img src={movie.posterUrl} alt={movie.name} loading="lazy" referrerPolicy="no-referrer"
+            onLoad={() => setOk(true)}
+            className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            style={{ opacity: ok ? 1 : 0, transition: 'opacity 500ms ease' }} />
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" />
+        {/* Release date badge */}
+        {movie.releaseDate ? (
+          <div className="absolute bottom-1.5 left-1 right-1 flex items-center gap-1 bg-green-600/90 rounded-md px-1.5 py-0.5 backdrop-blur-sm">
+            <Calendar size={9} className="text-slate-950 shrink-0" />
+            <span className="text-[9px] font-black text-slate-950 truncate">{movie.releaseDate}</span>
+          </div>
+        ) : (
+          <div className="absolute top-1 right-1 bg-green-600 text-slate-950 text-[8px] font-black px-1.5 py-0.5 rounded">
+            SẮP RA
+          </div>
+        )}
+      </div>
+      <div className="mt-1.5">
+        <div className="font-semibold text-[12px] text-slate-100 group-hover:text-green-400 transition-colors line-clamp-1">{movie.name}</div>
         <div className="text-[10px] text-slate-500 mt-0.5 truncate">{movie.originName || movie.year}</div>
       </div>
     </div>
   );
 }
 
-/* ─── Top 10 Card — BIG fullwidth như CôBePhim ──────────────── */
 function Top10Card({ movie, rank }: { movie: Movie; rank: number }) {
   const [ok, setOk] = useState(false);
-  // Width: 80vw max 340px — single big card shown in scroll
-  const w = 'clamp(240px,75vw,340px)';
   return (
-    <Link to={`/phim/${movie.slug}`} className="group shrink-0 block" style={{ width: w, scrollSnapAlign:'start' }}>
-      <div className="relative rounded-2xl overflow-hidden bg-slate-800" style={{ aspectRatio:'3/4' }}>
+    <Link to={`/phim/${movie.slug}`} className="group shrink-0 block" style={{ width: CW, scrollSnapAlign:'start' }}>
+      <div className="relative rounded-lg overflow-hidden bg-slate-800" style={{ aspectRatio:'2/3' }}>
         <div className="absolute inset-0 bg-slate-800" />
         <img src={movieApi.getImageUrl(movie.poster_url||movie.thumb_url)} alt={dec(movie.name)}
           loading="lazy" referrerPolicy="no-referrer" onLoad={() => setOk(true)}
-          className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-          style={{ opacity: ok ? 1 : 0, transition: 'opacity 400ms ease' }} />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-        {/* Lang badges bottom-left */}
-        <div className="absolute bottom-3 left-3 flex gap-1">
-          <LangBadge lang={movie.lang} />
-          <EpCountBadge ep={movie.episode_current} />
-        </div>
+          className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          style={{ opacity: ok ? 1 : 0, transition: 'opacity 500ms ease' }} />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" />
       </div>
-      {/* Rank + title below card */}
-      <div className="flex items-start gap-2 mt-2 px-0.5">
-        <span className={cn('text-4xl font-black leading-none shrink-0 mt-0.5', rank<=3?'text-slate-300':rank<=6?'text-slate-500':'text-slate-700')}
-          style={{ fontStyle:'italic', fontFamily:'Georgia, serif' }}>
-          {rank}
-        </span>
+      <div className="flex items-start gap-1.5 mt-1">
+        <span className={cn('text-3xl font-black leading-none shrink-0 mt-0.5', rank<=3?'text-green-400':'text-slate-600')} style={{fontStyle:'italic'}}>{rank}</span>
         <div className="flex-1 min-w-0">
-          <div className="font-bold text-[13px] text-slate-100 group-hover:text-green-400 transition-colors line-clamp-2 leading-snug">{dec(movie.name)}</div>
-          <div className="text-[10px] text-slate-500 mt-0.5 truncate">{dec(movie.origin_name)}</div>
+          <div className="font-semibold text-[12px] text-slate-100 group-hover:text-green-400 transition-colors line-clamp-2 leading-snug">{dec(movie.name)}</div>
+          {movie.year && <div className="text-[10px] text-slate-500 mt-0.5">{movie.year}</div>}
         </div>
       </div>
     </Link>
   );
 }
 
-/* ─── Anime Big Card — fullwidth info card như CôBePhim ─────── */
-function AnimeBigCard({ movie }: { movie: Movie }) {
-  const [ok, setOk] = useState(false);
-  return (
-    <Link to={`/phim/${movie.slug}`} className="group shrink-0 block" style={{ width:'clamp(280px,85vw,420px)', scrollSnapAlign:'start' }}>
-      <div className="relative rounded-2xl overflow-hidden bg-slate-800" style={{ minHeight:220 }}>
-        <div className="absolute inset-0 bg-slate-800" />
-        <img src={movieApi.getImageUrl(movie.thumb_url||movie.poster_url)} alt={dec(movie.name)}
-          loading="lazy" referrerPolicy="no-referrer" onLoad={() => setOk(true)}
-          className="absolute inset-0 w-full h-full object-cover object-top"
-          style={{ opacity: ok ? 1 : 0, transition: 'opacity 400ms ease' }} />
-        {/* dark overlay for text */}
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/95 via-slate-900/40 to-transparent" />
-        {/* Content inside card */}
-        <div className="relative z-10 p-4 flex flex-col justify-end" style={{ minHeight:220 }}>
-          <h3 className="text-base font-black text-white leading-snug line-clamp-2">{dec(movie.name)}</h3>
-          {movie.origin_name && <p className="text-green-400 text-xs font-semibold mt-0.5">{dec(movie.origin_name)}</p>}
-          {/* Badges row */}
-          <div className="flex flex-wrap items-center gap-1 mt-2">
-            {movie.year && <span className="text-[10px] font-bold border border-slate-600 text-slate-300 px-2 py-0.5 rounded-full">{movie.year}</span>}
-            {movie.episode_current && <span className="text-[10px] font-bold border border-slate-600 text-slate-300 px-2 py-0.5 rounded-full">{dec(movie.episode_current)}</span>}
-            {movie.category?.slice(0,2).map((c: any) => (
-              <span key={c.id} className="text-[10px] font-semibold bg-slate-800/80 text-slate-400 px-2 py-0.5 rounded-full">{c.name}</span>
-            ))}
-          </div>
-          {/* Short desc */}
-          {movie.content && (
-            <p className="text-slate-400 text-[11px] mt-2 line-clamp-2 leading-relaxed"
-              dangerouslySetInnerHTML={{ __html: movie.content.replace(/<[^>]*>/g,'').slice(0,120)+'...' }} />
-          )}
-        </div>
-      </div>
-    </Link>
-  );
-}
-
-/* ─── HRow ───────────────────────────────────────────────────── */
-function HRow({ children, gap = 'gap-2.5' }: { children: React.ReactNode; gap?: string }) {
+/* ─── HRow ────────────────────────────────────────────────────── */
+function HRow({ children }: { children: React.ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
   const [canL, setCanL] = useState(false);
   const [canR, setCanR] = useState(false);
@@ -261,50 +213,47 @@ function HRow({ children, gap = 'gap-2.5' }: { children: React.ReactNode; gap?: 
   const scroll = (d: 'left'|'right') => ref.current?.scrollBy({ left: d==='right'?500:-500, behavior:'smooth' });
   return (
     <div className="relative group/row">
-      {canL && <button onClick={() => scroll('left')} className="hidden md:flex absolute left-0 top-[38%] -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-slate-900/95 border border-slate-700 text-white items-center justify-center opacity-0 group-hover/row:opacity-100 transition-all hover:bg-green-500 hover:border-green-500 shadow-xl -translate-x-1/2"><ChevronLeft size={15}/></button>}
-      <div ref={ref} className={cn('flex overflow-x-auto -mx-4 md:-mx-0 px-4 md:px-0', gap)}
+      {canL && <button onClick={() => scroll('left')} className="absolute left-0 top-[35%] -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-slate-800/95 border border-slate-700 text-white flex items-center justify-center opacity-0 group-hover/row:opacity-100 transition-all hover:bg-green-500 hover:text-slate-950 shadow-xl -translate-x-1/2"><ChevronLeft size={16}/></button>}
+      <div ref={ref} className="flex gap-2 overflow-x-auto -mx-4 md:-mx-0 px-4 md:px-0"
         style={{ scrollSnapType:'x mandatory', scrollbarWidth:'none', msOverflowStyle:'none', WebkitOverflowScrolling:'touch' }}>
         {children}
       </div>
-      {canR && <button onClick={() => scroll('right')} className="hidden md:flex absolute right-0 top-[38%] -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-slate-900/95 border border-slate-700 text-white items-center justify-center opacity-0 group-hover/row:opacity-100 transition-all hover:bg-green-500 hover:border-green-500 shadow-xl translate-x-1/2"><ChevronRight size={15}/></button>}
+      {canR && <button onClick={() => scroll('right')} className="absolute right-0 top-[35%] -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-slate-800/95 border border-slate-700 text-white flex items-center justify-center opacity-0 group-hover/row:opacity-100 transition-all hover:bg-green-500 hover:text-slate-950 shadow-xl translate-x-1/2"><ChevronRight size={16}/></button>}
     </div>
   );
 }
 
-/* ─── Section Header — CôBePhim style: big bold, arrow circle ── */
-function SecHeader({ title, to, color }: { title: string; to?: string; color?: string }) {
+/* ─── SecHeader ───────────────────────────────────────────────── */
+function SecHeader({ title, to, label='Tất cả' }: { title:string; to?:string; label?:string }) {
   return (
-    <div className="flex items-start justify-between mb-4 gap-2">
-      <h2 className={cn('text-[17px] font-black leading-tight', color || 'text-white')} style={{ maxWidth:'calc(100% - 48px)' }}>
-        {title}
+    <div className="flex items-center justify-between mb-3">
+      <h2 className="text-base font-black text-white flex items-center gap-2">
+        <span className="w-1 h-4 bg-green-500 rounded-full inline-block shrink-0" />{title}
       </h2>
-      {to && (
-        <Link to={to} className="shrink-0 w-8 h-8 rounded-full bg-slate-800/80 border border-slate-700/60 flex items-center justify-center text-slate-400 hover:text-white hover:border-green-500/60 transition-all">
-          <ChevronRight size={15} />
-        </Link>
-      )}
+      {to && <Link to={to} className="flex items-center gap-1 text-xs font-semibold text-slate-400 hover:text-green-400 transition-colors bg-slate-800/60 border border-slate-700/60 px-2.5 py-1.5 rounded-full shrink-0">{label} <ChevronRight size={11}/></Link>}
     </div>
   );
 }
 
-/* ─── Skeleton ───────────────────────────────────────────────── */
+/* ─── Skeleton row (không bao giờ biến mất → no black screen) ── */
 function SkeletonRow() {
   return (
-    <div className="flex gap-2.5 overflow-hidden">
-      {Array.from({length:6}).map((_,i) => (
-        <div key={i} className="shrink-0 rounded-xl bg-slate-800/50 animate-pulse"
+    <div className="flex gap-2 overflow-hidden">
+      {Array.from({length:8}).map((_,i) => (
+        <div key={i} className="shrink-0 rounded-lg bg-slate-800/50 animate-pulse"
           style={{ width: CW, height: SKELETON_H }} />
       ))}
     </div>
   );
 }
 
-/* ─── LazySection ────────────────────────────────────────────── */
-function LazySection({ title, to, fetch: fetchFn, color }: {
-  title: string; to: string; color?: string;
+/* ─── LazySection — scroll trigger, 500ms delay, KHÔNG bị đen ── */
+function LazySection({ title, to, fetch: fetchFn, label }: {
+  title: string; to: string; label?: string;
   fetch: () => Promise<Movie[]>;
 }) {
-  const [movies, setMovies] = useState<Movie[] | null>(null);
+  const [movies, setMovies] = useState<Movie[] | null>(null); // null = chưa fetch
+  const [fetching, setFetching] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const done = useRef(false);
 
@@ -313,17 +262,23 @@ function LazySection({ title, to, fetch: fetchFn, color }: {
       if (!entry.isIntersecting || done.current) return;
       done.current = true;
       obs.disconnect();
+      setFetching(true);
+      // Delay 500ms trước khi fetch để tránh quá nhiều request đồng thời
       setTimeout(() => {
-        fetchFn().then(data => setMovies(data)).catch(() => setMovies([]));
-      }, 300);
-    }, { rootMargin: '500px' });
+        fetchFn()
+          .then(data => setMovies(data))
+          .catch(() => setMovies([]))
+          .finally(() => setFetching(false));
+      }, 500);
+    }, { rootMargin: '400px' }); // Trigger sớm khi còn cách 400px
     if (ref.current) obs.observe(ref.current);
     return () => obs.disconnect();
   }, []);
 
   return (
-    <section ref={ref} style={{ minHeight: SKELETON_H + 56 }}>
-      <SecHeader title={title} to={to} color={color} />
+    // min-height cố định → layout KHÔNG bao giờ collapse → không bị đen
+    <section ref={ref} style={{ minHeight: SKELETON_H + 60 }}>
+      <SecHeader title={title} to={to} label={label} />
       {movies && movies.length > 0
         ? <HRow>{movies.map(m => <MCard key={m._id} movie={m} />)}</HRow>
         : <SkeletonRow />
@@ -332,44 +287,46 @@ function LazySection({ title, to, fetch: fetchFn, color }: {
   );
 }
 
-/* ─── Interest chips — "Bạn đang quan tâm gì?" ──────────────── */
+/* ─── Interest cards ──────────────────────────────────────────── */
 const INTEREST = [
-  { label:'Top ImDb',   to:'/search?q=imdb',       g:'from-green-500 to-emerald-400' },
-  { label:'Thuyết Minh',to:'/search?q=thuyết minh',g:'from-teal-500 to-cyan-400' },
-  { label:'Phim 4K',    to:'/search?q=4k',          g:'from-purple-500 to-pink-400' },
-  { label:'Anime Hot',  to:'/type/hoat-hinh',        g:'from-pink-500 to-rose-400' },
-  { label:'Phim Lẻ',   to:'/type/phim-le',           g:'from-blue-500 to-indigo-400' },
-  { label:'TV Shows',   to:'/type/tv-shows',          g:'from-green-500 to-emerald-400' },
+  { label:'Hàn Quốc', sub:'Phim Bộ', to:'/type/phim-bo', g:'from-purple-600/70 via-blue-500/60 to-blue-400/50' },
+  { label:'Trung Quốc', sub:'Hoa Ngữ', to:'/type/phim-bo', g:'from-pink-500/70 via-rose-400/60 to-pink-300/50' },
+  { label:'Thái Lan', sub:'Cực Hay', to:'/type/phim-le', g:'from-blue-500/70 via-cyan-400/60 to-teal-400/50' },
+  { label:'Sitcom', sub:'TV Shows', to:'/type/tv-shows', g:'from-emerald-500/70 via-teal-400/60 to-cyan-400/50' },
+  { label:'Âu Mỹ', sub:'Hollywood', to:'/type/phim-le', g:'from-green-600/70 via-orange-400/60 to-yellow-400/50' },
+  { label:'Hoạt Hình', sub:'Anime', to:'/type/hoat-hinh', g:'from-indigo-500/70 via-purple-400/60 to-violet-400/50' },
 ];
 
-/* ─── Colored section titles like CôBePhim ──────────────────── */
-const LAZY_SECTIONS = [
-  { title:'Phim Hàn Quốc mới',    to:'/type/phim-bo',    color:'text-orange-300',  fetch: () => movieApi.searchMovies('hàn quốc',1,24).then(r=>r.items) },
-  { title:'Phim Trung Quốc mới',  to:'/type/phim-bo',    color:'text-pink-400',    fetch: () => movieApi.searchMovies('trung quốc',1,24).then(r=>r.items) },
-  { title:'Phim US-UK mới',        to:'/type/phim-le',    color:'text-pink-400',    fetch: () => movieApi.filterMovies({ type:'phim-le', country:'au-my', page:1, limit:24 }).then(r=>r.items) },
-  { title:'Phim Hành Động',        to:'/type/phim-le',    color:'text-white',       fetch: () => movieApi.searchMovies('hành động',1,24).then(r=>r.items) },
-  { title:'Phim Bộ Đang Chiếu',   to:'/type/phim-bo',    color:'text-white',       fetch: () => movieApi.getMoviesByType('phim-bo',1,24).then(r=>r.items) },
-  { title:'Phim Lẻ Mới',           to:'/type/phim-le',    color:'text-white',       fetch: () => movieApi.getMoviesByType('phim-le',1,24).then(r=>r.items) },
-  { title:'Tâm Lý - Tình Cảm',    to:'/type/phim-bo',    color:'text-rose-300',    fetch: () => movieApi.searchMovies('tình cảm',1,24).then(r=>r.items) },
-  { title:'Phim Kinh Dị',          to:'/type/phim-le',    color:'text-white',       fetch: () => movieApi.searchMovies('kinh dị',1,24).then(r=>r.items) },
-  { title:'Phim Nhật Bản',         to:'/type/phim-bo',    color:'text-white',       fetch: () => movieApi.searchMovies('nhật bản',1,24).then(r=>r.items) },
-  { title:'Phim Thái Lan',         to:'/type/phim-bo',    color:'text-white',       fetch: () => movieApi.searchMovies('thái lan',1,24).then(r=>r.items) },
-  { title:'Phim Hài Hước',         to:'/type/phim-le',    color:'text-white',       fetch: () => movieApi.searchMovies('hài hước',1,24).then(r=>r.items) },
-  { title:'Phim Việt Nam',         to:'/type/phim-bo',    color:'text-yellow-300',  fetch: () => movieApi.searchMovies('việt nam',1,24).then(r=>r.items) },
-  { title:'TV Shows',               to:'/type/tv-shows',   color:'text-white',       fetch: () => movieApi.getMoviesByType('tv-shows',1,24).then(r=>r.items) },
-  { title:'Phim Cổ Trang',         to:'/type/phim-bo',    color:'text-green-300',   fetch: () => movieApi.searchMovies('cổ trang',1,24).then(r=>r.items) },
-  { title:'Phim Hình Sự',          to:'/type/phim-le',    color:'text-white',       fetch: () => movieApi.searchMovies('hình sự',1,24).then(r=>r.items) },
-];
-
+/* ─── Top tabs config ─────────────────────────────────────────── */
 const TOP_TABS = ['Top ngày','Top tuần','Top tháng','Top bộ','Top lẻ'];
-const TOP_TITLES: Record<number, string> = {
-  0:'Top 10 phim bộ hôm nay', 1:'Top 10 tuần này', 2:'Top 10 tháng này', 3:'Top 10 phim bộ', 4:'Top 10 phim lẻ',
-};
+const TOP_TITLES = ['Top 10 Hôm Nay','Top 10 Tuần Này','Top 10 Tháng Này','Top 10 Phim Bộ','Top 10 Phim Lẻ'];
 const TOP_SRCS = [null,'phim-moi','phim-chieu-rap','phim-bo','phim-le'] as const;
 
-/* ══════════════════════════════════════════════════════════════
+/* ─── All lazy sections từ KKPhim API ────────────────────────── */
+const LAZY_SECTIONS = [
+  { title:'Phim Hàn Quốc',    to:'/type/phim-bo',       fetch: () => movieApi.searchMovies('hàn quốc',1,24).then(r=>r.items) },
+  { title:'Phim Trung Quốc',  to:'/type/phim-bo',       fetch: () => movieApi.searchMovies('trung quốc',1,24).then(r=>r.items) },
+  { title:'Phim Hành Động',   to:'/type/phim-le',       fetch: () => movieApi.searchMovies('hành động',1,24).then(r=>r.items) },
+  { title:'Phim Bộ Đang Chiếu',to:'/type/phim-bo',      fetch: () => movieApi.getMoviesByType('phim-bo',1,24).then(r=>r.items) },
+  { title:'Phim Lẻ Mới',      to:'/type/phim-le',       fetch: () => movieApi.getMoviesByType('phim-le',1,24).then(r=>r.items) },
+  { title:'Phim Hoạt Hình',   to:'/type/hoat-hinh',     fetch: () => movieApi.getMoviesByType('hoat-hinh',1,24).then(r=>r.items) },
+  { title:'Tâm Lý - Tình Cảm',to:'/type/phim-bo',       fetch: () => movieApi.searchMovies('tình cảm',1,24).then(r=>r.items) },
+  { title:'Phim Kinh Dị',     to:'/type/phim-le',       fetch: () => movieApi.searchMovies('kinh dị',1,24).then(r=>r.items) },
+  { title:'Phim Âu Mỹ',       to:'/type/phim-le',       fetch: () => movieApi.filterMovies({ type:'phim-le', country:'au-my', page:1, limit:24 }).then(r=>r.items) },
+  { title:'Phim Nhật Bản',    to:'/type/phim-bo',       fetch: () => movieApi.searchMovies('nhật bản',1,24).then(r=>r.items) },
+  { title:'Phim Thái Lan',    to:'/type/phim-bo',       fetch: () => movieApi.searchMovies('thái lan',1,24).then(r=>r.items) },
+  { title:'Phim Viễn Tưởng',  to:'/type/phim-le',       fetch: () => movieApi.filterMovies({ type:'phim-le', category:'vien-tuong', page:1, limit:24 }).then(r=>r.items) },
+  { title:'Phim Hài Hước',    to:'/type/phim-le',       fetch: () => movieApi.searchMovies('hài hước',1,24).then(r=>r.items) },
+  { title:'TV Shows',          to:'/type/tv-shows',      fetch: () => movieApi.getMoviesByType('tv-shows',1,24).then(r=>r.items) },
+  { title:'Phim Hoạt Hình Nhiều Người Xem',to:'/type/hoat-hinh',fetch: () => movieApi.getMoviesByType('hoat-hinh',2,24).then(r=>r.items) },
+  { title:'Phim Cổ Trang',    to:'/type/phim-bo',       fetch: () => movieApi.searchMovies('cổ trang',1,24).then(r=>r.items) },
+  { title:'Phim Hình Sự',     to:'/type/phim-le',       fetch: () => movieApi.searchMovies('hình sự',1,24).then(r=>r.items) },
+  { title:'Phim Việt Nam',    to:'/type/phim-bo',       fetch: () => movieApi.searchMovies('việt nam',1,24).then(r=>r.items) },
+];
+
+/* ════════════════════════════════════════════════════════════════
    MAIN HOME
-   ══════════════════════════════════════════════════════════════ */
+   ════════════════════════════════════════════════════════════════ */
 export default function Home() {
   const [bannerMovies, setBannerMovies] = useState<Movie[]>([]);
   const [top10, setTop10] = useState<Movie[]>([]);
@@ -378,24 +335,25 @@ export default function Home() {
   const [topTab, setTopTab] = useState(0);
   const [cinema, setCinema] = useState<Movie[]>([]);
   const [newUpdates, setNewUpdates] = useState<Movie[]>([]);
-  const [animeList, setAnimeList] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(true);
   const manualMovies = useManualMovies();
-  const [upcomingMovies, setUpcomingMovies] = useState<UpcomingMovie[]>([]);
-  const [oldUpcoming, setOldUpcoming] = useState<ManualMovie[]>([]);
-  useEffect(() => { const u = subscribeUpcomingMovies(setUpcomingMovies); return u; }, []);
-  useEffect(() => { const u = subscribeOldUpcoming(setOldUpcoming); return u; }, []);
+  const upcomingMovies = useUpcomingMoviesHook();
+  const oldUpcoming = useOldUpcomingHook();
 
-  useSEO({ title:'Xem Phim Miễn Phí - Phim Hay Cả Đảo', description:'Đảo Phim - Xem phim online miễn phí HD Vietsub, thuyết minh, lồng tiếng.', url:'/', type:'website' });
+  useSEO({
+    title: 'Xem Phim Miễn Phí - Phim Hay Cả Đảo',
+    description: 'Đảo Phim - Xem phim online miễn phí chất lượng HD. Phim bộ, phim lẻ, hoạt hình, anime, phim chiếu rạp Vietsub, thuyết minh, lồng tiếng. Cập nhật liên tục mỗi ngày.',
+    url: '/',
+    type: 'website',
+  });
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const [r1, r2, r3] = await Promise.all([
+        const [r1, r2] = await Promise.all([
           movieApi.getNewUpdates(1),
           movieApi.getMoviesByType('phim-chieu-rap', 1, 20),
-          movieApi.getMoviesByType('hoat-hinh', 1, 20),
         ]);
         if (cancelled) return;
         const t10 = r1.items.slice(0, 10);
@@ -404,7 +362,6 @@ export default function Home() {
         setTopTabMovies(t10);
         setCinema(r2.items);
         setNewUpdates(r1.items.slice(0, 30));
-        setAnimeList(r3.items);
       } catch (e) { console.error(e); }
       finally { if (!cancelled) setLoading(false); }
     })();
@@ -417,7 +374,9 @@ export default function Home() {
     setTopTabLoading(true);
     try {
       const src = TOP_SRCS[i];
-      const res = src === 'phim-moi' ? await movieApi.getNewUpdates(2) : await movieApi.getMoviesByType(src!, 1, 10);
+      const res = src === 'phim-moi'
+        ? await movieApi.getNewUpdates(2)
+        : await movieApi.getMoviesByType(src!, 1, 10);
       setTopTabMovies(res.items.slice(0, 10));
     } catch { setTopTabMovies(top10); }
     finally { setTopTabLoading(false); }
@@ -425,84 +384,70 @@ export default function Home() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center" style={{ paddingTop:'64px' }}>
-        <div className="w-8 h-8 border-[3px] border-t-transparent rounded-full animate-spin border-green-500" />
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center" style={{ paddingTop:'56px' }}>
+        <div className="w-8 h-8 border-t-transparent rounded-full animate-spin border-green-500" style={{ borderWidth:3, borderStyle:'solid' }} />
       </div>
     );
   }
 
   return (
-    <div className="pb-safe bg-slate-950 min-h-screen">
+    <div className="pb-20 bg-slate-950 min-h-screen">
       <Banner movies={bannerMovies} />
       <AdBanner position="top" className="max-w-2xl md:max-w-5xl lg:max-w-[1400px] mx-auto px-4 md:px-6 lg:px-8 mt-3" />
 
-      <main className="max-w-2xl md:max-w-5xl lg:max-w-[1400px] mx-auto px-4 md:px-6 lg:px-8 mt-6 flex flex-col gap-9">
+      <main className="max-w-2xl md:max-w-5xl lg:max-w-[1400px] mx-auto px-4 md:px-6 lg:px-8 mt-6 flex flex-col gap-8">
 
-        {/* ── "Bạn đang quan tâm gì?" — gradient chips ── */}
+        {/* Quan tâm gì */}
         <section>
-          <h2 className="text-[17px] font-black text-white mb-4">Bạn đang quan tâm gì?</h2>
-          <div className="flex gap-2.5 overflow-x-auto -mx-4 px-4" style={{ scrollbarWidth:'none' }}>
-            {INTEREST.map(c => (
-              <Link key={c.label} to={c.to}
-                className={cn('shrink-0 rounded-xl overflow-hidden bg-gradient-to-br text-white font-black text-sm flex items-center justify-center hover:scale-[1.03] active:scale-95 transition-transform', c.g)}
-                style={{ minWidth:'clamp(110px,32vw,160px)', height:'clamp(55px,12vw,75px)', padding:'8px 12px' }}>
-                {c.label}
+          <SecHeader title="Bạn đang quan tâm gì?" />
+          <div className="flex gap-2 overflow-x-auto -mx-4 md:-mx-0 px-4 md:px-0 pb-1"
+            style={{ scrollbarWidth:'none', msOverflowStyle:'none' }}>
+            {INTEREST.map(card => (
+              <Link key={card.label} to={card.to}
+                className={cn('shrink-0 relative rounded-xl overflow-hidden hover:scale-[1.02] transition-transform', `bg-gradient-to-br ${card.g}`)}
+                style={{ width:'clamp(120px,38vw,180px)', height:'clamp(65px,14vw,90px)', flexShrink:0 }}>
+                <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-black/20" />
+                <div className="absolute bottom-0 left-0 p-2.5">
+                  <p className="text-white font-black text-sm leading-tight">{card.label}</p>
+                  <p className="text-white/80 text-[10px] font-semibold flex items-center gap-0.5">{card.sub} <ChevronRight size={9}/></p>
+                </div>
               </Link>
             ))}
           </div>
         </section>
 
-        {/* ── Top 10 — BIG fullwidth cards ── */}
+        {/* Top 10 */}
         {top10.length > 0 && (
           <section>
-            {/* Tab pills */}
-            <div className="flex items-center gap-1.5 mb-4 overflow-x-auto" style={{ scrollbarWidth:'none' }}>
+            <div className="flex items-center gap-1.5 mb-3 overflow-x-auto" style={{ scrollbarWidth:'none' }}>
               {TOP_TABS.map((t,i) => (
                 <button key={t} onClick={() => handleTopTab(i)}
-                  className={cn('shrink-0 text-[12px] font-bold px-3.5 py-1.5 rounded-full border transition-all',
-                    topTab===i ? 'border-slate-600 bg-slate-800 text-white' : 'border-transparent text-slate-500 hover:text-slate-300')}>
+                  className={cn('shrink-0 text-xs font-bold px-3.5 py-2 rounded-full border transition-all',
+                    topTab===i ? 'bg-slate-800 border-slate-600 text-white' : 'border-transparent text-slate-500 hover:text-slate-300')}>
                   {t}
                 </button>
               ))}
             </div>
-            <SecHeader title={TOP_TITLES[topTab]} to="/type/phim-moi" />
+            <SecHeader title={TOP_TITLES[topTab]} to="/type/phim-moi" label="Xem tất cả" />
             {topTabLoading
-              ? <div className="flex items-center justify-center py-12"><Loader2 size={24} className="animate-spin text-green-400"/></div>
-              : <HRow gap="gap-3">{topTabMovies.map((m,i) => <Top10Card key={m._id} movie={m} rank={i+1}/>)}</HRow>
+              ? <div className="flex items-center justify-center py-8"><Loader2 size={24} className="animate-spin text-green-400"/></div>
+              : <HRow>{topTabMovies.map((m,i) => <Top10Card key={m._id} movie={m} rank={i+1}/>)}</HRow>
             }
           </section>
         )}
 
-        {/* ── Mãn Nhãn với Phim Chiếu Rạp — wide 16:9 ── */}
+        {/* Phim Chiếu Rạp — load ngay */}
         {cinema.length > 0 && (
           <section>
-            <SecHeader title="Mãn Nhãn với Phim Chiếu Rạp" to="/type/phim-chieu-rap" />
-            <HRow gap="gap-3">{cinema.map(m => <WideCard key={m._id} movie={m}/>)}</HRow>
+            <SecHeader title="Phim Chiếu Rạp Mới" to="/type/phim-chieu-rap" label="Tất cả" />
+            <HRow>{cinema.map(m => <MCard key={m._id} movie={m}/>)}</HRow>
           </section>
         )}
 
-        {/* ── Phim Sắp Tới — wide 16:9 ── */}
-        {upcomingMovies.filter(m => m.upcomingType === 'movie').length > 0 && (
-          <section>
-            <SecHeader title="Phim Sắp Tới Trên Rổ" to="/type/phim-chieu-rap" />
-            <HRow gap="gap-3">
-              {upcomingMovies.filter(m => m.upcomingType === 'movie').map(m => <UpcomingNewCard key={m.id} movie={m} />)}
-            </HRow>
-          </section>
-        )}
-        {oldUpcoming.filter(m => m.upcomingType === 'movie').length > 0 && (
-          <section>
-            <SecHeader title="Phim Sắp Tới Trên Rổ" to="/type/phim-chieu-rap" />
-            <HRow gap="gap-3">
-              {oldUpcoming.filter(m => m.upcomingType === 'movie').map(m => <UpcomingCard key={m.id} movie={m} />)}
-            </HRow>
-          </section>
-        )}
-
-        {/* ── Phim Mới Cập Nhật ── */}
+        {/* Phim Mới Cập Nhật — load ngay */}
         {(newUpdates.length > 0 || manualMovies.length > 0) && (
           <section>
-            <SecHeader title="Phim Mới Cập Nhật" to="/type/phim-moi" />
+            <SecHeader title="Phim Mới Cập Nhật" to="/type/phim-moi" label="Tất cả" />
             <HRow>
               {manualMovies.slice(0,4).map(m => <ManualMCard key={m.id} movie={m}/>)}
               {newUpdates.map(m => <MCard key={m._id} movie={m}/>)}
@@ -510,27 +455,67 @@ export default function Home() {
           </section>
         )}
 
-        {/* ── Kho Tàng Anime — BIG info card ── */}
-        {animeList.length > 0 && (
+        {/* Phim Sắp Chiếu Rạp — từ collection riêng */}
+        {upcomingMovies.filter(m => m.upcomingType === 'movie').length > 0 && (
           <section>
-            <SecHeader title="Kho Tàng Anime Mới Nhất" to="/type/hoat-hinh" />
-            <HRow gap="gap-3">
-              {animeList.slice(0,10).map(m => <AnimeBigCard key={m._id} movie={m} />)}
+            <SecHeader title="Phim Sắp Chiếu Rạp" to="/type/phim-chieu-rap" label="Tất cả" />
+            <HRow>
+              {upcomingMovies
+                .filter(m => m.upcomingType === 'movie')
+                .map(m => <UpcomingNewCard key={m.id} movie={m} />)}
             </HRow>
           </section>
         )}
 
-        {/* ── Anime Sắp Chiếu ── */}
+        {/* Anime Sắp Chiếu — từ collection riêng */}
         {upcomingMovies.filter(m => m.upcomingType === 'anime').length > 0 && (
           <section>
-            <SecHeader title="Anime Sắp Chiếu" to="/type/hoat-hinh" />
-            <HRow>{upcomingMovies.filter(m => m.upcomingType === 'anime').map(m => <UpcomingNewCard key={m.id} movie={m} />)}</HRow>
+            <SecHeader title="Anime Sắp Chiếu" to="/type/hoat-hinh" label="Tất cả" />
+            <HRow>
+              {upcomingMovies
+                .filter(m => m.upcomingType === 'anime')
+                .map(m => <UpcomingNewCard key={m.id} movie={m} />)}
+            </HRow>
           </section>
         )}
 
-        {/* ── All Lazy Sections ── */}
+        {/* Phim Bộ Sắp Chiếu — từ collection riêng */}
+        {upcomingMovies.filter(m => m.upcomingType === 'series').length > 0 && (
+          <section>
+            <SecHeader title="Phim Bộ Sắp Chiếu" to="/type/phim-bo" label="Tất cả" />
+            <HRow>
+              {upcomingMovies
+                .filter(m => m.upcomingType === 'series')
+                .map(m => <UpcomingNewCard key={m.id} movie={m} />)}
+            </HRow>
+          </section>
+        )}
+
+        {/* Fallback: sắp chiếu cũ từ manualMovies (isUpcoming=true) nếu chưa migrate */}
+        {oldUpcoming.filter(m => m.upcomingType === 'anime' || !m.upcomingType).length > 0 && (
+          <section>
+            <SecHeader title="Anime Sắp Chiếu" to="/type/hoat-hinh" label="Tất cả" />
+            <HRow>
+              {oldUpcoming
+                .filter(m => m.upcomingType === 'anime' || !m.upcomingType)
+                .map(m => <UpcomingCard key={m.id} movie={m} />)}
+            </HRow>
+          </section>
+        )}
+        {oldUpcoming.filter(m => m.upcomingType === 'movie').length > 0 && (
+          <section>
+            <SecHeader title="Phim Sắp Chiếu Rạp" to="/type/phim-chieu-rap" label="Tất cả" />
+            <HRow>
+              {oldUpcoming
+                .filter(m => m.upcomingType === 'movie')
+                .map(m => <UpcomingCard key={m.id} movie={m} />)}
+            </HRow>
+          </section>
+        )}
+
+        {/* Tất cả lazy sections từ KKPhim API */}
         {LAZY_SECTIONS.map(s => (
-          <LazySection key={s.title} title={s.title} to={s.to} fetch={s.fetch} color={s.color} />
+          <LazySection key={s.title} title={s.title} to={s.to} fetch={s.fetch} />
         ))}
 
       </main>

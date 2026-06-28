@@ -167,7 +167,7 @@ export default function ManualMovieDetail() {
               </div>
 
               {/* Rating chip PC */}
-              <div className="hidden md:flex items-center gap-2 ml-auto bg-green-600/80 border border-indigo-500/50 text-white text-xs font-black px-3 py-2 rounded-xl">
+              <div className="hidden md:flex items-center gap-2 ml-auto bg-indigo-600/80 border border-indigo-500/50 text-white text-xs font-black px-3 py-2 rounded-xl">
                 <Star size={14} className="fill-current text-green-400" />
                 <span>0</span>
                 <span className="font-normal text-indigo-300">Đánh giá</span>

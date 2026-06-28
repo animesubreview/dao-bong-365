@@ -84,7 +84,7 @@ export default function History() {
                       }}
                     />
                     <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <div className="w-12 h-12 rounded-full bg-green-500 flex items-center justify-center shadow-lg shadow-indigo-500/50">
+                      <div className="w-12 h-12 rounded-full bg-indigo-500 flex items-center justify-center shadow-lg shadow-indigo-500/50">
                         <Play className="text-white fill-current" size={24} />
                       </div>
                     </div>

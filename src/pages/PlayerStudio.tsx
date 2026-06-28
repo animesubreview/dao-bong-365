@@ -244,7 +244,7 @@ export default function PlayerStudio() {
                   <input type="color" value={config.accentColor} onChange={e => update('accentColor', e.target.value)}
                     className="w-10 h-9 rounded-lg border border-green-500/20 bg-[#060a06] cursor-pointer p-1" />
                   <div className="flex gap-2 flex-wrap">
-                    {['#22c55e','#3b82f6','#22c55e','#ef4444','#a855f7','#ec4899'].map(c => (
+                    {['#22c55e','#3b82f6','#f59e0b','#ef4444','#a855f7','#ec4899'].map(c => (
                       <button key={c} onClick={() => update('accentColor', c)}
                         style={{ width: 24, height: 24, background: c, borderRadius: 6, border: config.accentColor === c ? '2px solid #fff' : '2px solid transparent' }} />
                     ))}

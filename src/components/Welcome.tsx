@@ -84,7 +84,7 @@ export default function Welcome({ onEnter }: WelcomeProps) {
       {/* Content Overlay */}
       <div className={`relative z-10 flex flex-col items-center gap-10 transition-all duration-700 ${isAccelerating ? 'scale-0 opacity-0 blur-xl' : 'scale-100 opacity-100'}`}>
         <div className="flex flex-col items-center gap-6">
-          <div className="w-24 h-24 bg-green-600/20 backdrop-blur-xl border border-indigo-500/20 rounded-[32px] flex items-center justify-center shadow-[0_0_60px_rgba(99,102,241,0.2)]">
+          <div className="w-24 h-24 bg-indigo-600/20 backdrop-blur-xl border border-indigo-500/20 rounded-[32px] flex items-center justify-center shadow-[0_0_60px_rgba(99,102,241,0.2)]">
             <Clapperboard className="text-white" size={48} strokeWidth={1.5} />
           </div>
           <h1 className="text-7xl md:text-9xl font-black tracking-tighter italic text-white drop-shadow-[0_0_40px_rgba(99,102,241,0.4)]">

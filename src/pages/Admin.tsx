@@ -91,7 +91,7 @@ function Toast({ message, type, onClose }: { message: string; type: 'success' | 
 function SectionCard({ id, title, icon: Icon, children, color = 'indigo' }: any) {
   const [open, setOpen] = useState(true);
   const accents: Record<string, string> = {
-    indigo: 'from-green-500 to-green-700 shadow-green-500/20',
+    indigo: 'from-indigo-500 to-purple-500 shadow-indigo-500/20',
     emerald: 'from-emerald-500 to-teal-500 shadow-emerald-500/20',
     orange: 'from-orange-500 to-amber-500 shadow-orange-500/20',
     pink: 'from-pink-500 to-rose-500 shadow-pink-500/20',
@@ -99,7 +99,7 @@ function SectionCard({ id, title, icon: Icon, children, color = 'indigo' }: any)
     blue: 'from-blue-500 to-indigo-500 shadow-blue-500/20',
     cyan: 'from-cyan-500 to-blue-500 shadow-cyan-500/20',
     red: 'from-red-500 to-orange-500 shadow-red-500/20',
-    amber: 'from-amber-500 to-yellow-500 shadow-green-500/20',
+    amber: 'from-amber-500 to-yellow-500 shadow-amber-500/20',
   };
   const accent = accents[color] || accents.indigo;
   return (
@@ -183,7 +183,7 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
 
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-green-700 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-2xl shadow-green-500/30">
+          <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-yellow-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-2xl shadow-green-500/30">
             <Shield size={28} className="text-slate-950" />
           </div>
           <h1 className="text-3xl font-black text-white tracking-wider" style={{ fontFamily: 'Bebas Neue, sans-serif', letterSpacing: '0.08em' }}>
@@ -1525,7 +1525,7 @@ function VipSection({ onToast }: { onToast: (msg: string, t: 'success' | 'error'
     <SectionCard title="Gói VIP · Chặn Quảng Cáo" icon={Crown} color="orange">
       <div className="flex flex-col gap-5">
         <p className="text-sm text-slate-400">
-          User mua VIP bằng số dư tài khoản sẽ được <span className="text-green-400 font-bold">tắt hoàn toàn quảng cáo</span> trong thời hạn gói.
+          User mua VIP bằng số dư tài khoản sẽ được <span className="text-amber-400 font-bold">tắt hoàn toàn quảng cáo</span> trong thời hạn gói.
           Admin luôn miễn QC. Thay đổi giá có hiệu lực ngay.
         </p>
 
@@ -1558,14 +1558,14 @@ function VipSection({ onToast }: { onToast: (msg: string, t: 'success' | 'error'
         <button
           onClick={save}
           disabled={saving}
-          className="flex items-center gap-2 px-5 py-2.5 bg-green-500 hover:bg-green-500 disabled:opacity-60 text-white font-bold rounded-xl transition-colors w-fit"
+          className="flex items-center gap-2 px-5 py-2.5 bg-amber-500 hover:bg-amber-400 disabled:opacity-60 text-white font-bold rounded-xl transition-colors w-fit"
         >
           <Save size={15} />
           {saving ? 'Đang lưu...' : 'Lưu giá VIP'}
         </button>
 
         <div className="bg-slate-800/40 border border-amber-500/20 rounded-xl p-4 text-xs text-slate-500 flex flex-col gap-1">
-          <p className="font-bold text-green-400 mb-1">📌 Lưu ý</p>
+          <p className="font-bold text-amber-400 mb-1">📌 Lưu ý</p>
           <p>• Giá VIP tính bằng VNĐ, trừ từ số dư tài khoản người dùng.</p>
           <p>• Người dùng nạp tiền qua thẻ cào, sau đó dùng số dư để mua gói.</p>
           <p>• Gói VIP cộng dồn thời gian nếu user còn VIP hạn cũ.</p>
@@ -1595,7 +1595,7 @@ function RealtimeUsersSection() {
   }, []);
 
   const devices = [
-    { key: 'mobile', label: 'Mobile', color: 'text-green-400', bg: 'bg-green-500/20 border-green-500/30', icon: '📱' },
+    { key: 'mobile', label: 'Mobile', color: 'text-sky-400', bg: 'bg-sky-500/20 border-sky-500/30', icon: '📱' },
     { key: 'desktop', label: 'Desktop', color: 'text-emerald-400', bg: 'bg-emerald-500/20 border-emerald-500/30', icon: '🖥️' },
     { key: 'tablet', label: 'Tablet', color: 'text-purple-400', bg: 'bg-purple-500/20 border-purple-500/30', icon: '📲' },
     { key: 'other', label: 'Khác', color: 'text-slate-400', bg: 'bg-slate-700/40 border-slate-600/30', icon: '🔌' },
@@ -1656,7 +1656,7 @@ function RealtimeUsersSection() {
               {/* progress bar */}
               <div className="w-full h-1 bg-slate-800 rounded-full overflow-hidden">
                 <div
-                  className={`h-full rounded-full transition-all duration-700 ${d.key === 'mobile' ? 'bg-green-400' : d.key === 'desktop' ? 'bg-emerald-400' : d.key === 'tablet' ? 'bg-purple-400' : 'bg-slate-500'}`}
+                  className={`h-full rounded-full transition-all duration-700 ${d.key === 'mobile' ? 'bg-sky-400' : d.key === 'desktop' ? 'bg-emerald-400' : d.key === 'tablet' ? 'bg-purple-400' : 'bg-slate-500'}`}
                   style={{ width: `${pct}%` }}
                 />
               </div>
@@ -1878,7 +1878,6 @@ const NAV_SECTIONS = [
   { id: 'section-movies',       label: 'Phim thủ công',     icon: Film },
   { id: 'section-upcoming',     label: 'Phim sắp chiếu',    icon: Clock },
   { id: 'section-override',     label: 'Sửa phim API',      icon: Edit3 },
-  { id: 'section-schedule',     label: 'Lịch chiếu phim',   icon: Clock },
   { id: 'section-ads',          label: 'Quảng cáo',         icon: Megaphone },
   { id: 'section-members',      label: 'Thành viên',        icon: Users },
   { id: 'section-notifications',label: 'Thông báo',         icon: Bell },
@@ -1889,367 +1888,6 @@ const NAV_SECTIONS = [
   { id: 'section-manual-topup', label: 'Nạp thẻ TC',        icon: CreditCard },
   { id: 'section-guide',        label: 'Hướng dẫn',         icon: Info },
 ];
-
-// ─── Schedule Section — Lịch Chiếu Phim ─────────────────────────────────────
-interface ScheduleEntry {
-  id: string;
-  movieName: string;
-  posterUrl?: string;
-  embedUrl?: string;
-  dayOfWeek: string; // 'T2' | 'T3' | ... | 'CN'
-  timeSlot: string;  // '09:00' | '14:00' etc
-  type: 'phim-le' | 'phim-bo' | 'anime' | 'hoat-hinh';
-  episode?: string;
-  note?: string;
-  isActive: boolean;
-  createdAt: number;
-}
-
-const DAYS = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
-const DAY_FULL: Record<string, string> = { T2: 'Thứ 2', T3: 'Thứ 3', T4: 'Thứ 4', T5: 'Thứ 5', T6: 'Thứ 6', T7: 'Thứ 7', CN: 'Chủ nhật' };
-const SCHEDULE_TYPE_COLORS: Record<string, string> = {
-  'phim-le': 'bg-green-500/20 text-green-300 border-green-500/30',
-  'phim-bo': 'bg-purple-500/20 text-purple-300 border-purple-500/30',
-  'anime': 'bg-pink-500/20 text-pink-300 border-pink-500/30',
-  'hoat-hinh': 'bg-orange-500/20 text-orange-300 border-orange-500/30',
-};
-const SCHEDULE_TYPE_LABELS: Record<string, string> = {
-  'phim-le': '🎬 Phim lẻ', 'phim-bo': '📺 Phim bộ', 'anime': '🌸 Anime', 'hoat-hinh': '🎨 Hoạt hình',
-};
-
-const SCHEDULE_DEFAULT: Omit<ScheduleEntry, 'id' | 'createdAt'> = {
-  movieName: '', posterUrl: '', embedUrl: '', dayOfWeek: 'T2', timeSlot: '20:00',
-  type: 'phim-bo', episode: '', note: '', isActive: true,
-};
-
-function ScheduleSection({ onToast }: { onToast: (msg: string, t: 'success' | 'error') => void }) {
-  const [schedules, setSchedules] = useState<ScheduleEntry[]>([]);
-  const [form, setForm] = useState<Omit<ScheduleEntry, 'id' | 'createdAt'>>({ ...SCHEDULE_DEFAULT });
-  const [editId, setEditId] = useState<string | null>(null);
-  const [showForm, setShowForm] = useState(false);
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [filterDay, setFilterDay] = useState<string>('all');
-  const [saving, setSaving] = useState(false);
-
-  // Load từ localStorage (có thể đổi sang Firestore nếu muốn sync)
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem('schedule_entries');
-      if (stored) setSchedules(JSON.parse(stored));
-    } catch {}
-  }, []);
-
-  const persist = (list: ScheduleEntry[]) => {
-    setSchedules(list);
-    try { localStorage.setItem('schedule_entries', JSON.stringify(list)); } catch {}
-  };
-
-  const save = async () => {
-    if (!form.movieName.trim()) { onToast('Vui lòng nhập tên phim!', 'error'); return; }
-    if (!form.dayOfWeek) { onToast('Vui lòng chọn ngày chiếu!', 'error'); return; }
-    if (!form.timeSlot) { onToast('Vui lòng chọn giờ chiếu!', 'error'); return; }
-    setSaving(true);
-    try {
-      if (editId) {
-        const updated = schedules.map(s => s.id === editId ? { ...s, ...form } : s);
-        persist(updated);
-        onToast('Đã cập nhật lịch chiếu!', 'success');
-      } else {
-        const newEntry: ScheduleEntry = { ...form, id: Date.now().toString(), createdAt: Date.now() };
-        persist([...schedules, newEntry]);
-        onToast('Đã thêm lịch chiếu!', 'success');
-      }
-      setForm({ ...SCHEDULE_DEFAULT });
-      setEditId(null);
-      setShowForm(false);
-    } catch { onToast('Lỗi khi lưu!', 'error'); }
-    setSaving(false);
-  };
-
-  const del = (id: string) => {
-    if (!confirm('Xóa lịch chiếu này?')) return;
-    persist(schedules.filter(s => s.id !== id));
-    onToast('Đã xóa!', 'success');
-  };
-
-  const startEdit = (s: ScheduleEntry) => {
-    setForm({ movieName: s.movieName, posterUrl: s.posterUrl || '', embedUrl: s.embedUrl || '',
-      dayOfWeek: s.dayOfWeek, timeSlot: s.timeSlot, type: s.type, episode: s.episode || '', note: s.note || '', isActive: s.isActive });
-    setEditId(s.id);
-    setShowForm(true);
-  };
-
-  const toggleActive = (id: string) => {
-    const updated = schedules.map(s => s.id === id ? { ...s, isActive: !s.isActive } : s);
-    persist(updated);
-  };
-
-  // Group by day for grid view
-  const byDay = DAYS.reduce<Record<string, ScheduleEntry[]>>((acc, d) => {
-    acc[d] = schedules.filter(s => s.dayOfWeek === d).sort((a, b) => a.timeSlot.localeCompare(b.timeSlot));
-    return acc;
-  }, {});
-
-  const filtered = filterDay === 'all' ? schedules : schedules.filter(s => s.dayOfWeek === filterDay);
-  const sorted = [...filtered].sort((a, b) => a.dayOfWeek.localeCompare(b.dayOfWeek) || a.timeSlot.localeCompare(b.timeSlot));
-
-  return (
-    <SectionCard title="Lịch Chiếu Phim" icon={Clock} color="blue">
-      <div className="flex flex-col gap-5">
-        {/* Header stats */}
-        <div className="grid grid-cols-4 gap-3">
-          {[
-            { label: 'Tổng lịch', value: schedules.length, color: 'text-white' },
-            { label: 'Đang bật', value: schedules.filter(s => s.isActive).length, color: 'text-green-400' },
-            { label: 'Phim bộ', value: schedules.filter(s => s.type === 'phim-bo').length, color: 'text-purple-400' },
-            { label: 'Anime', value: schedules.filter(s => s.type === 'anime').length, color: 'text-pink-400' },
-          ].map(stat => (
-            <div key={stat.label} className="bg-slate-800/50 rounded-xl p-3 text-center border border-slate-700/40">
-              <div className={`text-xl font-black ${stat.color}`}>{stat.value}</div>
-              <div className="text-[11px] text-slate-500 mt-0.5">{stat.label}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* Controls */}
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <div className="flex items-center gap-2">
-            <button onClick={() => setViewMode('grid')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${viewMode === 'grid' ? 'bg-green-500/20 border-green-500/50 text-green-300' : 'bg-slate-800/60 border-slate-700/40 text-slate-400'}`}>
-              📅 Lịch tuần
-            </button>
-            <button onClick={() => setViewMode('list')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${viewMode === 'list' ? 'bg-green-500/20 border-green-500/50 text-green-300' : 'bg-slate-800/60 border-slate-700/40 text-slate-400'}`}>
-              📋 Danh sách
-            </button>
-          </div>
-          <button onClick={() => { setForm({ ...SCHEDULE_DEFAULT }); setEditId(null); setShowForm(v => !v); }}
-            className="btn-primary flex items-center gap-2 text-sm py-2">
-            {showForm ? <X size={15} /> : <Plus size={15} />}
-            {showForm ? 'Đóng' : 'Thêm lịch chiếu'}
-          </button>
-        </div>
-
-        {/* Form */}
-        {showForm && (
-          <div className="bg-slate-800/40 border border-green-500/20 rounded-2xl p-5 flex flex-col gap-4">
-            <h3 className="font-bold text-white text-sm flex items-center gap-2">
-              {editId ? '✏️ Sửa lịch chiếu' : '➕ Thêm lịch chiếu mới'}
-            </h3>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="sm:col-span-2">
-                <label className="text-xs text-slate-400 font-semibold mb-1 block">Tên phim *</label>
-                <input value={form.movieName} onChange={e => setForm(f => ({ ...f, movieName: e.target.value }))}
-                  className="input-field text-sm" placeholder="VD: One Piece, Doraemon, Conan..." />
-              </div>
-
-              <div>
-                <label className="text-xs text-slate-400 font-semibold mb-1 block">📅 Ngày chiếu *</label>
-                <div className="flex gap-1.5 flex-wrap">
-                  {DAYS.map(d => (
-                    <button key={d} onClick={() => setForm(f => ({ ...f, dayOfWeek: d }))}
-                      className={`px-2.5 py-1.5 rounded-lg text-xs font-bold border transition-all ${form.dayOfWeek === d ? 'bg-green-500 border-green-400 text-white' : 'bg-slate-800/60 border-slate-700/40 text-slate-400 hover:border-green-500/40'}`}>
-                      {d}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="text-xs text-slate-400 font-semibold mb-1 block">⏰ Giờ chiếu *</label>
-                <div className="flex gap-2 items-center">
-                  <input type="time" value={form.timeSlot} onChange={e => setForm(f => ({ ...f, timeSlot: e.target.value }))}
-                    className="input-field text-sm flex-1" />
-                  <div className="flex flex-col gap-1">
-                    {['20:00', '21:00', '09:00'].map(t => (
-                      <button key={t} onClick={() => setForm(f => ({ ...f, timeSlot: t }))}
-                        className={`text-[10px] px-2 py-0.5 rounded border font-bold transition-all ${form.timeSlot === t ? 'bg-green-500/30 border-green-500/50 text-green-300' : 'bg-slate-800 border-slate-700 text-slate-500 hover:border-green-500/30'}`}>
-                        {t}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <label className="text-xs text-slate-400 font-semibold mb-1 block">Loại phim</label>
-                <select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value as any }))} className="input-field text-sm">
-                  <option value="phim-bo">📺 Phim bộ</option>
-                  <option value="anime">🌸 Anime</option>
-                  <option value="phim-le">🎬 Phim lẻ</option>
-                  <option value="hoat-hinh">🎨 Hoạt hình</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="text-xs text-slate-400 font-semibold mb-1 block">Tập (tùy chọn)</label>
-                <input value={form.episode || ''} onChange={e => setForm(f => ({ ...f, episode: e.target.value }))}
-                  className="input-field text-sm" placeholder="VD: Tập 1-2, Full, EP 120..." />
-              </div>
-
-              <div className="sm:col-span-2">
-                <label className="text-xs text-slate-400 font-semibold mb-1 block">URL Poster (tùy chọn)</label>
-                <input value={form.posterUrl || ''} onChange={e => setForm(f => ({ ...f, posterUrl: e.target.value }))}
-                  className="input-field text-sm" placeholder="https://example.com/poster.jpg" />
-              </div>
-
-              <div className="sm:col-span-2">
-                <label className="text-xs text-slate-400 font-semibold mb-1 block">Link embed phim (tùy chọn)</label>
-                <input value={form.embedUrl || ''} onChange={e => setForm(f => ({ ...f, embedUrl: e.target.value }))}
-                  className="input-field text-sm" placeholder="https://player.example.com/embed/... (để bấm vào đi thẳng tới phim)" />
-              </div>
-
-              <div className="sm:col-span-2">
-                <label className="text-xs text-slate-400 font-semibold mb-1 block">Ghi chú</label>
-                <input value={form.note || ''} onChange={e => setForm(f => ({ ...f, note: e.target.value }))}
-                  className="input-field text-sm" placeholder="VD: Chiếu trên VTV3, phát sóng HD..." />
-              </div>
-
-              <div className="flex items-center gap-3">
-                <label className="text-xs text-slate-400 font-semibold">Hiển thị</label>
-                <button onClick={() => setForm(f => ({ ...f, isActive: !f.isActive }))}
-                  className={`relative w-10 h-5 rounded-full border transition-all ${form.isActive ? 'bg-green-500 border-green-400' : 'bg-slate-700 border-slate-600'}`}>
-                  <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all ${form.isActive ? 'left-5' : 'left-0.5'}`} />
-                </button>
-              </div>
-            </div>
-
-            <div className="flex gap-2 pt-1">
-              <button onClick={save} disabled={saving}
-                className="btn-primary flex items-center gap-2 text-sm flex-1 justify-center disabled:opacity-60">
-                <Check size={15} /> {saving ? 'Đang lưu...' : (editId ? 'Cập nhật' : 'Thêm lịch chiếu')}
-              </button>
-              <button onClick={() => { setShowForm(false); setForm({ ...SCHEDULE_DEFAULT }); setEditId(null); }}
-                className="btn-icon px-4 text-sm text-slate-400">Hủy</button>
-            </div>
-          </div>
-        )}
-
-        {schedules.length === 0 ? (
-          <div className="text-center py-12 text-slate-600">
-            <Clock size={40} className="mx-auto mb-3 opacity-30" />
-            <p className="text-sm">Chưa có lịch chiếu nào.</p>
-            <p className="text-xs mt-1">Nhấn "Thêm lịch chiếu" để tạo lịch phát sóng phim theo ngày.</p>
-          </div>
-        ) : viewMode === 'grid' ? (
-          /* GRID VIEW — chia theo 7 ngày */
-          <div className="overflow-x-auto -mx-1">
-            <div className="min-w-[700px] grid grid-cols-7 gap-2 px-1">
-              {DAYS.map(day => (
-                <div key={day} className="flex flex-col gap-1.5">
-                  <div className="text-center py-1.5 rounded-lg bg-slate-800/80 border border-slate-700/40">
-                    <p className="text-xs font-black text-white">{day}</p>
-                    <p className="text-[10px] text-slate-500">{DAY_FULL[day]}</p>
-                    {byDay[day].length > 0 && (
-                      <span className="text-[9px] bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded-full font-bold">{byDay[day].length}</span>
-                    )}
-                  </div>
-                  {byDay[day].map(entry => (
-                    <div key={entry.id}
-                      className={`relative rounded-xl overflow-hidden border transition-all group cursor-pointer ${entry.isActive ? 'border-slate-700/40 bg-slate-800/60 hover:border-green-500/40' : 'border-slate-800/30 bg-slate-900/40 opacity-50'}`}
-                      onClick={() => startEdit(entry)}>
-                      {entry.posterUrl && (
-                        <img src={entry.posterUrl} alt={entry.movieName}
-                          className="w-full aspect-[2/3] object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
-                      )}
-                      <div className={`p-1.5 ${!entry.posterUrl ? 'min-h-[60px] flex flex-col justify-between' : 'absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent'}`}>
-                        <p className="text-[10px] font-bold text-white leading-tight truncate">{entry.movieName}</p>
-                        <div className="flex items-center justify-between mt-0.5">
-                          <span className="text-[9px] text-green-300 font-bold">{entry.timeSlot}</span>
-                          {entry.episode && <span className="text-[9px] text-slate-400">{entry.episode}</span>}
-                        </div>
-                      </div>
-                      {/* Actions */}
-                      <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity flex gap-0.5">
-                        <button onClick={e => { e.stopPropagation(); toggleActive(entry.id); }}
-                          className="w-5 h-5 rounded bg-black/70 flex items-center justify-center text-[9px]">
-                          {entry.isActive ? '👁' : '🙈'}
-                        </button>
-                        <button onClick={e => { e.stopPropagation(); del(entry.id); }}
-                          className="w-5 h-5 rounded bg-red-900/70 flex items-center justify-center text-[9px]">
-                          ×
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                  {byDay[day].length === 0 && (
-                    <div className="rounded-xl border border-dashed border-slate-800/60 min-h-[60px] flex items-center justify-center">
-                      <span className="text-[10px] text-slate-700">Trống</span>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : (
-          /* LIST VIEW */
-          <div className="flex flex-col gap-3">
-            {/* Filter by day */}
-            <div className="flex gap-1.5 flex-wrap">
-              <button onClick={() => setFilterDay('all')}
-                className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-all ${filterDay === 'all' ? 'bg-green-500/20 border-green-500/50 text-green-300' : 'bg-slate-800/60 border-slate-700/40 text-slate-400'}`}>
-                Tất cả ({schedules.length})
-              </button>
-              {DAYS.filter(d => byDay[d].length > 0).map(d => (
-                <button key={d} onClick={() => setFilterDay(d)}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-all ${filterDay === d ? 'bg-green-500/20 border-green-500/50 text-green-300' : 'bg-slate-800/60 border-slate-700/40 text-slate-400'}`}>
-                  {d} ({byDay[d].length})
-                </button>
-              ))}
-            </div>
-
-            {sorted.map(entry => (
-              <div key={entry.id}
-                className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${entry.isActive ? 'bg-slate-800/40 border-slate-700/30 hover:border-green-500/30' : 'bg-slate-900/30 border-slate-800/20 opacity-60'}`}>
-                {entry.posterUrl ? (
-                  <img src={entry.posterUrl} alt={entry.movieName} className="w-10 h-14 object-cover rounded-lg shrink-0" />
-                ) : (
-                  <div className="w-10 h-14 bg-slate-700/60 rounded-lg flex items-center justify-center shrink-0">
-                    <Film size={14} className="text-slate-500" />
-                  </div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-sm font-bold text-white truncate">{entry.movieName}</span>
-                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border ${SCHEDULE_TYPE_COLORS[entry.type]}`}>
-                      {SCHEDULE_TYPE_LABELS[entry.type]}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                    <span className="text-xs text-green-400 font-bold">{DAY_FULL[entry.dayOfWeek]}</span>
-                    <span className="text-xs text-green-300 font-black">{entry.timeSlot}</span>
-                    {entry.episode && <span className="text-[11px] text-slate-400">{entry.episode}</span>}
-                    {entry.note && <span className="text-[11px] text-slate-500 italic truncate max-w-[120px]">{entry.note}</span>}
-                  </div>
-                  {entry.embedUrl && (
-                    <p className="text-[10px] text-green-600 mt-0.5 truncate">🔗 {entry.embedUrl}</p>
-                  )}
-                </div>
-                <div className="flex items-center gap-1 shrink-0">
-                  <button onClick={() => toggleActive(entry.id)}
-                    className={`btn-icon p-2 ${entry.isActive ? 'text-emerald-400' : 'text-slate-500 hover:text-emerald-400'}`}
-                    title={entry.isActive ? 'Tắt' : 'Bật'}>
-                    {entry.isActive ? <Eye size={13} /> : <EyeOff size={13} />}
-                  </button>
-                  <button onClick={() => startEdit(entry)} className="btn-icon p-2 hover:border-green-500/40 hover:text-green-400"><Edit3 size={13} /></button>
-                  <button onClick={() => del(entry.id)} className="btn-icon p-2 hover:border-red-500/40 hover:text-red-400"><Trash2 size={13} /></button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        <div className="bg-slate-800/30 border border-slate-700/30 rounded-xl p-4 text-xs text-slate-500">
-          <p className="font-bold text-slate-400 mb-1">📌 Hướng dẫn Lịch Chiếu</p>
-          <p>• Lịch chiếu hiển thị trên trang <strong className="text-slate-300">/lich-chieu</strong> và có thể nhúng vào trang chủ.</p>
-          <p>• Thêm link embed để người dùng bấm vào chuyển thẳng tới xem phim.</p>
-          <p>• Lịch lưu trên trình duyệt — để đồng bộ nhiều thiết bị, cần kết nối Firestore.</p>
-        </div>
-      </div>
-    </SectionCard>
-  );
-}
 
 // ─── Manual Topup Section ─────────────────────────────────────────────────────
 function ManualTopupSection({ onToast }: { onToast: (msg: string, t: 'success' | 'error') => void }) {
@@ -2430,7 +2068,7 @@ function AdminSidebar({ activeSection, onNavigate, onLogout, onSave, onReset, dr
       {/* Logo */}
       <div className="px-4 py-4 border-b border-slate-800/70 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-gradient-to-br from-green-500 to-green-700 rounded-xl flex items-center justify-center shadow-lg shadow-green-500/25 shrink-0">
+          <div className="w-9 h-9 bg-gradient-to-br from-green-500 to-yellow-400 rounded-xl flex items-center justify-center shadow-lg shadow-green-500/25 shrink-0">
             <Shield size={17} className="text-slate-950" />
           </div>
           <div>
@@ -2898,7 +2536,7 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
                     <button
                       key={opt.value}
                       onClick={() => setSettings(s => ({ ...s, logoType: opt.value as any }))}
-                      className={`py-2.5 px-3 rounded-xl text-xs font-bold border transition-all ${settings.logoType === opt.value ? 'bg-green-500/20 border-green-500/60 text-green-300' : 'bg-slate-800/60 border-slate-700/40 text-slate-400 hover:border-slate-600'}`}
+                      className={`py-2.5 px-3 rounded-xl text-xs font-bold border transition-all ${settings.logoType === opt.value ? 'bg-indigo-500/20 border-indigo-500/60 text-indigo-300' : 'bg-slate-800/60 border-slate-700/40 text-slate-400 hover:border-slate-600'}`}
                     >
                       {opt.label}
                     </button>
@@ -2971,7 +2609,7 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
               </div>
 
               {showMovieForm && (
-                <div id="movie-form-section" className="bg-slate-800/40 border border-green-500/30 rounded-2xl p-5 flex flex-col gap-4">
+                <div id="movie-form-section" className="bg-slate-800/40 border border-indigo-500/30 rounded-2xl p-5 flex flex-col gap-4">
                   <h3 className="font-bold text-white text-base">{editingId ? '✏️ Chỉnh sửa phim' : '➕ Thêm phim mới'}</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
@@ -3019,7 +2657,7 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
                     <div className="flex items-center justify-between mb-2">
                       <label className="text-xs text-slate-400 font-semibold flex items-center gap-1">
                         Danh sách tập *
-                        <span className="text-[10px] text-green-400 bg-green-500/10 px-1.5 py-0.5 rounded">Bắt buộc</span>
+                        <span className="text-[10px] text-indigo-400 bg-indigo-500/10 px-1.5 py-0.5 rounded">Bắt buộc</span>
                       </label>
                       <button
                         type="button"
@@ -3225,7 +2863,7 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
                     <div
                       key={movie.id}
                       onClick={() => editMovie(movie)}
-                      className={`flex items-center gap-3 p-3 border rounded-xl transition-all cursor-pointer active:scale-[0.98] ${editingId === movie.id ? 'bg-green-500/10 border-green-500/50' : 'bg-slate-800/40 border-slate-700/30 hover:border-green-500/40 hover:bg-slate-800/70'}`}
+                      className={`flex items-center gap-3 p-3 border rounded-xl transition-all cursor-pointer active:scale-[0.98] ${editingId === movie.id ? 'bg-indigo-500/10 border-indigo-500/50' : 'bg-slate-800/40 border-slate-700/30 hover:border-indigo-500/40 hover:bg-slate-800/70'}`}
                     >
                       {movie.posterUrl ? (
                         <img src={movie.posterUrl} alt={movie.name} className="w-10 h-14 object-cover rounded-lg shrink-0" />
@@ -3238,17 +2876,17 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
                         <div className="text-sm font-bold text-white truncate">{movie.name}</div>
                         <div className="text-[11px] text-slate-500 flex items-center gap-2 mt-0.5 flex-wrap">
                           <span>{movie.year}</span>
-                          <span className="text-green-400 bg-green-500/10 px-1.5 py-0.5 rounded text-[10px] font-bold">{movie.quality}</span>
+                          <span className="text-indigo-400 bg-indigo-500/10 px-1.5 py-0.5 rounded text-[10px] font-bold">{movie.quality}</span>
                           <span>{movie.lang}</span>
                         </div>
-                        <div className="text-[10px] text-green-400 mt-1 font-bold">
+                        <div className="text-[10px] text-indigo-400 mt-1 font-bold">
                           {editingId === movie.id ? '✏️ Đang chỉnh sửa...' : 'Nhấn để sửa'}
                         </div>
                       </div>
                       <div className="flex items-center gap-1 shrink-0">
                         <button
                           onClick={e => { e.stopPropagation(); editMovie(movie); }}
-                          className="btn-icon p-2.5 hover:border-green-500/40 hover:text-green-400"
+                          className="btn-icon p-2.5 hover:border-indigo-500/40 hover:text-indigo-400"
                           title="Sửa"
                         >
                           <Edit3 size={15} />
@@ -3556,13 +3194,6 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
           </div>
           )}
 
-          {/* LỊCH CHIẾU PHIM */}
-          {activeSection === 'section-schedule' && (
-          <div id="section-schedule">
-            <ScheduleSection onToast={(msg, t) => setToast({ message: msg, type: t })} />
-          </div>
-          )}
-
           {/* QUẢNG CÁO */}
           {activeSection === 'section-ads' && (
           <div id="section-ads">
@@ -3623,8 +3254,8 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
           <div id="section-guide">
             <SectionCard title="Hướng dẫn & Thông tin" icon={Info} color="pink">
               <div className="flex flex-col gap-4 text-sm text-slate-400">
-              <div className="bg-green-500/5 border border-green-500/20 rounded-xl p-4">
-                <h4 className="text-green-300 font-bold mb-2">🎬 Về logo</h4>
+              <div className="bg-indigo-500/5 border border-indigo-500/20 rounded-xl p-4">
+                <h4 className="text-indigo-300 font-bold mb-2">🎬 Về logo</h4>
                 <ul className="flex flex-col gap-1.5 text-slate-500 text-[13px]">
                   <li>• <strong className="text-slate-400">Icon mặc định</strong>: Dùng icon clapperboard có gradient đẹp</li>
                   <li>• <strong className="text-slate-400">Hình ảnh</strong>: Upload ảnh PNG/SVG hoặc dán URL (max 2MB)</li>
