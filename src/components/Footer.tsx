@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Search, Film, Calendar, User, Clapperboard, Mail } from 'lucide-react';
+import { Home, Search, Film, Calendar, User, Mail } from 'lucide-react';
 
 function useSiteSettings() {
   const [s, setS] = useState(() => {
@@ -37,11 +37,8 @@ export default function Footer() {
       {/* ── Full footer (mobile hidden, desktop shown) ── */}
       <footer className="hidden md:block border-t border-slate-800/60 bg-slate-950 mt-10">
         <div className="max-w-4xl mx-auto px-4 py-8 flex flex-col items-center gap-5 text-center">
-          <div className="flex items-center gap-2">
-            <div className="w-9 h-9 bg-green-500 rounded-full flex items-center justify-center">
-              <Clapperboard className="text-slate-950" size={16} strokeWidth={2.5} />
-            </div>
-            <span className="text-base font-black text-white">{siteName}</span>
+          <div className="flex items-center">
+            <img src="https://sf-static.upanhlaylink.com/img/image_202606278a6e7d9058c777bdc68dcd15405544b5.jpg" alt={siteName} className="h-9 w-auto object-contain" />
           </div>
           <p className="text-slate-500 text-xs max-w-sm leading-relaxed">
             Trang xem phim online chất lượng cao miễn phí. Vietsub – Thuyết minh – Lồng tiếng.
