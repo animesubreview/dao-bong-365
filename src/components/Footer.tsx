@@ -38,7 +38,7 @@ export default function Footer() {
       <footer className="hidden md:block border-t border-slate-800/60 bg-slate-950 mt-10">
         <div className="max-w-4xl mx-auto px-4 py-8 flex flex-col items-center gap-5 text-center">
           <div className="flex items-center">
-            <img src="https://sf-static.upanhlaylink.com/img/image_20260628dc3b9dcf646041872c1eb00964222c05.jpg" alt={siteName} className="h-9 w-auto object-contain" />
+            <img src="/assets/logo-daophim.png" alt={siteName} className="h-9 w-auto object-contain" />
           </div>
           <p className="text-slate-500 text-xs max-w-sm leading-relaxed">
             Trang xem phim online chất lượng cao miễn phí. Vietsub – Thuyết minh – Lồng tiếng.

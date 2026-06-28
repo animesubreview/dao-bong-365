@@ -26,8 +26,8 @@ function useSiteSettings() {
   return settings;
 }
 
-// ── Logo Đảo Phim — dùng nguyên ảnh logo đầy đủ (icon + chữ + tagline) ──
-const SITE_LOGO_URL = 'https://sf-static.upanhlaylink.com/img/image_20260628dc3b9dcf646041872c1eb00964222c05.jpg';
+// ── Logo Đảo Phim — ảnh local, nền trong suốt thật (icon + chữ + tagline) ──
+const SITE_LOGO_URL = '/assets/logo-daophim.png';
 
 function Logo({ settings }: { settings: any }) {
   const name: string = settings.siteName || 'ĐẢO PHIM';
