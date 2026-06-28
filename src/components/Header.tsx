@@ -37,7 +37,7 @@ function Logo({ settings }: { settings: any }) {
       <img
         src={SITE_LOGO_URL}
         alt={name}
-        className="h-14 sm:h-16 w-auto object-contain shrink-0 py-1.5"
+        className="h-[60px] w-auto object-contain shrink-0"
       />
     </div>
   );
