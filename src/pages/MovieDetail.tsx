@@ -133,7 +133,7 @@ export default function MovieDetail() {
       {/* ══ HERO BANNER – full width giống RoPhim ══ */}
       <div
         className="relative w-full overflow-hidden"
-        style={{ height: 'clamp(300px, 48vw, 580px)', marginTop: '-56px', paddingTop: '56px' }}
+        style={{ height: 'clamp(260px, 40vw, 480px)', marginTop: '-64px', paddingTop: '64px' }}
       >
         <img src={thumbUrl} alt={movie.name} referrerPolicy="no-referrer"
           className="w-full h-full object-cover object-top" />
@@ -182,9 +182,9 @@ export default function MovieDetail() {
               {firstEpisode ? (
                 <Link
                   to={`/watch/${movie.slug}/${firstEpisode.slug}?server=${encodeURIComponent(episodes[0]?.server_name || '')}`}
-                  className="flex items-center gap-2 bg-green-500 hover:bg-green-400 text-slate-950 font-black px-7 py-3 rounded-full text-sm shadow-lg shadow-green-500/25 transition-all active:scale-95 shrink-0"
+                  className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-amber-400 to-yellow-300 hover:from-amber-300 hover:to-yellow-200 text-slate-950 font-black py-3.5 rounded-full text-base shadow-lg shadow-amber-500/20 transition-all active:scale-[0.98] mt-3"
                 >
-                  <Play className="fill-current" size={16} /> Xem Ngay
+                  <Play className="fill-current" size={18} /> Xem Ngay
                 </Link>
               ) : (
                 <div className="flex items-center gap-2 bg-slate-700 text-slate-400 font-black px-7 py-3 rounded-full text-sm cursor-not-allowed shrink-0">
@@ -192,22 +192,18 @@ export default function MovieDetail() {
                 </div>
               )}
 
-              <div className="flex items-center gap-5 md:gap-6">
-                <button onClick={toggleFavorite} className="flex flex-col items-center gap-1 group">
+              <div className="flex items-center justify-around py-2 border-t border-white/5 w-full mt-2">
+                <button onClick={toggleFavorite} className="flex flex-col items-center gap-1.5 group">
                   <Heart size={22} className={cn('transition-colors', isFavorite ? 'fill-current text-red-500' : 'text-slate-300 group-hover:text-red-400')} />
-                  <span className="text-[10px] text-slate-500 hidden md:block">Yêu thích</span>
+                  <span className="text-[11px] text-slate-400 font-semibold">Yêu thích</span>
                 </button>
-                <button className="flex flex-col items-center gap-1 group">
+                <button className="flex flex-col items-center gap-1.5 group">
                   <Plus size={22} className="text-slate-300 group-hover:text-white transition-colors" />
-                  <span className="text-[10px] text-slate-500 hidden md:block">Thêm vào</span>
+                  <span className="text-[11px] text-slate-400 font-semibold">Thêm vào</span>
                 </button>
-                <button onClick={handleShare} className="flex flex-col items-center gap-1 group">
+                <button onClick={handleShare} className="flex flex-col items-center gap-1.5 group">
                   <Share2 size={22} className="text-slate-300 group-hover:text-white transition-colors" />
-                  <span className="text-[10px] text-slate-500 hidden md:block">Chia sẻ</span>
-                </button>
-                <button onClick={() => setActiveTab('episodes')} className="flex flex-col items-center gap-1 group">
-                  <MessageCircle size={22} className="text-slate-300 group-hover:text-white transition-colors" />
-                  <span className="text-[10px] text-slate-500 hidden md:block">Bình luận</span>
+                  <span className="text-[11px] text-slate-400 font-semibold">Chia sẻ</span>
                 </button>
               </div>
 
@@ -306,7 +302,7 @@ export default function MovieDetail() {
                         {currentServer?.server_data.map((ep, eIdx) => (
                           <Link key={eIdx}
                             to={`/watch/${movie.slug}/${ep.slug}?server=${encodeURIComponent(currentServer.server_name)}`}
-                            className="bg-slate-800 border border-slate-700 hover:border-green-500 hover:bg-green-500/10 text-slate-400 hover:text-green-400 py-2 rounded-lg text-center text-[11px] font-bold transition-all">
+                            className="bg-slate-800/80 border border-slate-700/60 hover:border-amber-400/60 hover:text-amber-300 text-slate-400 py-2.5 rounded-xl text-center text-[11px] font-bold transition-all">
                             {ep.name}
                           </Link>
                         ))}

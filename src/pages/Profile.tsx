@@ -94,7 +94,7 @@ export default function Profile() {
           /* Not logged in */
           <div className="flex gap-3 mb-1">
             <Link to="/auth"
-              className="flex-1 flex items-center justify-center gap-2 bg-green-500 hover:bg-green-400 text-white font-black py-3.5 rounded-2xl text-sm transition-all">
+              className="flex-1 flex items-center justify-center gap-2 bg-amber-400 hover:bg-amber-300 text-slate-950 font-black py-3.5 rounded-2xl text-sm transition-all">
               <LogIn size={16} /> Đăng nhập
             </Link>
             <Link to="/auth?mode=register"

@@ -1,7 +1,7 @@
 import { useSEO } from '../hooks/useSEO';
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Play, ChevronRight, ChevronLeft, Heart, SkipForward, List, Server, Info, BookmarkPlus, Image as ImageIcon, Users, Copy, Check, X, Loader2, ArrowRightCircle } from 'lucide-react';
+import { Play, ChevronRight, ChevronLeft, ChevronDown, Heart, SkipForward, List, Server, Info, BookmarkPlus, Image as ImageIcon, Users, Copy, Check, X, Loader2, ArrowRightCircle } from 'lucide-react';
 import { movieApi, getNguonCDetail, mergeNguonCEpisodes, nguonCToMovie, getOPhimDetail, mergeOPhimEpisodes } from '../services/api';
 import { Movie, Episode } from '../types';
 import { cn, usePageTitle } from '../lib/utils';
@@ -398,8 +398,15 @@ export default function Watch() {
 
             {/* Section header */}
             <div className="flex items-center gap-2 px-4 py-3 border-b border-white/5">
-              <List size={15} className="text-slate-400" />
-              <span className="text-white font-bold text-sm uppercase tracking-wide">Danh sách tập</span>
+              <div className="flex items-center gap-2">
+                <div className="flex flex-col gap-0.5 shrink-0">
+                  <span className="w-4 h-0.5 bg-amber-400 rounded-full block" />
+                  <span className="w-4 h-0.5 bg-amber-400 rounded-full block" />
+                  <span className="w-4 h-0.5 bg-amber-400 rounded-full block" />
+                </div>
+                <span className="text-white font-black text-base">Phần 1</span>
+                <ChevronDown size={16} className="text-slate-400 mt-0.5" />
+              </div>
             </div>
 
             {/* Movie name row with back btn */}
@@ -436,34 +443,37 @@ export default function Watch() {
               </div>
             )}
 
-            {/* Sub tab + episode count */}
-            <div className="px-4 py-2.5 flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <button className="flex items-center gap-1.5 text-green-400 border-b-2 border-green-500 pb-1 text-xs font-bold uppercase tracking-wide">
-                  Phụ đề
-                </button>
-              </div>
-              <span className="text-slate-500 text-xs">
-                Danh sách tập ({currentServer.server_data.length} / {currentServer.server_data.length})
-              </span>
+            {/* Sub dropdown row */}
+            <div className="px-4 py-3 flex items-center gap-3">
+              <button className="flex items-center gap-2 bg-[#2a2a2a] border border-slate-700/80 rounded-xl px-3 py-2 hover:border-slate-600 transition-colors">
+                <span className="text-white text-xs font-bold">Phụ đề #1</span>
+                <ChevronDown size={13} className="text-slate-400" />
+              </button>
             </div>
 
-            {/* Show thumbnails toggle */}
-            <div className="flex items-center gap-2 px-4 pb-3">
-              <button
-                onClick={() => setShowThumbs(v => !v)}
-                className={cn(
-                  'w-9 h-5 rounded-full transition-colors relative',
-                  showThumbs ? 'bg-green-500' : 'bg-slate-700'
-                )}
-              >
-                <span className={cn(
-                  'absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform shadow',
-                  showThumbs ? 'translate-x-4' : 'translate-x-0.5'
-                )} />
-              </button>
-              <span className="text-slate-400 text-xs">Hiện ảnh</span>
+            {/* Episode count + Rút gọn toggle row */}
+            <div className="px-4 pb-2 flex items-center justify-between">
+              <span className="text-slate-500 text-[11px] font-medium">
+                {currentServer.server_data.length} tập
+              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-slate-400 text-xs font-semibold">Rút gọn</span>
+                <button
+                  onClick={() => setShowThumbs(v => !v)}
+                  className={cn(
+                    'w-11 h-6 rounded-full transition-all relative border',
+                    showThumbs ? 'bg-amber-400 border-amber-400' : 'bg-slate-700 border-slate-600'
+                  )}
+                >
+                  <span className={cn(
+                    'absolute top-0.5 w-5 h-5 rounded-full transition-transform shadow-sm',
+                    showThumbs ? 'bg-white translate-x-5' : 'bg-slate-400 translate-x-0.5'
+                  )} />
+                </button>
+              </div>
             </div>
+
+
 
             {/* Episode grid */}
             <div className="px-4 pb-4">
@@ -481,8 +491,8 @@ export default function Watch() {
                         ? 'flex items-center gap-3 px-3 py-2.5 text-left'
                         : 'py-2.5',
                       ep.slug === episodeSlug
-                        ? 'bg-green-500/20 border-green-500/60 text-green-400'
-                        : 'bg-[#2a2a2a] border-slate-700/50 text-slate-400 hover:border-green-500/40 hover:text-green-300'
+                        ? 'bg-amber-400 border-amber-400 text-slate-950 shadow-lg shadow-amber-500/30'
+                        : 'bg-[#2a2a2a] border-slate-700/50 text-slate-400 hover:border-amber-400/40 hover:text-amber-300'
                     )}
                   >
                     {showThumbs && (
