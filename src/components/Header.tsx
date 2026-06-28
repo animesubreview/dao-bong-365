@@ -37,7 +37,7 @@ function Logo({ settings }: { settings: any }) {
       <img
         src={SITE_LOGO_URL}
         alt={name}
-        className="h-11 sm:h-12 w-auto object-contain shrink-0"
+        className="h-14 sm:h-16 w-auto object-contain shrink-0 py-1.5"
       />
     </div>
   );
@@ -229,7 +229,7 @@ export default function Header() {
     <>
       {/* ── HEADER BAR ── */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-transparent backdrop-blur-0 border-b border-transparent transition-all duration-300" id="main-header" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, transparent 100%)' }}>
-        <div className="max-w-7xl mx-auto px-3 md:px-6 h-14 flex items-center gap-2 md:gap-3">
+        <div className="max-w-7xl mx-auto px-3 md:px-6 h-16 flex items-center gap-2 md:gap-3">
 
           {/* Hamburger — 3 gạch, KHÔNG icon clapperboard */}
           <button
