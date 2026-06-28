@@ -27,7 +27,7 @@ function useSiteSettings() {
 }
 
 // ── Logo Đảo Phim — dùng nguyên ảnh logo đầy đủ (icon + chữ + tagline) ──
-const SITE_LOGO_URL = 'https://sf-static.upanhlaylink.com/img/image_202606278a6e7d9058c777bdc68dcd15405544b5.jpg';
+const SITE_LOGO_URL = 'https://sf-static.upanhlaylink.com/img/image_20260628dc3b9dcf646041872c1eb00964222c05.jpg';
 
 function Logo({ settings }: { settings: any }) {
   const name: string = settings.siteName || 'ĐẢO PHIM';
@@ -37,7 +37,7 @@ function Logo({ settings }: { settings: any }) {
       <img
         src={SITE_LOGO_URL}
         alt={name}
-        className="h-10 sm:h-11 w-auto object-contain shrink-0"
+        className="h-12 sm:h-14 w-auto object-contain shrink-0"
       />
     </div>
   );
@@ -131,25 +131,7 @@ export default function Header() {
     return () => { document.body.style.overflow = ''; };
   }, [isMenuOpen]);
 
-  // Header scroll effect
-  useEffect(() => {
-    const header = document.getElementById('main-header');
-    if (!header) return;
-    const onScroll = () => {
-      if (window.scrollY > 60) {
-        header.style.background = 'rgba(10,10,10,0.97)';
-        header.style.backdropFilter = 'blur(20px)';
-        header.style.borderBottomColor = 'rgba(255,255,255,0.06)';
-      } else {
-        header.style.background = 'linear-gradient(to bottom, rgba(0,0,0,0.65) 0%, transparent 100%)';
-        header.style.backdropFilter = 'blur(0px)';
-        header.style.borderBottomColor = 'transparent';
-      }
-    };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    onScroll();
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
+  // Header luôn nền đen đặc — không còn hiệu ứng trong suốt khi ở đầu trang
 
   useEffect(() => {
     const t = setTimeout(async () => {
@@ -227,8 +209,8 @@ export default function Header() {
 
   return (
     <>
-      {/* ── HEADER BAR ── */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-transparent backdrop-blur-0 border-b border-transparent transition-all duration-300" id="main-header" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, transparent 100%)' }}>
+      {/* ── HEADER BAR — nền đen đặc, giống CôBePhim ── */}
+      <header className="fixed top-0 left-0 right-0 z-50 bg-slate-950 border-b border-white/5 transition-all duration-300" id="main-header">
         <div className="max-w-7xl mx-auto px-3 md:px-6 h-16 flex items-center gap-2 md:gap-3">
 
           {/* Hamburger — 3 gạch, KHÔNG icon clapperboard */}

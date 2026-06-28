@@ -34,7 +34,7 @@ export default function Banner({ movies }: BannerProps) {
   const movie = items[idx];
 
   return (
-    <div className="relative w-full overflow-hidden" style={{ marginTop: '-64px' }}>
+    <div className="relative w-full overflow-hidden">
       {/* ── Fullscreen BG slides ── */}
       <div style={{ height: 'clamp(480px, 95vw, 700px)', position: 'relative' }}>
         {items.map((item, i) => (
@@ -55,8 +55,7 @@ export default function Banner({ movies }: BannerProps) {
         ))}
 
         {/* ── Content — pinned to bottom of BG ── */}
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-end pb-6 px-4"
-          style={{ paddingTop: '64px' }}>
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-end pb-6 px-4">
 
           {/* Poster card — center, medium size like CôBePhim */}
           <div
