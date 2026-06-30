@@ -1,15 +1,14 @@
 import { useSEO } from '../hooks/useSEO';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { movieApi } from '../services/api';
 import { Movie } from '../types';
 import MovieCard from '../components/MovieCard';
 import { ManualMovieCard, ManualMovie } from '../components/ManualMoviesSection';
 import { subscribeManualMovies } from '../lib/manualMovies';
-import { Search as SearchIcon, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search as SearchIcon, Loader2, ChevronLeft, ChevronRight, LayoutGrid } from 'lucide-react';
 import { cn, usePageTitle } from '../lib/utils';
 
-// Movie từ NguonC có _id bắt đầu bằng "nc-"
 const isNguonC = (movie: Movie) => movie._id?.startsWith('nc-');
 
 export default function Search() {
@@ -17,12 +16,18 @@ export default function Search() {
   const query = searchParams.get('q') || '';
   const page = parseInt(searchParams.get('page') || '1');
 
+  const [inputVal, setInputVal] = useState(query);
+  const inputRef = useRef<HTMLInputElement>(null);
+
   const [results, setResults] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(false);
   const [pagination, setPagination] = useState<any>(null);
   const [nguoncCount, setNguoncCount] = useState(0);
   const [manualResults, setManualResults] = useState<ManualMovie[]>([]);
   const [allManual, setAllManual] = useState<ManualMovie[]>([]);
+
+  const [browseMovies, setBrowseMovies] = useState<Movie[]>([]);
+  const [browseLoading, setBrowseLoading] = useState(false);
 
   useSEO({
     title: query ? `Tìm kiếm: ${query}` : 'Tìm kiếm phim',
@@ -33,11 +38,24 @@ export default function Search() {
     noIndex: true,
   });
 
-  // Load manual movies from Firestore
+  // Sync input với query trên URL
+  useEffect(() => { setInputVal(query); }, [query]);
+
+  // Load manual movies
   useEffect(() => {
     const unsub = subscribeManualMovies(setAllManual);
     return unsub;
   }, []);
+
+  // Load browse movies khi chưa có query
+  useEffect(() => {
+    if (query) return;
+    setBrowseLoading(true);
+    movieApi.getNewUpdates(1)
+      .then((res) => setBrowseMovies(res.items || []))
+      .catch(() => setBrowseMovies([]))
+      .finally(() => setBrowseLoading(false));
+  }, [query]);
 
   useEffect(() => {
     if (!query) {
@@ -46,8 +64,6 @@ export default function Search() {
       setPagination(null);
       return;
     }
-
-    // Search manual movies
     const q = query.toLowerCase();
     setManualResults(
       allManual.filter(m =>
@@ -56,8 +72,6 @@ export default function Search() {
         m.description?.toLowerCase().includes(q)
       )
     );
-
-    // Search API (KKPhim + NguonC song song)
     const fetchResults = async () => {
       setLoading(true);
       try {
@@ -77,6 +91,13 @@ export default function Search() {
     window.scrollTo(0, 0);
   }, [query, page, allManual]);
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const val = inputVal.trim();
+    if (!val) return;
+    setSearchParams({ q: val, page: '1' });
+  };
+
   const handlePageChange = (newPage: number) => {
     setSearchParams({ q: query, page: newPage.toString() });
   };
@@ -85,31 +106,53 @@ export default function Search() {
   const hasResults = results.length > 0 || manualResults.length > 0;
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] pb-24 pt-20">
+    <div className="min-h-screen bg-[#0a0a0a] pb-24 pt-6">
       <div className="max-w-7xl mx-auto px-4">
 
-        {/* Header */}
-        <div className="py-8">
-          <div className="flex items-center gap-3 mb-2">
-            <SearchIcon size={22} className="text-green-400" />
-            <h1 className="text-2xl font-black text-white tracking-tight">
-              {query ? `Kết quả cho "${query}"` : 'Tìm kiếm phim'}
-            </h1>
+        {/* ── Ô tìm kiếm lớn ── */}
+        <form onSubmit={handleSubmit} className="flex gap-2 mb-7">
+          <div className="relative flex-1">
+            <SearchIcon size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+            <input
+              ref={inputRef}
+              type="text"
+              value={inputVal}
+              onChange={(e) => setInputVal(e.target.value)}
+              placeholder="Tìm phim, diễn viên..."
+              autoFocus
+              className="w-full bg-slate-900/80 border border-slate-700/60 rounded-2xl pl-11 pr-4 py-3.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-green-500/60 focus:ring-1 focus:ring-green-500/30 transition-all"
+            />
           </div>
-          {query && !loading && (
-            <p className="text-slate-500 text-sm ml-9">
-              Tìm thấy <span className="text-green-400 font-bold">{totalCount}</span> kết quả
-              {nguoncCount > 0 && (
-                <span className="ml-2 text-xs text-slate-600">
-                  (bao gồm <span className="text-amber-400 font-semibold">{nguoncCount}</span> từ{' '}
-                  <span className="text-amber-400 font-semibold">NguonC</span>)
-                </span>
-              )}
-            </p>
-          )}
-        </div>
+          <button
+            type="submit"
+            className="shrink-0 bg-green-500 hover:bg-green-400 text-black font-bold px-5 rounded-2xl text-sm transition-colors"
+          >
+            Tìm
+          </button>
+        </form>
 
-        {/* Loading */}
+        {/* ── Kết quả khi có query ── */}
+        {query && (
+          <div className="mb-4">
+            <div className="flex items-center gap-2 mb-1">
+              <SearchIcon size={18} className="text-green-400" />
+              <h1 className="text-lg font-black text-white">Kết quả cho "{query}"</h1>
+            </div>
+            {!loading && (
+              <p className="text-slate-500 text-sm ml-7">
+                Tìm thấy <span className="text-green-400 font-bold">{totalCount}</span> kết quả
+                {nguoncCount > 0 && (
+                  <span className="ml-2 text-xs text-slate-600">
+                    (bao gồm <span className="text-amber-400 font-semibold">{nguoncCount}</span> từ{' '}
+                    <span className="text-amber-400 font-semibold">NguonC</span>)
+                  </span>
+                )}
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Loading skeleton */}
         {loading && (
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
             {Array.from({ length: 12 }).map((_, i) => (
@@ -118,7 +161,7 @@ export default function Search() {
           </div>
         )}
 
-        {/* Results */}
+        {/* Kết quả tìm kiếm */}
         {!loading && hasResults && (
           <>
             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
@@ -136,8 +179,6 @@ export default function Search() {
                 </div>
               ))}
             </div>
-
-            {/* Pagination */}
             {pagination && pagination.totalPages > 1 && (
               <div className="flex items-center justify-center gap-2 mt-10">
                 <button onClick={() => handlePageChange(page - 1)} disabled={page === 1}
@@ -165,37 +206,41 @@ export default function Search() {
           </>
         )}
 
-        {/* Empty state - không tìm thấy */}
+        {/* Không tìm thấy */}
         {!loading && !hasResults && query && (
-          <div className="flex flex-col items-center justify-center py-24 gap-5 text-center">
-            <div className="w-20 h-20 bg-[#181818] border border-white/8 rounded-full flex items-center justify-center text-slate-600">
-              <SearchIcon size={36} />
+          <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
+            <div className="w-16 h-16 bg-[#181818] rounded-full flex items-center justify-center text-slate-600">
+              <SearchIcon size={28} />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-white mb-2">Không tìm thấy phim nào</h3>
-              <p className="text-slate-500 text-sm max-w-xs">
-                Không có kết quả cho <span className="text-white font-semibold">"{query}"</span>. Thử tìm với từ khóa khác.
-              </p>
-            </div>
-            <div className="flex gap-2 flex-wrap justify-center">
-              <Link to="/" className="px-5 py-2.5 bg-green-500 text-black font-bold rounded-xl text-sm hover:bg-green-400 transition-all">
-                Về trang chủ
-              </Link>
-              <Link to="/type/phim-bo" className="px-5 py-2.5 bg-[#181818] border border-white/10 text-white font-bold rounded-xl text-sm hover:border-green-500/50 transition-all">
-                Xem phim bộ
-              </Link>
+              <h3 className="text-base font-bold text-white mb-1">Không tìm thấy phim nào</h3>
+              <p className="text-slate-500 text-sm">Thử tìm với từ khóa khác.</p>
             </div>
           </div>
         )}
 
-        {/* No query state */}
+        {/* ── Duyệt tìm khi chưa có query ── */}
         {!query && (
-          <div className="flex flex-col items-center justify-center py-24 gap-4 text-center">
-            <div className="w-20 h-20 bg-[#181818] border border-white/8 rounded-full flex items-center justify-center text-slate-600">
-              <SearchIcon size={36} />
+          <>
+            <div className="flex items-center gap-2 mb-4">
+              <LayoutGrid size={18} className="text-green-400" />
+              <h2 className="text-base font-black text-white">Duyệt tìm</h2>
             </div>
-            <p className="text-slate-500 text-sm">Nhập từ khóa vào ô tìm kiếm phía trên</p>
-          </div>
+            {browseLoading && (
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
+                {Array.from({ length: 12 }).map((_, i) => (
+                  <div key={i} className="aspect-[2/3] bg-[#181818] rounded-xl animate-pulse" />
+                ))}
+              </div>
+            )}
+            {!browseLoading && browseMovies.length > 0 && (
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
+                {browseMovies.map(movie => (
+                  <MovieCard key={movie._id} movie={movie} />
+                ))}
+              </div>
+            )}
+          </>
         )}
 
       </div>

@@ -508,6 +508,40 @@ export const movieApi = {
     return response.json();
   },
 
+  /**
+   * Lấy "lịch chiếu" theo từng ngày — dựa trên field modified.time (thời gian
+   * KKPhim cập nhật phim/tập mới). Gom nhiều trang phim-moi-cap-nhat lại,
+   * nhóm theo ngày dương lịch (yyyy-mm-dd) của modified.time.
+   * Trả về mảng các ngày (mới nhất trước), mỗi ngày kèm danh sách phim.
+   */
+  getScheduleByDate: async (maxPages: number = 4): Promise<{ date: string; movies: Movie[] }[]> => {
+    const allMovies: Movie[] = [];
+    for (let page = 1; page <= maxPages; page++) {
+      try {
+        const res = await fetch(`${BASE_URL}/danh-sach/phim-moi-cap-nhat?page=${page}`);
+        const data = await res.json();
+        const items: Movie[] = data?.items || [];
+        if (items.length === 0) break;
+        allMovies.push(...items);
+      } catch {
+        break;
+      }
+    }
+
+    const byDate = new Map<string, Movie[]>();
+    for (const movie of allMovies) {
+      const iso = movie.modified?.time;
+      if (!iso) continue;
+      const dateKey = iso.slice(0, 10); // yyyy-mm-dd
+      if (!byDate.has(dateKey)) byDate.set(dateKey, []);
+      byDate.get(dateKey)!.push(movie);
+    }
+
+    return Array.from(byDate.entries())
+      .sort((a, b) => (a[0] < b[0] ? 1 : -1)) // ngày mới nhất trước
+      .map(([date, movies]) => ({ date, movies }));
+  },
+
   getMovieDetail: async (slug: string): Promise<MovieDetailResponse> => {
     const response = await fetch(`${BASE_URL}/phim/${slug}`);
     return response.json();

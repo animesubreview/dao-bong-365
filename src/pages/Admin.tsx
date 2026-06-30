@@ -41,9 +41,6 @@ import {
   subscribeOverrides, MovieOverride,
 } from '../lib/movieOverrides';
 import {
-  subscribeCinemaRooms, createCinemaRoom, updateCinemaRoom, deleteCinemaRoom, CinemaRoom,
-} from '../lib/cinema';
-import {
   saveMaintenanceConfig, subscribeMaintenanceConfig,
   MaintenanceConfig, DEFAULT_MAINTENANCE,
 } from '../lib/maintenance';
@@ -1365,145 +1362,6 @@ function AdsSection({ onToast }: { onToast: (msg: string, t: 'success' | 'error'
 }
 
 
-// ===== CINEMA SECTION =====
-const DEFAULT_CINEMA_FORM = { title: '', embedUrl: '', thumbnail: '', description: '', isActive: true, scheduledAt: '', totalSeats: 40, maxViewers: 100 };
-
-function CinemaSection({ onToast }: { onToast: (msg: string, t: 'success' | 'error') => void }) {
-  const [rooms, setRooms] = useState<CinemaRoom[]>([]);
-  const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState(DEFAULT_CINEMA_FORM);
-  const [editId, setEditId] = useState<string | null>(null);
-
-  useEffect(() => subscribeCinemaRooms(setRooms), []);
-
-  const save = async () => {
-    if (!form.title || !form.embedUrl) return onToast('Vui lòng nhập tiêu đề và link!', 'error');
-    try {
-      const payload = { ...form, totalSeats: Number(form.totalSeats), maxViewers: Number(form.maxViewers) };
-      if (editId) { await updateCinemaRoom(editId, payload); onToast('Đã cập nhật phòng chiếu!', 'success'); }
-      else { await createCinemaRoom(payload as any); onToast('Đã tạo phòng chiếu!', 'success'); }
-      setForm(DEFAULT_CINEMA_FORM); setShowForm(false); setEditId(null);
-    } catch { onToast('Lỗi lưu dữ liệu!', 'error'); }
-  };
-
-  const del = async (id: string) => {
-    if (!confirm('Xóa phòng chiếu này?')) return;
-    await deleteCinemaRoom(id); onToast('Đã xóa!', 'success');
-  };
-
-  const resetSeats = async (r: CinemaRoom) => {
-    if (!confirm('Reset tất cả ghế đã đặt?')) return;
-    await updateCinemaRoom(r.id, { bookedSeats: [] }); onToast('Đã reset ghế!', 'success');
-  };
-
-  const startEdit = (r: CinemaRoom) => {
-    setForm({ title: r.title, embedUrl: r.embedUrl, thumbnail: r.thumbnail || '', description: r.description || '', isActive: r.isActive, scheduledAt: r.scheduledAt || '', totalSeats: r.totalSeats || 40, maxViewers: r.maxViewers || 100 });
-    setEditId(r.id); setShowForm(true);
-  };
-
-  const activeCount = rooms.filter(r => r.isActive).length;
-  const totalViewers = rooms.reduce((a, r) => a + (r.viewerCount || 0), 0);
-
-  return (
-    <SectionCard title="Rạp Chiếu Phim" icon={Film} color="pink">
-      <div className="flex flex-col gap-4">
-
-        {/* Stats row */}
-        <div className="grid grid-cols-3 gap-3">
-          {[
-            { label: 'Phòng chiếu', value: rooms.length, color: 'text-white' },
-            { label: 'Đang chiếu', value: activeCount, color: 'text-green-400' },
-            { label: 'Đang xem', value: totalViewers, color: 'text-green-400' },
-          ].map(stat => (
-            <div key={stat.label} className="bg-slate-800/50 rounded-xl p-3 text-center border border-slate-700/40">
-              <div className={`text-2xl font-black ${stat.color}`}>{stat.value}</div>
-              <div className="text-xs text-slate-500 mt-0.5">{stat.label}</div>
-            </div>
-          ))}
-        </div>
-
-        <div className="flex items-center justify-end">
-          <button onClick={() => { setShowForm(v => !v); setEditId(null); setForm(DEFAULT_CINEMA_FORM); }}
-            className="btn-primary flex items-center gap-2 text-sm py-2">
-            {showForm ? <X size={15} /> : <Plus size={15} />}
-            {showForm ? 'Đóng' : 'Tạo phòng chiếu'}
-          </button>
-        </div>
-
-        {showForm && (
-          <div className="bg-slate-800/40 border border-pink-500/20 rounded-2xl p-5 flex flex-col gap-3">
-            <h3 className="font-bold text-white">{editId ? '✏️ Sửa phòng chiếu' : '🎬 Tạo phòng chiếu mới'}</h3>
-            <input value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))}
-              placeholder="Tên phim / phòng chiếu" className="admin-input" />
-            <input value={form.embedUrl} onChange={e => setForm(p => ({ ...p, embedUrl: e.target.value }))}
-              placeholder="Link YouTube hoặc embed URL" className="admin-input" />
-            <input value={form.thumbnail} onChange={e => setForm(p => ({ ...p, thumbnail: e.target.value }))}
-              placeholder="Link ảnh thumbnail (tuỳ chọn)" className="admin-input" />
-            <textarea value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
-              placeholder="Mô tả (tuỳ chọn)" rows={2} className="admin-input resize-none" />
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs text-slate-400 mb-1 block">🪑 Số ghế tối đa</label>
-                <input type="number" min={1} max={200} value={form.totalSeats} onChange={e => setForm(p => ({ ...p, totalSeats: Number(e.target.value) }))} className="admin-input" />
-              </div>
-              <div>
-                <label className="text-xs text-slate-400 mb-1 block">👥 Số người xem tối đa</label>
-                <input type="number" min={1} max={1000} value={form.maxViewers} onChange={e => setForm(p => ({ ...p, maxViewers: Number(e.target.value) }))} className="admin-input" />
-              </div>
-            </div>
-
-            <div>
-              <label className="text-xs text-slate-400 mb-1 block">📅 Lịch chiếu (để trống = không lên lịch)</label>
-              <input type="datetime-local" value={form.scheduledAt} onChange={e => setForm(p => ({ ...p, scheduledAt: e.target.value }))} className="admin-input" />
-            </div>
-
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" checked={form.isActive} onChange={e => setForm(p => ({ ...p, isActive: e.target.checked }))} className="accent-green-500" />
-              <span className="text-sm text-slate-300">Đang hoạt động (hiển thị ngay)</span>
-            </label>
-            <button onClick={save} className="btn-primary flex items-center gap-2 self-start">
-              <Save size={15} /> Lưu phòng chiếu
-            </button>
-          </div>
-        )}
-
-        <div className="flex flex-col gap-2">
-          {rooms.map(r => (
-            <div key={r.id} className="p-3 bg-slate-800/40 rounded-xl border border-slate-700/40">
-              <div className="flex items-start gap-3">
-                {r.thumbnail && <img src={r.thumbnail} alt={r.title} className="w-16 h-10 object-cover rounded-lg shrink-0" />}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-white font-bold text-sm truncate">{r.title}</span>
-                    <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full shrink-0 ${r.isActive ? 'bg-green-600 text-white' : 'bg-slate-700 text-slate-400'}`}>
-                      {r.isActive ? 'ĐANG CHIẾU' : 'TẮT'}
-                    </span>
-                  </div>
-                  <div className="flex flex-wrap gap-3 mt-1 text-xs text-slate-500">
-                    <span>👁 {r.viewerCount || 0}/{r.maxViewers || 100} người</span>
-                    <span>🪑 {(r.bookedSeats?.length || 0)}/{r.totalSeats || 40} ghế</span>
-                    {r.scheduledAt && <span>📅 {new Date(r.scheduledAt).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' })}</span>}
-                  </div>
-                  {/* Seat fill bar */}
-                  <div className="mt-1.5 w-full h-1 bg-slate-700 rounded-full overflow-hidden">
-                    <div className="h-full bg-green-500 rounded-full transition-all" style={{ width: `${Math.round(((r.bookedSeats?.length || 0) / (r.totalSeats || 40)) * 100)}%` }} />
-                  </div>
-                </div>
-                <div className="flex items-center gap-1 shrink-0">
-                  <button onClick={() => resetSeats(r)} title="Reset ghế" className="p-2 rounded-lg text-slate-400 hover:text-blue-400 hover:bg-blue-400/10 transition-all text-xs font-bold">🔄</button>
-                  <button onClick={() => startEdit(r)} className="p-2 rounded-lg text-slate-400 hover:text-green-400 hover:bg-green-500/10 transition-all"><Edit3 size={14} /></button>
-                  <button onClick={() => del(r.id)} className="p-2 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-400/10 transition-all"><Trash2 size={14} /></button>
-                </div>
-              </div>
-            </div>
-          ))}
-          {rooms.length === 0 && <p className="text-slate-500 text-sm text-center py-4">Chưa có phòng chiếu nào. Tạo phòng đầu tiên!</p>}
-        </div>
-      </div>
-    </SectionCard>
-  );
-}
 
 // ── VipSection ────────────────────────────────────────────────────────────────
 function VipSection({ onToast }: { onToast: (msg: string, t: 'success' | 'error') => void }) {
@@ -1881,7 +1739,6 @@ const NAV_SECTIONS = [
   { id: 'section-ads',          label: 'Quảng cáo',         icon: Megaphone },
   { id: 'section-members',      label: 'Thành viên',        icon: Users },
   { id: 'section-notifications',label: 'Thông báo',         icon: Bell },
-  { id: 'section-cinema',       label: 'Rạp chiếu',         icon: MonitorPlay },
   { id: 'section-vip',          label: 'Gói VIP',           icon: Crown },
   { id: 'section-geoblock',     label: 'Chặn IP',           icon: Globe },
   { id: 'section-maintenance',  label: 'Bảo trì',           icon: Wrench },
@@ -3212,13 +3069,6 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
           {activeSection === 'section-notifications' && (
           <div id="section-notifications">
             <NotificationsSection onToast={(msg, t) => setToast({ message: msg, type: t })} />
-          </div>
-          )}
-
-          {/* RẠP CHIẾU PHIM */}
-          {activeSection === 'section-cinema' && (
-          <div id="section-cinema">
-            <CinemaSection onToast={(msg, t) => setToast({ message: msg, type: t })} />
           </div>
           )}
 

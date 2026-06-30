@@ -16,6 +16,8 @@ export interface Movie {
   country?: { id: string; name: string; slug: string }[];
   actor?: string[];
   director?: string[];
+  modified?: { time: string };
+  episode_current?: string;
 }
 
 export interface Episode {

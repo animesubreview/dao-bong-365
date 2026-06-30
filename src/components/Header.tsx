@@ -43,26 +43,6 @@ function Logo({ settings }: { settings: any }) {
   );
 }
 
-function SuggestionList({ suggestions, onSelect }: { suggestions: Movie[]; onSelect: (m: Movie) => void }) {
-  if (!suggestions.length) return null;
-  return (
-    <div className="absolute top-full right-0 mt-2 w-72 bg-slate-900 border border-slate-700/60 rounded-2xl overflow-hidden shadow-2xl z-50">
-      {suggestions.map(movie => (
-        <button key={movie._id} onClick={() => onSelect(movie)}
-          className="w-full flex items-center gap-3 p-3 hover:bg-slate-800 transition-colors text-left border-b border-slate-800/60 last:border-0">
-          <div className="shrink-0 w-10 rounded-lg overflow-hidden bg-slate-800" style={{ aspectRatio: '2/3' }}>
-            <img src={movieApi.getImageUrl(movie.thumb_url)} alt={movie.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-sm font-bold text-white truncate">{movie.name}</div>
-            <div className="text-[10px] text-slate-500 truncate">{movie.origin_name}</div>
-          </div>
-        </button>
-      ))}
-    </div>
-  );
-}
-
 const GENRES = ['Hành Động','Lịch Sử','Viễn Tưởng','Bí Ẩn','Thể Thao','Gia Đình','Hình Sự','Thần Thoại','Cổ Trang','Kinh Dị','Tình Cảm','Phiêu Lưu','Học Đường','Võ Thuật','Chính Kịch','Chiến Tranh','Tâm Lý','Âm Nhạc','Hài Hước'];
 const COUNTRIES = [
   { name: 'Hàn Quốc', slug: 'han-quoc' },
@@ -77,11 +57,6 @@ const COUNTRIES = [
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [showSearch, setShowSearch] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [suggestions, setSuggestions] = useState<Movie[]>([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const [isSearching, setIsSearching] = useState(false);
   const [session, setSession] = useState<UserProfile | null>(null);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [genreOpen, setGenreOpen] = useState(false);
@@ -101,8 +76,6 @@ export default function Header() {
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
   const [modalStep, setModalStep] = useState<'search' | 'confirm' | 'done'>('search');
   const userMenuRef = useRef<HTMLDivElement>(null);
-  const desktopSearchRef = useRef<HTMLDivElement>(null);
-  const mobileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const location = useLocation();
   const settings = useSiteSettings();
@@ -123,7 +96,7 @@ export default function Header() {
   }, []);
 
   useEffect(() => {
-    setIsMenuOpen(false); setShowSearch(false); setSearchQuery(''); setShowSuggestions(false);
+    setIsMenuOpen(false);
   }, [location.pathname]);
 
   useEffect(() => {
@@ -150,16 +123,6 @@ export default function Header() {
     onScroll();
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
-
-  useEffect(() => {
-    const t = setTimeout(async () => {
-      if (searchQuery.trim().length < 2) { setSuggestions([]); setShowSuggestions(false); return; }
-      setIsSearching(true);
-      try { const r = await movieApi.searchMovies(searchQuery, 1); setSuggestions(r.items.slice(0, 5)); setShowSuggestions(true); }
-      catch {} finally { setIsSearching(false); }
-    }, 300);
-    return () => clearTimeout(t);
-  }, [searchQuery]);
 
   // Modal movie search debounce
   useEffect(() => {
@@ -216,15 +179,6 @@ export default function Header() {
     setWatchRoomMaxInput('2');
   };
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) { navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`); setShowSuggestions(false); }
-  };
-
-  const handleSelectSugg = (m: Movie) => {
-    navigate(`/phim/${m.slug}`); setShowSuggestions(false); setSearchQuery(''); setShowSearch(false);
-  };
-
   return (
     <>
       {/* ── HEADER BAR ── */}
@@ -263,43 +217,6 @@ export default function Header() {
           </nav>
 
           <div className="flex-1" />
-
-          {/* Desktop search */}
-          <div ref={desktopSearchRef} className="hidden lg:flex relative">
-            <form onSubmit={handleSearch}>
-              <div className="relative">
-                <input type="text" placeholder="Tìm kiếm phim..."
-                  value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-                  onFocus={() => searchQuery.length >= 2 && setShowSuggestions(true)}
-                  className="w-48 bg-slate-800/70 border border-slate-700/60 rounded-full py-1.5 pl-9 pr-3 text-sm focus:outline-none focus:border-green-500/50 text-white placeholder:text-slate-500 focus:w-64 transition-all" />
-                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none">
-                  {isSearching ? <Loader2 className="animate-spin" size={14} /> : <Search size={14} />}
-                </div>
-              </div>
-            </form>
-            {showSuggestions && <SuggestionList suggestions={suggestions} onSelect={handleSelectSugg} />}
-          </div>
-
-          {/* Mobile search */}
-          <div className="relative lg:hidden">
-            {showSearch ? (
-              <form onSubmit={handleSearch} className="flex items-center">
-                <div className="relative">
-                  <input ref={mobileInputRef} type="text" placeholder="Tìm phim..."
-                    value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-                    onFocus={() => searchQuery.length >= 2 && setShowSuggestions(true)}
-                    className="w-40 bg-slate-800 border border-slate-700 rounded-full py-1.5 pl-8 pr-7 text-sm focus:outline-none focus:border-green-500/60 text-white placeholder:text-slate-500" />
-                  <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500" />
-                  <button type="button" onClick={() => { setShowSearch(false); setSearchQuery(''); setShowSuggestions(false); }}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white"><X size={12} /></button>
-                </div>
-              </form>
-            ) : (
-              <button onClick={() => { setShowSearch(true); setTimeout(() => mobileInputRef.current?.focus(), 50); }}
-                className="text-slate-300 hover:text-white p-1.5"><Search size={20} /></button>
-            )}
-            {showSuggestions && <SuggestionList suggestions={suggestions} onSelect={handleSelectSugg} />}
-          </div>
 
           {/* Bell */}
           <button className="p-1.5 text-slate-400 hover:text-white transition-colors shrink-0 hidden sm:block">

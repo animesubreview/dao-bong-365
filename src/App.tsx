@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import Header from './components/Header';
 import Footer from './components/Footer';
+import MobileBottomNav from './components/MobileBottomNav';
 import NotificationDisplay from './components/NotificationDisplay';
 import Home from './pages/Home';
 import MovieDetail from './pages/MovieDetail';
@@ -16,7 +17,7 @@ import WatchManual from './pages/WatchManual';
 import ManualMovieDetail from './pages/ManualMovieDetail';
 import Auth from './pages/Auth';
 import Profile from './pages/Profile';
-import CinemaPage from './pages/Cinema';
+import SchedulePage from './pages/Schedule';
 import WatchRoomPage from './pages/WatchRoom';
 import TruyenTranh from './pages/TruyenTranh';
 import NapThe from './pages/NapThe';
@@ -28,7 +29,6 @@ import { subscribeMaintenanceConfig, MaintenanceConfig, DEFAULT_MAINTENANCE } fr
 import { getGeoResult, getGeoblockEnabled, GeoResult } from './lib/geoblock';
 import ClickAd from './components/ClickAd';
 import { startPresence } from './lib/presence';
-import TikTokAnnouncementPopup from './components/TikTokAnnouncementPopup';
 
 function LoadingScreen({ fadeOut }: { fadeOut: boolean }) {
   return (
@@ -191,11 +191,10 @@ function AppInner({ maintenance, maintenanceLoaded }: { maintenance: Maintenance
   return (
       <div className="min-h-screen bg-slate-950 flex flex-col">
         <ClickAd />
-        <TikTokAnnouncementPopup />
         <TVOptimizer />
         <Header />
         <NotificationDisplay />
-        <div className="flex-1 pt-16">
+        <div className="flex-1 pt-16 pb-20 md:pb-0">
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/phim/:slug" element={<MovieDetail />} />
@@ -211,7 +210,8 @@ function AppInner({ maintenance, maintenanceLoaded }: { maintenance: Maintenance
             <Route path="/manual/:id" element={<ManualMovieDetail />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/profile" element={<Profile />} />
-            <Route path="/cinema" element={<CinemaPage />} />
+            <Route path="/cinema" element={<SchedulePage />} />
+            <Route path="/lich-chieu" element={<SchedulePage />} />
             <Route path="/watch-room/:roomId" element={<WatchRoomPage />} />
             <Route path="/truyen-tranh" element={<TruyenTranh />} />
             <Route path="/nap-tien" element={<NapThe />} />
@@ -219,6 +219,7 @@ function AppInner({ maintenance, maintenanceLoaded }: { maintenance: Maintenance
           </Routes>
         </div>
         <Footer />
+        <MobileBottomNav />
       </div>
   );
 }
