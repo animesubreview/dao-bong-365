@@ -17,6 +17,7 @@ import WatchManual from './pages/WatchManual';
 import ManualMovieDetail from './pages/ManualMovieDetail';
 import Auth from './pages/Auth';
 import Profile from './pages/Profile';
+import Account from './pages/Account';
 import SchedulePage from './pages/Schedule';
 import WatchRoomPage from './pages/WatchRoom';
 import TruyenTranh from './pages/TruyenTranh';
@@ -209,7 +210,8 @@ function AppInner({ maintenance, maintenanceLoaded }: { maintenance: Maintenance
             <Route path="/watch-manual/:id/:ep" element={<WatchManual />} />
             <Route path="/manual/:id" element={<ManualMovieDetail />} />
             <Route path="/auth" element={<Auth />} />
-            <Route path="/profile" element={<Profile />} />
+            <Route path="/profile" element={<Account />} />
+            <Route path="/profile/edit" element={<Profile />} />
             <Route path="/cinema" element={<SchedulePage />} />
             <Route path="/lich-chieu" element={<SchedulePage />} />
             <Route path="/watch-room/:roomId" element={<WatchRoomPage />} />

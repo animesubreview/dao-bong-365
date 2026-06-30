@@ -264,6 +264,7 @@ export default function Watch() {
       {/* ── Video Player ── iframe + logo overlay ── */}
       <DaoPhimPlayer
         src={currentEpisode.link_embed}
+        m3u8={currentEpisode.link_m3u8}
         title={`${movie.name} - Tập ${currentEpisode.name}`}
         className="w-full"
         onEnded={() => {

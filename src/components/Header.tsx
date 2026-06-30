@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import {
-  Search, History, Heart, X, Loader2, Clapperboard, LogIn, LogOut,
-  ChevronDown, UserCog, Home, SlidersHorizontal, Tv2, Film, MonitorPlay,
-  Globe, ChevronRight, Download, Smile, Bell, Users, Check, Copy, BookOpen,
-  CreditCard, Crown, Zap, Wallet,
+  Search, History, Heart, X, Loader2, LogIn, LogOut,
+  ChevronDown, UserCog,
+  Bell, Users, Check, Copy,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { movieApi } from '../services/api';
@@ -43,8 +42,8 @@ function Logo({ settings }: { settings: any }) {
   );
 }
 
-const GENRES = ['Hành Động','Lịch Sử','Viễn Tưởng','Bí Ẩn','Thể Thao','Gia Đình','Hình Sự','Thần Thoại','Cổ Trang','Kinh Dị','Tình Cảm','Phiêu Lưu','Học Đường','Võ Thuật','Chính Kịch','Chiến Tranh','Tâm Lý','Âm Nhạc','Hài Hước'];
-const COUNTRIES = [
+export const GENRES = ['Hành Động','Lịch Sử','Viễn Tưởng','Bí Ẩn','Thể Thao','Gia Đình','Hình Sự','Thần Thoại','Cổ Trang','Kinh Dị','Tình Cảm','Phiêu Lưu','Học Đường','Võ Thuật','Chính Kịch','Chiến Tranh','Tâm Lý','Âm Nhạc','Hài Hước'];
+export const COUNTRIES = [
   { name: 'Hàn Quốc', slug: 'han-quoc' },
   { name: 'Trung Quốc', slug: 'trung-quoc' },
   { name: 'Âu Mỹ', slug: 'au-my' },
@@ -56,11 +55,8 @@ const COUNTRIES = [
 ];
 
 export default function Header() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [session, setSession] = useState<UserProfile | null>(null);
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [genreOpen, setGenreOpen] = useState(false);
-  const [countryOpen, setCountryOpen] = useState(false);
   // Watch Room quick-create modal
   const [showWatchRoomModal, setShowWatchRoomModal] = useState(false);
   const [watchRoomMax, setWatchRoomMax] = useState<number>(2);
@@ -94,15 +90,6 @@ export default function Header() {
     document.addEventListener('mousedown', h);
     return () => document.removeEventListener('mousedown', h);
   }, []);
-
-  useEffect(() => {
-    setIsMenuOpen(false);
-  }, [location.pathname]);
-
-  useEffect(() => {
-    document.body.style.overflow = isMenuOpen ? 'hidden' : '';
-    return () => { document.body.style.overflow = ''; };
-  }, [isMenuOpen]);
 
   // Header scroll effect
   useEffect(() => {
@@ -168,7 +155,6 @@ export default function Header() {
 
   const openWatchRoomModal = () => {
     setShowWatchRoomModal(true);
-    setIsMenuOpen(false);
     setCreatedRoomId(null);
     setRoomLinkCopied(false);
     setModalSearch('');
@@ -179,22 +165,18 @@ export default function Header() {
     setWatchRoomMaxInput('2');
   };
 
+  // Cho phép các trang khác (vd. trang Tài khoản) mở modal Xem Chung qua custom event
+  useEffect(() => {
+    const handler = () => openWatchRoomModal();
+    window.addEventListener('open-watch-room-modal', handler);
+    return () => window.removeEventListener('open-watch-room-modal', handler);
+  }, []);
+
   return (
     <>
       {/* ── HEADER BAR ── */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-transparent backdrop-blur-0 border-b border-transparent transition-all duration-300" id="main-header" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, transparent 100%)' }}>
         <div className="max-w-7xl mx-auto px-3 md:px-6 h-16 flex items-center gap-2 md:gap-3">
-
-          {/* Hamburger — 3 gạch, KHÔNG icon clapperboard */}
-          <button
-            onClick={() => setIsMenuOpen(v => !v)}
-            className="shrink-0 flex flex-col gap-[5px] p-2 -ml-1 group"
-            aria-label="Menu"
-          >
-            <span className={cn('block h-[2px] bg-slate-300 group-hover:bg-white rounded-full transition-all', isMenuOpen ? 'w-5 rotate-45 translate-y-[7px]' : 'w-5')} />
-            <span className={cn('block h-[2px] bg-slate-300 group-hover:bg-white rounded-full transition-all', isMenuOpen ? 'opacity-0 w-0' : 'w-5')} />
-            <span className={cn('block h-[2px] bg-slate-300 group-hover:bg-white rounded-full transition-all', isMenuOpen ? 'w-5 -rotate-45 -translate-y-[7px]' : 'w-5')} />
-          </button>
 
           {/* Logo — 1 lần duy nhất */}
           <Link to="/" className="shrink-0"><Logo settings={settings} /></Link>
@@ -264,179 +246,6 @@ export default function Header() {
           )}
         </div>
       </header>
-
-      {/* ── DRAWER OVERLAY ── */}
-      {isMenuOpen && (
-        <div className="fixed inset-0 z-[200]" onClick={() => setIsMenuOpen(false)}>
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-          <aside
-            className="absolute top-0 left-0 h-full w-[300px] max-w-[85vw] bg-slate-950 flex flex-col overflow-y-auto border-r border-slate-800/60"
-            onClick={e => e.stopPropagation()}
-          >
-            {/* Drawer header */}
-            <div className="h-14 flex items-center justify-between px-4 border-b border-slate-800/60 shrink-0">
-              <Logo settings={settings} />
-              <button onClick={() => setIsMenuOpen(false)} className="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition-all">
-                <X size={20} />
-              </button>
-            </div>
-
-            {/* Login prompt or user info */}
-            {!session ? (
-              <div className="mx-4 mt-4 p-4 bg-slate-900 rounded-2xl border border-slate-800">
-                <p className="text-xs text-slate-400 mb-3 leading-relaxed">Đăng nhập để đồng bộ lịch sử xem & phim yêu thích của bạn.</p>
-                <Link to="/auth" onClick={() => setIsMenuOpen(false)}
-                  className="flex items-center justify-center gap-2 w-full bg-white text-slate-950 font-black text-sm py-2.5 rounded-xl hover:bg-slate-100 transition-all">
-                  <LogIn size={14} /> Đăng nhập ngay
-                </Link>
-              </div>
-            ) : (
-              <div className="mx-4 mt-4 p-3 bg-slate-900 rounded-2xl border border-slate-800 flex items-center gap-3">
-                <img src={session.avatar} alt={session.username} className="w-10 h-10 rounded-full bg-slate-700 shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-white truncate">{session.username}</p>
-                  <p className="text-xs text-slate-500 truncate">{session.email}</p>
-                </div>
-              </div>
-            )}
-
-            {/* Nav */}
-            <div className="px-3 mt-4 flex-1">
-              <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1 px-2">DUYỆT PHIM</p>
-              <nav className="flex flex-col gap-0.5">
-                {[
-                  { to: '/', label: 'Trang Chủ', icon: Home },
-                  { to: '/type/phim-bo', label: 'Phim Hàn Quốc', icon: Tv2 },
-                  { to: '/type/phim-bo', label: 'Phim Trung Quốc', icon: Film },
-                  { to: '/type/phim-le', label: 'Phim Lẻ', icon: MonitorPlay },
-                  { to: '/type/tv-shows', label: 'TV Shows', icon: Tv2 },
-                  { to: '/type/hoat-hinh', label: 'Hoạt Hình', icon: Smile },
-                  { to: '/type/phim-chieu-rap', label: 'Chiếu Rạp', icon: Clapperboard, badge: 'HOT', badgeRed: true },
-                ].map(item => (
-                  <Link key={item.to + item.label} to={item.to} onClick={() => setIsMenuOpen(false)}
-                    className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold text-slate-200 hover:text-white hover:bg-slate-800/60 transition-all">
-                    <item.icon size={17} className="text-slate-500 shrink-0" />
-                    <span className="flex-1">{item.label}</span>
-                    {item.badge && (
-                      <span className={cn('text-[9px] font-black text-white px-1.5 py-0.5 rounded', item.badgeRed ? 'bg-red-500' : 'bg-green-600')}>
-                        {item.badge}
-                      </span>
-                    )}
-                  </Link>
-                ))}
-
-                {/* Truyện Tranh */}
-                <Link
-                  to="/truyen-tranh"
-                  onClick={() => setIsMenuOpen(false)}
-                  className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold text-slate-200 hover:text-white hover:bg-slate-800/60 transition-all"
-                >
-                  <BookOpen size={17} className="text-orange-400 shrink-0" />
-                  <span className="flex-1">Truyện Tranh</span>
-                  <span className="text-[9px] font-black text-white px-1.5 py-0.5 rounded bg-orange-500">NEW</span>
-                </Link>
-
-                {/* Xem Chung button */}
-                <button
-                  onClick={openWatchRoomModal}
-                  className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold text-slate-200 hover:text-white hover:bg-slate-800/60 transition-all w-full text-left"
-                >
-                  <Users size={17} className="text-green-400 shrink-0" />
-                  <span className="flex-1">Xem Chung</span>
-                  <span className="text-[9px] font-black text-white px-1.5 py-0.5 rounded bg-green-600">NEW</span>
-                </button>
-
-                {/* ── Nạp Thẻ & VIP ── */}
-                <div className="border-t border-slate-800/60 mt-2 pt-2">
-                  <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1 px-2">TÀI KHOẢN</p>
-
-                  {/* Nạp thẻ → /nap-tien */}
-                  <Link to="/nap-tien" onClick={() => setIsMenuOpen(false)}
-                    className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold text-slate-200 hover:text-white hover:bg-slate-800/60 transition-all">
-                    <CreditCard size={17} className="text-green-400 shrink-0" />
-                    <span className="flex-1">Nạp thẻ cào</span>
-                    <ChevronRight size={14} className="text-slate-600" />
-                  </Link>
-
-                  {/* VIP → /mua-vip */}
-                  <Link to="/mua-vip" onClick={() => setIsMenuOpen(false)}
-                    className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold text-amber-200 hover:text-white hover:bg-amber-500/10 transition-all">
-                    <Crown size={17} className="text-amber-400 shrink-0" />
-                    <span className="flex-1">Mua VIP · Chặn QC</span>
-                    <ChevronRight size={14} className="text-amber-600" />
-                  </Link>
-                </div>
-
-                {/* Thể Loại */}
-                <button onClick={() => setGenreOpen(v => !v)}
-                  className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold text-slate-200 hover:text-white hover:bg-slate-800/60 transition-all w-full text-left">
-                  <Globe size={17} className="text-slate-500 shrink-0" />
-                  <span className="flex-1">Thể Loại</span>
-                  <ChevronDown size={14} className={cn('text-slate-500 transition-transform', genreOpen && 'rotate-180')} />
-                </button>
-                {genreOpen && (
-                  <div className="ml-8 flex flex-col gap-0.5">
-                    {GENRES.map(g => (
-                      <span key={g} className="text-sm text-slate-400 hover:text-white py-2 px-3 rounded-lg hover:bg-slate-800/60 transition-colors cursor-pointer">
-                        {g}
-                      </span>
-                    ))}
-                  </div>
-                )}
-
-                {/* Quốc Gia */}
-                <button onClick={() => setCountryOpen(v => !v)}
-                  className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold text-slate-200 hover:text-white hover:bg-slate-800/60 transition-all w-full text-left">
-                  <Globe size={17} className="text-slate-500 shrink-0" />
-                  <span className="flex-1">Quốc Gia</span>
-                  <ChevronDown size={14} className={cn('text-slate-500 transition-transform', countryOpen && 'rotate-180')} />
-                </button>
-                {countryOpen && (
-                  <div className="ml-8 flex flex-col gap-0.5">
-                    {COUNTRIES.map(c => (
-                      <span key={c.slug} className="text-sm text-slate-400 hover:text-white py-2 px-3 rounded-lg hover:bg-slate-800/60 transition-colors cursor-pointer">
-                        {c.name}
-                      </span>
-                    ))}
-                  </div>
-                )}
-
-                <div className="border-t border-slate-800/60 mt-2 pt-2 flex flex-col gap-0.5">
-                  <Link to="/history" onClick={() => setIsMenuOpen(false)}
-                    className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold text-slate-200 hover:text-white hover:bg-slate-800/60 transition-all">
-                    <History size={17} className="text-slate-500 shrink-0" /> Lịch sử xem
-                  </Link>
-                  <Link to="/favorites" onClick={() => setIsMenuOpen(false)}
-                    className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold text-slate-200 hover:text-white hover:bg-slate-800/60 transition-all">
-                    <Heart size={17} className="text-slate-500 shrink-0" /> Phim yêu thích
-                  </Link>
-                  {session && (
-                    <button onClick={async () => { await logout(); setIsMenuOpen(false); }}
-                      className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold text-red-400 hover:bg-red-500/10 transition-all w-full text-left">
-                      <LogOut size={17} className="shrink-0" /> Đăng xuất
-                    </button>
-                  )}
-                </div>
-              </nav>
-            </div>
-
-            {/* App download */}
-            <div className="mx-3 mb-5 mt-4 shrink-0">
-              <div className="bg-slate-900 rounded-2xl border border-slate-800 p-4">
-                <div className="flex items-center gap-3 mb-3">
-                  <img src="/assets/logo-daophim.png" alt={settings.siteName || 'ĐẢO PHIM'} className="h-9 w-auto object-contain shrink-0" />
-                  <div>
-                    <p className="text-[10px] text-slate-500">Xem phim mọi lúc, mọi nơi</p>
-                  </div>
-                </div>
-                <button className="flex items-center justify-center gap-2 w-full bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold py-2.5 rounded-xl transition-all border border-slate-700">
-                  <Download size={13} /> Tải APK Android
-                </button>
-              </div>
-            </div>
-          </aside>
-        </div>
-      )}
 
       {/* ── WATCH ROOM MODAL ── */}
       {showWatchRoomModal && (

@@ -325,8 +325,8 @@ export default function ProfilePage() {
 
       <div className="w-full max-w-sm relative z-10">
         {/* Back */}
-        <Link to="/" className="inline-flex items-center gap-2 text-slate-500 hover:text-white text-sm mb-6 transition-colors">
-          <ArrowLeft size={16} /> Về trang chủ
+        <Link to="/profile" className="inline-flex items-center gap-2 text-slate-500 hover:text-white text-sm mb-6 transition-colors">
+          <ArrowLeft size={16} /> Về Tài khoản
         </Link>
 
         <div className="bg-slate-900/90 border border-slate-800/80 rounded-3xl overflow-hidden shadow-2xl backdrop-blur-xl">
