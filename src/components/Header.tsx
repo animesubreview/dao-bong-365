@@ -71,6 +71,13 @@ export default function Header() {
   const [modalSearching, setModalSearching] = useState(false);
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
   const [modalStep, setModalStep] = useState<'search' | 'confirm' | 'done'>('search');
+  // ── Tìm kiếm nhanh trên desktop (dropdown ngay trong header) ──
+  const [showDesktopSearch, setShowDesktopSearch] = useState(false);
+  const [desktopQuery, setDesktopQuery] = useState('');
+  const [desktopResults, setDesktopResults] = useState<Movie[]>([]);
+  const [desktopSearching, setDesktopSearching] = useState(false);
+  const desktopSearchRef = useRef<HTMLDivElement>(null);
+  const desktopInputRef = useRef<HTMLInputElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const location = useLocation();
@@ -86,6 +93,7 @@ export default function Header() {
   useEffect(() => {
     const h = (e: MouseEvent) => {
       if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) setShowUserMenu(false);
+      if (desktopSearchRef.current && !desktopSearchRef.current.contains(e.target as Node)) setShowDesktopSearch(false);
     };
     document.addEventListener('mousedown', h);
     return () => document.removeEventListener('mousedown', h);
@@ -124,6 +132,48 @@ export default function Header() {
     }, 300);
     return () => clearTimeout(t);
   }, [modalSearch, showWatchRoomModal]);
+
+  // Debounce tìm kiếm nhanh trên desktop
+  useEffect(() => {
+    if (!showDesktopSearch || desktopQuery.trim().length < 2) { setDesktopResults([]); return; }
+    const t = setTimeout(async () => {
+      setDesktopSearching(true);
+      try {
+        const r = await movieApi.searchMovies(desktopQuery.trim(), 1, 8);
+        setDesktopResults(r.items || []);
+      } catch {
+        setDesktopResults([]);
+      } finally {
+        setDesktopSearching(false);
+      }
+    }, 300);
+    return () => clearTimeout(t);
+  }, [desktopQuery, showDesktopSearch]);
+
+  // Auto-focus khi mở ô tìm kiếm + đóng bằng phím Esc
+  useEffect(() => {
+    if (showDesktopSearch) {
+      desktopInputRef.current?.focus();
+    } else {
+      setDesktopQuery('');
+      setDesktopResults([]);
+    }
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setShowDesktopSearch(false); };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [showDesktopSearch]);
+
+  const goToDesktopSearchResults = () => {
+    const val = desktopQuery.trim();
+    if (!val) return;
+    setShowDesktopSearch(false);
+    navigate(`/search?q=${encodeURIComponent(val)}`);
+  };
+
+  const goToDesktopMovie = (movie: Movie) => {
+    setShowDesktopSearch(false);
+    navigate(`/phim/${movie.slug}`);
+  };
 
   const handleNapThe = async () => {
     if (!session) { setNapMsg({ text: 'Bạn cần đăng nhập!', ok: false }); return; }
@@ -199,6 +249,88 @@ export default function Header() {
           </nav>
 
           <div className="flex-1" />
+
+          {/* ── Tìm kiếm nhanh (chỉ desktop) ── */}
+          <div ref={desktopSearchRef} className="relative hidden lg:block shrink-0">
+            <div className={cn(
+              'flex items-center transition-all duration-200 overflow-hidden rounded-full border',
+              showDesktopSearch
+                ? 'w-72 bg-slate-900/90 border-slate-700/70 px-3'
+                : 'w-9 bg-transparent border-transparent'
+            )}>
+              <button
+                onClick={() => setShowDesktopSearch(v => !v)}
+                className="p-1.5 text-slate-300 hover:text-white transition-colors shrink-0"
+                aria-label="Tìm kiếm phim"
+              >
+                {desktopSearching ? <Loader2 size={17} className="animate-spin" /> : <Search size={17} />}
+              </button>
+              {showDesktopSearch && (
+                <>
+                  <input
+                    ref={desktopInputRef}
+                    type="text"
+                    value={desktopQuery}
+                    onChange={e => setDesktopQuery(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') goToDesktopSearchResults(); }}
+                    placeholder="Tìm phim, diễn viên..."
+                    className="flex-1 bg-transparent text-sm text-white placeholder:text-slate-500 py-2 px-1.5 focus:outline-none min-w-0"
+                  />
+                  {desktopQuery && (
+                    <button onClick={() => setDesktopQuery('')} className="p-1 text-slate-500 hover:text-white shrink-0">
+                      <X size={14} />
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+
+            {/* Dropdown kết quả */}
+            {showDesktopSearch && desktopQuery.trim().length >= 2 && (
+              <div className="absolute top-full right-0 mt-2 w-96 max-h-[28rem] overflow-y-auto bg-slate-900 border border-slate-700/60 rounded-2xl shadow-2xl z-50">
+                {desktopSearching && desktopResults.length === 0 ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 size={20} className="animate-spin text-slate-500" />
+                  </div>
+                ) : desktopResults.length === 0 ? (
+                  <div className="py-8 text-center">
+                    <p className="text-slate-500 text-sm">Không tìm thấy phim nào</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="py-1.5">
+                      {desktopResults.map(movie => (
+                        <button
+                          key={movie._id}
+                          onClick={() => goToDesktopMovie(movie)}
+                          className="w-full flex items-center gap-3 px-3 py-2 hover:bg-slate-800/80 transition-colors text-left"
+                        >
+                          <div className="w-10 rounded-md overflow-hidden shrink-0 bg-slate-800" style={{ aspectRatio: '2/3' }}>
+                            <img
+                              src={movieApi.getImageUrl(movie.thumb_url)}
+                              alt={movie.name}
+                              className="w-full h-full object-cover"
+                              referrerPolicy="no-referrer"
+                            />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-white text-sm font-semibold truncate">{movie.name}</p>
+                            <p className="text-slate-500 text-xs truncate">{movie.origin_name} · {movie.year}</p>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                    <button
+                      onClick={goToDesktopSearchResults}
+                      className="w-full text-center py-2.5 text-xs font-bold text-green-400 hover:bg-slate-800/80 border-t border-slate-800 transition-colors"
+                    >
+                      Xem tất cả kết quả cho "{desktopQuery.trim()}"
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
 
           {/* Bell */}
           <button className="p-1.5 text-slate-400 hover:text-white transition-colors shrink-0 hidden sm:block">
