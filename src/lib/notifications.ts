@@ -20,10 +20,13 @@ export interface SiteNotification {
   targetUrl?: string;
   imageUrl?: string;
   displayStyle?: 'default' | 'image_link';
+  /** Danh mục hiển thị trong trang Thông báo: 'phim' (mặc định) hoặc 'cong_dong' */
+  category?: 'phim' | 'cong_dong';
 }
 
 const NOTIFS_COL = 'siteNotifications';
 const DISMISSED_KEY = 'kk_dismissed_notifs';
+const READ_KEY = 'kk_read_notifs';
 
 // ── Firebase CRUD ──────────────────────────────────────────────────────────────
 
@@ -51,6 +54,7 @@ export async function createNotification(
   if (data.expiresAt)     notif.expiresAt     = data.expiresAt;
   if (data.imageUrl)      notif.imageUrl      = data.imageUrl;
   if (data.displayStyle)  notif.displayStyle  = data.displayStyle;
+  notif.category = data.category || 'phim';
 
   const ref = await addDoc(collection(db, NOTIFS_COL), notif);
   return { id: ref.id, ...notif } as SiteNotification;
@@ -87,6 +91,35 @@ export function dismissNotification(id: string) {
   if (!dismissed.includes(id)) {
     sessionStorage.setItem(DISMISSED_KEY, JSON.stringify([...dismissed, id]));
   }
+}
+
+// ── Đã đọc (lưu local, dùng cho trang Thông báo + chấm đỏ trên chuông) ────────
+// Khác với "dismissed": dismissed chỉ ẩn popup trong phiên hiện tại,
+// còn "read" đánh dấu lâu dài (localStorage) để không hiện chấm đỏ nữa.
+
+export function getReadIds(): string[] {
+  try {
+    const v = localStorage.getItem(READ_KEY);
+    return v ? JSON.parse(v) : [];
+  } catch { return []; }
+}
+
+export function markAsRead(id: string) {
+  const read = getReadIds();
+  if (!read.includes(id)) {
+    localStorage.setItem(READ_KEY, JSON.stringify([...read, id]));
+  }
+}
+
+export function markAllAsRead(ids: string[]) {
+  const read = new Set(getReadIds());
+  ids.forEach(id => read.add(id));
+  localStorage.setItem(READ_KEY, JSON.stringify([...read]));
+}
+
+export function countUnread(notifs: SiteNotification[]): number {
+  const read = new Set(getReadIds());
+  return filterActiveNotifications(notifs).filter(n => !read.has(n.id)).length;
 }
 
 // ── Helper filter ─────────────────────────────────────────────────────────────

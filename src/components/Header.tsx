@@ -10,6 +10,7 @@ import { movieApi } from '../services/api';
 import { Movie } from '../types';
 import { logout, onAuthChange, getUserProfile, UserProfile } from '../lib/auth';
 import { createWatchRoom } from '../lib/watchRoom';
+import { subscribeNotifications, countUnread, SiteNotification } from '../lib/notifications';
 
 function useSiteSettings() {
   const [settings, setSettings] = useState(() => {
@@ -82,6 +83,19 @@ export default function Header() {
   const navigate = useNavigate();
   const location = useLocation();
   const settings = useSiteSettings();
+
+  // ── Chuông thông báo: đếm số chưa đọc, cập nhật realtime + khi đổi trang ──
+  const [allNotifs, setAllNotifs] = useState<SiteNotification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    const unsub = subscribeNotifications(setAllNotifs);
+    return unsub;
+  }, []);
+
+  useEffect(() => {
+    setUnreadCount(countUnread(allNotifs));
+  }, [allNotifs, location.pathname]);
 
   useEffect(() => {
     const u = onAuthChange(async user => {
@@ -332,14 +346,23 @@ export default function Header() {
             )}
           </div>
 
-          {/* Bell */}
-          <button className="p-1.5 text-slate-400 hover:text-white transition-colors shrink-0 hidden sm:block">
+          {/* Chuông thông báo — thay cho icon tài khoản cũ trên mobile */}
+          <Link
+            to="/notifications"
+            className="relative p-1.5 text-slate-300 hover:text-white transition-colors shrink-0"
+            aria-label="Thông báo"
+          >
             <Bell size={19} />
-          </button>
+            {unreadCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 min-w-[15px] h-[15px] px-[3px] rounded-full bg-red-500 text-white text-[9px] font-black flex items-center justify-center leading-none">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
+          </Link>
 
-          {/* User / Login */}
+          {/* User / Login — trên mobile đã có tab "Tài khoản" ở thanh dưới nên chỉ hiện từ md trở lên */}
           {session ? (
-            <div ref={userMenuRef} className="relative shrink-0">
+            <div ref={userMenuRef} className="relative shrink-0 hidden md:block">
               <button onClick={() => setShowUserMenu(v => !v)}
                 className="flex items-center gap-1.5 pl-1 pr-2 py-1 rounded-full bg-slate-800/80 border border-slate-700/50 hover:border-green-500/40 transition-all">
                 <img src={session.avatar} alt={session.username} className="w-7 h-7 rounded-full bg-slate-700" />
@@ -372,7 +395,7 @@ export default function Header() {
             </div>
           ) : (
             <Link to="/auth"
-              className="shrink-0 flex items-center gap-1.5 border border-white/60 hover:bg-white hover:text-slate-950 text-white text-xs font-bold px-3 py-2 rounded-full transition-all">
+              className="shrink-0 hidden md:flex items-center gap-1.5 border border-white/60 hover:bg-white hover:text-slate-950 text-white text-xs font-bold px-3 py-2 rounded-full transition-all">
               <LogIn size={13} /> <span className="hidden sm:inline">Đăng nhập</span>
             </Link>
           )}

@@ -602,6 +602,7 @@ const NOTIF_DEFAULTS = {
   title: '',
   message: '',
   type: 'info' as SiteNotification['type'],
+  category: 'phim' as NonNullable<SiteNotification['category']>,
   active: true,
   showAsPopup: true,
   targetUrl: '',
@@ -631,6 +632,7 @@ function NotificationsSection({ onToast }: { onToast: (msg: string, t: 'success'
         title: form.title.trim(),
         message: form.message.trim(),
         type: form.type,
+        category: form.category,
         active: form.active,
         showAsPopup: form.displayStyle === 'image_link' ? true : form.showAsPopup,
         targetUrl: form.targetUrl.trim() || undefined,
@@ -699,6 +701,20 @@ function NotificationsSection({ onToast }: { onToast: (msg: string, t: 'success'
                 </select>
               </div>
               <div>
+                <label className="text-xs text-slate-400 font-semibold mb-1 block">Danh mục (trang Thông báo)</label>
+                <select
+                  value={form.category}
+                  onChange={e => setForm(f => ({ ...f, category: e.target.value as NonNullable<SiteNotification['category']> }))}
+                  className="input-field text-sm"
+                >
+                  <option value="phim">🎬 Phim</option>
+                  <option value="cong_dong">👥 Cộng đồng</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="sm:col-span-2">
                 <label className="text-xs text-slate-400 font-semibold mb-1 block">Kiểu hiển thị</label>
                 <select
                   value={form.displayStyle === 'image_link' ? 'image_link' : (form.showAsPopup ? 'popup' : 'banner')}
@@ -803,6 +819,9 @@ function NotificationsSection({ onToast }: { onToast: (msg: string, t: 'success'
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className={`text-[10px] font-black px-1.5 py-0.5 rounded ${TYPE_COLORS[n.type]}`}>{TYPE_LABELS[n.type]}</span>
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-700/50 text-slate-300">
+                      {n.category === 'cong_dong' ? '👥 Cộng đồng' : '🎬 Phim'}
+                    </span>
                     <span className="text-[10px] text-slate-500">
                       {n.displayStyle === 'image_link' ? '🖼️ Image Link' : n.showAsPopup ? '🪟 Popup' : '📢 Banner'}
                     </span>

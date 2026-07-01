@@ -23,6 +23,7 @@ import WatchRoomPage from './pages/WatchRoom';
 import TruyenTranh from './pages/TruyenTranh';
 import NapThe from './pages/NapThe';
 import MuaVip from './pages/MuaVip';
+import Notifications from './pages/Notifications';
 import MaintenancePage from './components/MaintenancePage';
 import GeoBlockPage from './components/GeoBlockPage';
 import TVOptimizer from './components/TVOptimizer';
@@ -218,6 +219,7 @@ function AppInner({ maintenance, maintenanceLoaded }: { maintenance: Maintenance
             <Route path="/truyen-tranh" element={<TruyenTranh />} />
             <Route path="/nap-tien" element={<NapThe />} />
             <Route path="/mua-vip" element={<MuaVip />} />
+            <Route path="/notifications" element={<Notifications />} />
           </Routes>
         </div>
         <Footer />
