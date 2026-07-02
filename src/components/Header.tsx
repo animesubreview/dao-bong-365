@@ -265,7 +265,7 @@ export default function Header() {
           <div className="flex-1" />
 
           {/* ── Tìm kiếm nhanh (chỉ desktop) ── */}
-          <div ref={desktopSearchRef} className="relative hidden lg:block shrink-0">
+          <div ref={desktopSearchRef} className="relative hidden md:block shrink-0">
             <div className={cn(
               'flex items-center transition-all duration-200 overflow-hidden rounded-full border',
               showDesktopSearch
