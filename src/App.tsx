@@ -32,7 +32,7 @@ import { getGeoResult, getGeoblockEnabled, GeoResult } from './lib/geoblock';
 import ClickAd from './components/ClickAd';
 import { startPresence } from './lib/presence';
 
-function LoadingScreen({ fadeOut, onVideoEvent }: { fadeOut: boolean; onVideoEvent: (type: 'ended' | 'error') => void }) {
+function LoadingScreen({ fadeOut }: { fadeOut: boolean }) {
   return (
     <div
       style={{
@@ -41,27 +41,44 @@ function LoadingScreen({ fadeOut, onVideoEvent }: { fadeOut: boolean; onVideoEve
         zIndex: 9999,
         backgroundColor: '#0a0a0f',
         display: 'flex',
+        flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        overflow: 'hidden',
         opacity: fadeOut ? 0 : 1,
         transition: 'opacity 0.7s ease',
         pointerEvents: fadeOut ? 'none' : 'all',
       }}
     >
-      <video
-        autoPlay
-        muted
-        playsInline
-        // @ts-ignore - thuộc tính riêng cho iOS Safari cũ
-        webkit-playsinline="true"
-        preload="auto"
-        onEnded={() => onVideoEvent('ended')}
-        onError={() => onVideoEvent('error')}
-        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-      >
-        <source src="https://litter.catbox.moe/44aupjg0zb4d9hi3.mp4" type="video/mp4" />
-      </video>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&display=swap');
+
+        @keyframes kk-pop {
+          0%   { opacity: 0; transform: scale(0.6) rotate(-8deg); }
+          65%  { opacity: 1; transform: scale(1.08) rotate(2deg); }
+          100% { opacity: 1; transform: scale(1) rotate(0deg); }
+        }
+        @keyframes kk-glow-soft {
+          0%, 100% { box-shadow: 0 0 40px rgba(34,197,94,0.22), 0 0 80px rgba(34,197,94,0.08); }
+          50%       { box-shadow: 0 0 60px rgba(34,197,94,0.4), 0 0 110px rgba(34,197,94,0.16); }
+        }
+        .kk-logo-wrap {
+          animation: kk-pop 0.75s cubic-bezier(.22,1,.36,1) 0.1s both;
+        }
+        .kk-glow-box {
+          animation: kk-glow-soft 2.5s ease-in-out 1s infinite;
+        }
+      `}</style>
+
+      {/* Logo image — hiệu ứng glow + pop, dùng đúng logo web */}
+      <div className="kk-logo-wrap" style={{ position: 'relative' }}>
+        <div className="kk-glow-box" style={{ position: 'relative', padding: '14px 22px', borderRadius: 24 }}>
+          <img
+            src="/assets/logo-daophim.png"
+            alt="Đảo Phim"
+            style={{ height: 64, width: 'auto', display: 'block', position: 'relative', zIndex: 1 }}
+          />
+        </div>
+      </div>
     </div>
   );
 }
@@ -76,22 +93,10 @@ export default function App() {
   const [geoblockEnabled, setGeoblockEnabled] = useState<boolean | null>(null);
 
   useEffect(() => {
-    // An toàn: nếu video không tải được / mạng chặn link ngoài, không để màn hình đen mãi
-    const safetyTimer = setTimeout(() => { setFadeOut(true); }, 4000);
-    return () => clearTimeout(safetyTimer);
+    const fadeTimer = setTimeout(() => setFadeOut(true), 2200);
+    const hideTimer = setTimeout(() => setIsLoading(false), 2950);
+    return () => { clearTimeout(fadeTimer); clearTimeout(hideTimer); };
   }, []);
-
-  useEffect(() => {
-    if (!fadeOut) return;
-    const t = setTimeout(() => setIsLoading(false), 700);
-    return () => clearTimeout(t);
-  }, [fadeOut]);
-
-  const handleVideoEvent = (type: 'ended' | 'error') => {
-    // Video lỗi -> ẩn ngay lập tức (không chờ) để khỏi bị màn đen do link chặn/mạng lỗi
-    // Video phát xong hết -> fade ra bình thường
-    setFadeOut(true);
-  };
 
   useEffect(() => {
     const unsub = subscribeMaintenanceConfig(cfg => {
@@ -120,7 +125,7 @@ export default function App() {
   }, []);
 
   if (isLoading) {
-    return <LoadingScreen fadeOut={fadeOut} onVideoEvent={handleVideoEvent} />;
+    return <LoadingScreen fadeOut={fadeOut} />;
   }
 
   // Vẫn đang kiểm tra IP → hiện spinner nhỏ, không block
