@@ -7,7 +7,7 @@ import { getStore } from '@netlify/blobs';
 
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '8182223004:AAEKg4Gf869fv0Io72AQNeWvrii6D3_utIk';
 const TELEGRAM_CHAT_ID   = process.env.TELEGRAM_CHAT_ID   || '-1003945410277';
-const SITE_URL           = process.env.SITE_URL            || 'https://daophim.lol';
+const SITE_URL           = process.env.SITE_URL            || 'https://daophim.online';
 const KKPHIM_API         = 'https://phimapi.com';
 
 async function sendTelegram(text, photoUrl) {

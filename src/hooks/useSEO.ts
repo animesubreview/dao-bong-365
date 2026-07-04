@@ -12,7 +12,7 @@
 import { useEffect } from 'react';
 
 const SITE_NAME  = 'Đảo Phim';
-const SITE_URL   = 'https://daophim.lol';
+const SITE_URL   = 'https://daophim.online';
 const DEFAULT_IMG = 'https://sf-static.upanhlaylink.com/img/image_2026051206bab16347f075d07864efb55a5224ea.jpg';
 
 interface SEOMovie {

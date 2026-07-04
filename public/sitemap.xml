@@ -4,7 +4,7 @@
 
   <!-- ═══ TRANG CHỦ ═══════════════════════════════════════════════════════ -->
   <url>
-    <loc>https://daophim.lol/</loc>
+    <loc>https://daophim.online/</loc>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
     <image:image>
@@ -15,49 +15,80 @@
 
   <!-- ═══ TÌM KIẾM ════════════════════════════════════════════════════════ -->
   <url>
-    <loc>https://daophim.lol/search</loc>
+    <loc>https://daophim.online/search</loc>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
 
   <!-- ═══ PHIM BỘ ═══════════════════════════════════════════════════════════ -->
   <url>
-    <loc>https://daophim.lol/type/phim-bo</loc>
+    <loc>https://daophim.online/type/phim-bo</loc>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
 
   <!-- ═══ PHIM LẺ ═══════════════════════════════════════════════════════════ -->
   <url>
-    <loc>https://daophim.lol/type/phim-le</loc>
+    <loc>https://daophim.online/type/phim-le</loc>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
 
   <!-- ═══ HOẠT HÌNH ════════════════════════════════════════════════════════ -->
   <url>
-    <loc>https://daophim.lol/type/hoat-hinh</loc>
+    <loc>https://daophim.online/type/hoat-hinh</loc>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
 
   <!-- ═══ PHIM CHIẾU RẠP ══════════════════════════════════════════════════ -->
   <url>
-    <loc>https://daophim.lol/type/phim-chieu-rap</loc>
+    <loc>https://daophim.online/type/phim-chieu-rap</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
 
+  <!-- ═══ PHIM THEO QUỐC GIA ═════════════════════════════════════════════ -->
+  <url>
+    <loc>https://daophim.online/type/phim-bo?country=han-quoc</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.85</priority>
+  </url>
+
+  <url>
+    <loc>https://daophim.online/type/phim-bo?country=trung-quoc</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.85</priority>
+  </url>
+
+  <url>
+    <loc>https://daophim.online/type/phim-le?country=au-my</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://daophim.online/type/phim-bo?country=thai-lan</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.75</priority>
+  </url>
+
+  <url>
+    <loc>https://daophim.online/type/hoat-hinh?country=nhat-ban</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+
   <!-- ═══ TRUYỆN TRANH ════════════════════════════════════════════════════ -->
   <url>
-    <loc>https://daophim.lol/truyen-tranh</loc>
+    <loc>https://daophim.online/truyen-tranh</loc>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
 
   <!-- ═══ CINEMA / RẠP PHIM ════════════════════════════════════════════════ -->
   <url>
-    <loc>https://daophim.lol/cinema</loc>
+    <loc>https://daophim.online/cinema</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>

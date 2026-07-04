@@ -3,13 +3,13 @@
 
   <!-- Sitemap trang tĩnh -->
   <sitemap>
-    <loc>https://daophim.lol/sitemap.xml</loc>
+    <loc>https://daophim.online/sitemap.xml</loc>
     <lastmod>2026-05-23</lastmod>
   </sitemap>
 
   <!-- Sitemap động – toàn bộ phim từ API (tự cập nhật mỗi ngày) -->
   <sitemap>
-    <loc>https://daophim.lol/sitemap-movies.xml</loc>
+    <loc>https://daophim.online/sitemap-movies.xml</loc>
     <lastmod>2026-05-23</lastmod>
   </sitemap>
 

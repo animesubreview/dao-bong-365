@@ -191,7 +191,7 @@ export default function PlayerStudio() {
               {config.logoType === 'image' && (
                 <div>
                   <label className={labelCls}>URL Ảnh Logo</label>
-                  <input type="url" value={config.logoImageUrl} onChange={e => update('logoImageUrl', e.target.value)} className={inputCls} placeholder="https://daophim.lol/logo.png" />
+                  <input type="url" value={config.logoImageUrl} onChange={e => update('logoImageUrl', e.target.value)} className={inputCls} placeholder="https://daophim.online/logo.png" />
                 </div>
               )}
 

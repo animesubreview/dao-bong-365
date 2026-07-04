@@ -5,7 +5,7 @@
 
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '8182223004:AAEKg4Gf869fv0Io72AQNeWvrii6D3_utIk';
 const TELEGRAM_CHAT_ID   = process.env.TELEGRAM_CHAT_ID   || '6949171104';
-const SITE_URL           = process.env.SITE_URL            || 'https://daophim.lol';
+const SITE_URL           = process.env.SITE_URL            || 'https://daophim.online';
 
 async function sendTelegram(text, photoUrl) {
   const base = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}`;

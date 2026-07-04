@@ -22,6 +22,6 @@ Disallow: /watch-room/
 Crawl-delay: 1
 
 # Sitemaps
-Sitemap: https://daophim.lol/sitemap-index.xml
-Sitemap: https://daophim.lol/sitemap.xml
-Sitemap: https://daophim.lol/sitemap-movies.xml
+Sitemap: https://daophim.online/sitemap-index.xml
+Sitemap: https://daophim.online/sitemap.xml
+Sitemap: https://daophim.online/sitemap-movies.xml

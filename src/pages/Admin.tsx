@@ -764,7 +764,7 @@ function NotificationsSection({ onToast }: { onToast: (msg: string, t: 'success'
                     value={form.targetUrl}
                     onChange={e => setForm(f => ({ ...f, targetUrl: e.target.value }))}
                     className="input-field text-sm"
-                    placeholder="https://daophim.lol/phim/ten-phim"
+                    placeholder="https://daophim.online/phim/ten-phim"
                   />
                 </div>
               </div>
