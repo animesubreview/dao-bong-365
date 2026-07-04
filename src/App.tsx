@@ -32,7 +32,7 @@ import { getGeoResult, getGeoblockEnabled, GeoResult } from './lib/geoblock';
 import ClickAd from './components/ClickAd';
 import { startPresence } from './lib/presence';
 
-function LoadingScreen({ fadeOut }: { fadeOut: boolean }) {
+function LoadingScreen({ fadeOut, onVideoEvent }: { fadeOut: boolean; onVideoEvent: (type: 'ended' | 'error') => void }) {
   return (
     <div
       style={{
@@ -43,6 +43,7 @@ function LoadingScreen({ fadeOut }: { fadeOut: boolean }) {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
+        overflow: 'hidden',
         opacity: fadeOut ? 0 : 1,
         transition: 'opacity 0.7s ease',
         pointerEvents: fadeOut ? 'none' : 'all',
@@ -55,7 +56,9 @@ function LoadingScreen({ fadeOut }: { fadeOut: boolean }) {
         // @ts-ignore - thuộc tính riêng cho iOS Safari cũ
         webkit-playsinline="true"
         preload="auto"
-        style={{ width: '100%', height: '100%', objectFit: 'contain', background: '#0a0a0f' }}
+        onEnded={() => onVideoEvent('ended')}
+        onError={() => onVideoEvent('error')}
+        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
       >
         <source src="https://litter.catbox.moe/44aupjg0zb4d9hi3.mp4" type="video/mp4" />
       </video>
@@ -73,10 +76,22 @@ export default function App() {
   const [geoblockEnabled, setGeoblockEnabled] = useState<boolean | null>(null);
 
   useEffect(() => {
-    const fadeTimer = setTimeout(() => setFadeOut(true), 2200);
-    const hideTimer = setTimeout(() => setIsLoading(false), 2950);
-    return () => { clearTimeout(fadeTimer); clearTimeout(hideTimer); };
+    // An toàn: nếu video không tải được / mạng chặn link ngoài, không để màn hình đen mãi
+    const safetyTimer = setTimeout(() => { setFadeOut(true); }, 4000);
+    return () => clearTimeout(safetyTimer);
   }, []);
+
+  useEffect(() => {
+    if (!fadeOut) return;
+    const t = setTimeout(() => setIsLoading(false), 700);
+    return () => clearTimeout(t);
+  }, [fadeOut]);
+
+  const handleVideoEvent = (type: 'ended' | 'error') => {
+    // Video lỗi -> ẩn ngay lập tức (không chờ) để khỏi bị màn đen do link chặn/mạng lỗi
+    // Video phát xong hết -> fade ra bình thường
+    setFadeOut(true);
+  };
 
   useEffect(() => {
     const unsub = subscribeMaintenanceConfig(cfg => {
@@ -105,7 +120,7 @@ export default function App() {
   }, []);
 
   if (isLoading) {
-    return <LoadingScreen fadeOut={fadeOut} />;
+    return <LoadingScreen fadeOut={fadeOut} onVideoEvent={handleVideoEvent} />;
   }
 
   // Vẫn đang kiểm tra IP → hiện spinner nhỏ, không block
