@@ -53,25 +53,33 @@ function LoadingScreen({ fadeOut }: { fadeOut: boolean }) {
         @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&display=swap');
 
         @keyframes kk-pop {
-          0%   { opacity: 0; transform: scale(0.6) rotate(-8deg); }
-          65%  { opacity: 1; transform: scale(1.08) rotate(2deg); }
-          100% { opacity: 1; transform: scale(1) rotate(0deg); }
+          0%   { opacity: 0; transform: scale(0.85); }
+          100% { opacity: 1; transform: scale(1); }
         }
         @keyframes kk-glow-soft {
-          0%, 100% { box-shadow: 0 0 40px rgba(34,197,94,0.22), 0 0 80px rgba(34,197,94,0.08); }
-          50%       { box-shadow: 0 0 60px rgba(34,197,94,0.4), 0 0 110px rgba(34,197,94,0.16); }
+          0%, 100% { box-shadow: 0 0 36px rgba(34,197,94,0.35), 0 0 70px rgba(34,197,94,0.15); }
+          50%       { box-shadow: 0 0 52px rgba(34,197,94,0.55), 0 0 100px rgba(34,197,94,0.25); }
         }
         .kk-logo-wrap {
-          animation: kk-pop 0.75s cubic-bezier(.22,1,.36,1) 0.1s both;
+          animation: kk-pop 0.45s cubic-bezier(.22,1,.36,1) both;
         }
         .kk-glow-box {
-          animation: kk-glow-soft 2.5s ease-in-out 1s infinite;
+          animation: kk-glow-soft 2.5s ease-in-out 0.45s infinite;
         }
       `}</style>
 
-      {/* Logo image — hiệu ứng glow + pop, dùng đúng logo web */}
+      {/* Logo image — thẻ pill nền đen bo góc + viền glow xanh */}
       <div className="kk-logo-wrap" style={{ position: 'relative' }}>
-        <div className="kk-glow-box" style={{ position: 'relative', padding: '14px 22px', borderRadius: 24 }}>
+        <div
+          className="kk-glow-box"
+          style={{
+            position: 'relative',
+            padding: '18px 28px',
+            borderRadius: 24,
+            backgroundColor: '#111318',
+            border: '1px solid rgba(34,197,94,0.25)',
+          }}
+        >
           <img
             src="/assets/logo-daophim.png"
             alt="Đảo Phim"
