@@ -41,7 +41,6 @@ function LoadingScreen({ fadeOut }: { fadeOut: boolean }) {
         zIndex: 9999,
         backgroundColor: '#0a0a0f',
         display: 'flex',
-        flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
         opacity: fadeOut ? 0 : 1,
@@ -49,57 +48,17 @@ function LoadingScreen({ fadeOut }: { fadeOut: boolean }) {
         pointerEvents: fadeOut ? 'none' : 'all',
       }}
     >
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&display=swap');
-
-        @keyframes kk-pop {
-          0%   { opacity: 0; transform: scale(0.6) rotate(-8deg); }
-          65%  { opacity: 1; transform: scale(1.08) rotate(2deg); }
-          100% { opacity: 1; transform: scale(1) rotate(0deg); }
-        }
-        @keyframes kk-fade-up {
-          0%   { opacity: 0; transform: translateY(18px); }
-          100% { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes kk-glow-soft {
-          0%, 100% { box-shadow: 0 0 40px rgba(34,197,94,0.22), 0 0 80px rgba(34,197,94,0.08); }
-          50%       { box-shadow: 0 0 60px rgba(34,197,94,0.4), 0 0 110px rgba(34,197,94,0.16); }
-        }
-        .kk-logo-wrap {
-          animation: kk-pop 0.75s cubic-bezier(.22,1,.36,1) 0.1s both;
-        }
-        .kk-glow-box {
-          animation: kk-glow-soft 2.5s ease-in-out 1s infinite;
-        }
-        .kk-sub {
-          animation: kk-fade-up 0.55s ease 0.85s both;
-        }
-      `}</style>
-
-      {/* Logo image — hiệu ứng glow + pop, dùng đúng logo web */}
-      <div className="kk-logo-wrap" style={{ position: 'relative', marginBottom: 8 }}>
-        <div className="kk-glow-box" style={{ position: 'relative', padding: '14px 22px', borderRadius: 24 }}>
-          <img
-            src="/assets/logo-daophim.png"
-            alt="Đảo Phim"
-            style={{ height: 64, width: 'auto', display: 'block', position: 'relative', zIndex: 1 }}
-          />
-        </div>
-      </div>
-
-      {/* Tagline */}
-      <div className="kk-sub" style={{
-        marginTop: 18,
-        fontSize: 14,
-        color: 'rgba(255,255,255,0.42)',
-        letterSpacing: '0.12em',
-        textTransform: 'uppercase',
-        fontFamily: "'Nunito', system-ui, sans-serif",
-        fontWeight: 700,
-      }}>
-        Phim hay cả đảo
-      </div>
-
+      <video
+        autoPlay
+        muted
+        playsInline
+        // @ts-ignore - thuộc tính riêng cho iOS Safari cũ
+        webkit-playsinline="true"
+        preload="auto"
+        style={{ width: '100%', height: '100%', objectFit: 'contain', background: '#0a0a0f' }}
+      >
+        <source src="https://litter.catbox.moe/44aupjg0zb4d9hi3.mp4" type="video/mp4" />
+      </video>
     </div>
   );
 }
