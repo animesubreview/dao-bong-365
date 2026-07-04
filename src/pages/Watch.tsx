@@ -272,6 +272,7 @@ export default function Watch() {
             navigate(`/watch/${movie.slug}/${nextEpisode.slug}?server=${encodeURIComponent(nextEpisode.server_name)}`);
           }
         }}
+        onNext={nextEpisode ? () => navigate(`/watch/${movie.slug}/${nextEpisode.slug}?server=${encodeURIComponent(nextEpisode.server_name)}`) : undefined}
       />
 
       {/* ── Content area ── */}
