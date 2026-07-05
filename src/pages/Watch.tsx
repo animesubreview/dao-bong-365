@@ -87,10 +87,10 @@ export default function Watch() {
       if (!slug) return;
       try {
         const [res, override, nguonC, ophim] = await Promise.all([
-          movieApi.getMovieDetail(slug),
-          getMovieOverride(slug),
-          getNguonCDetail(slug),
-          getOPhimDetail(slug),
+          movieApi.getMovieDetail(slug).catch((err) => { console.warn('[KKPhim] lỗi lấy chi tiết phim:', err); return { status: false, movie: null, episodes: [] } as any; }),
+          getMovieOverride(slug).catch((err) => { console.warn('[Override] lỗi:', err); return null; }),
+          getNguonCDetail(slug).catch((err) => { console.warn('[NguonC] lỗi lấy chi tiết phim:', err); return null; }),
+          getOPhimDetail(slug).catch((err) => { console.warn('[OPhim] lỗi lấy chi tiết phim:', err); return null; }),
         ]);
         // Nếu KKPhim không có phim này nhưng NguonC có → dùng NguonC làm nguồn chính
         let movieData = res.movie;
