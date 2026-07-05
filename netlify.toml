@@ -11,6 +11,10 @@
   path = "/phim/*"
   function = "seo-prerender"
 
+[[edge_functions]]
+  path = "/type/*"
+  function = "seo-prerender"
+
 # ── Sitemap động (PHẢI đứng trước SPA fallback) ──────────────────
 [[redirects]]
   from = "/sitemap-movies.xml"

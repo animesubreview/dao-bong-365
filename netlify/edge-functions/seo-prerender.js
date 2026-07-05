@@ -41,18 +41,129 @@ function stripHtml(str) {
   return (str || '').replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
 }
 
+const TYPE_LABELS = {
+  'phim-bo': 'Phim Bộ', 'phim-le': 'Phim Lẻ', 'hoat-hinh': 'Hoạt Hình',
+  'tv-shows': 'TV Shows', 'phim-chieu-rap': 'Phim Chiếu Rạp',
+};
+const COUNTRY_LABELS = {
+  'han-quoc': 'Hàn Quốc', 'trung-quoc': 'Trung Quốc', 'au-my': 'Âu Mỹ',
+  'nhat-ban': 'Nhật Bản', 'thai-lan': 'Thái Lan', 'viet-nam': 'Việt Nam',
+  'dai-loan': 'Đài Loan', 'hong-kong': 'Hồng Kông', 'an-do': 'Ấn Độ',
+  'anh': 'Anh', 'phap': 'Pháp', 'duc': 'Đức',
+};
+
 export default async function handler(request, context) {
   const url = new URL(request.url);
   const ua  = request.headers.get('user-agent') || '';
 
-  // Chỉ xử lý trang /phim/{slug} và khi là bot
-  const match = url.pathname.match(/^\/phim\/([^/]+)$/);
-  if (!match || !isBot(ua)) {
+  if (!isBot(ua)) return context.next();
+
+  const movieMatch = url.pathname.match(/^\/phim\/([^/]+)$/);
+  const typeMatch  = url.pathname.match(/^\/type\/([^/]+)$/);
+
+  if (movieMatch) return handleMovieDetail(movieMatch[1], context);
+  if (typeMatch)  return handleTypeListing(typeMatch[1], url.searchParams, context);
+
+  return context.next();
+}
+
+async function handleTypeListing(type, searchParams, context) {
+  const country  = searchParams.get('country')  || '';
+  const category = searchParams.get('category') || '';
+  const page     = searchParams.get('page') || '1';
+
+  try {
+    let apiUrl = `${API_BASE}/v1/api/danh-sach/${type}?page=${page}&limit=24&sort_field=modified.time`;
+    if (country)  apiUrl += `&country=${country}`;
+    if (category) apiUrl += `&category=${category}`;
+
+    const res = await fetch(apiUrl, { signal: AbortSignal.timeout(5000) });
+    if (!res.ok) return context.next();
+
+    const data  = await res.json();
+    const items = data?.data?.items || [];
+    if (!items.length) return context.next();
+
+    const typeLabel    = TYPE_LABELS[type] || type;
+    const countryLabel = COUNTRY_LABELS[country] || '';
+    const pageTitle = escapeHtml(
+      countryLabel ? `${typeLabel} ${countryLabel} Vietsub HD Mới Nhất` : `${typeLabel} Vietsub HD Mới Nhất`
+    );
+    const fullTitle = `${pageTitle} | ${SITE_NAME}`;
+    const desc = escapeHtml(
+      `Tổng hợp ${typeLabel}${countryLabel ? ' ' + countryLabel : ''} Vietsub, thuyết minh, lồng tiếng full HD, cập nhật mới mỗi ngày tại ${SITE_NAME}. Xem miễn phí, không quảng cáo.`
+    );
+    let pageUrl = `${SITE_URL}/type/${type}`;
+    if (country) pageUrl += `?country=${country}`;
+    pageUrl = escapeHtml(pageUrl);
+
+    const itemListSchema = {
+      '@context': 'https://schema.org',
+      '@type': 'ItemList',
+      name: pageTitle,
+      itemListElement: items.slice(0, 24).map((m, i) => ({
+        '@type': 'ListItem',
+        position: i + 1,
+        url: `${SITE_URL}/phim/${m.slug}`,
+        name: m.name,
+      })),
+    };
+    const breadcrumb = {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: SITE_NAME, item: SITE_URL },
+        { '@type': 'ListItem', position: 2, name: typeLabel, item: `${SITE_URL}/type/${type}` },
+      ],
+    };
+
+    const cardsHtml = items.map((m) => {
+      const img = escapeHtml((m.thumb_url || m.poster_url || DEFAULT_IMG).startsWith('http')
+        ? m.thumb_url : `https://phimimg.com/${m.thumb_url}`);
+      return `<a href="${SITE_URL}/phim/${escapeHtml(m.slug)}">
+        <img src="${img}" alt="${escapeHtml(m.name)}" width="220" height="330" loading="lazy" />
+        <h3>${escapeHtml(m.name)}</h3>
+        <p>${escapeHtml(m.origin_name || '')} · ${escapeHtml(String(m.year || ''))}</p>
+      </a>`;
+    }).join('\n');
+
+    const html = `<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>${fullTitle}</title>
+  <meta name="description" content="${desc}" />
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
+  <link rel="canonical" href="${pageUrl}" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="${SITE_NAME}" />
+  <meta property="og:title" content="${fullTitle}" />
+  <meta property="og:description" content="${desc}" />
+  <meta property="og:url" content="${pageUrl}" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <script type="application/ld+json">${JSON.stringify({ '@graph': [itemListSchema, breadcrumb] })}</script>
+</head>
+<body>
+  <h1>${pageTitle}</h1>
+  <p>${desc}</p>
+  <nav>${cardsHtml}</nav>
+</body>
+</html>`;
+
+    return new Response(html, {
+      headers: {
+        'content-type': 'text/html; charset=utf-8',
+        'cache-control': 'public, s-maxage=1800, stale-while-revalidate=3600',
+        'x-prerendered-by': 'daophim-edge',
+      },
+    });
+  } catch {
     return context.next();
   }
+}
 
-  const slug = match[1];
-
+async function handleMovieDetail(slug, context) {
   try {
     const res  = await fetch(`${API_BASE}/phim/${slug}`, { signal: AbortSignal.timeout(5000) });
     if (!res.ok) return context.next();
@@ -171,5 +282,5 @@ export default async function handler(request, context) {
 }
 
 export const config = {
-  path: '/phim/*',
+  path: ['/phim/*', '/type/*'],
 };
