@@ -51,7 +51,7 @@ import {
 import { subscribeOnlineUsers, PresenceStats } from '../lib/presence';
 
 const ADMIN_USERNAME = 'daophim';
-const ADMIN_PASSWORD = '2307';
+const ADMIN_PASSWORD = '0708';
 
 const DEFAULT_SETTINGS = {
   siteName: 'ĐẢO PHIM',
