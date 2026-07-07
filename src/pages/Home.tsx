@@ -10,6 +10,7 @@ import { subscribeUpcomingMovies, UpcomingMovie } from '../lib/upcomingMovies';
 import { cn } from '../lib/utils';
 import Banner from '../components/Banner';
 import AdBanner from '../components/AdBanner';
+import LiveBanner from '../components/LiveBanner';
 
 /* ─── helpers ─────────────────────────────────────────────────── */
 function dec(s: string) {
@@ -393,6 +394,7 @@ export default function Home() {
   return (
     <div className="pb-20 bg-slate-950 min-h-screen">
       <Banner movies={bannerMovies} />
+      <LiveBanner />
       <AdBanner position="top" className="max-w-2xl md:max-w-5xl lg:max-w-[1400px] mx-auto px-4 md:px-6 lg:px-8 mt-3" />
 
       <main className="max-w-2xl md:max-w-5xl lg:max-w-[1400px] mx-auto px-4 md:px-6 lg:px-8 mt-6 flex flex-col gap-8">

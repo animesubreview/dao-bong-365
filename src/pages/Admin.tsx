@@ -6,7 +6,7 @@ import {
   RefreshCw, Link as LinkIcon, Info, Lock, LogOut, KeyRound,
   Bell, BellPlus, Users, Ban, UserCheck, Clock, Megaphone, MonitorPlay,
   Wallet, PlusCircle, MinusCircle, CreditCard, Wrench, Crown, Activity, Wifi,
-  History, Search,
+  History, Search, Radio, Trash,
 } from 'lucide-react';
 import { getAdBanners, createAdBanner, updateAdBanner, deleteAdBanner, AdBannerData } from '../components/AdBanner';
 import { createPopupAd, updatePopupAd, deletePopupAd, PopupAdData } from '../components/PopupAd';
@@ -35,6 +35,11 @@ import {
 import {
   createUpcomingMovie, updateUpcomingMovie, deleteUpcomingMovie, subscribeUpcomingMovies, UpcomingMovie,
 } from '../lib/upcomingMovies';
+import {
+  subscribeLiveConfig, updateLiveConfig, LiveConfig, DEFAULT_LIVE_CONFIG,
+  subscribeLiveChat, deleteLiveChatMessage, clearLiveChat, LiveChatMessage,
+} from '../lib/livestream';
+import { cn } from '../lib/utils';
 import { notifyManualMovie } from '../lib/telegramNotify';
 import {
   getMovieOverride, saveMovieOverride, deleteMovieOverride,
@@ -1753,6 +1758,7 @@ const NAV_SECTIONS = [
   { id: 'section-realtime',     label: 'Tổng quan',         icon: Activity },
   { id: 'section-brand',        label: 'Logo & Thương hiệu', icon: Palette },
   { id: 'section-movies',       label: 'Phim thủ công',     icon: Film },
+  { id: 'section-livestream',   label: 'Livestream',        icon: Radio },
   { id: 'section-upcoming',     label: 'Phim sắp chiếu',    icon: Clock },
   { id: 'section-override',     label: 'Sửa phim API',      icon: Edit3 },
   { id: 'section-ads',          label: 'Quảng cáo',         icon: Megaphone },
@@ -1764,6 +1770,145 @@ const NAV_SECTIONS = [
   { id: 'section-manual-topup', label: 'Nạp thẻ TC',        icon: CreditCard },
   { id: 'section-guide',        label: 'Hướng dẫn',         icon: Info },
 ];
+
+// ─── Livestream Section (bật/tắt phát trực tiếp + chat realtime) ─────────────
+function LivestreamAdminSection({ onToast }: { onToast: (msg: string, t: 'success' | 'error') => void }) {
+  const [config, setConfig] = useState<LiveConfig>(DEFAULT_LIVE_CONFIG);
+  const [form, setForm] = useState<LiveConfig>(DEFAULT_LIVE_CONFIG);
+  const [saving, setSaving] = useState(false);
+  const [messages, setMessages] = useState<LiveChatMessage[]>([]);
+
+  useEffect(() => {
+    const unsub = subscribeLiveConfig(cfg => { setConfig(cfg); setForm(cfg); });
+    return unsub;
+  }, []);
+
+  useEffect(() => {
+    const unsub = subscribeLiveChat(setMessages);
+    return unsub;
+  }, []);
+
+  const handleToggle = async () => {
+    const next = !config.enabled;
+    await updateLiveConfig({ ...form, enabled: next });
+    onToast(next ? '🔴 Đã BẬT phát trực tiếp!' : '⚪ Đã TẮT phát trực tiếp', next ? 'success' : 'error');
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await updateLiveConfig(form);
+      onToast('✅ Đã lưu cấu hình livestream!');
+    } catch {
+      onToast('Lỗi khi lưu!', 'error');
+    }
+    setSaving(false);
+  };
+
+  const handleDeleteMsg = async (id: string) => {
+    await deleteLiveChatMessage(id);
+  };
+
+  const handleClearChat = async () => {
+    if (!confirm('Xóa toàn bộ tin nhắn chat của phòng livestream?')) return;
+    await clearLiveChat();
+    onToast('🧹 Đã xóa toàn bộ chat!');
+  };
+
+  return (
+    <SectionCard title="Phát Trực Tiếp (Livestream)" icon={Radio} color="red">
+      <div className="flex flex-col gap-4">
+
+        {/* Trạng thái + nút bật/tắt */}
+        <div className="flex items-center justify-between bg-slate-800/40 border border-slate-700/40 rounded-2xl p-4">
+          <div className="flex items-center gap-3">
+            <span className={`w-2.5 h-2.5 rounded-full ${config.enabled ? 'bg-red-500 animate-pulse' : 'bg-slate-600'}`} />
+            <div>
+              <p className="text-white font-bold text-sm">
+                {config.enabled ? 'Đang phát trực tiếp' : 'Livestream đang tắt'}
+              </p>
+              <p className="text-slate-500 text-xs mt-0.5">
+                {config.enabled ? 'Người xem sẽ thấy banner nổi bật ở trang chủ' : 'Bật lên để hiện banner + trang xem trực tiếp'}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={handleToggle}
+            className={cn('w-14 h-8 rounded-full transition-colors relative shrink-0', config.enabled ? 'bg-red-500' : 'bg-slate-700')}
+          >
+            <span className={cn('absolute top-1 w-6 h-6 rounded-full bg-white transition-transform shadow', config.enabled ? 'translate-x-7' : 'translate-x-1')} />
+          </button>
+        </div>
+
+        {/* Form cấu hình */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="sm:col-span-2">
+            <label className="text-xs text-slate-400 font-semibold mb-1 block">Link nhúng (embed) *</label>
+            <input
+              value={form.embedUrl}
+              onChange={e => setForm(f => ({ ...f, embedUrl: e.target.value }))}
+              className="input-field text-sm"
+              placeholder="https://www.youtube.com/watch?v=... hoặc link Facebook Live / link nhúng khác"
+            />
+            <p className="text-[11px] text-slate-600 mt-1">
+              Hỗ trợ YouTube, Facebook Live, hoặc link nhúng khác (VD: abyssplayer...). Link YouTube được chặn tua đầy đủ nhất (ẩn cả thanh tua gốc); các link khác sẽ bị khóa vùng thanh tua ở đáy video bằng lớp phủ, có thể che luôn nút play/pause gốc của player đó.
+            </p>
+          </div>
+          <div>
+            <label className="text-xs text-slate-400 font-semibold mb-1 block">Tiêu đề</label>
+            <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} className="input-field text-sm" placeholder="VD: Trực tiếp sự kiện ra mắt phim" />
+          </div>
+          <div>
+            <label className="text-xs text-slate-400 font-semibold mb-1 block">URL Poster (banner trang chủ)</label>
+            <input value={form.posterUrl} onChange={e => setForm(f => ({ ...f, posterUrl: e.target.value }))} className="input-field text-sm" placeholder="https://example.com/poster.jpg" />
+          </div>
+          <div className="sm:col-span-2">
+            <label className="text-xs text-slate-400 font-semibold mb-1 block">Mô tả</label>
+            <textarea rows={2} value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} className="input-field text-sm resize-none" placeholder="Nội dung ngắn gọn về buổi phát trực tiếp..." />
+          </div>
+        </div>
+
+        <div className="flex gap-2">
+          <button onClick={handleSave} disabled={saving} className="btn-primary flex items-center gap-2 text-sm flex-1 justify-center disabled:opacity-50">
+            <Check size={16} /> {saving ? 'Đang lưu...' : 'Lưu cấu hình'}
+          </button>
+        </div>
+
+        {/* Chat moderation */}
+        <div className="border-t border-slate-800/60 pt-4">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-sm font-bold text-white flex items-center gap-2">
+              Chat realtime <span className="text-slate-500 text-xs font-normal">({messages.length} tin nhắn)</span>
+            </p>
+            {messages.length > 0 && (
+              <button onClick={handleClearChat} className="text-[11px] font-bold text-red-400 hover:text-red-300 flex items-center gap-1">
+                <Trash size={12} /> Xóa toàn bộ
+              </button>
+            )}
+          </div>
+          <div className="max-h-64 overflow-y-auto flex flex-col gap-1.5 pr-1">
+            {messages.length === 0 ? (
+              <p className="text-slate-600 text-xs text-center py-4">Chưa có tin nhắn nào</p>
+            ) : (
+              [...messages].reverse().map(m => (
+                <div key={m.id} className="flex items-center gap-2 bg-slate-800/40 border border-slate-700/30 rounded-lg px-3 py-2">
+                  <img src={m.avatar} className="w-6 h-6 rounded-full bg-slate-700 shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <span className="text-xs font-bold text-green-400 mr-1.5">{m.username}</span>
+                    <span className="text-xs text-slate-300 break-words">{m.text}</span>
+                  </div>
+                  <button onClick={() => handleDeleteMsg(m.id)} className="text-slate-600 hover:text-red-400 shrink-0" title="Xóa tin nhắn">
+                    <X size={13} />
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+    </SectionCard>
+  );
+}
 
 // ─── Manual Topup Section ─────────────────────────────────────────────────────
 function ManualTopupSection({ onToast }: { onToast: (msg: string, t: 'success' | 'error') => void }) {
@@ -2471,7 +2616,7 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
 
           {/* QUẢN LÝ PHIM THỦ CÔNG */}
           {activeSection === 'section-movies' && (
-          <div id="section-movies">
+          <div id="section-movies" className="flex flex-col gap-6">
             <SectionCard title="Quản lý phim thủ công" icon={Film} color="orange">
               <div className="flex flex-col gap-4">
               <div className="flex items-center justify-between">
@@ -2788,6 +2933,13 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
             </div>
 
             </SectionCard>
+          </div>
+          )}
+
+          {/* LIVESTREAM — tách riêng, độc lập hoàn toàn với Phim thủ công */}
+          {activeSection === 'section-livestream' && (
+          <div id="section-livestream">
+            <LivestreamAdminSection onToast={showToast} />
           </div>
           )}
 

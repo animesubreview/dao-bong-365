@@ -1,107 +1,284 @@
-import React, { useState, useEffect } from 'react';
-import { Radio, Play, Eye, Calendar } from 'lucide-react';
-import { subscribeLiveStreams, LiveStream } from '../lib/cinema';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Link } from 'react-router-dom';
+import {
+  Radio, Send, Shield, LogIn, Play, Pause, Volume2, VolumeX, Maximize, Lock,
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import {
+  subscribeLiveConfig, subscribeLiveChat, sendLiveChatMessage, LiveConfig,
+  LiveChatMessage, buildLiveEmbed, postYouTubeCommand, DEFAULT_LIVE_CONFIG,
+} from '../lib/livestream';
+import { getCurrentUser, getUserProfile, onAuthChange, UserProfile } from '../lib/auth';
+import { usePageTitle } from '../lib/utils';
 
-function getEmbedUrl(url: string): string {
-  // YouTube
-  const yt = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s]+)/);
-  if (yt) return `https://www.youtube.com/embed/${yt[1]}?autoplay=1`;
-  // Already embed
-  return url;
+function timeAgo(ts: number): string {
+  const diff = Math.floor((Date.now() - ts) / 1000);
+  if (diff < 60) return 'vừa xong';
+  if (diff < 3600) return `${Math.floor(diff / 60)} phút trước`;
+  return `${Math.floor(diff / 3600)} giờ trước`;
 }
 
-export default function LiveStreamPage() {
-  const [streams, setStreams] = useState<LiveStream[]>([]);
-  const [selected, setSelected] = useState<LiveStream | null>(null);
-  const [loading, setLoading] = useState(true);
+// ── Player chặn tua (chỉ dùng link nhúng, không cho kéo thanh tua) ───────────
+function LivePlayer({ embedUrl, title }: { embedUrl: string; title: string }) {
+  const { url, kind } = buildLiveEmbed(embedUrl);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const [playing, setPlaying] = useState(true);
+  const [muted, setMuted] = useState(false);
 
-  useEffect(() => {
-    const unsub = subscribeLiveStreams(data => {
-      setStreams(data);
-      if (data.length > 0 && !selected) setSelected(data[0]);
-      setLoading(false);
-    });
-    return unsub;
-  }, []);
+  const togglePlay = () => {
+    postYouTubeCommand(iframeRef.current, playing ? 'pauseVideo' : 'playVideo');
+    setPlaying(p => !p);
+  };
+  const toggleMute = () => {
+    postYouTubeCommand(iframeRef.current, muted ? 'unMute' : 'mute');
+    setMuted(m => !m);
+  };
+  const toggleFullscreen = () => {
+    if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+    else wrapperRef.current?.requestFullscreen?.().catch(() => {});
+  };
 
-  if (loading) {
+  if (!url) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="w-10 h-10 border-t-transparent rounded-full animate-spin border-green-500" style={{ borderWidth: 3, borderStyle: 'solid' }} />
-      </div>
-    );
-  }
-
-  if (streams.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 text-center px-4">
-        <Radio size={48} className="text-slate-600" />
-        <h2 className="text-xl font-black text-white">Chưa có livestream nào</h2>
-        <p className="text-slate-400 text-sm">Admin sẽ sớm phát trực tiếp, hãy quay lại sau!</p>
+      <div className="w-full aspect-video bg-black rounded-2xl flex items-center justify-center">
+        <p className="text-slate-500 text-sm">Chưa có link phát trực tiếp</p>
       </div>
     );
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-6">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse" />
-        <h1 className="text-2xl font-black text-white">Phát Trực Tiếp</h1>
+    <div
+      ref={wrapperRef}
+      onContextMenu={e => e.preventDefault()}
+      className="relative w-full aspect-video bg-black rounded-2xl overflow-hidden group select-none"
+    >
+      <iframe
+        ref={iframeRef}
+        src={url}
+        className="absolute inset-0 w-full h-full border-0"
+        allow="autoplay; encrypted-media; picture-in-picture"
+        allowFullScreen={kind !== 'youtube'}
+        title={title || 'Livestream'}
+        referrerPolicy="no-referrer"
+      />
+
+      {/* LIVE badge */}
+      <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-red-600 text-white text-[11px] font-black px-2.5 py-1 rounded-full shadow-lg z-20 pointer-events-none">
+        <span className="w-2 h-2 bg-white rounded-full animate-pulse" />
+        TRỰC TIẾP
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main player */}
-        <div className="lg:col-span-2">
-          {selected && (
-            <div className="rounded-2xl overflow-hidden bg-slate-900 border border-slate-800">
-              <div className="relative" style={{ aspectRatio: '16/9' }}>
-                <iframe
-                  src={getEmbedUrl(selected.embedUrl)}
-                  className="w-full h-full"
-                  allowFullScreen
-                  allow="autoplay; encrypted-media"
-                  style={{ border: 'none' }}
-                />
-                {selected.isLive && (
-                  <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-red-600 text-white text-xs font-black px-2.5 py-1 rounded-full">
-                    <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
-                    LIVE
-                  </div>
-                )}
-              </div>
-              <div className="p-4">
-                <h2 className="text-white font-black text-lg">{selected.title}</h2>
-                {selected.description && <p className="text-slate-400 text-sm mt-1">{selected.description}</p>}
-              </div>
-            </div>
-          )}
-        </div>
+      {kind === 'youtube' ? (
+        /* Custom control bar cho YouTube — chặn tua hoàn toàn, không có thanh seek */
+        <div className="absolute inset-0 z-10">
+          <button
+            onClick={togglePlay}
+            className="absolute inset-0 flex items-center justify-center"
+            aria-label={playing ? 'Tạm dừng' : 'Phát'}
+          >
+            <span className={`w-16 h-16 rounded-full bg-black/40 backdrop-blur flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity ${!playing ? 'opacity-100' : ''}`}>
+              {playing ? <Pause size={26} className="text-white" /> : <Play size={26} className="text-white ml-1" />}
+            </span>
+          </button>
 
-        {/* Stream list */}
-        <div className="flex flex-col gap-3">
-          <h3 className="text-slate-400 text-sm font-bold uppercase tracking-wider">Danh sách phát</h3>
-          {streams.map(s => (
-            <button key={s.id} onClick={() => setSelected(s)}
-              className={`flex gap-3 p-3 rounded-xl border text-left transition-all ${selected?.id === s.id ? 'border-green-500 bg-green-500/10' : 'border-slate-800 bg-slate-900/60 hover:border-slate-600'}`}>
-              {s.thumbnail ? (
-                <img src={s.thumbnail} alt={s.title} className="w-20 h-14 object-cover rounded-lg shrink-0" />
-              ) : (
-                <div className="w-20 h-14 bg-slate-800 rounded-lg flex items-center justify-center shrink-0">
-                  <Play size={20} className="text-slate-600" />
-                </div>
-              )}
-              <div className="min-w-0">
-                <div className="text-white font-bold text-sm line-clamp-2">{s.title}</div>
-                {s.isLive && (
-                  <div className="flex items-center gap-1 mt-1">
-                    <div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
-                    <span className="text-red-400 text-xs font-bold">LIVE</span>
-                  </div>
-                )}
-              </div>
+          <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between gap-2 px-3 py-2 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="flex items-center gap-2">
+              <button onClick={togglePlay} className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors">
+                {playing ? <Pause size={15} /> : <Play size={15} className="ml-0.5" />}
+              </button>
+              <button onClick={toggleMute} className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors">
+                {muted ? <VolumeX size={15} /> : <Volume2 size={15} />}
+              </button>
+              <span className="flex items-center gap-1 text-[10px] text-slate-300 font-semibold bg-black/40 px-2 py-1 rounded-full">
+                <Lock size={9} /> Không thể tua
+              </span>
+            </div>
+            <button onClick={toggleFullscreen} className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors">
+              <Maximize size={14} />
             </button>
-          ))}
+          </div>
         </div>
+      ) : (
+        /* Link nhúng dạng khác (abyssplayer, facebook, twitch...) — không sửa được
+           player bên trong iframe (khác domain) nên chặn tua bằng lớp phủ trong suốt
+           đè lên vùng thanh tua (thường nằm ở đáy player), chặn mọi click/kéo vào đó. */
+        <>
+          <div className="absolute bottom-0 left-0 right-0 h-12 md:h-14 z-20 cursor-not-allowed" title="Đã khóa tua video" />
+          <div className="absolute inset-x-0 bottom-0 h-12 md:h-14 z-10 bg-gradient-to-t from-black/50 to-transparent pointer-events-none flex items-end justify-center pb-1.5">
+            <span className="flex items-center gap-1 text-[10px] text-slate-300 font-semibold bg-black/50 px-2 py-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+              <Lock size={9} /> Không thể tua
+            </span>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ── Chat realtime ─────────────────────────────────────────────────────────────
+function LiveChatBox() {
+  const [messages, setMessages] = useState<LiveChatMessage[]>([]);
+  const [text, setText] = useState('');
+  const [currentUser, setCurrentUser] = useState(getCurrentUser());
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [sending, setSending] = useState(false);
+  const listRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const unsub = onAuthChange(async (u) => {
+      setCurrentUser(u);
+      setProfile(u ? await getUserProfile(u.uid) : null);
+    });
+    return unsub;
+  }, []);
+
+  useEffect(() => {
+    const unsub = subscribeLiveChat(setMessages);
+    return unsub;
+  }, []);
+
+  useEffect(() => {
+    listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' });
+  }, [messages.length]);
+
+  const handleSend = useCallback(async () => {
+    if (!currentUser || !profile) return;
+    const trimmed = text.trim();
+    if (!trimmed || trimmed.length > 300 || profile.isBanned) return;
+    setSending(true);
+    await sendLiveChatMessage({
+      uid: currentUser.uid,
+      username: profile.username,
+      avatar: profile.avatar,
+      text: trimmed,
+      isAdmin: profile.role === 'admin',
+      createdAt: Date.now(),
+    });
+    setText('');
+    setSending(false);
+  }, [currentUser, profile, text]);
+
+  return (
+    <div className="flex flex-col bg-[#141414] border border-slate-800/60 rounded-2xl overflow-hidden h-[420px] lg:h-full">
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-slate-800/60 shrink-0">
+        <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+        <span className="text-white font-bold text-sm">Chat trực tiếp</span>
+        <span className="text-slate-500 text-xs ml-auto">{messages.length} tin nhắn</span>
+      </div>
+
+      <div ref={listRef} className="flex-1 overflow-y-auto px-3 py-3 flex flex-col gap-2.5">
+        {messages.length === 0 && (
+          <p className="text-slate-600 text-xs text-center mt-6">Chưa có tin nhắn nào. Hãy là người đầu tiên bình luận!</p>
+        )}
+        <AnimatePresence initial={false}>
+          {messages.map(m => (
+            <motion.div
+              key={m.id}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex items-start gap-2"
+            >
+              <img src={m.avatar} alt={m.username} className="w-7 h-7 rounded-full bg-slate-700 shrink-0" />
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className={`text-xs font-bold ${m.isAdmin ? 'text-amber-400' : 'text-green-400'}`}>{m.username}</span>
+                  {m.isAdmin && (
+                    <span className="inline-flex items-center gap-0.5 text-[9px] font-black px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                      <Shield size={8} /> ADMIN
+                    </span>
+                  )}
+                  <span className="text-[9px] text-slate-600">{timeAgo(m.createdAt)}</span>
+                </div>
+                <p className="text-[13px] text-slate-200 leading-snug break-words">{m.text}</p>
+              </div>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </div>
+
+      <div className="p-2.5 border-t border-slate-800/60 shrink-0">
+        {currentUser && profile ? (
+          profile.isBanned ? (
+            <p className="text-center text-red-400 text-xs py-2">Tài khoản của bạn đã bị khóa bình luận</p>
+          ) : (
+            <div className="flex items-center gap-2">
+              <input
+                value={text}
+                onChange={e => setText(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter' && !sending) handleSend(); }}
+                maxLength={300}
+                placeholder="Nhắn gì đó..."
+                className="flex-1 bg-slate-900/60 border border-slate-700/60 rounded-full px-4 py-2 text-sm text-white placeholder:text-slate-600 outline-none focus:border-green-500/60 transition-colors"
+              />
+              <button
+                onClick={handleSend}
+                disabled={sending || !text.trim()}
+                className="w-9 h-9 shrink-0 rounded-full bg-green-500 hover:bg-green-400 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center text-slate-950 transition-colors"
+              >
+                <Send size={15} />
+              </button>
+            </div>
+          )
+        ) : (
+          <Link to="/auth" className="flex items-center justify-center gap-2 text-sm font-bold text-green-400 hover:text-green-300 py-2 transition-colors">
+            <LogIn size={15} /> Đăng nhập để trò chuyện
+          </Link>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Trang chính ────────────────────────────────────────────────────────────────
+export default function LiveStreamPage() {
+  const [config, setConfig] = useState<LiveConfig>(DEFAULT_LIVE_CONFIG);
+  const [loading, setLoading] = useState(true);
+
+  usePageTitle('Phát trực tiếp');
+
+  useEffect(() => {
+    const unsub = subscribeLiveConfig(cfg => { setConfig(cfg); setLoading(false); });
+    return unsub;
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-[70vh] flex items-center justify-center">
+        <div className="w-9 h-9 border-4 border-green-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!config.enabled) {
+    return (
+      <div className="min-h-[70vh] flex flex-col items-center justify-center gap-4 text-center px-4">
+        <div className="w-20 h-20 rounded-full bg-slate-800/60 flex items-center justify-center">
+          <Radio size={34} className="text-slate-600" />
+        </div>
+        <h2 className="text-xl font-black text-white">Hiện chưa có livestream nào</h2>
+        <p className="text-slate-400 text-sm max-w-sm">Admin sẽ sớm phát trực tiếp, hãy quay lại sau nhé!</p>
+        <Link to="/" className="text-green-400 font-bold text-sm mt-2">← Về trang chủ</Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-6xl mx-auto px-3 md:px-6 py-5">
+      <div className="flex items-center gap-2.5 mb-4">
+        <span className="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse" />
+        <h1 className="text-xl md:text-2xl font-black text-white">Phát Trực Tiếp</h1>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:h-[520px]">
+        <div className="lg:col-span-2 flex flex-col gap-3">
+          <LivePlayer embedUrl={config.embedUrl} title={config.title} />
+          <div className="bg-[#141414] border border-slate-800/60 rounded-2xl p-4">
+            <h2 className="text-white font-bold text-base">{config.title || 'Đang phát trực tiếp'}</h2>
+            {config.description && <p className="text-slate-400 text-sm mt-1.5 leading-relaxed">{config.description}</p>}
+          </div>
+        </div>
+        <LiveChatBox />
       </div>
     </div>
   );
