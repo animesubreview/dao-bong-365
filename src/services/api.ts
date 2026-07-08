@@ -592,7 +592,8 @@ export const movieApi = {
     };
   },
 
-  getImageUrl: (url: string) => {
+  getImageUrl: (url?: string) => {
+    if (!url) return '/assets/logo-daophim.png'; // fallback khi thiếu poster/thumb
     if (url.includes('phim.nguonc.com')) return url;
     if (url.startsWith('http')) return `https://phimapi.com/image.php?url=${url}`;
     return `https://phimapi.com/image.php?url=https://phimimg.com/${url}`;
