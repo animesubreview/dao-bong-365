@@ -1,4 +1,4 @@
-import { Movie, APIResponse, MovieDetailResponse, Episode, MovieDetailV1Response } from '../types';
+import { Movie, APIResponse, MovieDetailResponse, Episode, MovieDetailV1Response, MovieImagesResponse, MovieImage } from '../types';
 
 const BASE_URL = 'https://phimapi.com';
 
@@ -562,6 +562,26 @@ export const movieApi = {
       return data;
     } catch {
       return null;
+    }
+  },
+
+  /**
+   * GET /v1/api/phim/{slug}/images
+   * Danh sách hình ảnh (poster, backdrop...) của phim.
+   * Trả về mảng ảnh rỗng nếu lỗi hoặc không có dữ liệu, để component dùng
+   * .map() an toàn mà không cần check null ở nơi gọi.
+   */
+  getMovieImages: async (slug: string): Promise<MovieImage[]> => {
+    try {
+      const response = await fetch(`${BASE_URL}/v1/api/phim/${slug}/images`, {
+        headers: { accept: 'application/json' },
+      });
+      if (!response.ok) return [];
+      const data: MovieImagesResponse = await response.json();
+      const images = data?.data?.item?.images ?? data?.data?.images ?? [];
+      return Array.isArray(images) ? images : [];
+    } catch {
+      return [];
     }
   },
 

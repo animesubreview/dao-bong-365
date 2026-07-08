@@ -86,6 +86,29 @@ export interface MovieDetailV1Response {
   };
 }
 
+/**
+ * GET /v1/api/phim/{slug}/images
+ * Danh sách hình ảnh (poster, backdrop...) của phim.
+ */
+export interface MovieImage {
+  url: string;
+  type?: string; // vd: 'poster' | 'backdrop'
+  width?: number;
+  height?: number;
+}
+
+export interface MovieImagesResponse {
+  status: boolean | string;
+  msg?: string;
+  data: {
+    item?: {
+      slug?: string;
+      images?: MovieImage[];
+    };
+    images?: MovieImage[];
+  };
+}
+
 export interface HistoryItem {
   id: string;
   name: string;
