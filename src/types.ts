@@ -48,6 +48,44 @@ export interface MovieDetailResponse {
   episodes: Episode[];
 }
 
+/**
+ * Format 2: GET /v1/api/phim/{slug}
+ * Khác Format 1: dữ liệu phim + tập phim đều nằm gộp trong `data.item`,
+ * kèm thêm các field mà Format 1 không có: trailer_url, view, tmdb, imdb...
+ */
+export interface MovieDetailV1Item extends Movie {
+  episode?: Episode[];
+  trailer_url?: string;
+  view?: number;
+  is_copyright?: boolean;
+  chieurap?: boolean;
+  sub_docquyen?: boolean;
+  notify?: string;
+  showtimes?: string;
+  tmdb?: {
+    id?: string | null;
+    type?: string | null;
+    season?: number | null;
+    vote_average?: number;
+    vote_count?: number;
+  };
+  imdb?: {
+    id?: string | null;
+  };
+  created?: { time: string };
+}
+
+export interface MovieDetailV1Response {
+  status: boolean | string;
+  msg?: string;
+  data: {
+    seoOnPage?: Record<string, any>;
+    breadCrumb?: Record<string, any>[];
+    titlePage?: string;
+    item: MovieDetailV1Item;
+  };
+}
+
 export interface HistoryItem {
   id: string;
   name: string;

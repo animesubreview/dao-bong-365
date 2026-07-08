@@ -1,4 +1,4 @@
-import { Movie, APIResponse, MovieDetailResponse, Episode } from '../types';
+import { Movie, APIResponse, MovieDetailResponse, Episode, MovieDetailV1Response } from '../types';
 
 const BASE_URL = 'https://phimapi.com';
 
@@ -547,6 +547,24 @@ export const movieApi = {
     return response.json();
   },
 
+  /**
+   * Format 2: GET /v1/api/phim/{slug}
+   * Khác với getMovieDetail (Format 1): dữ liệu phim + tập phim gộp chung
+   * trong data.item, kèm thêm trailer_url, view, tmdb (rating), imdb...
+   * Trả về null nếu lỗi hoặc không tìm thấy phim.
+   */
+  getMovieDetailV1: async (slug: string): Promise<MovieDetailV1Response | null> => {
+    try {
+      const response = await fetch(`${BASE_URL}/v1/api/phim/${slug}`);
+      if (!response.ok) return null;
+      const data: MovieDetailV1Response = await response.json();
+      if (!data?.data?.item) return null;
+      return data;
+    } catch {
+      return null;
+    }
+  },
+
   searchMovies: async (keyword: string, page: number = 1, limit: number = 20): Promise<APIResponse<Movie>> => {
     const response = await fetch(`${BASE_URL}/v1/api/tim-kiem?keyword=${keyword}&page=${page}&limit=${limit}`);
     const data = await response.json();
@@ -592,8 +610,7 @@ export const movieApi = {
     };
   },
 
-  getImageUrl: (url?: string) => {
-    if (!url) return '/assets/logo-daophim.png'; // fallback khi thiếu poster/thumb
+  getImageUrl: (url: string) => {
     if (url.includes('phim.nguonc.com')) return url;
     if (url.startsWith('http')) return `https://phimapi.com/image.php?url=${url}`;
     return `https://phimapi.com/image.php?url=https://phimimg.com/${url}`;

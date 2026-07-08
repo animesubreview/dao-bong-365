@@ -32,16 +32,6 @@ export default function MovieCard({ movie, className }: any) {
             alt={movie.name}
             loading="lazy"
             referrerPolicy="no-referrer"
-            onError={(e) => {
-              const img = e.currentTarget;
-              const original = movie.poster_url || movie.thumb_url;
-              // Nếu proxy phimapi.com lỗi/bị chặn, thử lại bằng link ảnh gốc
-              if (original && img.src !== original) {
-                img.src = original;
-              } else {
-                img.src = '/assets/logo-daophim.png';
-              }
-            }}
             className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           />
           {/* Bottom badges */}
