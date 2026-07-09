@@ -22,6 +22,7 @@ export default function MovieDetail() {
   const [selectedServer, setSelectedServer] = useState(0);
   const [activeTab, setActiveTab] = useState<Tab>('episodes');
   const [showFullDesc, setShowFullDesc] = useState(false);
+  const [tmdbImages, setTmdbImages] = useState<{ posters: string[]; backdrops: string[] }>({ posters: [], backdrops: [] });
   const navigate = useNavigate();
 
   // ── Dynamic SEO cho trang phim ──────────────────────────────────
@@ -44,12 +45,14 @@ export default function MovieDetail() {
     const fetchData = async () => {
       if (!slug) return;
       try {
-        const [res, override, nguonC, ophim] = await Promise.all([
+        const [res, override, nguonC, ophim, tmdbImgs] = await Promise.all([
           movieApi.getMovieDetail(slug).catch((err) => { console.warn('[KKPhim] lỗi lấy chi tiết phim:', err); return { status: false, movie: null, episodes: [] } as any; }),
           getMovieOverride(slug).catch((err) => { console.warn('[Override] lỗi:', err); return null; }),
           getNguonCDetail(slug).catch((err) => { console.warn('[NguonC] lỗi lấy chi tiết phim:', err); return null; }),
           getOPhimDetail(slug).catch((err) => { console.warn('[OPhim] lỗi lấy chi tiết phim:', err); return null; }),
+          movieApi.getMovieImagesV1(slug).catch(() => ({ posters: [], backdrops: [] })),
         ]);
+        setTmdbImages(tmdbImgs);
         // Merge override vào movie data - override field nào thì hiện field đó
         // Nếu KKPhim không có phim này nhưng NguonC có → dùng NguonC làm nguồn chính
         let movieData = res.movie;
@@ -114,8 +117,8 @@ export default function MovieDetail() {
     );
   }
 
-  const posterUrl = movieApi.getImageUrl(movie.poster_url || movie.thumb_url);
-  const thumbUrl = movieApi.getImageUrl(movie.thumb_url || movie.poster_url);
+  const posterUrl = tmdbImages.posters[0] || movieApi.getImageUrl(movie.poster_url || movie.thumb_url) || '/assets/logo-daophim.png';
+  const thumbUrl = tmdbImages.backdrops[0] || movieApi.getImageUrl(movie.thumb_url || movie.poster_url) || '/assets/logo-daophim.png';
   const firstEpisode = episodes[0]?.server_data[0];
   const currentServer = episodes[selectedServer];
 
@@ -136,6 +139,11 @@ export default function MovieDetail() {
         style={{ height: 'clamp(300px, 48vw, 580px)', marginTop: '-56px', paddingTop: '56px' }}
       >
         <img src={thumbUrl} alt={movie.name} referrerPolicy="no-referrer"
+          onError={(e) => {
+            const fallback = movieApi.getImageUrl(movie.thumb_url || movie.poster_url);
+            if (fallback && e.currentTarget.src !== fallback) e.currentTarget.src = fallback;
+            else e.currentTarget.src = '/assets/logo-daophim.png';
+          }}
           className="w-full h-full object-cover object-top" />
         <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-slate-950/60 to-transparent" />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
@@ -157,7 +165,12 @@ export default function MovieDetail() {
           {/* Poster – PC only left column */}
           <div className="hidden md:block shrink-0 w-44 lg:w-52">
             <div className="rounded-xl overflow-hidden shadow-2xl shadow-black/80 border border-slate-800/60" style={{ aspectRatio: '2/3' }}>
-              <img src={posterUrl} alt={movie.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+              <img src={posterUrl} alt={movie.name} className="w-full h-full object-cover" referrerPolicy="no-referrer"
+                onError={(e) => {
+                  const fallback = movieApi.getImageUrl(movie.poster_url || movie.thumb_url);
+                  if (fallback && e.currentTarget.src !== fallback) e.currentTarget.src = fallback;
+                  else e.currentTarget.src = '/assets/logo-daophim.png';
+                }} />
             </div>
           </div>
 
@@ -167,7 +180,12 @@ export default function MovieDetail() {
             {/* Mobile: small poster + title */}
             <div className="flex md:hidden items-end gap-4 mb-4">
               <div className="w-24 shrink-0 rounded-xl overflow-hidden shadow-xl border border-slate-800/60" style={{ aspectRatio: '2/3' }}>
-                <img src={posterUrl} alt={movie.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                <img src={posterUrl} alt={movie.name} className="w-full h-full object-cover" referrerPolicy="no-referrer"
+                onError={(e) => {
+                  const fallback = movieApi.getImageUrl(movie.poster_url || movie.thumb_url);
+                  if (fallback && e.currentTarget.src !== fallback) e.currentTarget.src = fallback;
+                  else e.currentTarget.src = '/assets/logo-daophim.png';
+                }} />
               </div>
               <div className="pb-1">
                 <h1 className="text-lg font-black text-white leading-tight line-clamp-2">{movie.name}</h1>

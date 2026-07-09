@@ -1,6 +1,11 @@
-import { Movie, APIResponse, MovieDetailResponse, Episode, MovieDetailV1Response, MovieImagesResponse, MovieImage } from '../types';
+import { Movie, APIResponse, MovieDetailResponse, Episode } from '../types';
 
 const BASE_URL = 'https://phimapi.com';
+
+// Cache ảnh chất lượng cao lấy được từ NguonC theo slug (nếu có), dùng trong getImageUrl.
+// Populate cache này ở nơi nào lấy được ảnh đẹp từ NguonC bằng: NguonCImageCache.set(slug, { poster, thumb });
+const NguonCImageCache = new Map<string, { poster: string; thumb?: string }>();
+
 
 // ─── NguonC API ──────────────────────────────────────────────────────────────
 const NGUONC_BASE = 'https://phim.nguonc.com/api';
@@ -547,44 +552,6 @@ export const movieApi = {
     return response.json();
   },
 
-  /**
-   * Format 2: GET /v1/api/phim/{slug}
-   * Khác với getMovieDetail (Format 1): dữ liệu phim + tập phim gộp chung
-   * trong data.item, kèm thêm trailer_url, view, tmdb (rating), imdb...
-   * Trả về null nếu lỗi hoặc không tìm thấy phim.
-   */
-  getMovieDetailV1: async (slug: string): Promise<MovieDetailV1Response | null> => {
-    try {
-      const response = await fetch(`${BASE_URL}/v1/api/phim/${slug}`);
-      if (!response.ok) return null;
-      const data: MovieDetailV1Response = await response.json();
-      if (!data?.data?.item) return null;
-      return data;
-    } catch {
-      return null;
-    }
-  },
-
-  /**
-   * GET /v1/api/phim/{slug}/images
-   * Danh sách hình ảnh (poster, backdrop...) của phim.
-   * Trả về mảng ảnh rỗng nếu lỗi hoặc không có dữ liệu, để component dùng
-   * .map() an toàn mà không cần check null ở nơi gọi.
-   */
-  getMovieImages: async (slug: string): Promise<MovieImage[]> => {
-    try {
-      const response = await fetch(`${BASE_URL}/v1/api/phim/${slug}/images`, {
-        headers: { accept: 'application/json' },
-      });
-      if (!response.ok) return [];
-      const data: MovieImagesResponse = await response.json();
-      const images = data?.data?.item?.images ?? data?.data?.images ?? [];
-      return Array.isArray(images) ? images : [];
-    } catch {
-      return [];
-    }
-  },
-
   searchMovies: async (keyword: string, page: number = 1, limit: number = 20): Promise<APIResponse<Movie>> => {
     const response = await fetch(`${BASE_URL}/v1/api/tim-kiem?keyword=${keyword}&page=${page}&limit=${limit}`);
     const data = await response.json();
@@ -630,10 +597,70 @@ export const movieApi = {
     };
   },
 
-  getImageUrl: (url: string) => {
-    if (url.includes('phim.nguonc.com')) return url;
-    if (url.startsWith('http')) return `https://phimapi.com/image.php?url=${url}`;
-    return `https://phimapi.com/image.php?url=https://phimimg.com/${url}`;
+  getImageUrl: (path: any) => {
+    if (!path) return '';
+
+    // Chuẩn hóa kiểu dữ liệu đầu vào nếu không phải string
+    if (typeof path !== 'string') {
+      try {
+        if (Array.isArray(path) && path.length > 0) {
+          path = path[0];
+        } else if (typeof path === 'object') {
+          path = path.url || path.link || String(path);
+        } else {
+          path = String(path);
+        }
+      } catch (e) {
+        return '';
+      }
+    }
+
+    if (typeof path !== 'string' || !path) return '';
+
+    // Trả về trực tiếp nếu là link đầy đủ
+    if (path.startsWith('http')) return path;
+    if (path.startsWith('//')) return `https:${path}`;
+
+    // Kiểm tra xem đường dẫn/slug này có sẵn ảnh đẹp từ Nguồn C trong bộ đệm không
+    const cachedImages = NguonCImageCache.get(path);
+    if (cachedImages) return cachedImages.poster;
+
+    // Điều hướng chính xác tên miền CDN dựa trên cấu trúc đường dẫn
+    if (path.includes('ophim') || path.includes('uploads/movies')) {
+      // Sửa lỗi các domain ảnh của OPhim bị chết bằng cách chuyển sang img.ophim.live ổn định hơn
+      return `https://img.ophim.live/uploads/movies/${path.replace(/.*uploads\/movies\//, '')}`;
+    }
+
+    // Mặc định đối với KKPhim/OPhim khác
+    return `https://phimimg.com/uploads/movies/${path.replace(/.*uploads\/movies\//, '')}`;
+  },
+
+  // Lấy ảnh chất lượng cao (poster/backdrop) trực tiếp từ TMDB qua endpoint
+  // GET https://phimapi.com/v1/api/phim/{slug}/images
+  // Trả về URL đầy đủ đã ghép base size + file_path, sẵn sàng dùng trong <img src>
+  getMovieImagesV1: async (slug: string): Promise<{ posters: string[]; backdrops: string[] }> => {
+    try {
+      const res = await fetch(`https://phimapi.com/v1/api/phim/${slug}/images`);
+      const json = await res.json();
+      const data = json?.data;
+      if (!data) return { posters: [], backdrops: [] };
+
+      const posterBase: string = data.image_sizes?.poster?.w500 || 'https://image.tmdb.org/t/p/w500';
+      const backdropBase: string = data.image_sizes?.backdrop?.w1280 || 'https://image.tmdb.org/t/p/w1280';
+
+      const images: Array<{ type: string; file_path: string }> = data.images || [];
+      const posters = images
+        .filter((img) => img.type === 'poster' && img.file_path)
+        .map((img) => `${posterBase}${img.file_path}`);
+      const backdrops = images
+        .filter((img) => img.type === 'backdrop' && img.file_path)
+        .map((img) => `${backdropBase}${img.file_path}`);
+
+      return { posters, backdrops };
+    } catch (err) {
+      console.error('getMovieImagesV1 error:', err);
+      return { posters: [], backdrops: [] };
+    }
   },
 
   // Normalize lang field — KKPhim sometimes returns garbage strings
