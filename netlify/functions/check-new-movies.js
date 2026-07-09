@@ -9,6 +9,38 @@ const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '8182223004:AAEKg4G
 const TELEGRAM_CHAT_ID   = process.env.TELEGRAM_CHAT_ID   || '-1003945410277';
 const SITE_URL           = process.env.SITE_URL            || 'https://daophim.online';
 const KKPHIM_API         = 'https://phimapi.com';
+const INDEXNOW_KEY       = process.env.INDEXNOW_KEY        || 'daophim2026indexnowkey9f8a7b6c';
+
+// IndexNow: báo cho Bing/Yandex (và các search engine hỗ trợ IndexNow) biết ngay khi có URL mới
+// Google chưa hỗ trợ IndexNow, nhưng ta vẫn ping thêm sitemap cho Google ở dưới.
+async function submitIndexNow(urls) {
+  if (!urls.length) return;
+  try {
+    await fetch('https://api.indexnow.org/indexnow', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json; charset=utf-8' },
+      body: JSON.stringify({
+        host: 'daophim.online',
+        key: INDEXNOW_KEY,
+        keyLocation: `${SITE_URL}/${INDEXNOW_KEY}.txt`,
+        urlList: urls,
+      }),
+    });
+  } catch (e) {
+    console.log('IndexNow submit lỗi:', e.message);
+  }
+}
+
+// Ping Google + Bing để crawl lại sitemap ngay (best-effort, không đảm bảo index tức thì)
+async function pingSitemaps() {
+  const sitemapUrl = encodeURIComponent(`${SITE_URL}/sitemap-movies.xml`);
+  try {
+    await fetch(`https://www.google.com/ping?sitemap=${sitemapUrl}`);
+    await fetch(`https://www.bing.com/ping?sitemap=${sitemapUrl}`);
+  } catch (e) {
+    console.log('Ping sitemap lỗi:', e.message);
+  }
+}
 
 async function sendTelegram(text, photoUrl) {
   const base = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}`;
@@ -49,7 +81,7 @@ function getThumb(thumb_url) {
 
 // Format phim mới hoàn toàn
 function formatNewMovie(movie) {
-  const url = `${SITE_URL}/movie/${movie.slug}`;
+  const url = `${SITE_URL}/phim/${movie.slug}`;
   const year = movie.year ? `📅 <b>${movie.year}</b>   ` : '';
   const quality = movie.quality ? `🎥 <b>${movie.quality}</b>   ` : '';
   const lang = movie.lang ? `🔊 ${movie.lang}` : '';
@@ -66,7 +98,7 @@ function formatNewMovie(movie) {
 
 // Format tập mới
 function formatNewEpisode(movie, epCurrent) {
-  const url = `${SITE_URL}/movie/${movie.slug}`;
+  const url = `${SITE_URL}/phim/${movie.slug}`;
   const quality = movie.quality ? `🎥 <b>${movie.quality}</b>   ` : '';
   const lang = movie.lang ? `🔊 ${movie.lang}` : '';
   const type = movie.type === 'hoathinh' ? '🌸 Anime' : '📺 Phim Bộ';
@@ -153,6 +185,9 @@ const myHandler = async () => {
       const result = await sendTelegram(text, thumb);
       console.log(`✅ Sent: ${movie.name} (${isNewMovie ? 'NEW MOVIE' : 'NEW EP'}) - Telegram: ${result.ok}`);
 
+      // Báo ngay cho search engine hỗ trợ IndexNow (Bing, Yandex...) biết URL này vừa có nội dung mới
+      await submitIndexNow([`${SITE_URL}/phim/${slug}`]);
+
       // Đánh dấu đã gửi
       newSentMovies[key] = Date.now();
       sentCount++;
@@ -175,6 +210,11 @@ const myHandler = async () => {
       } catch (e) {
         console.log('Could not save to Blobs:', e.message);
       }
+    }
+
+    // Báo Google/Bing crawl lại sitemap nếu có phim mới trong lượt chạy này
+    if (sentCount > 0) {
+      await pingSitemaps();
     }
 
     console.log(`✅ Done. Sent ${sentCount} notifications.`);

@@ -4,13 +4,21 @@
   <!-- Sitemap trang tĩnh -->
   <sitemap>
     <loc>https://daophim.online/sitemap.xml</loc>
-    <lastmod>2026-05-23</lastmod>
   </sitemap>
 
-  <!-- Sitemap động – toàn bộ phim từ API (tự cập nhật mỗi ngày) -->
+  <!-- Sitemap động – toàn bộ phim từ API (tự cập nhật, cache 12h) -->
   <sitemap>
     <loc>https://daophim.online/sitemap-movies.xml</loc>
-    <lastmod>2026-05-23</lastmod>
+  </sitemap>
+
+  <!-- Sitemap trang thể loại / quốc gia -->
+  <sitemap>
+    <loc>https://daophim.online/sitemap-categories.xml</loc>
+  </sitemap>
+
+  <!-- Sitemap ảnh phim (Google Image Search) -->
+  <sitemap>
+    <loc>https://daophim.online/sitemap-images.xml</loc>
   </sitemap>
 
 </sitemapindex>

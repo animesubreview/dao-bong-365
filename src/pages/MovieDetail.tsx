@@ -245,7 +245,7 @@ export default function MovieDetail() {
         {/* Title (PC) + Badges */}
         <div className="mt-5 md:mt-6">
           <div className="hidden md:block mb-3">
-            <h1 className="text-2xl lg:text-3xl font-black text-white leading-tight">{movie.name}</h1>
+            <p className="text-2xl lg:text-3xl font-black text-white leading-tight">{movie.name}</p>
             {movie.origin_name && movie.origin_name !== movie.name && (
               <p className="text-green-400 text-sm font-semibold mt-1">{movie.origin_name}</p>
             )}

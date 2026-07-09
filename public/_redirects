@@ -1,5 +1,8 @@
 # ── Sitemap động (PHẢI đứng trước SPA fallback) ──────────────────
 /sitemap-movies.xml /.netlify/functions/sitemap-dynamic 200
+/sitemap-categories.xml /.netlify/functions/sitemap-categories 200
+/sitemap-images.xml /.netlify/functions/sitemap-images 200
+/rss.xml /.netlify/functions/rss 200
 
 # ── Telegram notify webhook ───────────────────────────────────────
 /api/telegram-notify /.netlify/functions/telegram-notify 200

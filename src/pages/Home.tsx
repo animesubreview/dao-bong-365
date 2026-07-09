@@ -393,6 +393,9 @@ export default function Home() {
 
   return (
     <div className="pb-20 bg-slate-950 min-h-screen">
+      <h1 className="sr-only">
+        Đảo Phim - Xem Phim Online Miễn Phí HD Vietsub, Thuyết Minh, Lồng Tiếng
+      </h1>
       <Banner movies={bannerMovies} />
       <LiveBanner />
       <AdBanner position="top" className="max-w-2xl md:max-w-5xl lg:max-w-[1400px] mx-auto px-4 md:px-6 lg:px-8 mt-3" />
