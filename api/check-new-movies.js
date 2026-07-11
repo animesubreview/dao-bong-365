@@ -2,8 +2,6 @@
  * Netlify Scheduled Function: check-new-movies (ESM)
  * Chạy mỗi 30 phút - Không spam lặp nhờ Netlify Blobs
  */
-import { schedule } from '@netlify/functions';
-import { getStore } from '@netlify/blobs';
 
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '8182223004:AAEKg4Gf869fv0Io72AQNeWvrii6D3_utIk';
 const TELEGRAM_CHAT_ID   = process.env.TELEGRAM_CHAT_ID   || '-1003945410277';
@@ -111,19 +109,48 @@ function formatNewEpisode(movie, epCurrent) {
     `🔗 <a href="${url}">▶️ Xem ngay tại DaoPhim.lol</a>`;
 }
 
-const myHandler = async () => {
+// Lưu trạng thái "phim đã gửi" bằng Upstash Redis (free tier) thay cho Netlify Blobs
+// Cần 2 biến môi trường: UPSTASH_REDIS_REST_URL và UPSTASH_REDIS_REST_TOKEN (lấy free tại upstash.com)
+async function redisGet(key) {
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) return null;
+  try {
+    const res = await fetch(`${url}/get/${key}`, { headers: { Authorization: `Bearer ${token}` } });
+    const data = await res.json();
+    return data?.result ? JSON.parse(data.result) : null;
+  } catch { return null; }
+}
+async function redisSet(key, value) {
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) return;
+  try {
+    await fetch(`${url}/set/${key}`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(value),
+    });
+  } catch (e) { console.log('Redis set lỗi:', e.message); }
+}
+
+async function netlifyHandlerFn(event) {
+  // Bảo vệ endpoint: chỉ chạy khi có đúng secret (GitHub Actions cron sẽ gửi kèm)
+  const secret = process.env.CRON_SECRET;
+  if (secret && event.headers['x-cron-secret'] !== secret) {
+    return { statusCode: 401, body: 'Unauthorized' };
+  }
+
   console.log('🔍 Checking new movies from KKPhim...');
 
   try {
-    // Lấy store để lưu trạng thái phim đã gửi
+    // Lấy trạng thái phim đã gửi từ Redis
     let sentMovies = {};
-    let store;
     try {
-      store = getStore('telegram-sent');
-      const stored = await store.get('sent-list', { type: 'json' });
+      const stored = await redisGet('sent-list');
       if (stored) sentMovies = stored;
     } catch {
-      console.log('Blobs not available, using empty state');
+      console.log('Redis không khả dụng, dùng state rỗng');
     }
 
     // Gọi API KKPhim
@@ -204,12 +231,10 @@ const myHandler = async () => {
     }
 
     // Lưu lại
-    if (store) {
-      try {
-        await store.set('sent-list', JSON.stringify(newSentMovies));
-      } catch (e) {
-        console.log('Could not save to Blobs:', e.message);
-      }
+    try {
+      await redisSet('sent-list', newSentMovies);
+    } catch (e) {
+      console.log('Không lưu được vào Redis:', e.message);
     }
 
     // Báo Google/Bing crawl lại sitemap nếu có phim mới trong lượt chạy này
@@ -226,4 +251,5 @@ const myHandler = async () => {
   }
 };
 
-export const handler = schedule('*/30 * * * *', myHandler);
+import { wrapNetlifyHandler } from './_compat.js';
+export default wrapNetlifyHandler(netlifyHandlerFn);

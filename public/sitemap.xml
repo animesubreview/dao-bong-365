@@ -93,4 +93,11 @@
     <priority>0.7</priority>
   </url>
 
+  <!-- ═══ SƠ ĐỒ TRANG WEB (HTML sitemap) ═══════════════════════════════════ -->
+  <url>
+    <loc>https://daophim.online/site-map</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+
 </urlset>

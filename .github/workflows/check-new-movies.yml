@@ -1,0 +1,15 @@
+name: Check New Movies (cron 30p)
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Gọi API check-new-movies trên Vercel
+        run: |
+          curl -sS -X GET "https://daophim.online/api/check-new-movies" \
+            -H "x-cron-secret: ${{ secrets.CRON_SECRET }}"

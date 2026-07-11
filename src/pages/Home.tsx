@@ -224,12 +224,33 @@ function HRow({ children }: { children: React.ReactNode }) {
   );
 }
 
+/* ─── Bảng màu tiêu đề danh mục (đa dạng, bắt mắt như các web phim lớn) ── */
+const TITLE_COLORS = [
+  { text: 'text-pink-400',    bar: 'bg-pink-400' },
+  { text: 'text-orange-400',  bar: 'bg-orange-400' },
+  { text: 'text-yellow-400',  bar: 'bg-yellow-400' },
+  { text: 'text-fuchsia-400', bar: 'bg-fuchsia-400' },
+  { text: 'text-sky-400',     bar: 'bg-sky-400' },
+  { text: 'text-emerald-400', bar: 'bg-emerald-400' },
+  { text: 'text-violet-400',  bar: 'bg-violet-400' },
+  { text: 'text-rose-400',    bar: 'bg-rose-400' },
+  { text: 'text-cyan-400',    bar: 'bg-cyan-400' },
+  { text: 'text-lime-400',    bar: 'bg-lime-400' },
+];
+
+function colorForTitle(title: string) {
+  let hash = 0;
+  for (let i = 0; i < title.length; i++) hash = (hash * 31 + title.charCodeAt(i)) >>> 0;
+  return TITLE_COLORS[hash % TITLE_COLORS.length];
+}
+
 /* ─── SecHeader ───────────────────────────────────────────────── */
 function SecHeader({ title, to, label='Tất cả' }: { title:string; to?:string; label?:string }) {
+  const { text, bar } = colorForTitle(title);
   return (
     <div className="flex items-center justify-between mb-3">
-      <h2 className="text-base font-black text-white flex items-center gap-2">
-        <span className="w-1 h-4 bg-green-500 rounded-full inline-block shrink-0" />{title}
+      <h2 className={`text-base font-black flex items-center gap-2 ${text}`}>
+        <span className={`w-1 h-4 rounded-full inline-block shrink-0 ${bar}`} />{title}
       </h2>
       {to && <Link to={to} className="flex items-center gap-1 text-xs font-semibold text-slate-400 hover:text-green-400 transition-colors bg-slate-800/60 border border-slate-700/60 px-2.5 py-1.5 rounded-full shrink-0">{label} <ChevronRight size={11}/></Link>}
     </div>
@@ -393,6 +414,9 @@ export default function Home() {
 
   return (
     <div className="pb-20 bg-slate-950 min-h-screen">
+      <h1 className="sr-only">
+        Đảo Phim - Xem Phim Online Miễn Phí HD Vietsub, Thuyết Minh, Lồng Tiếng
+      </h1>
       <Banner movies={bannerMovies} />
       <LiveBanner />
       <AdBanner position="top" className="max-w-2xl md:max-w-5xl lg:max-w-[1400px] mx-auto px-4 md:px-6 lg:px-8 mt-3" />
