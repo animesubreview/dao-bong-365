@@ -25,8 +25,6 @@ import NapThe from './pages/NapThe';
 import MuaVip from './pages/MuaVip';
 import Notifications from './pages/Notifications';
 import LiveStreamPage from './pages/LiveStream';
-import NotFound from './pages/NotFound';
-import HtmlSitemap from './pages/HtmlSitemap';
 import MaintenancePage from './components/MaintenancePage';
 import GeoBlockPage from './components/GeoBlockPage';
 import TVOptimizer from './components/TVOptimizer';
@@ -211,8 +209,6 @@ function AppInner({ maintenance, maintenanceLoaded }: { maintenance: Maintenance
             <Route path="/mua-vip" element={<MuaVip />} />
             <Route path="/notifications" element={<Notifications />} />
             <Route path="/truc-tiep" element={<LiveStreamPage />} />
-            <Route path="/site-map" element={<HtmlSitemap />} />
-            <Route path="*" element={<NotFound />} />
           </Routes>
         </div>
         <Footer />

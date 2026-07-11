@@ -179,7 +179,7 @@ export default function ManualMovieDetail() {
         {/* Title (PC) + Badges */}
         <div className="mt-5 md:mt-6">
           <div className="hidden md:block mb-3">
-            <p className="text-2xl lg:text-3xl font-black text-white leading-tight">{movie.name}</p>
+            <h1 className="text-2xl lg:text-3xl font-black text-white leading-tight">{movie.name}</h1>
             {movie.originName && (
               <p className="text-green-400 text-sm font-semibold mt-1">{movie.originName}</p>
             )}

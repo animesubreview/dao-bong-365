@@ -25,5 +25,3 @@ Crawl-delay: 1
 Sitemap: https://daophim.online/sitemap-index.xml
 Sitemap: https://daophim.online/sitemap.xml
 Sitemap: https://daophim.online/sitemap-movies.xml
-Sitemap: https://daophim.online/sitemap-categories.xml
-Sitemap: https://daophim.online/sitemap-images.xml
