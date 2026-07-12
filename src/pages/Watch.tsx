@@ -7,6 +7,7 @@ import { Movie, Episode } from '../types';
 import { cn, usePageTitle } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import CommentSection from '../components/CommentSection';
+import MovieCard from '../components/MovieCard';
 import DaoPhimPlayer from '../components/DaoPhimPlayer';
 import { getMovieOverride, mergeOverride } from '../lib/movieOverrides';
 import { createWatchRoom } from '../lib/watchRoom';
@@ -51,6 +52,7 @@ export default function Watch() {
   const [lastWatchRoom, setLastWatchRoom] = useState<{ roomId: string; movieName: string; episodeName: string } | null>(null);
   const [currentUser, setCurrentUser] = useState(getCurrentUser());
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [recommended, setRecommended] = useState<Movie[]>([]);
 
   // Auth listener
   useEffect(() => {
@@ -63,6 +65,21 @@ export default function Watch() {
     });
     return unsub;
   }, []);
+
+  // Phim đề xuất cùng thể loại (hiện dưới phần bình luận)
+  useEffect(() => {
+    let cancelled = false;
+    if (!movie?.category?.length) { setRecommended([]); return; }
+    const genreSlug = movie.category[0].slug;
+    movieApi.filterMovies({ category: genreSlug, limit: 13 })
+      .then((res) => {
+        if (cancelled) return;
+        const items = (res.items || []).filter((m) => m.slug !== movie.slug).slice(0, 12);
+        setRecommended(items);
+      })
+      .catch(() => { if (!cancelled) setRecommended([]); });
+    return () => { cancelled = true; };
+  }, [movie?.slug]);
 
   // Load saved watch room
   useEffect(() => {
@@ -365,6 +382,23 @@ export default function Watch() {
           <div className="h-[2px] bg-green-500 rounded-full mt-2 w-16" />
         </motion.div>
 
+        {/* ── Nhắc đăng nhập để lưu lịch sử/tiến độ xem (chỉ hiện khi chưa đăng nhập) ── */}
+        {!currentUser && (
+          <motion.div initial={{ y: 16, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.06 }}
+            className="flex items-center gap-3 bg-green-500/10 border border-green-500/30 rounded-xl px-4 py-3">
+            <BookmarkPlus size={20} className="text-green-400 shrink-0" />
+            <p className="text-xs sm:text-sm text-slate-200 flex-1">
+              Đăng nhập để lưu <b className="text-white">lịch sử xem</b> và tự động nhớ tập bạn đang xem dở.
+            </p>
+            <Link
+              to="/auth"
+              className="shrink-0 bg-green-600 hover:bg-green-500 text-white text-xs font-bold px-3 py-1.5 rounded-full transition-colors"
+            >
+              Đăng nhập
+            </Link>
+          </motion.div>
+        )}
+
         {/* ── Movie detail mini card ── */}
         <motion.div initial={{ y: 16, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.05 }}
           className="bg-[#181818] rounded-xl p-4 flex gap-3">
@@ -510,6 +544,31 @@ export default function Watch() {
         <motion.div initial={{ y: 16, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.12 }}>
           <CommentSection movieSlug={slug || ''} />
         </motion.div>
+
+        {/* ── Phim đề xuất cùng thể loại ── */}
+        {recommended.length > 0 && (
+          <motion.div initial={{ y: 16, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.14 }}>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-white font-black text-sm uppercase tracking-wide flex items-center gap-2">
+                <span className="w-1 h-4 bg-green-500 rounded-full inline-block shrink-0" />
+                Đề Xuất Cho Bạn
+              </h2>
+              {movie.category?.[0] && (
+                <Link
+                  to={`/type/phim-bo?category=${movie.category[0].slug}`}
+                  className="text-xs font-semibold text-slate-400 hover:text-green-400 transition-colors"
+                >
+                  Xem tất cả
+                </Link>
+              )}
+            </div>
+            <div className="grid grid-cols-3 sm:grid-cols-4 xl:grid-cols-3 gap-2.5 sm:gap-3">
+              {recommended.map((m) => (
+                <MovieCard key={m._id || m.slug} movie={m} />
+              ))}
+            </div>
+          </motion.div>
+        )}
 
       </div>
       </div>
