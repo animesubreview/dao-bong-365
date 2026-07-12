@@ -261,7 +261,11 @@ export default function Watch() {
         )}
       </AnimatePresence>
 
+      {/* ══ Khối bố cục: mobile/iPad giữ nguyên (cột đơn); PC/Laptop (xl+) chia 2 cột ══ */}
+      <div className="xl:max-w-[1500px] xl:mx-auto xl:px-8 xl:pt-4 xl:grid xl:grid-cols-[1fr_380px] xl:gap-6 xl:items-start">
+
       {/* ── Video Player ── iframe + logo overlay ── */}
+      <div className="xl:col-start-1">
       <DaoPhimPlayer
         src={currentEpisode.link_embed}
         m3u8={currentEpisode.link_m3u8}
@@ -274,9 +278,10 @@ export default function Watch() {
         }}
         onNext={nextEpisode ? () => navigate(`/watch/${movie.slug}/${nextEpisode.slug}?server=${encodeURIComponent(nextEpisode.server_name)}`) : undefined}
       />
+      </div>
 
       {/* ── Content area ── */}
-      <div className="max-w-2xl mx-auto px-3 pt-3 flex flex-col gap-3">
+      <div className="max-w-2xl xl:max-w-none mx-auto xl:mx-0 px-3 xl:px-0 pt-3 xl:pt-0 flex flex-col gap-3 xl:col-start-1">
 
         {/* ── Movie info card (KhoiPhim style) ── */}
         <motion.div initial={{ y: 16, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
@@ -393,10 +398,66 @@ export default function Watch() {
           </div>
         </motion.div>
 
+
+        {/* ── Phụ đề / Nội dung section ── */}
+        <motion.div initial={{ y: 16, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }}
+          className="bg-[#181818] rounded-xl overflow-hidden">
+          <div className="flex items-center gap-2 px-4 py-3 border-b border-white/5">
+            <Info size={15} className="text-green-400" />
+            <span className="text-white font-bold text-sm uppercase tracking-wide">Nội dung</span>
+          </div>
+          <div className="p-4 flex flex-col gap-3">
+            {/* Tags */}
+            <div className="flex flex-wrap gap-2">
+              {movie.year && (
+                <span className="text-xs text-slate-300 bg-[#2a2a2a] border border-slate-700 px-3 py-1 rounded-full">
+                  Năm: {movie.year}
+                </span>
+              )}
+              {movie.quality && (
+                <span className="text-xs text-slate-300 bg-[#2a2a2a] border border-slate-700 px-3 py-1 rounded-full">
+                  Chất lượng: {movie.quality}
+                </span>
+              )}
+              {movie.time && (
+                <span className="text-xs text-slate-300 bg-[#2a2a2a] border border-slate-700 px-3 py-1 rounded-full">
+                  Thời lượng: {movie.time}
+                </span>
+              )}
+              {movie.lang && (
+                <span className="text-xs text-slate-300 bg-[#2a2a2a] border border-slate-700 px-3 py-1 rounded-full">
+                  Ngôn ngữ: {movie.lang}
+                </span>
+              )}
+            </div>
+
+            {/* Actors */}
+            {movie.actor && movie.actor.length > 0 && (
+              <div>
+                <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-2">Diễn viên</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {movie.actor.map((a: string, i: number) => (
+                    <span key={i} className="text-xs text-slate-300 bg-[#2a2a2a] border border-slate-700/60 px-2.5 py-1 rounded-full">
+                      {a}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </motion.div>
+
+        {/* ── Bình luận ── */}
+        <motion.div initial={{ y: 16, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.12 }}>
+          <CommentSection movieSlug={slug || ''} />
+        </motion.div>
+
+      </div>
+
         {/* ── Danh sách tập ── */}
         {currentServer && (
           <motion.div initial={{ y: 16, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.08 }}
-            className="bg-[#181818] rounded-xl overflow-hidden">
+            className="bg-[#181818] rounded-xl overflow-hidden xl:col-start-2 xl:[grid-row:1/-1] xl:sticky xl:top-6 xl:max-h-[calc(100vh-3rem)] xl:flex xl:flex-col">
 
             {/* Section header */}
             <div className="flex items-center gap-2 px-4 py-3 border-b border-white/5">
@@ -470,7 +531,7 @@ export default function Watch() {
             {/* Episode grid */}
             <div className="px-4 pb-4">
               <div className={cn(
-                'gap-2 max-h-56 overflow-y-auto pr-1',
+                'gap-2 max-h-56 xl:max-h-none xl:flex-1 overflow-y-auto pr-1',
                 showThumbs ? 'flex flex-col' : 'grid grid-cols-4 sm:grid-cols-6'
               )}>
                 {currentServer.server_data.map((ep, idx) => (
@@ -499,60 +560,8 @@ export default function Watch() {
           </motion.div>
         )}
 
-        {/* ── Phụ đề / Nội dung section ── */}
-        <motion.div initial={{ y: 16, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }}
-          className="bg-[#181818] rounded-xl overflow-hidden">
-          <div className="flex items-center gap-2 px-4 py-3 border-b border-white/5">
-            <Info size={15} className="text-green-400" />
-            <span className="text-white font-bold text-sm uppercase tracking-wide">Nội dung</span>
-          </div>
-          <div className="p-4 flex flex-col gap-3">
-            {/* Tags */}
-            <div className="flex flex-wrap gap-2">
-              {movie.year && (
-                <span className="text-xs text-slate-300 bg-[#2a2a2a] border border-slate-700 px-3 py-1 rounded-full">
-                  Năm: {movie.year}
-                </span>
-              )}
-              {movie.quality && (
-                <span className="text-xs text-slate-300 bg-[#2a2a2a] border border-slate-700 px-3 py-1 rounded-full">
-                  Chất lượng: {movie.quality}
-                </span>
-              )}
-              {movie.time && (
-                <span className="text-xs text-slate-300 bg-[#2a2a2a] border border-slate-700 px-3 py-1 rounded-full">
-                  Thời lượng: {movie.time}
-                </span>
-              )}
-              {movie.lang && (
-                <span className="text-xs text-slate-300 bg-[#2a2a2a] border border-slate-700 px-3 py-1 rounded-full">
-                  Ngôn ngữ: {movie.lang}
-                </span>
-              )}
-            </div>
-
-            {/* Actors */}
-            {movie.actor && movie.actor.length > 0 && (
-              <div>
-                <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-2">Diễn viên</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {movie.actor.map((a: string, i: number) => (
-                    <span key={i} className="text-xs text-slate-300 bg-[#2a2a2a] border border-slate-700/60 px-2.5 py-1 rounded-full">
-                      {a}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </motion.div>
-
-        {/* ── Bình luận ── */}
-        <motion.div initial={{ y: 16, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.12 }}>
-          <CommentSection movieSlug={slug || ''} />
-        </motion.div>
-
       </div>
+      {/* ↑ đóng khối bố cục 2 cột (grid xl:) mở ở đầu component ── */}
 
       {/* ── Modal tạo phòng xem chung ── */}
       <AnimatePresence>

@@ -1,13 +1,14 @@
 import { useSEO } from '../hooks/useSEO';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronRight, ChevronLeft, Loader2, Calendar } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Loader2, Calendar, Play, Clock } from 'lucide-react';
 import { movieApi } from '../services/api';
 import { Movie } from '../types';
 import { useManualMovies, ManualMovie } from '../components/ManualMoviesSection';
 import { subscribeUpcomingMovies as subscribeOldUpcoming } from '../lib/manualMovies';
 import { subscribeUpcomingMovies, UpcomingMovie } from '../lib/upcomingMovies';
 import { cn } from '../lib/utils';
+import { onAuthChange } from '../lib/auth';
 import Banner from '../components/Banner';
 import AdBanner from '../components/AdBanner';
 import LiveBanner from '../components/LiveBanner';
@@ -254,6 +255,85 @@ function colorForTitle(title: string) {
   return TITLE_COLORS[hash % TITLE_COLORS.length];
 }
 
+/* ─── Tiếp tục xem (lịch sử xem gần đây, chỉ hiện khi đã đăng nhập) ─── */
+function timeAgo(ts: number) {
+  const diffMin = Math.floor((Date.now() - ts) / 60000);
+  if (diffMin < 1) return 'Vừa xong';
+  if (diffMin < 60) return `${diffMin} phút trước`;
+  const diffH = Math.floor(diffMin / 60);
+  if (diffH < 24) return `${diffH} giờ trước`;
+  const diffD = Math.floor(diffH / 24);
+  if (diffD < 7) return `${diffD} ngày trước`;
+  return new Date(ts).toLocaleDateString('vi-VN');
+}
+
+function ContinueWatchingSection() {
+  const [loggedIn, setLoggedIn] = useState(false);
+  const [history, setHistory] = useState<any[]>([]);
+
+  useEffect(() => {
+    const unsub = onAuthChange((user) => {
+      setLoggedIn(!!user);
+      if (user) {
+        try {
+          const saved = JSON.parse(localStorage.getItem('watchHistory') || '[]');
+          setHistory(Array.isArray(saved) ? saved.slice(0, 12) : []);
+        } catch { setHistory([]); }
+      }
+    });
+    return () => unsub();
+  }, []);
+
+  if (!loggedIn || history.length === 0) return null;
+
+  return (
+    <section className="px-4 md:px-8 mb-6">
+      <SecHeader title="Tiếp Tục Xem" to="/history" label="Xem tất cả" />
+      <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-hide">
+        {history.map((item) => (
+          <Link
+            key={item.slug + item.episodeSlug}
+            to={`/watch/${item.slug}/${item.episodeSlug}`}
+            className="group relative shrink-0 w-40 sm:w-48 rounded-xl overflow-hidden bg-slate-800"
+            style={{ aspectRatio: '16/9' }}
+          >
+            <img
+              src={movieApi.getImageUrl(item.thumb_url || item.poster_url || '')}
+              alt={item.name}
+              loading="lazy"
+              referrerPolicy="no-referrer"
+              onError={(e) => {
+                const t = e.currentTarget;
+                if (item.poster_url && !t.src.includes(item.poster_url)) {
+                  t.src = movieApi.getImageUrl(item.poster_url);
+                } else {
+                  t.src = '/assets/logo-daophim.png';
+                }
+              }}
+              className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/10 to-transparent" />
+            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="w-10 h-10 rounded-full bg-green-500/90 flex items-center justify-center">
+                <Play size={18} className="text-white fill-current" />
+              </div>
+            </div>
+            <div className="absolute bottom-0 left-0 right-0 p-2">
+              <p className="text-[12px] font-bold text-white line-clamp-1">{item.name}</p>
+              <div className="flex items-center justify-between mt-0.5">
+                <span className="text-[10px] text-slate-300">Tập {item.episodeName}</span>
+                <span className="flex items-center gap-0.5 text-[10px] text-slate-400">
+                  <Clock size={9} /> {timeAgo(item.updatedAt)}
+                </span>
+              </div>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 /* ─── SecHeader ───────────────────────────────────────────────── */
 function SecHeader({ title, to, label='Tất cả' }: { title:string; to?:string; label?:string }) {
   const { text, bar } = colorForTitle(title);
@@ -428,6 +508,7 @@ export default function Home() {
         Đảo Phim - Xem Phim Online Miễn Phí HD Vietsub, Thuyết Minh, Lồng Tiếng
       </h1>
       <Banner movies={bannerMovies} />
+      <ContinueWatchingSection />
       <LiveBanner />
       <AdBanner position="top" className="max-w-2xl md:max-w-5xl lg:max-w-[1400px] mx-auto px-4 md:px-6 lg:px-8 mt-3" />
 
