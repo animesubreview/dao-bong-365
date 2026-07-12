@@ -239,6 +239,16 @@ const TITLE_COLORS = [
 ];
 
 function colorForTitle(title: string) {
+  const t = title.toLowerCase();
+  // Màu cố định theo quốc gia/chủ đề (ưu tiên trước khi dùng màu ngẫu nhiên theo hash)
+  if (t.includes('việt nam')) return { text: 'text-red-500', bar: 'bg-yellow-400' };       // Cờ Việt Nam: đỏ - vàng
+  if (t.includes('hàn quốc')) return { text: 'text-pink-400', bar: 'bg-pink-400' };
+  if (t.includes('trung quốc')) return { text: 'text-orange-400', bar: 'bg-orange-400' };
+  if (t.includes('us-uk') || t.includes('âu mỹ')) return { text: 'text-fuchsia-400', bar: 'bg-fuchsia-400' };
+  if (t.includes('nhật bản')) return { text: 'text-sky-400', bar: 'bg-sky-400' };
+  if (t.includes('thái lan')) return { text: 'text-yellow-400', bar: 'bg-yellow-400' };
+  if (t.includes('hoạt hình') || t.includes('anime')) return { text: 'text-violet-400', bar: 'bg-violet-400' };
+
   let hash = 0;
   for (let i = 0; i < title.length; i++) hash = (hash * 31 + title.charCodeAt(i)) >>> 0;
   return TITLE_COLORS[hash % TITLE_COLORS.length];

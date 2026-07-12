@@ -625,14 +625,16 @@ export const movieApi = {
     const cachedImages = NguonCImageCache.get(path);
     if (cachedImages) return cachedImages.poster;
 
-    // Điều hướng chính xác tên miền CDN dựa trên cấu trúc đường dẫn
-    if (path.includes('ophim') || path.includes('uploads/movies')) {
-      // Sửa lỗi các domain ảnh của OPhim bị chết bằng cách chuyển sang img.ophim.live ổn định hơn
-      return `https://img.ophim.live/uploads/movies/${path.replace(/.*uploads\/movies\//, '')}`;
+    // Chuẩn hóa path về dạng "uploads/movies/..."
+    const cleanPath = path.replace(/^\/+/, '').replace(/.*uploads\/movies\//, 'uploads/movies/');
+
+    // Chỉ dùng img.ophim.live khi path thực sự ghi rõ nguồn OPhim
+    if (path.includes('ophim')) {
+      return `https://img.ophim.live/${cleanPath}`;
     }
 
-    // Mặc định đối với KKPhim/OPhim khác
-    return `https://phimimg.com/uploads/movies/${path.replace(/.*uploads\/movies\//, '')}`;
+    // Mặc định: KKPhim/phimapi dùng đúng domain ảnh img.phimapi.com
+    return `https://img.phimapi.com/${cleanPath}`;
   },
 
   // Lấy ảnh chất lượng cao (poster/backdrop) trực tiếp từ TMDB qua endpoint
