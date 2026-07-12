@@ -14,6 +14,8 @@ interface DaoPhimPlayerProps {
   onEnded?: () => void;
   /** Có tập tiếp theo hay không + hành động khi bấm nút "Tập kế tiếp" trên thanh điều khiển */
   onNext?: () => void;
+  /** Khoá lưu tiến độ xem dở (thường là `${slug}:${episodeSlug}`). Bỏ trống = không lưu/nhắc tiếp tục xem. */
+  resumeKey?: string;
 }
 
 interface QualityLevel {
@@ -41,9 +43,38 @@ function formatTime(sec: number): string {
   return h > 0 ? `${h}:${mm}:${ss}` : `${mm}:${ss}`;
 }
 
+function formatTimeWords(sec: number): string {
+  if (!isFinite(sec) || sec < 0) sec = 0;
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  const s = Math.floor(sec % 60);
+  if (h > 0) return `${h} giờ ${m} phút`;
+  if (m > 0) return `${m} phút ${s} giây`;
+  return `${s} giây`;
+}
+
+// ── Lưu/đọc tiến độ xem dở theo từng tập (localStorage) ────────────────────
+function loadProgress(key: string): { time: number; duration: number; updatedAt: number } | null {
+  try {
+    const raw = localStorage.getItem(`watchProgress:${key}`);
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    if (typeof data?.time === 'number' && data.time > 0) return data;
+    return null;
+  } catch { return null; }
+}
+function saveProgress(key: string, time: number, duration: number) {
+  try {
+    localStorage.setItem(`watchProgress:${key}`, JSON.stringify({ time, duration, updatedAt: Date.now() }));
+  } catch {}
+}
+function clearProgress(key: string) {
+  try { localStorage.removeItem(`watchProgress:${key}`); } catch {}
+}
+
 type SettingsPane = 'main' | 'quality' | 'subtitle';
 
-export default function DaoPhimPlayer({ src, m3u8, title, className = '', onEnded, onNext }: DaoPhimPlayerProps) {
+export default function DaoPhimPlayer({ src, m3u8, title, className = '', onEnded, onNext, resumeKey }: DaoPhimPlayerProps) {
   const [config, setConfig] = useState<PlayerConfig>(DEFAULT_CONFIG);
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -52,6 +83,11 @@ export default function DaoPhimPlayer({ src, m3u8, title, className = '', onEnde
 
   const [m3u8Failed, setM3u8Failed] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  // ── Tiếp tục xem: nhắc lại vị trí đã dừng ────────────────────────────────
+  const [resumePrompt, setResumePrompt] = useState<{ time: number } | null>(null);
+  const pendingResumeRef = useRef(false); // true khi đang chờ người dùng chọn tiếp tục/xem lại
+  const saveIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // mode: 'direct' = gọi thẳng URL gốc | 'proxy' = qua Netlify function (bypass Referer/CORS của KKPhim)
   const [mode, setMode] = useState<'direct' | 'proxy'>('direct');
@@ -98,7 +134,55 @@ export default function DaoPhimPlayer({ src, m3u8, title, className = '', onEnde
     setCurrentSubtitle(-1);
     setShowSettings(false);
     setSettingsPane('main');
-  }, [m3u8]);
+
+    // Kiểm tra xem tập này đã xem dở chưa, nếu có thì chờ người dùng chọn tiếp tục/xem lại
+    setResumePrompt(null);
+    pendingResumeRef.current = false;
+    if (resumeKey) {
+      const saved = loadProgress(resumeKey);
+      // Chỉ nhắc nếu đã xem được ít nhất 10s và chưa xem gần hết tập (dưới 95%)
+      if (saved && saved.time > 10 && (!saved.duration || saved.time < saved.duration * 0.95)) {
+        pendingResumeRef.current = true;
+        setResumePrompt({ time: saved.time });
+      }
+    }
+  }, [m3u8, resumeKey]);
+
+  // ── Tự lưu tiến độ xem mỗi 5s (chỉ khi đang phát và có resumeKey) ────────
+  useEffect(() => {
+    if (!resumeKey) return;
+    saveIntervalRef.current = setInterval(() => {
+      const video = videoRef.current;
+      if (!video || video.paused || !video.duration) return;
+      // Không lưu nếu đã xem gần hết (coi như đã hoàn thành, để khỏi nhắc lại từ đầu)
+      if (video.currentTime < video.duration * 0.97) {
+        saveProgress(resumeKey, video.currentTime, video.duration);
+      }
+    }, 5000);
+    return () => { if (saveIntervalRef.current) clearInterval(saveIntervalRef.current); };
+  }, [resumeKey]);
+
+  // ── Xử lý khi người dùng chọn ở popup "Tiếp tục xem" ─────────────────────
+  const handleResumeContinue = () => {
+    const video = videoRef.current;
+    pendingResumeRef.current = false;
+    if (video && resumePrompt) {
+      video.currentTime = resumePrompt.time;
+      video.play().catch(() => {});
+    }
+    setResumePrompt(null);
+  };
+  const handleResumeRestart = () => {
+    const video = videoRef.current;
+    pendingResumeRef.current = false;
+    if (video) {
+      video.currentTime = 0;
+      video.play().catch(() => {});
+    }
+    if (resumeKey) clearProgress(resumeKey);
+    setResumePrompt(null);
+  };
+
 
   // ── Khởi tạo HLS khi có link m3u8 ──────────────────────────────────────
   useEffect(() => {
@@ -126,7 +210,7 @@ export default function DaoPhimPlayer({ src, m3u8, title, className = '', onEnde
           .map((lv, index) => ({ index, height: lv.height || 0, label: heightLabel(lv.height || 0) }))
           .sort((a, b) => b.height - a.height);
         setQualities(levels);
-        video.play().catch(() => {});
+        if (!pendingResumeRef.current) video.play().catch(() => {});
       });
       hls.on(Hls.Events.LEVEL_SWITCHED, (_, data) => setActiveLevel(data.level));
       hls.on(Hls.Events.SUBTITLE_TRACKS_UPDATED, (_, data) => {
@@ -147,6 +231,10 @@ export default function DaoPhimPlayer({ src, m3u8, title, className = '', onEnde
       // Safari hỗ trợ HLS gốc — không can thiệp được chất lượng/phụ đề thủ công
       setUsingHlsJs(false);
       video.src = playUrl;
+      if (pendingResumeRef.current) {
+        const pauseOnce = () => { video.pause(); video.removeEventListener('loadedmetadata', pauseOnce); };
+        video.addEventListener('loadedmetadata', pauseOnce);
+      }
     } else {
       setM3u8Failed(true);
     }
@@ -166,7 +254,12 @@ export default function DaoPhimPlayer({ src, m3u8, title, className = '', onEnde
     if (!video) return;
 
     const onPlay = () => setPlaying(true);
-    const onPause = () => setPlaying(false);
+    const onPause = () => {
+      setPlaying(false);
+      if (resumeKey && video.duration && video.currentTime < video.duration * 0.97) {
+        saveProgress(resumeKey, video.currentTime, video.duration);
+      }
+    };
     const onTimeUpdate = () => { if (!scrubbing) setCurrentTime(video.currentTime); };
     const onDurationChange = () => setDuration(video.duration || 0);
     const onProgress = () => {
@@ -195,7 +288,7 @@ export default function DaoPhimPlayer({ src, m3u8, title, className = '', onEnde
       video.removeEventListener('waiting', onWaiting);
       video.removeEventListener('playing', onPlaying);
     };
-  }, [scrubbing]);
+  }, [scrubbing, resumeKey]);
 
   // ── Theo dõi trạng thái fullscreen (đủ tiền tố trình duyệt) ──────────────
   useEffect(() => {
@@ -338,10 +431,37 @@ export default function DaoPhimPlayer({ src, m3u8, title, className = '', onEnde
             style={{ display: 'block' }}
             playsInline
             autoPlay
-            onEnded={onEnded}
+            onEnded={() => { if (resumeKey) clearProgress(resumeKey); onEnded?.(); }}
             onClick={togglePlay}
             title={title || 'Video'}
           />
+
+          {/* Popup "Tiếp tục xem" khi phát hiện đã xem dở tập này trước đó */}
+          {resumePrompt && (
+            <div className="absolute inset-0 z-30 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="bg-[#181818] border border-slate-700/60 rounded-2xl p-5 sm:p-6 max-w-xs sm:max-w-sm w-full text-center shadow-2xl">
+                <p className="text-white font-black text-lg mb-3">THÔNG BÁO!</p>
+                <p className="text-slate-300 text-sm mb-1">Bạn đã dừng lại ở</p>
+                <p className="inline-block bg-yellow-400 text-slate-900 font-black text-sm px-3 py-1 rounded-lg mb-5">
+                  {formatTimeWords(resumePrompt.time)}
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={handleResumeContinue}
+                    className="flex-1 bg-green-600 hover:bg-green-500 text-white font-bold text-sm py-2.5 rounded-xl transition-colors"
+                  >
+                    Tiếp tục xem
+                  </button>
+                  <button
+                    onClick={handleResumeRestart}
+                    className="flex-1 bg-red-600 hover:bg-red-500 text-white font-bold text-sm py-2.5 rounded-xl transition-colors"
+                  >
+                    Xem lại từ đầu
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {loading && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/40 pointer-events-none">
