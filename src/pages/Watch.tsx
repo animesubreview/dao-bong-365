@@ -399,6 +399,12 @@ export default function Watch() {
           </motion.div>
         )}
 
+      </div>
+      {/* ↑ đóng content-area phần 1 (để sidebar dưới đây thành ô lưới riêng, không bị lồng bên trong) */}
+
+        {/* ══ Sidebar (PC/Laptop): info phim + danh sách tập gộp chung 1 cột phải, dính khi cuộn ══ */}
+        <div className="max-w-2xl xl:max-w-none mx-auto xl:mx-0 px-3 xl:px-0 flex flex-col gap-3 xl:gap-4 xl:col-start-2 xl:[grid-row:1/-1] xl:sticky xl:top-6 xl:max-h-[calc(100vh-3rem)] xl:overflow-y-auto xl:pr-1">
+
         {/* ── Movie detail mini card ── */}
         <motion.div initial={{ y: 16, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.05 }}
           className="bg-[#181818] rounded-xl p-4 flex gap-3">
@@ -433,11 +439,10 @@ export default function Watch() {
           </div>
         </motion.div>
 
-
         {/* ── Danh sách tập ── */}
         {currentServer && (
           <motion.div initial={{ y: 16, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.08 }}
-            className="bg-[#181818] rounded-xl overflow-hidden xl:col-start-2 xl:[grid-row:1/-1] xl:sticky xl:top-6 xl:max-h-[calc(100vh-3rem)] xl:flex xl:flex-col">
+            className="bg-[#181818] rounded-xl overflow-hidden xl:flex xl:flex-col xl:min-h-0">
 
             {/* Section header */}
             <div className="flex items-center gap-2 px-4 py-3 border-b border-white/5">
@@ -539,6 +544,11 @@ export default function Watch() {
             </div>
           </motion.div>
         )}
+
+        </div>
+        {/* ↑ đóng sidebar (info phim + danh sách tập) ── */}
+
+      <div className="max-w-2xl xl:max-w-none mx-auto xl:mx-0 px-3 xl:px-0 flex flex-col gap-3 xl:col-start-1">
 
         {/* ── Bình luận ── */}
         <motion.div initial={{ y: 16, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.12 }}>
