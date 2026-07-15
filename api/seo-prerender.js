@@ -179,8 +179,8 @@ async function handleMovieDetail(slug, request) {
 
     // ── Build meta data ─────────────────────────────────────────────
     const isTV     = movie.type === 'series';
-    const title    = escapeHtml(`${movie.name}${movie.origin_name && movie.origin_name !== movie.name ? ` - ${movie.origin_name}` : ''} (${movie.year || ''}) Vietsub HD`);
-    const fullTitle = `${title} | ${SITE_NAME}`;
+    const title    = escapeHtml(movie.name);
+    const fullTitle = `${title} | DAOPHIM`;
     const desc     = escapeHtml(
       `Xem ${movie.name} (${movie.origin_name || ''}) ${movie.year || ''} Vietsub HD miễn phí tại Đảo Phim. ` +
       stripHtml(movie.content || '').slice(0, 150)

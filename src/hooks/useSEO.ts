@@ -91,25 +91,15 @@ function stripHtml(html: string): string {
 export function useSEO({ title, description, image, url, type = 'website', movie, noIndex }: SEOProps) {
   useEffect(() => {
     // ── Xây dựng title tối ưu cho keyword tên phim ─────────────────
-    // Format: "Shades The Series Vietsub HD (2026) | Shades - Đảo Phim"
-    // Mục tiêu: Google search "shades the series vietsub" → top
+    // Format: "Tên Phim | DAOPHIM"
+    const TITLE_SUFFIX = 'DAOPHIM';
     let pageTitle: string;
     if (movie) {
-      const isTV = movie.type === 'series' || (movie.episode_total && movie.episode_total !== '1');
-      const year = movie.year ? ` (${movie.year})` : '';
-      const quality = movie.quality ? ` ${movie.quality}` : ' HD';
-      const lang = (movie.lang?.toLowerCase().includes('vietsub') || !movie.lang)
-        ? ' Vietsub' : ` ${movie.lang}`;
-      const epInfo = isTV && movie.episode_current
-        ? ` - Tập ${movie.episode_current}` : '';
-      const originPart = movie.origin_name && movie.origin_name !== movie.name
-        ? ` | ${movie.origin_name}` : '';
-      // "Shades The Series Vietsub HD (2026) - Tập 8 | Shades - Đảo Phim"
-      pageTitle = `${movie.name}${lang}${quality}${year}${epInfo}${originPart} - ${SITE_NAME}`;
+      pageTitle = `${movie.name} | ${TITLE_SUFFIX}`;
     } else if (title) {
-      pageTitle = `${title} | ${SITE_NAME}`;
+      pageTitle = `${title} | ${TITLE_SUFFIX}`;
     } else {
-      pageTitle = `${SITE_NAME} - Xem Phim Miễn Phí | Phim Hay Cả Đảo`;
+      pageTitle = `${SITE_NAME} - Xem Phim Miễn Phí | ${TITLE_SUFFIX}`;
     }
 
     // ── Mô tả: phải có tên phim, tên gốc, năm, keyword vietsub ─────
@@ -219,7 +209,7 @@ export function useSEO({ title, description, image, url, type = 'website', movie
 
     // ── Cleanup khi unmount ────────────────────────────────────────
     return () => {
-      document.title = `${SITE_NAME} - Xem Phim Miễn Phí | Phim Hay Cả Đảo`;
+      document.title = `${SITE_NAME} - Xem Phim Miễn Phí | DAOPHIM`;
       setCanonical(`${SITE_URL}/`);
     };
   }, [title, description, image, url, type, movie, noIndex]);
