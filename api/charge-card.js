@@ -1,18 +1,16 @@
-// ─── Netlify Function: charge-card.js ────────────────────────────────────────
-// POST /.netlify/functions/charge-card
-// Nhận thông tin thẻ từ frontend → gọi TrumThe API → trả về kết quả
-// 
-// Env vars cần thiết (Netlify Dashboard > Environment Variables):
-//   TRUMTHE_PARTNER_ID  - Partner ID từ trumthe.vn
-//   TRUMTHE_PARTNER_KEY - Partner Key từ trumthe.vn
-//   FIREBASE_PROJECT_ID - Firebase project ID
-//   FIREBASE_CLIENT_EMAIL - Firebase service account email
-//   FIREBASE_PRIVATE_KEY - Firebase service account private key
-//   SITE_URL - URL của website (vd: https://kinkin.netlify.app)
+// ─── Netlify/Vercel Function: charge-card.js ──────────────────────────────────
+// POST .../charge-card
+// Nhận thông tin thẻ từ frontend → gọi GachTheFast API (chargingws/v2) → trả kết quả
+//
+// Env vars cần thiết:
+//   GACHTHEFAST_PARTNER_ID   - Partner ID (mục "Thông tin kết nối" trên gachthefast.com)
+//   GACHTHEFAST_PARTNER_KEY  - Partner Key
+//   GACHTHEFAST_DOMAIN       - (tuỳ chọn) mặc định gachthefast.com
+//   FIREBASE_PROJECT_ID / FIREBASE_CLIENT_EMAIL / FIREBASE_PRIVATE_KEY
 
 const { initializeApp, getApps, cert } = require('firebase-admin/app');
 const { getFirestore }                  = require('firebase-admin/firestore');
-const axios                             = require('axios');
+const crypto                            = require('crypto');
 
 // ─── Init Firebase Admin (idempotent) ────────────────────────────────────────
 function initFirebase() {
@@ -27,7 +25,9 @@ function initFirebase() {
   return getFirestore();
 }
 
-// ─── Handler ─────────────────────────────────────────────────────────────────
+const GACHTHEFAST_DOMAIN = process.env.GACHTHEFAST_DOMAIN || 'gachthefast.com';
+
+// ─── Handler ───────────────────────────────────────────────────────────────
 async function netlifyHandlerFn(event) {
   const headers = {
     'Content-Type': 'application/json',
@@ -51,13 +51,12 @@ async function netlifyHandlerFn(event) {
     return { statusCode: 400, headers, body: JSON.stringify({ error: 'Thiếu thông tin thẻ' }) };
   }
 
-  // ─── Kiểm tra env vars ─────────────────────────────────────────────────────
-  const partnerId  = process.env.TRUMTHE_PARTNER_ID;
-  const partnerKey = process.env.TRUMTHE_PARTNER_KEY;
-  const siteUrl    = process.env.SITE_URL || `https://${event.headers.host}`;
+  // ─── Kiểm tra env vars ─────────────────────────────────────────────────
+  const partnerId  = process.env.GACHTHEFAST_PARTNER_ID;
+  const partnerKey = process.env.GACHTHEFAST_PARTNER_KEY;
 
   if (!partnerId || !partnerKey) {
-    console.error('[charge-card] Missing TRUMTHE_PARTNER_ID or TRUMTHE_PARTNER_KEY');
+    console.error('[charge-card] Thiếu GACHTHEFAST_PARTNER_ID hoặc GACHTHEFAST_PARTNER_KEY');
     return {
       statusCode: 500,
       headers,
@@ -65,65 +64,78 @@ async function netlifyHandlerFn(event) {
     };
   }
 
-  // ─── Gọi TrumThe API ───────────────────────────────────────────────────────
+  // Chuẩn hoá tên nhà mạng theo đúng format GachTheFast yêu cầu (viết hoa không dấu)
+  const TELCO_MAP = {
+    viettel: 'VIETTEL', mobifone: 'MOBIFONE', vinaphone: 'VINAPHONE',
+    vietnamobile: 'VIETNAMOBILE', gate: 'GATE', zing: 'ZING', garena: 'GARENA',
+  };
+  const telcoNorm = TELCO_MAP[String(telco).toLowerCase()] || String(telco).toUpperCase();
+
+  // Chữ ký theo tài liệu chính thức GachTheFast: md5(partner_key + code + serial)
+  const sign = crypto.createHash('md5').update(partnerKey + code + serial).digest('hex');
+
+  const params = new URLSearchParams({
+    telco: telcoNorm,
+    code: String(code),
+    serial: String(serial),
+    amount: String(amount),
+    request_id: String(requestId),
+    partner_id: String(partnerId),
+    sign,
+    command: 'charging',
+  });
+
+  const db = initFirebase();
+  const docRef = db.collection('topup_requests').doc(String(requestId));
+
   try {
-    const callbackUrl = `${siteUrl}/.netlify/functions/card-callback`;
+    const res = await fetch(`https://${GACHTHEFAST_DOMAIN}/chargingws/v2?${params.toString()}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      signal: AbortSignal.timeout(30000),
+    });
+    const result = await res.json();
+    console.log('[charge-card] GachTheFast response:', JSON.stringify(result));
 
-    const trumtheRes = await axios.post(
-      'https://trumthe.vn/chargingws/v2',
-      {
-        telco,
-        code,
-        serial,
-        amount: String(amount),
-        request_id:   requestId,
-        partner_id:   partnerId,
-        partner_key:  partnerKey,
-        callback_url: callbackUrl,
-      },
-      { timeout: 30000 }
-    );
+    // Mã trạng thái GachTheFast: 1=thành công đúng mệnh giá, 2=thành công sai mệnh giá,
+    // 3=thẻ lỗi, 4=hệ thống bảo trì, 99=thẻ chờ xử lý (đợi callback), 100=gửi thẻ thất bại
+    const status = Number(result.status);
 
-    const result = trumtheRes.data;
-    console.log('[charge-card] TrumThe response:', JSON.stringify(result));
+    if (status === 1 || status === 2) {
+      // Thành công ngay — cộng đúng theo giá trị GachTheFast xác nhận (đề phòng sai mệnh giá)
+      const actualValue = Number(result.value ?? result.card_value ?? amount);
 
-    const db = initFirebase();
-    const docRef = db.collection('topup_requests').doc(requestId);
-
-    // status: 1=thành công ngay, 2=đang xử lý (callback sau), 3=sai, 99=lỗi
-    if (result.status === 1) {
-      // Thành công ngay lập tức
-      const actualValue = result.value || amount;
-
-      await docRef.update({
+      await docRef.set({
         status:      'success',
         actualValue,
-        message:     result.message || 'Nạp thẻ thành công',
+        message:     result.message || (status === 2 ? 'Thẻ đúng nhưng sai mệnh giá khai báo' : 'Nạp thẻ thành công'),
+        raw:         result,
         updatedAt:   Date.now(),
-      });
+      }, { merge: true });
 
-      // Cộng tiền user
       await creditUserBalance(db, uid, actualValue, requestId);
 
       return { statusCode: 200, headers, body: JSON.stringify({ ok: true, status: 'success', value: actualValue }) };
     }
 
-    if (result.status === 2) {
-      // Đang xử lý – callback sẽ được gọi sau
-      await docRef.update({
+    if (status === 99) {
+      // Đang xử lý – callback sẽ được GachTheFast gọi về sau (xem card-callback.js)
+      await docRef.set({
         status:    'pending',
-        message:   result.message || 'Đang xử lý, kết quả sẽ được cập nhật tự động.',
+        message:   result.message || 'Thẻ đang chờ xử lý, kết quả sẽ được cập nhật tự động.',
+        raw:       result,
         updatedAt: Date.now(),
-      });
+      }, { merge: true });
       return { statusCode: 200, headers, body: JSON.stringify({ ok: true, status: 'pending' }) };
     }
 
-    // Thất bại / sai thẻ
-    await docRef.update({
+    // status 3 (thẻ lỗi), 4 (bảo trì), 100 (thất bại) hoặc mã lạ khác
+    await docRef.set({
       status:    'failed',
       message:   result.message || 'Thẻ không hợp lệ hoặc đã sử dụng.',
+      raw:       result,
       updatedAt: Date.now(),
-    });
+    }, { merge: true });
 
     return {
       statusCode: 200,
@@ -131,16 +143,14 @@ async function netlifyHandlerFn(event) {
       body: JSON.stringify({ ok: false, error: result.message || 'Thẻ không hợp lệ.' }),
     };
   } catch (err) {
-    console.error('[charge-card] Error:', err.message);
+    console.error('[charge-card] Lỗi:', err.message);
 
-    // Cập nhật failed trong Firestore
     try {
-      const db = initFirebase();
-      await db.collection('topup_requests').doc(requestId).update({
+      await docRef.set({
         status:    'failed',
         message:   'Lỗi kết nối API: ' + err.message,
         updatedAt: Date.now(),
-      });
+      }, { merge: true });
     } catch (_) {}
 
     return {
@@ -149,7 +159,7 @@ async function netlifyHandlerFn(event) {
       body: JSON.stringify({ error: 'Lỗi kết nối đến hệ thống nạp thẻ, vui lòng thử lại.' }),
     };
   }
-};
+}
 
 // ─── Cộng tiền vào balance user ──────────────────────────────────────────────
 async function creditUserBalance(db, uid, amount, requestId) {
@@ -162,7 +172,6 @@ async function creditUserBalance(db, uid, amount, requestId) {
 
   await userRef.update({ balance: newBalance });
 
-  // Ghi giao dịch
   const txRef = db.collection('transactions').doc();
   await txRef.set({
     id:            txRef.id,

@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import {
   User, Bell, Crown, LayoutGrid, MonitorPlay, History, Bookmark, Heart,
   ChevronRight, ChevronDown, LogOut, Home, Tv2, Film, Smile, Clapperboard,
-  BookOpen, Globe, Users,
+  BookOpen, Globe, Users, Wallet,
 } from 'lucide-react';
 import { onAuthChange, getUserProfile, UserProfile, logout } from '../lib/auth';
 import { GENRES, COUNTRIES } from '../components/Header';
@@ -164,6 +164,21 @@ export default function Account() {
               <p className="text-sm text-slate-500 truncate">{profile.email}</p>
             </div>
           </div>
+
+          {/* ── Số dư ví ── */}
+          <Link
+            to="/nap-tien"
+            className="flex items-center justify-between bg-green-500/10 border border-green-500/30 rounded-xl px-3.5 py-2.5 mb-3 hover:bg-green-500/15 transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <Wallet size={16} className="text-green-400 shrink-0" />
+              <span className="text-xs text-slate-300 font-medium">Số dư ví</span>
+            </div>
+            <span className="text-sm font-black text-green-400">
+              {(profile.balance || 0).toLocaleString('vi-VN')}đ
+            </span>
+          </Link>
+
           <div className="flex gap-2.5">
             <Link to="/profile/edit" className="flex-1 text-center bg-transparent border border-green-500/50 text-green-400 font-bold text-sm py-2.5 rounded-xl hover:bg-green-500/10 transition-colors">
               Hồ sơ
@@ -179,6 +194,7 @@ export default function Account() {
       <div className="bg-slate-900/40 border border-slate-800/60 rounded-2xl overflow-hidden mb-4">
         <Row icon={Bell} label="Thông báo" to="/profile/edit" />
         <Row icon={Crown} label="Nâng cấp VIP · Chặn QC" to="/mua-vip" iconColor="text-amber-400" />
+        <Row icon={Wallet} label="Nạp thẻ" to="/nap-tien" iconColor="text-green-400" />
         <Row icon={LayoutGrid} label="Menu" onClick={() => setShowMenu(true)} />
         <Row icon={Users} label="Xem chung" onClick={openWatchRoom} badge="NEW" iconColor="text-green-400" />
         <Row icon={History} label="Đang xem" to="/history" />

@@ -1,13 +1,12 @@
-// ─── Netlify Function: card-callback.js ──────────────────────────────────────
-// POST /.netlify/functions/card-callback
-// TrumThe API gọi về URL này sau khi xử lý thẻ xong
+// ─── Netlify/Vercel Function: card-callback.js ────────────────────────────────
+// GachTheFast gọi về URL này sau khi xử lý thẻ xong (GET hoặc POST tuỳ cấu hình)
 //
-// Đây là Callback URL bạn điền vào TrumThe Dashboard:
-//   https://YOUR-SITE.netlify.app/.netlify/functions/card-callback
+// Đây là Callback URL điền vào GachTheFast Dashboard (mục "Thông tin kết nối"):
+//   https://daophim.online/api/card-callback
 //
 // Env vars cần thiết:
 //   FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY
-//   TRUMTHE_PARTNER_KEY - dùng để verify chữ ký callback
+//   GACHTHEFAST_PARTNER_KEY - dùng để verify chữ ký callback
 
 const { initializeApp, getApps, cert } = require('firebase-admin/app');
 const { getFirestore }                  = require('firebase-admin/firestore');
@@ -26,125 +25,119 @@ function initFirebase() {
   return getFirestore();
 }
 
-// ─── Handler ─────────────────────────────────────────────────────────────────
+// ─── Handler ───────────────────────────────────────────────────────────────
 async function netlifyHandlerFn(event) {
   const headers = {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
   };
 
-  // TrumThe gửi POST với form-urlencoded hoặc JSON
+  // Đọc dữ liệu dù GachTheFast gửi kiểu GET (query string) hay POST (json body)
   let params = {};
   try {
-    const ct = event.headers['content-type'] || '';
-    if (ct.includes('application/json')) {
-      params = JSON.parse(event.body || '{}');
-    } else {
-      // form-urlencoded
-      const qs = new URLSearchParams(event.body || '');
-      qs.forEach((v, k) => { params[k] = v; });
+    if (event.queryStringParameters) {
+      Object.assign(params, event.queryStringParameters);
+    }
+    if (event.body) {
+      const ct = event.headers['content-type'] || '';
+      if (ct.includes('application/json')) {
+        Object.assign(params, JSON.parse(event.body));
+      } else {
+        const qs = new URLSearchParams(event.body);
+        qs.forEach((v, k) => { params[k] = v; });
+      }
     }
   } catch {
     return { statusCode: 400, headers, body: JSON.stringify({ code: -1, message: 'Invalid body' }) };
   }
 
-  console.log('[card-callback] Received:', JSON.stringify(params));
+  console.log('[card-callback] Nhận được:', JSON.stringify(params));
 
+  // Đúng tên field theo tài liệu GachTheFast
   const {
     request_id,
-    status,      // 1=success, 2=pending, 3=wrong, 99=error
-    value,       // giá trị thực tế
+    status,          // 1=đúng mệnh giá, 2=sai mệnh giá(vẫn thành công), 3=lỗi, 4=bảo trì, 99=chờ xử lý, 100=thất bại
     message,
-    sign,        // chữ ký MD5 từ TrumThe
+    declared_value,  // mệnh giá khai báo
+    card_value,       // mệnh giá thực của thẻ
+    value,            // mệnh giá tính tiền
+    amount,           // số tiền GachTheFast trả về ví đối tác (không phải số cộng cho user)
+    code,
+    serial,
+    telco,
+    trans_id,
+    callback_sign,
   } = params;
 
   if (!request_id) {
     return { statusCode: 400, headers, body: JSON.stringify({ code: -1, message: 'Missing request_id' }) };
   }
 
-  // ─── Verify signature (nếu có TRUMTHE_PARTNER_KEY) ────────────────────────
-  const partnerKey = process.env.TRUMTHE_PARTNER_KEY;
-  if (partnerKey && sign) {
-    // TrumThe sign = MD5(partner_key + request_id + status + value)
+  // ─── Verify chữ ký: md5(partner_key + code + serial) ───────────────────
+  const partnerKey = process.env.GACHTHEFAST_PARTNER_KEY;
+  if (partnerKey && callback_sign) {
     const expected = crypto
       .createHash('md5')
-      .update(`${partnerKey}${request_id}${status}${value || ''}`)
+      .update(`${partnerKey}${code || ''}${serial || ''}`)
       .digest('hex');
-    if (expected !== sign) {
-      console.warn('[card-callback] Invalid signature!', { expected, received: sign });
+    if (expected !== callback_sign) {
+      console.warn('[card-callback] Sai chữ ký!', { expected, received: callback_sign });
       return { statusCode: 403, headers, body: JSON.stringify({ code: -1, message: 'Invalid signature' }) };
     }
   }
 
   try {
     const db     = initFirebase();
-    const docRef = db.collection('topup_requests').doc(request_id);
+    const docRef = db.collection('topup_requests').doc(String(request_id));
     const snap   = await docRef.get();
 
     if (!snap.exists) {
-      console.warn('[card-callback] Request not found:', request_id);
+      console.warn('[card-callback] Không tìm thấy request:', request_id);
       return { statusCode: 404, headers, body: JSON.stringify({ code: -1, message: 'Request not found' }) };
     }
 
     const topup = snap.data();
 
-    // Tránh xử lý trùng lặp
+    // Tránh xử lý trùng lặp (GachTheFast có thể gọi lại callback nhiều lần)
     if (topup.status === 'success') {
       return { statusCode: 200, headers, body: JSON.stringify({ code: 1, message: 'Already processed' }) };
     }
 
     const numStatus   = parseInt(String(status), 10);
-    const actualValue = parseInt(String(value || 0), 10);
+    const actualValue = parseInt(String(value ?? card_value ?? 0), 10);
 
-    if (numStatus === 1) {
-      // ─── Thành công ──────────────────────────────────────────────────────
+    if (numStatus === 1 || numStatus === 2) {
+      // ─── Thành công (đúng hoặc sai mệnh giá — luôn cộng theo actualValue) ──
       await docRef.update({
         status:      'success',
         actualValue,
-        message:     message || 'Nạp thẻ thành công',
+        message:     message || (numStatus === 2 ? 'Thẻ đúng nhưng sai mệnh giá khai báo' : 'Nạp thẻ thành công'),
+        transId:     trans_id || null,
+        raw:         params,
         updatedAt:   Date.now(),
       });
 
-      // Cộng tiền user
       await creditUserBalance(db, topup.uid, actualValue, request_id);
 
-      console.log(`[card-callback] ✅ Success: uid=${topup.uid}, value=${actualValue}`);
-    } else if (numStatus === 3) {
-      // ─── Sai mệnh giá (vẫn xử lý nhưng ghi lại) ─────────────────────────
-      // TrumThe vẫn cộng giá trị thực, nhưng ít hơn mệnh giá khai báo
-      if (actualValue > 0) {
-        await docRef.update({
-          status:      'wrong_value',
-          actualValue,
-          message:     message || `Sai mệnh giá: nhận được ${actualValue.toLocaleString('vi-VN')}đ`,
-          updatedAt:   Date.now(),
-        });
-        await creditUserBalance(db, topup.uid, actualValue, request_id);
-        console.log(`[card-callback] ⚠️ Wrong value: declared=${topup.amount}, actual=${actualValue}`);
-      } else {
-        await docRef.update({
-          status:    'failed',
-          message:   message || 'Thẻ không hợp lệ hoặc sai mệnh giá.',
-          updatedAt: Date.now(),
-        });
-      }
+      console.log(`[card-callback] ✅ Thành công: uid=${topup.uid}, value=${actualValue}`);
     } else {
-      // ─── Thất bại / lỗi ──────────────────────────────────────────────────
+      // ─── status 3 (thẻ lỗi), 4 (bảo trì), 100 (thất bại) hoặc mã lạ ────────
       await docRef.update({
         status:    'failed',
         message:   message || 'Nạp thẻ thất bại.',
+        raw:       params,
         updatedAt: Date.now(),
       });
-      console.log(`[card-callback] ❌ Failed: ${message}`);
+      console.log(`[card-callback] ❌ Thất bại: ${message}`);
     }
 
-    // TrumThe yêu cầu trả về { code: 1 } khi nhận được callback thành công
+    // GachTheFast yêu cầu trả về { code: 1 } khi nhận callback thành công
     return { statusCode: 200, headers, body: JSON.stringify({ code: 1, message: 'OK' }) };
   } catch (err) {
-    console.error('[card-callback] Error:', err.message);
+    console.error('[card-callback] Lỗi:', err.message);
     return { statusCode: 500, headers, body: JSON.stringify({ code: -1, message: err.message }) };
   }
-};
+}
 
 // ─── Cộng tiền vào balance user ──────────────────────────────────────────────
 async function creditUserBalance(db, uid, amount, requestId) {
@@ -152,7 +145,7 @@ async function creditUserBalance(db, uid, amount, requestId) {
 
   const userRef  = db.collection('users').doc(uid);
   const userSnap = await userRef.get();
-  if (!userSnap.exists) { console.warn('User not found:', uid); return; }
+  if (!userSnap.exists) { console.warn('Không tìm thấy user:', uid); return; }
 
   const current    = userSnap.data().balance || 0;
   const newBalance = current + amount;
@@ -167,13 +160,11 @@ async function creditUserBalance(db, uid, amount, requestId) {
     amount,
     balanceBefore: current,
     balanceAfter:  newBalance,
-    note:          `Nạp thẻ cào thành công (callback)`,
+    note:          `Nạp thẻ cào thành công (${requestId})`,
     requestId,
     createdAt:     Date.now(),
     status:        'success',
   });
-
-  console.log(`[creditUserBalance] uid=${uid}, +${amount}, newBalance=${newBalance}`);
 }
 
 import { wrapNetlifyHandler } from './_compat.js';
