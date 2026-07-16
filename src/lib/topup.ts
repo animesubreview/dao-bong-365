@@ -1,6 +1,6 @@
 // ─── Dịch vụ nạp thẻ cào (TrumThe v2 API) ────────────────────────────────────
 import { db } from './firebase';
-import { doc, setDoc, getDoc, collection, getDocs, query, where, orderBy, updateDoc, onSnapshot } from 'firebase/firestore';
+import { doc, setDoc, getDoc, collection, getDocs, query, where, orderBy, updateDoc } from 'firebase/firestore';
 
 export type CardTelco = 'VIETTEL' | 'MOBIFONE' | 'VINAPHONE' | 'VIETNAMOBILE' | 'GMOBILE';
 
@@ -53,8 +53,8 @@ export async function submitCardTopup(
       if (existing.status === 'pending') return { ok: false, error: 'Thẻ này đang được xử lý, vui lòng chờ.' };
     }
 
-    // Tạo request ID duy nhất — dạng số (đúng theo ví dụ tài liệu GachTheFast)
-    const requestId = `${Date.now()}${Math.floor(Math.random() * 900 + 100)}`;
+    // Tạo request ID duy nhất
+    const requestId = `${uid}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 
     // Lưu vào Firestore với status pending
     const topupRef = doc(db, 'topup_requests', requestId);
@@ -73,8 +73,8 @@ export async function submitCardTopup(
     };
     await setDoc(topupRef, topupData);
 
-    // Gọi API để charge card (Vercel serverless function)
-    const res = await fetch('/api/charge-card', {
+    // Gọi Netlify Function để charge card
+    const res = await fetch('/.netlify/functions/charge-card', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ requestId, uid, telco, serial: serial.trim(), code: code.trim(), amount }),
@@ -112,18 +112,6 @@ export async function getTopupRequest(requestId: string): Promise<TopupRequest |
     const snap = await getDoc(doc(db, 'topup_requests', requestId));
     return snap.exists() ? (snap.data() as TopupRequest) : null;
   } catch { return null; }
-}
-
-// ─── Lắng nghe real-time lịch sử nạp thẻ (tự cập nhật khi pending → success) ──
-export function subscribeUserTopupHistory(uid: string, callback: (list: TopupRequest[]) => void) {
-  const q = query(
-    collection(db, 'topup_requests'),
-    where('uid', '==', uid),
-    orderBy('createdAt', 'desc')
-  );
-  return onSnapshot(q, (snap) => {
-    callback(snap.docs.map((d) => d.data() as TopupRequest));
-  }, () => callback([]));
 }
 
 // ─── Format tiền VNĐ ─────────────────────────────────────────────────────────

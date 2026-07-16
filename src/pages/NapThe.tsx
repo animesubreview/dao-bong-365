@@ -1,20 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { CreditCard, Clock, CheckCircle2, XCircle, AlertCircle, Send, History, Zap } from 'lucide-react';
+import { CreditCard, Clock, CheckCircle2, XCircle, AlertCircle, Send, History } from 'lucide-react';
 import {
-  submitCardTopup,
-  subscribeUserTopupHistory,
+  submitManualTopup,
+  subscribeUserManualTopup,
   CARD_TELCOS,
   CARD_AMOUNTS,
   formatVND,
   getStatusInfo,
-  TopupRequest,
+  ManualTopupRequest,
   CardTelco,
-} from '../lib/topup';
+} from '../lib/manualTopup';
 import { onAuthChange, getUserProfile, UserProfile } from '../lib/auth';
 
-function StatusBadge({ status }: { status: TopupRequest['status'] }) {
-  const info = getStatusInfo(status)!;
-  const Icon = status === 'pending' ? Clock : status === 'success' ? CheckCircle2 : XCircle;
+function StatusBadge({ status }: { status: ManualTopupRequest['status'] }) {
+  const info = getStatusInfo(status);
+  const Icon = status === 'pending' ? Clock : status === 'approved' ? CheckCircle2 : XCircle;
   return (
     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold border ${info.bg} ${info.color}`}>
       <Icon size={11} />
@@ -32,7 +32,7 @@ export default function NapThe() {
   const [amount, setAmount] = useState(100000);
   const [loading, setLoading] = useState(false);
   const [msg, setMsg]       = useState<{ text: string; ok: boolean } | null>(null);
-  const [history, setHistory] = useState<TopupRequest[]>([]);
+  const [history, setHistory] = useState<ManualTopupRequest[]>([]);
 
   useEffect(() => {
     const unsub = onAuthChange(async firebaseUser => {
@@ -48,7 +48,7 @@ export default function NapThe() {
 
   useEffect(() => {
     if (!user) return;
-    const unsub = subscribeUserTopupHistory(user.uid, setHistory);
+    const unsub = subscribeUserManualTopup(user.uid, setHistory);
     return () => unsub();
   }, [user]);
 
@@ -56,10 +56,10 @@ export default function NapThe() {
     if (!user) { setMsg({ text: 'Bạn cần đăng nhập để nạp thẻ!', ok: false }); return; }
     if (!serial.trim() || !code.trim()) { setMsg({ text: 'Vui lòng nhập đầy đủ serial và mã thẻ!', ok: false }); return; }
     setLoading(true); setMsg(null);
-    const result = await submitCardTopup(user.uid, telco, serial, code, amount);
+    const result = await submitManualTopup(user.uid, user.username, telco, serial, code, amount);
     setLoading(false);
     if (result.ok) {
-      setMsg({ text: '✅ Đã gửi thẻ! Hệ thống đang xử lý tự động, tiền sẽ cộng ngay khi có kết quả.', ok: true });
+      setMsg({ text: '✅ Gửi yêu cầu thành công! Admin sẽ kiểm tra và duyệt sớm.', ok: true });
       setSerial(''); setCode(''); setTab('history');
     } else {
       setMsg({ text: result.error || 'Gửi thất bại, thử lại.', ok: false });
@@ -74,17 +74,17 @@ export default function NapThe() {
           <CreditCard size={16} className="text-emerald-400" />
         </div>
         <h1 className="text-base font-black text-white tracking-wide">NẠP THẺ CÀO</h1>
-        <span className="ml-auto text-[11px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
-          <Zap size={11} /> Tự động
+        <span className="ml-auto text-[11px] bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 px-2 py-0.5 rounded-full font-bold">
+          Duyệt thủ công
         </span>
       </div>
 
       <div className="max-w-lg mx-auto px-4 pt-4 flex flex-col gap-4">
         {/* Notice */}
-        <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-3 flex gap-2.5 items-start">
-          <AlertCircle size={16} className="text-emerald-400 mt-0.5 flex-shrink-0" />
-          <p className="text-emerald-200/80 text-xs leading-relaxed">
-            Nạp thẻ <strong>tự động</strong>. Thẻ đúng sẽ được cộng tiền ngay lập tức, thường trong vòng <strong>vài giây đến 1 phút</strong>.
+        <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-3 flex gap-2.5 items-start">
+          <AlertCircle size={16} className="text-yellow-400 mt-0.5 flex-shrink-0" />
+          <p className="text-yellow-200/80 text-xs leading-relaxed">
+            Nạp thẻ theo phương thức <strong>duyệt thủ công</strong>. Sau khi gửi, admin sẽ kiểm tra và cộng tiền vào tài khoản. Thường trong vòng <strong>5–30 phút</strong>.
           </p>
         </div>
 
@@ -192,6 +192,7 @@ export default function NapThe() {
             )}
             {user && history.map(req => {
               const telcoInfo = CARD_TELCOS.find(t => t.value === req.telco);
+              const info = getStatusInfo(req.status);
               return (
                 <div key={req.id} className="bg-slate-800/50 border border-slate-700/40 rounded-xl p-3.5 flex flex-col gap-2">
                   <div className="flex items-center justify-between">
@@ -206,9 +207,9 @@ export default function NapThe() {
                     <div><span className="text-slate-600">Serial: </span><span className="text-slate-400 font-mono">{req.serial}</span></div>
                     <div><span className="text-slate-600">Mã: </span><span className="text-slate-400 font-mono">{req.code}</span></div>
                   </div>
-                  {req.message && (
-                    <div className={`text-[11px] px-2 py-1 rounded-lg border ${getStatusInfo(req.status)!.bg} ${getStatusInfo(req.status)!.color}`}>
-                      {req.message}
+                  {req.note && (
+                    <div className={`text-[11px] px-2 py-1 rounded-lg border ${info.bg} ${info.color}`}>
+                      <span className="opacity-70">Admin: </span>{req.note}
                     </div>
                   )}
                   <p className="text-[10px] text-slate-600">{new Date(req.createdAt).toLocaleString('vi-VN')}</p>
