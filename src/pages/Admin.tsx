@@ -69,6 +69,7 @@ const DEFAULT_SETTINGS = {
   phone: '09 4601 7826',
   email: '',
   adsEmail: 'adsdaophim@gmail.com',
+  adsTelegram: '',
   authorName: 'Đức Tài',
   accentColor: 'indigo',
   adminPassword: '',
@@ -2608,6 +2609,10 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
 
               <InputRow label="Email đặt quảng cáo" hint="Hiển thị ở phần liên hệ đặt ads cuối trang">
                 <input type="email" value={settings.adsEmail} onChange={e => setSettings(s => ({ ...s, adsEmail: e.target.value }))} className="input-field" placeholder="adsdaophim@gmail.com" />
+              </InputRow>
+
+              <InputRow label="Telegram đặt quảng cáo" hint="Username Telegram (không cần @), hiển thị thêm nút Telegram cạnh email ở footer. Để trống nếu không muốn hiện.">
+                <input type="text" value={settings.adsTelegram || ''} onChange={e => setSettings(s => ({ ...s, adsTelegram: e.target.value.replace(/^@/, '') }))} className="input-field" placeholder="daophim_ads" />
               </InputRow>
             </div>
             </SectionCard>

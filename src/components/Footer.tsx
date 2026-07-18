@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Mail } from 'lucide-react';
+import { Mail, Send } from 'lucide-react';
 
 function useSiteSettings() {
   const [s, setS] = useState(() => {
@@ -19,6 +19,7 @@ export default function Footer() {
   const settings = useSiteSettings();
   const siteName = settings.siteName || 'ĐẢO PHIM';
   const adsEmail  = settings.adsEmail  || 'adsdaophim@gmail.com';
+  const adsTelegram = settings.adsTelegram || '';
 
   return (
     <footer className="border-t border-slate-800/60 bg-slate-950 mt-10">
@@ -42,7 +43,7 @@ export default function Footer() {
         </div>
 
         {/* Liên hệ đặt quảng cáo */}
-        <div className="flex items-center gap-2 text-slate-500 text-xs">
+        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-slate-500 text-xs">
           <span>📢 Liên hệ đặt quảng cáo:</span>
           <a
             href={`mailto:${adsEmail}`}
@@ -51,6 +52,17 @@ export default function Footer() {
             <Mail size={12} />
             {adsEmail}
           </a>
+          {adsTelegram && (
+            <a
+              href={`https://t.me/${adsTelegram}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 text-sky-400 hover:text-sky-300 font-semibold transition-colors"
+            >
+              <Send size={12} />
+              @{adsTelegram}
+            </a>
+          )}
         </div>
 
         {/* Sovereign note */}
