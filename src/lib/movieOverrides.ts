@@ -9,6 +9,18 @@ import {
 } from 'firebase/firestore';
 import { db } from './firebase';
 
+export interface CustomEpisode {
+  name: string;         // "Tập 1", "Full"...
+  slug: string;         // đặt trùng slug tập gốc để GHI ĐÈ link, hoặc đặt slug mới để thêm tập riêng
+  link_embed?: string;
+  link_m3u8?: string;
+}
+
+export interface CustomServer {
+  server_name: string;  // "Server 1", "Server 2"... - đặt trùng tên server gốc (VD "Vietsub #1") để GHI ĐÈ cả server đó
+  server_data: CustomEpisode[];
+}
+
 export interface MovieOverride {
   slug: string;              // key - slug của phim
   name?: string;
@@ -25,6 +37,7 @@ export interface MovieOverride {
   director?: string[];
   category?: { id: string; name: string; slug: string }[];
   country?: { id: string; name: string; slug: string }[];
+  customServers?: CustomServer[]; // Server tùy chỉnh - ghi đè hoặc thêm link embed/m3u8
   updatedAt: number;
 }
 
@@ -84,4 +97,21 @@ export function mergeOverride<T extends object>(movie: T, override: MovieOverrid
     }
   }
   return merged;
+}
+
+/**
+ * Gộp "Server tùy chỉnh" (customServers) do admin thêm vào danh sách tập gốc từ API.
+ *  - Server tùy chỉnh có server_name TRÙNG với server gốc → GHI ĐÈ (thay link embed/m3u8).
+ *  - Server tùy chỉnh có tên MỚI (VD "Server 1") → THÊM vào cuối danh sách.
+ */
+export function mergeCustomServers<T extends { server_name: string; server_data: any[] }>(
+  mainEpisodes: T[],
+  override: MovieOverride | null
+): T[] {
+  if (!override?.customServers?.length) return mainEpisodes;
+
+  const customNames = new Set(override.customServers.map(s => s.server_name));
+  const remainingMain = mainEpisodes.filter(s => !customNames.has(s.server_name));
+
+  return [...(override.customServers as unknown as T[]), ...remainingMain];
 }

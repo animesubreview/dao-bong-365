@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import PopupAd from '../components/PopupAd';
 import CommentSection from '../components/CommentSection';
 import AdBanner from '../components/AdBanner';
-import { getMovieOverride, mergeOverride } from '../lib/movieOverrides';
+import { getMovieOverride, mergeOverride, mergeCustomServers } from '../lib/movieOverrides';
 import { useSEO } from '../hooks/useSEO';
 
 type Tab = 'episodes' | 'info' | 'actors' | 'suggest';
@@ -67,7 +67,7 @@ export default function MovieDetail() {
 
         setMovie(mergeOverride(movieData, override));
         // Merge OPhim vào cuối
-        setEpisodes(mergeOPhimEpisodes(baseEpisodes, ophim));
+        setEpisodes(mergeCustomServers(mergeOPhimEpisodes(baseEpisodes, ophim), override));
         const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
         setIsFavorite(favorites.some((f: any) => f.slug === slug));
       } catch (error) {

@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import CommentSection from '../components/CommentSection';
 import MovieCard from '../components/MovieCard';
 import DaoPhimPlayer from '../components/DaoPhimPlayer';
-import { getMovieOverride, mergeOverride } from '../lib/movieOverrides';
+import { getMovieOverride, mergeOverride, mergeCustomServers } from '../lib/movieOverrides';
 import { createWatchRoom } from '../lib/watchRoom';
 import { getCurrentUser, getUserProfile, onAuthChange } from '../lib/auth';
 import type { UserProfile } from '../lib/auth';
@@ -123,7 +123,7 @@ export default function Watch() {
         setMovie(mergeOverride(movieData, override));
 
         // Merge NguonC: phim đã có tập → chỉ thêm server NguonC; chưa có → dùng hẳn NguonC
-        const mergedEpisodes = mergeOPhimEpisodes(baseEpisodes, ophim);
+        const mergedEpisodes = mergeCustomServers(mergeOPhimEpisodes(baseEpisodes, ophim), override);
         setEpisodes(mergedEpisodes);
 
         let ep = null;

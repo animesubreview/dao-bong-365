@@ -2283,6 +2283,57 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
     }
   };
 
+  // ─── Quản lý Server tùy chỉnh (ghi đè/thêm link embed & m3u8) ────────────
+  const addCustomServer = () => {
+    setOverrideForm(f => {
+      const list = f.customServers || [];
+      const n = list.length + 1;
+      return { ...f, customServers: [...list, { server_name: `Server ${n}`, server_data: [] }] };
+    });
+  };
+
+  const removeCustomServer = (idx: number) => {
+    setOverrideForm(f => ({ ...f, customServers: (f.customServers || []).filter((_, i) => i !== idx) }));
+  };
+
+  const updateCustomServerName = (idx: number, name: string) => {
+    setOverrideForm(f => ({
+      ...f,
+      customServers: (f.customServers || []).map((s, i) => i === idx ? { ...s, server_name: name } : s),
+    }));
+  };
+
+  const addCustomEpisode = (serverIdx: number) => {
+    setOverrideForm(f => ({
+      ...f,
+      customServers: (f.customServers || []).map((s, i) => {
+        if (i !== serverIdx) return s;
+        const n = s.server_data.length + 1;
+        return { ...s, server_data: [...s.server_data, { name: `Tập ${n}`, slug: `tap-${n}`, link_embed: '', link_m3u8: '' }] };
+      }),
+    }));
+  };
+
+  const removeCustomEpisode = (serverIdx: number, epIdx: number) => {
+    setOverrideForm(f => ({
+      ...f,
+      customServers: (f.customServers || []).map((s, i) => {
+        if (i !== serverIdx) return s;
+        return { ...s, server_data: s.server_data.filter((_, j) => j !== epIdx) };
+      }),
+    }));
+  };
+
+  const updateCustomEpisode = (serverIdx: number, epIdx: number, field: 'name' | 'slug' | 'link_embed' | 'link_m3u8', value: string) => {
+    setOverrideForm(f => ({
+      ...f,
+      customServers: (f.customServers || []).map((s, i) => {
+        if (i !== serverIdx) return s;
+        return { ...s, server_data: s.server_data.map((ep, j) => j === epIdx ? { ...ep, [field]: value } : ep) };
+      }),
+    }));
+  };
+
   const deleteOverride = async (slug: string) => {
     if (!confirm('Xóa chỉnh sửa? Phim sẽ về data gốc từ API.')) return;
     try {
@@ -3213,6 +3264,66 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
                       className="input-field text-sm resize-none w-full font-mono" placeholder={overrideApiMovie.director?.join('\n') || 'Tên đạo diễn...'} />
                   </div>
 
+                  {/* ── Server tùy chỉnh: ghi đè hoặc thêm link embed/m3u8 ── */}
+                  <div className="border-t border-slate-700/50 pt-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <div>
+                        <label className="text-xs text-slate-300 font-bold block">🔗 Server tùy chỉnh (embed / m3u8)</label>
+                        <p className="text-[10px] text-slate-500 mt-0.5">
+                          Đặt tên server TRÙNG server gốc (VD "Vietsub #1") để <b>ghi đè</b> link, hoặc đặt tên mới (VD "Server 1", "Server 2") để <b>thêm</b> nguồn phát riêng.
+                        </p>
+                      </div>
+                      <button onClick={addCustomServer} type="button" className="btn-icon px-3 py-1.5 text-xs shrink-0 flex items-center gap-1 hover:border-green-500/40 hover:text-green-400">
+                        <Plus size={13} /> Thêm Server
+                      </button>
+                    </div>
+
+                    <div className="flex flex-col gap-3">
+                      {(overrideForm.customServers || []).map((srv, sIdx) => (
+                        <div key={sIdx} className="bg-slate-900/50 border border-slate-700/40 rounded-xl p-3">
+                          <div className="flex items-center gap-2 mb-2">
+                            <input
+                              type="text"
+                              value={srv.server_name}
+                              onChange={e => updateCustomServerName(sIdx, e.target.value)}
+                              className="input-field text-sm flex-1 font-semibold"
+                              placeholder="Tên server, VD: Server 1"
+                            />
+                            <button onClick={() => removeCustomServer(sIdx)} type="button" className="btn-icon p-2 hover:border-red-500/40 hover:text-red-400 shrink-0">
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+
+                          <div className="flex flex-col gap-2">
+                            {srv.server_data.map((ep, eIdx) => (
+                              <div key={eIdx} className="grid grid-cols-1 sm:grid-cols-[100px_100px_1fr_1fr_auto] gap-1.5 items-center bg-slate-800/40 rounded-lg p-2">
+                                <input type="text" value={ep.name} onChange={e => updateCustomEpisode(sIdx, eIdx, 'name', e.target.value)}
+                                  className="input-field text-xs" placeholder="Tên tập" />
+                                <input type="text" value={ep.slug} onChange={e => updateCustomEpisode(sIdx, eIdx, 'slug', e.target.value)}
+                                  className="input-field text-xs font-mono" placeholder="slug" />
+                                <input type="url" value={ep.link_embed || ''} onChange={e => updateCustomEpisode(sIdx, eIdx, 'link_embed', e.target.value)}
+                                  className="input-field text-xs" placeholder="Link embed (iframe)" />
+                                <input type="url" value={ep.link_m3u8 || ''} onChange={e => updateCustomEpisode(sIdx, eIdx, 'link_m3u8', e.target.value)}
+                                  className="input-field text-xs" placeholder="Link .m3u8" />
+                                <button onClick={() => removeCustomEpisode(sIdx, eIdx)} type="button" className="btn-icon p-1.5 hover:border-red-500/40 hover:text-red-400 justify-self-end">
+                                  <X size={13} />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+
+                          <button onClick={() => addCustomEpisode(sIdx)} type="button" className="mt-2 text-xs text-green-400 hover:text-green-300 font-semibold flex items-center gap-1">
+                            <Plus size={12} /> Thêm tập
+                          </button>
+                        </div>
+                      ))}
+
+                      {(!overrideForm.customServers || overrideForm.customServers.length === 0) && (
+                        <p className="text-xs text-slate-600 italic text-center py-2">Chưa có server tùy chỉnh nào.</p>
+                      )}
+                    </div>
+                  </div>
+
                   <div className="flex gap-2 pt-2">
                     <button onClick={saveOverride} className="btn-primary flex items-center gap-2 text-sm flex-1 justify-center">
                       <Check size={16} /> Lưu chỉnh sửa
@@ -3239,6 +3350,7 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
                           {ov.actor?.length && <span className="text-[9px] bg-purple-500/10 text-purple-400 border border-purple-500/20 px-1.5 py-0.5 rounded">Diễn viên</span>}
                           {ov.quality && <span className="text-[9px] bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 px-1.5 py-0.5 rounded">{ov.quality}</span>}
                           {ov.lang && <span className="text-[9px] bg-orange-500/10 text-orange-400 border border-orange-500/20 px-1.5 py-0.5 rounded">{ov.lang}</span>}
+                          {ov.customServers?.length ? <span className="text-[9px] bg-sky-500/10 text-sky-400 border border-sky-500/20 px-1.5 py-0.5 rounded">🔗 {ov.customServers.length} server</span> : null}
                         </div>
                       </div>
                       <div className="flex gap-1">
