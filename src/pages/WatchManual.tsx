@@ -1,10 +1,23 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Heart, Film, ChevronRight, ChevronLeft, List, ExternalLink, Info, Server } from 'lucide-react';
+import { Heart, Film, ChevronRight, ChevronLeft, List, ExternalLink, Info, Server, ShieldAlert } from 'lucide-react';
 import { cn, usePageTitle } from '../lib/utils';
 import { motion } from 'motion/react';
 import CommentSection from '../components/CommentSection';
 import { getManualMovie, ManualMovie, ManualEpisode } from '../lib/manualMovies';
+
+function useSiteSettings() {
+  const [s, setS] = useState(() => {
+    try { const v = localStorage.getItem('site_settings'); return v ? JSON.parse(v) : {}; } catch { return {}; }
+  });
+  useEffect(() => {
+    const cb = () => { try { const v = localStorage.getItem('site_settings'); if (v) setS(JSON.parse(v)); } catch {} };
+    window.addEventListener('storage', cb);
+    window.addEventListener('site_settings_updated', cb);
+    return () => { window.removeEventListener('storage', cb); window.removeEventListener('site_settings_updated', cb); };
+  }, []);
+  return s;
+}
 
 function buildEmbedUrl(raw: string): { url: string; isDrive: boolean; isM3u8: boolean } {
   const trimmed = raw.trim();
@@ -319,6 +332,8 @@ export default function WatchManual() {
   const [embedError, setEmbedError] = useState(false);
   const [showThumbs, setShowThumbs] = useState(false);
   const navigate = useNavigate();
+  const settings = useSiteSettings();
+  const copyWarning = settings.manualCopyWarning || '';
 
   usePageTitle(movie ? movie.name : undefined);
 
@@ -399,7 +414,11 @@ export default function WatchManual() {
   return (
     <div className="min-h-screen bg-[#0d0d0d] pb-24">
 
+      {/* ══ Khối bố cục: mobile/iPad giữ nguyên (cột đơn); PC/Laptop (xl+) chia 2 cột ══ */}
+      <div className="xl:max-w-[1500px] xl:mx-auto xl:px-8 xl:pt-4 xl:grid xl:grid-cols-[1fr_380px] xl:gap-6 xl:items-start">
+
       {/* ── Video Player + Watermark (fullscreen-safe) ── */}
+      <div className="xl:col-start-1">
       {isM3u8 ? (
         <HlsPlayer src={embedSrc} movie={movie} />
       ) : (
@@ -409,9 +428,17 @@ export default function WatchManual() {
           movie={movie}
         />
       )}
+      </div>
 
       {/* ── Content ── */}
-      <div className="max-w-2xl mx-auto px-3 pt-3 flex flex-col gap-3">
+      <div className="max-w-2xl xl:max-w-none mx-auto xl:mx-0 px-3 xl:px-0 pt-3 xl:pt-0 flex flex-col gap-3 xl:col-start-1">
+
+        {copyWarning && (
+          <div className="flex items-start gap-2.5 bg-red-500/10 border border-red-500/30 rounded-xl px-3.5 py-2.5">
+            <ShieldAlert size={16} className="text-red-400 shrink-0 mt-0.5" />
+            <p className="text-red-200/90 text-xs leading-relaxed">{copyWarning}</p>
+          </div>
+        )}
 
         {/* ── Title card ── */}
         <motion.div initial={{ y: 16, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
@@ -442,6 +469,12 @@ export default function WatchManual() {
           </div>
           <div className="h-[2px] bg-green-500 rounded-full mt-2 w-16" />
         </motion.div>
+
+      </div>
+      {/* ↑ đóng content-area phần 1 (để sidebar dưới đây thành ô lưới riêng, không bị lồng bên trong) */}
+
+        {/* ══ Sidebar (PC/Laptop): info phim + danh sách tập gộp chung 1 cột phải, dính khi cuộn ══ */}
+        <div className="max-w-2xl xl:max-w-none mx-auto xl:mx-0 px-3 xl:px-0 flex flex-col gap-3 xl:gap-4 xl:col-start-2 xl:[grid-row:1/-1] xl:sticky xl:top-6 xl:max-h-[calc(100vh-3rem)] xl:overflow-y-auto xl:pr-1">
 
         {/* ── Movie detail mini card ── */}
         <motion.div initial={{ y: 16, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.05 }}
@@ -555,6 +588,11 @@ export default function WatchManual() {
           )}
         </motion.div>
 
+        </div>
+        {/* ↑ đóng sidebar (info phim + danh sách tập) ── */}
+
+      <div className="max-w-2xl xl:max-w-none mx-auto xl:mx-0 px-3 xl:px-0 flex flex-col gap-3 xl:col-start-1">
+
         {/* ── Nội dung ── */}
         {isDrive && (
           <motion.div initial={{ y: 16, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }}
@@ -576,6 +614,7 @@ export default function WatchManual() {
           <CommentSection movieSlug={`manual-${movie.id || ''}`} />
         </motion.div>
 
+      </div>
       </div>
     </div>
   );

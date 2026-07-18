@@ -70,6 +70,7 @@ const DEFAULT_SETTINGS = {
   email: '',
   adsEmail: 'adsdaophim@gmail.com',
   adsTelegram: '',
+  manualCopyWarning: 'Video thuộc bản quyền độc quyền của Đảo Phim. Nghiêm cấm sao chép, re-upload dưới mọi hình thức khi chưa được cho phép.',
   authorName: 'Đức Tài',
   accentColor: 'indigo',
   adminPassword: '',
@@ -2613,6 +2614,10 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
 
               <InputRow label="Telegram đặt quảng cáo" hint="Username Telegram (không cần @), hiển thị thêm nút Telegram cạnh email ở footer. Để trống nếu không muốn hiện.">
                 <input type="text" value={settings.adsTelegram || ''} onChange={e => setSettings(s => ({ ...s, adsTelegram: e.target.value.replace(/^@/, '') }))} className="input-field" placeholder="daophim_ads" />
+              </InputRow>
+
+              <InputRow label="Cảnh báo copy (trang Up phim thủ công)" hint="Hiển thị dưới video ở trang xem phim up thủ công. Để trống nếu không muốn hiện.">
+                <textarea rows={2} value={settings.manualCopyWarning || ''} onChange={e => setSettings(s => ({ ...s, manualCopyWarning: e.target.value }))} className="input-field resize-none" placeholder="Video thuộc bản quyền độc quyền..." />
               </InputRow>
             </div>
             </SectionCard>
