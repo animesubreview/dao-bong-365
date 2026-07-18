@@ -5,16 +5,13 @@ import { cn, usePageTitle } from '../lib/utils';
 import { motion } from 'motion/react';
 import CommentSection from '../components/CommentSection';
 import { getManualMovie, ManualMovie, ManualEpisode } from '../lib/manualMovies';
+import { subscribeSiteSettings } from '../lib/siteSettings';
 
 function useSiteSettings() {
-  const [s, setS] = useState(() => {
-    try { const v = localStorage.getItem('site_settings'); return v ? JSON.parse(v) : {}; } catch { return {}; }
-  });
+  const [s, setS] = useState<Record<string, any>>({});
   useEffect(() => {
-    const cb = () => { try { const v = localStorage.getItem('site_settings'); if (v) setS(JSON.parse(v)); } catch {} };
-    window.addEventListener('storage', cb);
-    window.addEventListener('site_settings_updated', cb);
-    return () => { window.removeEventListener('storage', cb); window.removeEventListener('site_settings_updated', cb); };
+    const unsub = subscribeSiteSettings(setS);
+    return unsub;
   }, []);
   return s;
 }
@@ -333,7 +330,7 @@ export default function WatchManual() {
   const [showThumbs, setShowThumbs] = useState(false);
   const navigate = useNavigate();
   const settings = useSiteSettings();
-  const copyWarning = settings.manualCopyWarning || '';
+  const copyWarning = settings.manualCopyWarningEnabled !== false ? (settings.manualCopyWarning || '') : '';
 
   usePageTitle(movie ? movie.name : undefined);
 

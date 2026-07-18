@@ -13,6 +13,7 @@ import { createPopupAd, updatePopupAd, deletePopupAd, PopupAdData } from '../com
 import { getClickAdConfig, saveClickAdConfig, ClickAdConfig, DEFAULT_CLICK_AD } from '../lib/clickAd';
 import { getVipPrices, saveVipPrices, VipPrices, DEFAULT_VIP_PRICES, VIP_META, VIP_DAYS } from '../lib/vip';
 import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { fetchSiteSettings, saveSiteSettings as saveSiteSettingsFirestore } from '../lib/siteSettings';
 import { db } from '../lib/firebase';
 import { getAllUsers, banUser as apiBanUser, unbanUser as apiUnbanUser, deleteUserProfile, setUserRole, addUserBalance, UserProfile } from '../lib/auth';
 import {
@@ -71,6 +72,7 @@ const DEFAULT_SETTINGS = {
   adsEmail: 'adsdaophim@gmail.com',
   adsTelegram: '',
   manualCopyWarning: 'Video thuộc bản quyền độc quyền của Đảo Phim. Nghiêm cấm sao chép, re-upload dưới mọi hình thức khi chưa được cho phép.',
+  manualCopyWarningEnabled: true,
   authorName: 'Đức Tài',
   accentColor: 'indigo',
   adminPassword: '',
@@ -2176,6 +2178,16 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
   const [settings, setSettings] = useState<typeof DEFAULT_SETTINGS>(() => {
     try { const v = localStorage.getItem('site_settings'); return v ? { ...DEFAULT_SETTINGS, ...JSON.parse(v) } : DEFAULT_SETTINGS; } catch { return DEFAULT_SETTINGS; }
   });
+
+  // Lấy cấu hình thật từ Firestore khi vào trang Admin (localStorage chỉ là cache hiển thị tạm)
+  useEffect(() => {
+    fetchSiteSettings().then((data) => {
+      if (data && Object.keys(data).length > 0) {
+        setSettings((prev) => ({ ...DEFAULT_SETTINGS, ...prev, ...data }));
+      }
+    });
+  }, []);
+
   const [movies, setMovies] = useState<ManualMovie[]>([]);
   const [upcomingMovies, setUpcomingMovies] = useState<UpcomingMovie[]>([]);
 
@@ -2295,12 +2307,14 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => setToast({ message, type });
 
-  const saveSettings = () => {
+  const saveSettings = async () => {
     try {
-      localStorage.setItem('site_settings', JSON.stringify(settings));
-      window.dispatchEvent(new Event('site_settings_updated'));
-      showToast('Đã lưu cài đặt thành công!');
-    } catch { showToast('Lỗi khi lưu cài đặt!', 'error'); }
+      await saveSiteSettingsFirestore(settings);
+      showToast('Đã lưu cài đặt thành công! (áp dụng cho mọi người dùng)');
+    } catch (e) {
+      console.error(e);
+      showToast('Lỗi khi lưu cài đặt lên máy chủ!', 'error');
+    }
   };
 
   // saveMovies không còn dùng localStorage — Firestore subscription tự cập nhật state
@@ -2456,10 +2470,11 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
     setTimeout(() => { const el = document.getElementById("upcoming-form-section"); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); }, 100);
   };
 
-  const resetSettings = () => {
+  const resetSettings = async () => {
     if (!confirm('Khôi phục cài đặt mặc định?')) return;
     setSettings(DEFAULT_SETTINGS);
     localStorage.removeItem('site_settings');
+    try { await saveSiteSettingsFirestore(DEFAULT_SETTINGS); } catch (e) { console.error(e); }
     window.dispatchEvent(new Event('site_settings_updated'));
     showToast('Đã khôi phục cài đặt mặc định!');
   };
@@ -2616,8 +2631,28 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
                 <input type="text" value={settings.adsTelegram || ''} onChange={e => setSettings(s => ({ ...s, adsTelegram: e.target.value.replace(/^@/, '') }))} className="input-field" placeholder="daophim_ads" />
               </InputRow>
 
-              <InputRow label="Cảnh báo copy (trang Up phim thủ công)" hint="Hiển thị dưới video ở trang xem phim up thủ công. Để trống nếu không muốn hiện.">
-                <textarea rows={2} value={settings.manualCopyWarning || ''} onChange={e => setSettings(s => ({ ...s, manualCopyWarning: e.target.value }))} className="input-field resize-none" placeholder="Video thuộc bản quyền độc quyền..." />
+              <InputRow label="Cảnh báo copy (trang Up phim thủ công)" hint="Hiển thị dưới video ở trang xem phim up thủ công.">
+                <div className="flex items-center gap-3 mb-2">
+                  <button
+                    type="button"
+                    onClick={() => setSettings(s => ({ ...s, manualCopyWarningEnabled: !s.manualCopyWarningEnabled }))}
+                    className={cn(
+                      'relative w-11 h-6 rounded-full transition-colors shrink-0',
+                      settings.manualCopyWarningEnabled ? 'bg-green-500' : 'bg-slate-700'
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        'absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform',
+                        settings.manualCopyWarningEnabled ? 'translate-x-5' : 'translate-x-0'
+                      )}
+                    />
+                  </button>
+                  <span className="text-sm text-slate-300">
+                    {settings.manualCopyWarningEnabled ? 'Đang bật — hiện trên trang xem phim' : 'Đang tắt — ẩn hoàn toàn'}
+                  </span>
+                </div>
+                <textarea rows={2} value={settings.manualCopyWarning || ''} onChange={e => setSettings(s => ({ ...s, manualCopyWarning: e.target.value }))} className="input-field resize-none" placeholder="Video thuộc bản quyền độc quyền..." disabled={!settings.manualCopyWarningEnabled} />
               </InputRow>
             </div>
             </SectionCard>

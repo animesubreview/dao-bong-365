@@ -11,17 +11,15 @@ import { Movie } from '../types';
 import { logout, onAuthChange, getUserProfile, UserProfile } from '../lib/auth';
 import { createWatchRoom } from '../lib/watchRoom';
 import { subscribeNotifications, countUnread, SiteNotification } from '../lib/notifications';
+import { subscribeSiteSettings } from '../lib/siteSettings';
 
 function useSiteSettings() {
-  const [settings, setSettings] = useState(() => {
-    try { const s = localStorage.getItem('site_settings'); return s ? JSON.parse(s) : { logoType: 'text', siteName: 'ĐẢO PHIM' }; }
-    catch { return { logoType: 'text', siteName: 'ĐẢO PHIM' }; }
-  });
+  const [settings, setSettings] = useState<Record<string, any>>({ logoType: 'text', siteName: 'ĐẢO PHIM' });
   useEffect(() => {
-    const fn = () => { try { const s = localStorage.getItem('site_settings'); if (s) setSettings(JSON.parse(s)); } catch {} };
-    window.addEventListener('storage', fn);
-    window.addEventListener('site_settings_updated', fn);
-    return () => { window.removeEventListener('storage', fn); window.removeEventListener('site_settings_updated', fn); };
+    const unsub = subscribeSiteSettings((data) => {
+      setSettings((prev) => ({ ...prev, ...data }));
+    });
+    return unsub;
   }, []);
   return settings;
 }
