@@ -11,7 +11,7 @@
 const SITE_NAME = 'Đảo Phim';
 const SITE_URL  = 'https://daophim.online';
 const API_BASE  = 'https://phimapi.com';
-const DEFAULT_IMG = 'https://sf-static.upanhlaylink.com/img/image_2026051206bab16347f075d07864efb55a5224ea.jpg';
+const DEFAULT_IMG = 'https://daophim.online/og-image.png';
 
 // Ghép link ảnh poster/backdrop đúng domain thật của KKPhim (img.phimapi.com),
 // đồng bộ với movieApi.getImageUrl() bên client — tránh ảnh vỡ khi share link (Facebook/Zalo).
@@ -75,9 +75,11 @@ export default async function handler(request) {
   const url = new URL(request.url);
 
   const movieMatch = url.pathname.match(/^\/phim\/([^/]+)$/);
+  const watchMatch = url.pathname.match(/^\/watch\/([^/]+)(?:\/[^/]+)?\/?$/);
   const typeMatch  = url.pathname.match(/^\/type\/([^/]+)$/);
 
   if (movieMatch) return handleMovieDetail(movieMatch[1], request);
+  if (watchMatch) return handleMovieDetail(watchMatch[1], request);
   if (typeMatch)  return handleTypeListing(typeMatch[1], url.searchParams, request);
 
   return passThrough(request);
