@@ -627,6 +627,7 @@ function NotificationsSection({ onToast }: { onToast: (msg: string, t: 'success'
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ ...NOTIF_DEFAULTS });
   const [saving, setSaving] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   // Subscribe realtime từ Firebase
   useEffect(() => {
@@ -634,12 +635,12 @@ function NotificationsSection({ onToast }: { onToast: (msg: string, t: 'success'
     return unsub;
   }, []);
 
-  const handleCreate = async () => {
+  const handleSubmit = async () => {
     if (!form.title.trim()) { onToast('Vui lòng nhập tiêu đề thông báo', 'error'); return; }
     if (!form.message.trim()) { onToast('Vui lòng nhập nội dung thông báo', 'error'); return; }
     setSaving(true);
     try {
-      await createNotification({
+      const payload = {
         title: form.title.trim(),
         message: form.message.trim(),
         type: form.type,
@@ -650,12 +651,43 @@ function NotificationsSection({ onToast }: { onToast: (msg: string, t: 'success'
         imageUrl: form.displayStyle === 'image_link' ? (form.imageUrl.trim() || undefined) : undefined,
         displayStyle: form.displayStyle,
         expiresAt: form.expiresAt,
-      });
+      };
+      if (editingId) {
+        await updateNotification(editingId, payload);
+        onToast('Đã cập nhật thông báo!', 'success');
+      } else {
+        await createNotification(payload);
+        onToast('Đã gửi thông báo thành công! Tất cả người dùng sẽ thấy ngay.', 'success');
+      }
       setForm({ ...NOTIF_DEFAULTS });
+      setEditingId(null);
       setShowForm(false);
-      onToast('Đã gửi thông báo thành công! Tất cả người dùng sẽ thấy ngay.', 'success');
-    } catch { onToast('Lỗi khi gửi thông báo', 'error'); }
+    } catch { onToast(editingId ? 'Lỗi khi cập nhật thông báo' : 'Lỗi khi gửi thông báo', 'error'); }
     finally { setSaving(false); }
+  };
+
+  const startEdit = (n: SiteNotification) => {
+    setForm({
+      title: n.title,
+      message: n.message,
+      type: n.type,
+      category: n.category || 'phim',
+      active: n.active,
+      showAsPopup: n.showAsPopup ?? true,
+      targetUrl: n.targetUrl || '',
+      imageUrl: n.imageUrl || '',
+      displayStyle: n.displayStyle || 'default',
+      expiresAt: n.expiresAt,
+    });
+    setEditingId(n.id);
+    setShowForm(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const cancelEdit = () => {
+    setForm({ ...NOTIF_DEFAULTS });
+    setEditingId(null);
+    setShowForm(false);
   };
 
   const toggleActive = async (id: string, active: boolean) => {
@@ -685,7 +717,7 @@ function NotificationsSection({ onToast }: { onToast: (msg: string, t: 'success'
             {' · '}<span className="text-emerald-400">{notifs.filter(n => n.active).length} đang bật</span>
           </p>
           <button
-            onClick={() => setShowForm(v => !v)}
+            onClick={() => (showForm ? cancelEdit() : setShowForm(true))}
             className="btn-primary flex items-center gap-2 text-sm py-2"
           >
             {showForm ? <X size={15} /> : <BellPlus size={15} />}
@@ -695,7 +727,9 @@ function NotificationsSection({ onToast }: { onToast: (msg: string, t: 'success'
 
         {showForm && (
           <div className="bg-slate-800/40 border border-pink-500/20 rounded-2xl p-5 flex flex-col gap-4">
-            <h3 className="font-bold text-white text-base">🔔 Tạo thông báo mới</h3>
+            <h3 className="font-bold text-white text-base">
+              {editingId ? '✏️ Chỉnh sửa thông báo' : '🔔 Tạo thông báo mới'}
+            </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
@@ -813,10 +847,10 @@ function NotificationsSection({ onToast }: { onToast: (msg: string, t: 'success'
             </div>
 
             <div className="flex gap-2 pt-1">
-              <button onClick={handleCreate} disabled={saving} className="btn-primary flex items-center gap-2 text-sm flex-1 justify-center disabled:opacity-60">
-                <Bell size={15} /> {saving ? 'Đang gửi...' : 'Gửi thông báo'}
+              <button onClick={handleSubmit} disabled={saving} className="btn-primary flex items-center gap-2 text-sm flex-1 justify-center disabled:opacity-60">
+                <Bell size={15} /> {saving ? 'Đang lưu...' : editingId ? 'Cập nhật thông báo' : 'Gửi thông báo'}
               </button>
-              <button onClick={() => setShowForm(false)} className="btn-icon px-4 text-sm text-slate-400">
+              <button onClick={cancelEdit} className="btn-icon px-4 text-sm text-slate-400">
                 Hủy
               </button>
             </div>
@@ -843,6 +877,13 @@ function NotificationsSection({ onToast }: { onToast: (msg: string, t: 'success'
                   <p className="text-[10px] text-slate-600 mt-1">{new Date(n.createdAt).toLocaleString('vi-VN')}</p>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
+                  <button
+                    onClick={() => startEdit(n)}
+                    className="btn-icon p-2.5 hover:border-indigo-500/40 hover:text-indigo-400"
+                    title="Chỉnh sửa"
+                  >
+                    <Edit3 size={14} />
+                  </button>
                   <button
                     onClick={() => toggleActive(n.id, n.active)}
                     className={`btn-icon p-2.5 ${n.active ? 'hover:border-slate-500/40 text-emerald-400' : 'hover:border-emerald-500/40 text-slate-500'}`}

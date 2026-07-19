@@ -15,6 +15,17 @@ const SITE_URL  = 'https://daophim.online';
 const API_BASE  = 'https://phimapi.com';
 const DEFAULT_IMG = 'https://sf-static.upanhlaylink.com/img/image_2026051206bab16347f075d07864efb55a5224ea.jpg';
 
+// Ghép link ảnh poster/backdrop đúng domain thật của KKPhim (img.phimapi.com),
+// đồng bộ với movieApi.getImageUrl() bên client — tránh ảnh vỡ khi share link (Facebook/Zalo).
+function buildPosterUrl(raw) {
+  if (!raw) return DEFAULT_IMG;
+  if (raw.startsWith('http')) return raw;
+  if (raw.startsWith('//')) return `https:${raw}`;
+  const clean = raw.replace(/^\/+/, '').replace(/.*uploads\/movies\//, 'uploads/movies/');
+  if (raw.includes('ophim')) return `https://img.ophim.live/${clean}`;
+  return `https://img.phimapi.com/${clean}`;
+}
+
 // Danh sách bot cần prerender
 const BOT_AGENTS = [
   'googlebot', 'bingbot', 'yandexbot', 'duckduckbot', 'slurp',
@@ -118,8 +129,7 @@ async function handleTypeListing(type, searchParams, context) {
     };
 
     const cardsHtml = items.map((m) => {
-      const img = escapeHtml((m.thumb_url || m.poster_url || DEFAULT_IMG).startsWith('http')
-        ? m.thumb_url : `https://phimimg.com/${m.thumb_url}`);
+      const img = escapeHtml(buildPosterUrl(m.poster_url || m.thumb_url));
       return `<a href="${SITE_URL}/phim/${escapeHtml(m.slug)}">
         <img src="${img}" alt="${escapeHtml(m.name)}" width="220" height="330" loading="lazy" />
         <h3>${escapeHtml(m.name)}</h3>
@@ -180,10 +190,7 @@ async function handleMovieDetail(slug, context) {
       `Xem ${movie.name} (${movie.origin_name || ''}) ${movie.year || ''} Vietsub HD miễn phí tại Đảo Phim. ` +
       stripHtml(movie.content || '').slice(0, 150)
     );
-    const image    = escapeHtml(
-      (movie.poster_url || movie.thumb_url || DEFAULT_IMG)
-        .replace('https://phimimg.com/', 'https://img.ophim.live/')
-    );
+    const image    = escapeHtml(buildPosterUrl(movie.poster_url || movie.thumb_url));
     const pageUrl  = escapeHtml(`${SITE_URL}/phim/${slug}`);
     const genres   = (movie.category || []).map((c) => escapeHtml(c.name)).join(', ');
     const keywords = [
