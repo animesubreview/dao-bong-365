@@ -61,7 +61,12 @@ export async function createNotification(
 }
 
 export async function updateNotification(id: string, data: Partial<SiteNotification>) {
-  await updateDoc(doc(db, NOTIFS_COL, id), data as any);
+  // Firestore không chấp nhận giá trị undefined trong updateDoc → lọc bỏ trước khi ghi
+  const clean: Record<string, any> = {};
+  for (const [k, v] of Object.entries(data)) {
+    if (v !== undefined) clean[k] = v;
+  }
+  await updateDoc(doc(db, NOTIFS_COL, id), clean);
 }
 
 export async function deleteNotification(id: string) {
