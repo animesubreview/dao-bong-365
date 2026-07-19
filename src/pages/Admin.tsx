@@ -2245,7 +2245,24 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
         setOverrideApiMovie(res.movie);
         // Load existing override if any
         const existing = await getMovieOverride(overrideSearchSlug.trim());
-        setOverrideForm(existing || {
+
+        // Chuyển server/tập THẬT của phim (từ API) thành customServers để admin thấy ngay
+        // và chỉ cần sửa link, không cần tự gõ tên server/slug.
+        const realServers = (res.episodes || []).map((srv: any) => ({
+          server_name: srv.server_name,
+          server_data: (srv.server_data || []).map((ep: any) => {
+            const currentLink = ep.link_m3u8 || ep.link_embed || '';
+            return {
+              name: ep.name,
+              slug: ep.slug,
+              link_embed: ep.link_embed || '',
+              link_m3u8: ep.link_m3u8 || '',
+              _rawLink: currentLink,
+            };
+          }),
+        }));
+
+        setOverrideForm(existing && existing.customServers?.length ? existing : {
           slug: overrideSearchSlug.trim(),
           name: res.movie.name || '',
           origin_name: res.movie.origin_name || '',
@@ -2257,6 +2274,8 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
           status: res.movie.status || '',
           actor: res.movie.actor || [],
           director: res.movie.director || [],
+          ...(existing || {}),
+          customServers: realServers,
         });
         setShowOverrideForm(true);
       } else {
@@ -3295,10 +3314,9 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
                   <div className="border-t border-slate-700/50 pt-4">
                     <div className="flex items-center justify-between mb-2">
                       <div>
-                        <label className="text-xs text-slate-300 font-bold block">🔗 Server tùy chỉnh (dán link như phim thủ công)</label>
+                        <label className="text-xs text-slate-300 font-bold block">🔗 Server & Link phim (đã tự điền từ API)</label>
                         <p className="text-[10px] text-slate-500 mt-0.5">
-                          Mỗi tập chỉ cần <b>dán 1 link</b> (Google Drive, .m3u8, hoặc embed bất kỳ) — hệ thống tự nhận diện, giống hệt cách nhập link phim up thủ công.
-                          Đặt tên server TRÙNG server gốc (VD "Vietsub #1") để <b>ghi đè</b> link, hoặc đặt tên mới (VD "Server 1", "Server 2") để <b>thêm</b> nguồn phát riêng.
+                          Danh sách server/tập <b>thật của phim</b> đã tự hiện sẵn bên dưới — chỉ cần sửa lại ô link của tập nào bị lỗi rồi lưu. Muốn thêm nguồn phát mới thì bấm "Thêm Server".
                         </p>
                       </div>
                       <button onClick={addCustomServer} type="button" className="btn-icon px-3 py-1.5 text-xs shrink-0 flex items-center gap-1 hover:border-green-500/40 hover:text-green-400">
