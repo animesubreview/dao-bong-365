@@ -14,6 +14,7 @@ export interface CustomEpisode {
   slug: string;         // đặt trùng slug tập gốc để GHI ĐÈ link, hoặc đặt slug mới để thêm tập riêng
   link_embed?: string;
   link_m3u8?: string;
+  _rawLink?: string;    // link gốc admin dán vào (Drive/m3u8/embed) - chỉ để hiển thị lại trong form, không dùng khi phát
 }
 
 export interface CustomServer {

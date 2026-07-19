@@ -16,19 +16,7 @@ function useSiteSettings() {
   return s;
 }
 
-function buildEmbedUrl(raw: string): { url: string; isDrive: boolean; isM3u8: boolean } {
-  const trimmed = raw.trim();
-  const isM3u8 = /\.m3u8($|\?)/i.test(trimmed);
-  if (isM3u8) return { url: trimmed, isDrive: false, isM3u8: true };
-  const isDrive = trimmed.includes('drive.google.com') || trimmed.includes('docs.google.com');
-  if (!isDrive) return { url: trimmed, isDrive: false, isM3u8: false };
-  const fileMatch = trimmed.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
-  if (fileMatch) return { url: `https://drive.google.com/file/d/${fileMatch[1]}/preview`, isDrive: true, isM3u8: false };
-  const idMatch = trimmed.match(/[?&]id=([a-zA-Z0-9_-]+)/);
-  if (idMatch) return { url: `https://drive.google.com/file/d/${idMatch[1]}/preview`, isDrive: true, isM3u8: false };
-  if (trimmed.includes('/preview')) return { url: trimmed, isDrive: true, isM3u8: false };
-  return { url: trimmed.replace(/\/(view|edit)(\?.*)?$/, '/preview'), isDrive: true, isM3u8: false };
-}
+import { buildEmbedUrl } from '../lib/embedUrl';
 
 // ── HLS / M3U8 Player ────────────────────────────────────────────────────────
 function HlsPlayer({ src, movie }: { src: string; movie: ManualMovie }) {

@@ -1,6 +1,25 @@
 import { Movie, APIResponse, MovieDetailResponse, Episode } from '../types';
 
-const BASE_URL = 'https://phimapi.com';
+// Domain API chính (KKPhim/phimapi.com) — có thể đổi trong Admin → Cài đặt Website
+// nếu domain gốc bị sập, dùng domain mirror khác mà không cần sửa code.
+const DEFAULT_API_BASE = 'https://phimapi.com';
+
+function readApiBaseFromSettings(): string {
+  try {
+    const raw = localStorage.getItem('site_settings');
+    if (!raw) return DEFAULT_API_BASE;
+    const settings = JSON.parse(raw);
+    const custom = (settings.apiBaseUrl || '').trim().replace(/\/+$/, '');
+    return custom || DEFAULT_API_BASE;
+  } catch { return DEFAULT_API_BASE; }
+}
+
+let BASE_URL = readApiBaseFromSettings();
+if (typeof window !== 'undefined') {
+  const refresh = () => { BASE_URL = readApiBaseFromSettings(); };
+  window.addEventListener('site_settings_updated', refresh);
+  window.addEventListener('storage', refresh);
+}
 
 // Cache ảnh chất lượng cao lấy được từ NguonC theo slug (nếu có), dùng trong getImageUrl.
 // Populate cache này ở nơi nào lấy được ảnh đẹp từ NguonC bằng: NguonCImageCache.set(slug, { poster, thumb });

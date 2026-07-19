@@ -46,6 +46,7 @@ import {
   getMovieOverride, saveMovieOverride, deleteMovieOverride,
   subscribeOverrides, MovieOverride,
 } from '../lib/movieOverrides';
+import { linkToEpisodeFields, buildEmbedUrl } from '../lib/embedUrl';
 import {
   saveMaintenanceConfig, subscribeMaintenanceConfig,
   MaintenanceConfig, DEFAULT_MAINTENANCE,
@@ -73,6 +74,7 @@ const DEFAULT_SETTINGS = {
   adsTelegram: '',
   manualCopyWarning: 'Video thuộc bản quyền độc quyền của Đảo Phim. Nghiêm cấm sao chép, re-upload dưới mọi hình thức khi chưa được cho phép.',
   manualCopyWarningEnabled: true,
+  apiBaseUrl: '',
   authorName: 'Đức Tài',
   accentColor: 'indigo',
   adminPassword: '',
@@ -2334,6 +2336,21 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
     }));
   };
 
+  // Ô "Link video" duy nhất — tự nhận diện Google Drive / m3u8 / embed thường,
+  // giống hệt cách nhập link cho phim up thủ công (chỉ cần dán 1 link).
+  const updateCustomEpisodeLink = (serverIdx: number, epIdx: number, rawLink: string) => {
+    setOverrideForm(f => ({
+      ...f,
+      customServers: (f.customServers || []).map((s, i) => {
+        if (i !== serverIdx) return s;
+        return {
+          ...s,
+          server_data: s.server_data.map((ep, j) => j === epIdx ? { ...ep, ...linkToEpisodeFields(rawLink), _rawLink: rawLink } : ep),
+        };
+      }),
+    }));
+  };
+
   const deleteOverride = async (slug: string) => {
     if (!confirm('Xóa chỉnh sửa? Phim sẽ về data gốc từ API.')) return;
     try {
@@ -2704,6 +2721,16 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
                   </span>
                 </div>
                 <textarea rows={2} value={settings.manualCopyWarning || ''} onChange={e => setSettings(s => ({ ...s, manualCopyWarning: e.target.value }))} className="input-field resize-none" placeholder="Video thuộc bản quyền độc quyền..." disabled={!settings.manualCopyWarningEnabled} />
+              </InputRow>
+
+              <InputRow label="Domain API phim (nâng cao)" hint="Domain gốc lấy dữ liệu phim (KKPhim/phimapi.com). Chỉ đổi khi domain gốc bị sập, cần chuyển sang domain mirror khác. Để trống = dùng mặc định phimapi.com.">
+                <input
+                  type="text"
+                  value={settings.apiBaseUrl || ''}
+                  onChange={e => setSettings(s => ({ ...s, apiBaseUrl: e.target.value }))}
+                  className="input-field font-mono text-sm"
+                  placeholder="https://phimapi.com"
+                />
               </InputRow>
             </div>
             </SectionCard>
@@ -3268,8 +3295,9 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
                   <div className="border-t border-slate-700/50 pt-4">
                     <div className="flex items-center justify-between mb-2">
                       <div>
-                        <label className="text-xs text-slate-300 font-bold block">🔗 Server tùy chỉnh (embed / m3u8)</label>
+                        <label className="text-xs text-slate-300 font-bold block">🔗 Server tùy chỉnh (dán link như phim thủ công)</label>
                         <p className="text-[10px] text-slate-500 mt-0.5">
+                          Mỗi tập chỉ cần <b>dán 1 link</b> (Google Drive, .m3u8, hoặc embed bất kỳ) — hệ thống tự nhận diện, giống hệt cách nhập link phim up thủ công.
                           Đặt tên server TRÙNG server gốc (VD "Vietsub #1") để <b>ghi đè</b> link, hoặc đặt tên mới (VD "Server 1", "Server 2") để <b>thêm</b> nguồn phát riêng.
                         </p>
                       </div>
@@ -3295,21 +3323,39 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
                           </div>
 
                           <div className="flex flex-col gap-2">
-                            {srv.server_data.map((ep, eIdx) => (
-                              <div key={eIdx} className="grid grid-cols-1 sm:grid-cols-[100px_100px_1fr_1fr_auto] gap-1.5 items-center bg-slate-800/40 rounded-lg p-2">
-                                <input type="text" value={ep.name} onChange={e => updateCustomEpisode(sIdx, eIdx, 'name', e.target.value)}
-                                  className="input-field text-xs" placeholder="Tên tập" />
-                                <input type="text" value={ep.slug} onChange={e => updateCustomEpisode(sIdx, eIdx, 'slug', e.target.value)}
-                                  className="input-field text-xs font-mono" placeholder="slug" />
-                                <input type="url" value={ep.link_embed || ''} onChange={e => updateCustomEpisode(sIdx, eIdx, 'link_embed', e.target.value)}
-                                  className="input-field text-xs" placeholder="Link embed (iframe)" />
-                                <input type="url" value={ep.link_m3u8 || ''} onChange={e => updateCustomEpisode(sIdx, eIdx, 'link_m3u8', e.target.value)}
-                                  className="input-field text-xs" placeholder="Link .m3u8" />
-                                <button onClick={() => removeCustomEpisode(sIdx, eIdx)} type="button" className="btn-icon p-1.5 hover:border-red-500/40 hover:text-red-400 justify-self-end">
-                                  <X size={13} />
-                                </button>
-                              </div>
-                            ))}
+                            {srv.server_data.map((ep, eIdx) => {
+                              const preview = buildEmbedUrl(ep._rawLink ?? (ep.link_m3u8 || ep.link_embed || ''));
+                              return (
+                                <div key={eIdx} className="grid grid-cols-1 sm:grid-cols-[90px_90px_1fr_auto] gap-1.5 items-center bg-slate-800/40 rounded-lg p-2">
+                                  <input type="text" value={ep.name} onChange={e => updateCustomEpisode(sIdx, eIdx, 'name', e.target.value)}
+                                    className="input-field text-xs" placeholder="Tên tập" />
+                                  <input type="text" value={ep.slug} onChange={e => updateCustomEpisode(sIdx, eIdx, 'slug', e.target.value)}
+                                    className="input-field text-xs font-mono" placeholder="slug" />
+                                  <div className="flex flex-col gap-1">
+                                    <input
+                                      type="text"
+                                      value={ep._rawLink ?? (ep.link_m3u8 || ep.link_embed || '')}
+                                      onChange={e => updateCustomEpisodeLink(sIdx, eIdx, e.target.value)}
+                                      className="input-field text-xs"
+                                      placeholder="Dán link video: Google Drive / .m3u8 / embed bất kỳ"
+                                    />
+                                    {(ep._rawLink || ep.link_embed || ep.link_m3u8) && (
+                                      <span className={cn(
+                                        'text-[9px] font-bold w-fit px-1.5 py-0.5 rounded',
+                                        preview.isM3u8 ? 'bg-green-500/15 text-green-400' :
+                                        preview.isDrive ? 'bg-sky-500/15 text-sky-400' :
+                                        'bg-slate-600/30 text-slate-400'
+                                      )}>
+                                        {preview.isM3u8 ? '✓ M3U8' : preview.isDrive ? '✓ Google Drive' : '✓ Embed thường'}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <button onClick={() => removeCustomEpisode(sIdx, eIdx)} type="button" className="btn-icon p-1.5 hover:border-red-500/40 hover:text-red-400 justify-self-end">
+                                    <X size={13} />
+                                  </button>
+                                </div>
+                              );
+                            })}
                           </div>
 
                           <button onClick={() => addCustomEpisode(sIdx)} type="button" className="mt-2 text-xs text-green-400 hover:text-green-300 font-semibold flex items-center gap-1">
