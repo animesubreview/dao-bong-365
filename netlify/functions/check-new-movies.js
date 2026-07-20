@@ -79,6 +79,39 @@ function getThumb(thumb_url) {
   return `https://phimimg.com/upload/vod/${thumb_url}`;
 }
 
+// ─── Gửi thông báo sang Discord bằng Webhook (không cần tạo bot phức tạp) ───
+// Cách lấy DISCORD_WEBHOOK_URL: Discord → Server Settings → Integrations → Webhooks
+// → New Webhook → chọn kênh muốn nhận tin → Copy Webhook URL → dán vào env var DISCORD_WEBHOOK_URL trên Vercel.
+const DISCORD_WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL || '';
+
+async function sendDiscord({ title, url, description, thumb, isNewMovie }) {
+  if (!DISCORD_WEBHOOK_URL) return { skipped: true };
+  try {
+    const embed = {
+      title: title.slice(0, 256),
+      url,
+      description: description.slice(0, 4096),
+      color: isNewMovie ? 0x22c55e : 0x3b82f6, // xanh lá = phim mới, xanh dương = tập mới
+      image: thumb ? { url: thumb } : undefined,
+      footer: { text: 'Đảo Phim' },
+      timestamp: new Date().toISOString(),
+    };
+    const res = await fetch(DISCORD_WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username: 'Đảo Phim Bot',
+        content: `${isNewMovie ? '🎬 **PHIM MỚI!**' : '🆕 **CÓ TẬP MỚI!**'}`,
+        embeds: [embed],
+      }),
+      signal: AbortSignal.timeout(8000),
+    });
+    return { ok: res.ok, status: res.status };
+  } catch (e) {
+    console.log('Gửi Discord lỗi:', e.message);
+    return { ok: false, error: e.message };
+  }
+}
 // Format phim mới hoàn toàn
 function formatNewMovie(movie) {
   const url = `${SITE_URL}/phim/${movie.slug}`;
@@ -172,21 +205,36 @@ const myHandler = async () => {
       }
 
       const thumb = getThumb(movie.thumb_url);
+      const movieUrl = `${SITE_URL}/phim/${slug}`;
 
       let text;
+      let discordDesc;
       if (isNewMovie) {
         text = formatNewMovie(movie);
+        discordDesc = `${movie.origin_name ? `_${movie.origin_name}_\n` : ''}` +
+          `${movie.year ? `📅 ${movie.year}  ` : ''}${movie.quality ? `🎥 ${movie.quality}  ` : ''}${movie.lang ? `🔊 ${movie.lang}` : ''}` +
+          `${movie.episode_total && movie.episode_total !== 'Full' ? `\n📺 Tổng: ${movie.episode_total} tập` : ''}`;
       } else {
         // Tập mới — chỉ gửi nếu là phim bộ/anime
         if (movie.type === 'single') continue; // phim lẻ không có tập mới
         text = formatNewEpisode(movie, epRaw || 'Mới nhất');
+        discordDesc = `${movie.origin_name ? `_${movie.origin_name}_\n` : ''}` +
+          `🎬 Tập mới nhất: **${epRaw || 'Mới nhất'}**\n` +
+          `${movie.quality ? `🎥 ${movie.quality}  ` : ''}${movie.lang ? `🔊 ${movie.lang}` : ''}`;
       }
 
       const result = await sendTelegram(text, thumb);
-      console.log(`✅ Sent: ${movie.name} (${isNewMovie ? 'NEW MOVIE' : 'NEW EP'}) - Telegram: ${result.ok}`);
+      const discordResult = await sendDiscord({
+        title: movie.name,
+        url: movieUrl,
+        description: discordDesc,
+        thumb,
+        isNewMovie,
+      });
+      console.log(`✅ Sent: ${movie.name} (${isNewMovie ? 'NEW MOVIE' : 'NEW EP'}) - Telegram: ${result.ok} - Discord: ${discordResult.ok ?? 'bỏ qua (chưa cấu hình)'}`);
 
       // Báo ngay cho search engine hỗ trợ IndexNow (Bing, Yandex...) biết URL này vừa có nội dung mới
-      await submitIndexNow([`${SITE_URL}/phim/${slug}`]);
+      await submitIndexNow([movieUrl]);
 
       // Đánh dấu đã gửi
       newSentMovies[key] = Date.now();
