@@ -1,6 +1,6 @@
 /**
  * Netlify Scheduled Function: check-new-movies (ESM)
- * Chạy mỗi 30 phút - Không spam lặp nhờ Netlify Blobs
+ * Chạy mỗi 10 phút - Không spam lặp nhờ Netlify Blobs
  */
 import { schedule } from '@netlify/functions';
 import { getStore } from '@netlify/blobs';
@@ -79,13 +79,28 @@ function getThumb(thumb_url) {
   return `https://phimimg.com/upload/vod/${thumb_url}`;
 }
 
-// ─── Gửi thông báo sang Discord bằng Webhook (không cần tạo bot phức tạp) ───
-// Cách lấy DISCORD_WEBHOOK_URL: Discord → Server Settings → Integrations → Webhooks
-// → New Webhook → chọn kênh muốn nhận tin → Copy Webhook URL → dán vào env var DISCORD_WEBHOOK_URL trên Vercel.
-const DISCORD_WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL || '';
+// ─── Gửi thông báo sang Discord bằng BOT THẬT (Bot Token) qua REST API ───
+// Vì hàm này chạy trên serverless (chạy xong là tắt), bot KHÔNG login gateway
+// (client.login() kiểu discord.js thường) mà gọi thẳng REST API của Discord để
+// gửi tin nhắn bằng danh nghĩa bot. Bot vẫn hiện đúng tên/avatar đã tạo,
+// chỉ khác là sẽ không hiện chấm "online" liên tục — điều này không ảnh hưởng
+// gì tới việc gửi tin nhắn.
+//
+// Cách tạo & cấu hình:
+// 1. Vào https://discord.com/developers/applications → New Application → đặt tên bot.
+// 2. Tab "Bot" → Reset Token → copy token → dán vào env var DISCORD_BOT_TOKEN.
+// 3. Vẫn ở tab "Bot" → bật "MESSAGE CONTENT INTENT" nếu sau này cần đọc tin nhắn (không bắt buộc để gửi tin).
+// 4. Tab "OAuth2 → URL Generator" → chọn scope "bot" → quyền "Send Messages", "Embed Links",
+//    "Attach Files" → copy URL → mở URL đó, chọn server, bấm Authorize để mời bot vào server.
+// 5. Trong Discord: bật Developer Mode (User Settings → Advanced) → chuột phải vào kênh
+//    muốn bot gửi tin → "Copy Channel ID" → dán vào env var DISCORD_CHANNEL_ID.
+// 6. Set 2 biến môi trường DISCORD_BOT_TOKEN và DISCORD_CHANNEL_ID trên Netlify (Site settings → Environment variables).
+const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN || '';
+const DISCORD_CHANNEL_ID = process.env.DISCORD_CHANNEL_ID || '';
+const DISCORD_API = 'https://discord.com/api/v10';
 
-async function sendDiscord({ title, url, description, thumb, isNewMovie }) {
-  if (!DISCORD_WEBHOOK_URL) return { skipped: true };
+async function sendDiscordBot({ title, url, description, thumb, isNewMovie }) {
+  if (!DISCORD_BOT_TOKEN || !DISCORD_CHANNEL_ID) return { skipped: true };
   try {
     const embed = {
       title: title.slice(0, 256),
@@ -93,19 +108,25 @@ async function sendDiscord({ title, url, description, thumb, isNewMovie }) {
       description: description.slice(0, 4096),
       color: isNewMovie ? 0x22c55e : 0x3b82f6, // xanh lá = phim mới, xanh dương = tập mới
       image: thumb ? { url: thumb } : undefined,
-      footer: { text: 'Đảo Phim' },
+      footer: { text: 'Đảo Phim Bot' },
       timestamp: new Date().toISOString(),
     };
-    const res = await fetch(DISCORD_WEBHOOK_URL, {
+    const res = await fetch(`${DISCORD_API}/channels/${DISCORD_CHANNEL_ID}/messages`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bot ${DISCORD_BOT_TOKEN}`,
+      },
       body: JSON.stringify({
-        username: 'Đảo Phim Bot',
-        content: `${isNewMovie ? '🎬 **PHIM MỚI!**' : '🆕 **CÓ TẬP MỚI!**'}`,
+        content: isNewMovie ? '🎬 **PHIM MỚI!**' : '🆕 **CÓ TẬP MỚI!**',
         embeds: [embed],
       }),
       signal: AbortSignal.timeout(8000),
     });
+    if (!res.ok) {
+      const errBody = await res.text().catch(() => '');
+      console.log('Discord API lỗi:', res.status, errBody);
+    }
     return { ok: res.ok, status: res.status };
   } catch (e) {
     console.log('Gửi Discord lỗi:', e.message);
@@ -168,8 +189,8 @@ const myHandler = async () => {
     const data = await res.json();
     const movies = data.items || [];
 
-    // Lọc trong 35 phút qua (dư 5 phút buffer)
-    const cutoff = Math.floor(Date.now() / 1000) - 35 * 60;
+    // Lọc trong 15 phút qua (chu kỳ 10 phút + dư 5 phút buffer)
+    const cutoff = Math.floor(Date.now() / 1000) - 15 * 60;
 
     const toProcess = movies.filter(m => {
       const t = m.modified?.time || m.updated_at || '';
@@ -224,7 +245,7 @@ const myHandler = async () => {
       }
 
       const result = await sendTelegram(text, thumb);
-      const discordResult = await sendDiscord({
+      const discordResult = await sendDiscordBot({
         title: movie.name,
         url: movieUrl,
         description: discordDesc,
@@ -274,4 +295,4 @@ const myHandler = async () => {
   }
 };
 
-export const handler = schedule('*/30 * * * *', myHandler);
+export const handler = schedule('*/10 * * * *', myHandler);
