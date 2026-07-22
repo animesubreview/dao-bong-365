@@ -180,17 +180,32 @@ const myHandler = async () => {
       console.log('Blobs not available, using empty state');
     }
 
-    // Gọi API KKPhim
-    const res = await fetch(`${KKPHIM_API}/danh-sach/phim-moi-cap-nhat?page=1`, {
-      headers: { 'User-Agent': 'DaoPhim-Bot/1.0' },
-    });
-    if (!res.ok) throw new Error(`API error: ${res.status}`);
+    // Gọi API KKPhim — quét nhiều trang để không bỏ sót khi có nhiều phim cập nhật cùng lúc
+    let movies = [];
+    for (let page = 1; page <= 3; page++) {
+      const res = await fetch(`${KKPHIM_API}/danh-sach/phim-moi-cap-nhat?page=${page}`, {
+        headers: { 'User-Agent': 'DaoPhim-Bot/1.0' },
+      });
+      if (!res.ok) {
+        if (page === 1) throw new Error(`API error: ${res.status}`);
+        break;
+      }
+      const data = await res.json();
+      const items = data.items || [];
+      if (items.length === 0) break;
+      movies = movies.concat(items);
+      // Nếu trang này đã có phim ngoài khoảng 20 phút thì các trang sau chắc chắn cũ hơn, dừng sớm cho nhanh
+      const oldestInPage = items[items.length - 1];
+      const oldestTime = oldestInPage?.modified?.time || oldestInPage?.updated_at || '';
+      if (oldestTime) {
+        const ts = Math.floor(new Date(oldestTime).getTime() / 1000);
+        const earlyStopCutoff = Math.floor(Date.now() / 1000) - 20 * 60;
+        if (ts < earlyStopCutoff) break;
+      }
+    }
 
-    const data = await res.json();
-    const movies = data.items || [];
-
-    // Lọc trong 15 phút qua (chu kỳ 10 phút + dư 5 phút buffer)
-    const cutoff = Math.floor(Date.now() / 1000) - 15 * 60;
+    // Lọc trong 20 phút qua (chu kỳ 10 phút + dư buffer cho cron bị trễ)
+    const cutoff = Math.floor(Date.now() / 1000) - 20 * 60;
 
     const toProcess = movies.filter(m => {
       const t = m.modified?.time || m.updated_at || '';
@@ -199,13 +214,13 @@ const myHandler = async () => {
       return ts >= cutoff;
     });
 
-    console.log(`Found ${toProcess.length} movies updated in last 35 min`);
+    console.log(`Found ${toProcess.length} movies updated in last 20 min (quét ${movies.length} phim từ API)`);
 
     let sentCount = 0;
     const newSentMovies = { ...sentMovies };
 
     for (const movie of toProcess) {
-      if (sentCount >= 5) break; // tối đa 5 thông báo/lần
+      if (sentCount >= 20) break; // tối đa 20 thông báo/lần (đủ dư cho những lúc KKPhim cập nhật dồn dập)
 
       const slug = movie.slug;
       const epRaw = movie.episode_current || '';
@@ -261,7 +276,7 @@ const myHandler = async () => {
       newSentMovies[key] = Date.now();
       sentCount++;
 
-      await new Promise(r => setTimeout(r, 700));
+      await new Promise(r => setTimeout(r, 400));
     }
 
     // Dọn dẹp entries cũ hơn 7 ngày
