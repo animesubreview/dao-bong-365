@@ -39,6 +39,8 @@ import {
 import {
   subscribeLiveConfig, updateLiveConfig, LiveConfig, DEFAULT_LIVE_CONFIG,
   subscribeLiveChat, deleteLiveChatMessage, clearLiveChat, LiveChatMessage,
+  subscribeRegistrations, decideRegistration, removeRegistration, RoomRegistration,
+  subscribeRoomViewerCount,
 } from '../lib/livestream';
 import { cn } from '../lib/utils';
 import { notifyManualMovie } from '../lib/telegramNotify';
@@ -1824,6 +1826,8 @@ function LivestreamAdminSection({ onToast }: { onToast: (msg: string, t: 'succes
   const [form, setForm] = useState<LiveConfig>(DEFAULT_LIVE_CONFIG);
   const [saving, setSaving] = useState(false);
   const [messages, setMessages] = useState<LiveChatMessage[]>([]);
+  const [registrations, setRegistrations] = useState<RoomRegistration[]>([]);
+  const [viewerCount, setViewerCount] = useState(0);
 
   useEffect(() => {
     const unsub = subscribeLiveConfig(cfg => { setConfig(cfg); setForm(cfg); });
@@ -1834,6 +1838,35 @@ function LivestreamAdminSection({ onToast }: { onToast: (msg: string, t: 'succes
     const unsub = subscribeLiveChat(setMessages);
     return unsub;
   }, []);
+
+  useEffect(() => {
+    const unsub = subscribeRegistrations(setRegistrations);
+    return unsub;
+  }, []);
+
+  useEffect(() => {
+    const unsub = subscribeRoomViewerCount(setViewerCount);
+    return unsub;
+  }, []);
+
+  const pendingRegs = registrations.filter(r => r.status === 'pending');
+  const approvedRegs = registrations.filter(r => r.status === 'approved');
+
+  const handleDecide = async (uid: string, status: 'approved' | 'rejected') => {
+    await decideRegistration(uid, status);
+    onToast(status === 'approved' ? '✅ Đã duyệt vào phòng chiếu!' : '⛔ Đã từ chối yêu cầu', status === 'approved' ? 'success' : 'error');
+  };
+
+  const handleRevoke = async (uid: string) => {
+    if (!confirm('Thu hồi quyền xem phòng chiếu của người này?')) return;
+    await removeRegistration(uid);
+    onToast('🗑️ Đã thu hồi quyền xem');
+  };
+
+  // Chuyển giá trị input[type=datetime-local] <-> timestamp (ms)
+  const scheduledInputValue = form.scheduledAt
+    ? new Date(form.scheduledAt - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16)
+    : '';
 
   const handleToggle = async () => {
     const next = !config.enabled;
@@ -1879,12 +1912,48 @@ function LivestreamAdminSection({ onToast }: { onToast: (msg: string, t: 'succes
               </p>
             </div>
           </div>
-          <button
-            onClick={handleToggle}
-            className={cn('w-14 h-8 rounded-full transition-colors relative shrink-0', config.enabled ? 'bg-red-500' : 'bg-slate-700')}
-          >
-            <span className={cn('absolute top-1 w-6 h-6 rounded-full bg-white transition-transform shadow', config.enabled ? 'translate-x-7' : 'translate-x-1')} />
-          </button>
+          <div className="flex items-center gap-3">
+            <span className="flex items-center gap-1.5 text-xs font-bold text-slate-300 bg-slate-900/60 border border-slate-700/60 px-2.5 py-1.5 rounded-full">
+              <Eye size={13} /> {viewerCount} đang xem
+            </span>
+            <button
+              onClick={handleToggle}
+              className={cn('w-14 h-8 rounded-full transition-colors relative shrink-0', config.enabled ? 'bg-red-500' : 'bg-slate-700')}
+            >
+              <span className={cn('absolute top-1 w-6 h-6 rounded-full bg-white transition-transform shadow', config.enabled ? 'translate-x-7' : 'translate-x-1')} />
+            </button>
+          </div>
+        </div>
+
+        {/* Đăng ký & duyệt phòng chiếu + hẹn giờ chiếu */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="flex items-center justify-between bg-slate-800/40 border border-slate-700/40 rounded-2xl p-4">
+            <div>
+              <p className="text-white font-bold text-sm">Yêu cầu đăng ký & duyệt</p>
+              <p className="text-slate-500 text-xs mt-0.5">Bật lên: chỉ ai được admin duyệt mới xem được phòng</p>
+            </div>
+            <button
+              onClick={() => setForm(f => ({ ...f, requireApproval: !f.requireApproval }))}
+              className={cn('w-14 h-8 rounded-full transition-colors relative shrink-0', form.requireApproval ? 'bg-green-500' : 'bg-slate-700')}
+            >
+              <span className={cn('absolute top-1 w-6 h-6 rounded-full bg-white transition-transform shadow', form.requireApproval ? 'translate-x-7' : 'translate-x-1')} />
+            </button>
+          </div>
+          <div className="bg-slate-800/40 border border-slate-700/40 rounded-2xl p-4">
+            <label className="text-xs text-slate-400 font-semibold mb-1 block">Hẹn giờ chiếu (tùy chọn)</label>
+            <input
+              type="datetime-local"
+              value={scheduledInputValue}
+              onChange={e => {
+                const v = e.target.value;
+                setForm(f => ({ ...f, scheduledAt: v ? new Date(v).getTime() : 0 }));
+              }}
+              className="input-field text-sm"
+            />
+            <p className="text-[11px] text-slate-600 mt-1">
+              Để trống = chiếu ngay khi bật. Có giờ = người xem thấy đếm ngược, phòng tự mở đúng giờ.
+            </p>
+          </div>
         </div>
 
         {/* Form cấu hình */}
@@ -1920,6 +1989,51 @@ function LivestreamAdminSection({ onToast }: { onToast: (msg: string, t: 'succes
             <Check size={16} /> {saving ? 'Đang lưu...' : 'Lưu cấu hình'}
           </button>
         </div>
+
+        {/* Duyệt đăng ký vào phòng chiếu */}
+        {form.requireApproval && (
+          <div className="border-t border-slate-800/60 pt-4">
+            <p className="text-sm font-bold text-white flex items-center gap-2 mb-2">
+              <UserCheck size={15} className="text-amber-400" /> Yêu cầu chờ duyệt
+              <span className="text-slate-500 text-xs font-normal">({pendingRegs.length} đang chờ · {approvedRegs.length} đã duyệt)</span>
+            </p>
+            <div className="max-h-72 overflow-y-auto flex flex-col gap-1.5 pr-1">
+              {pendingRegs.length === 0 && approvedRegs.length === 0 ? (
+                <p className="text-slate-600 text-xs text-center py-4">Chưa có ai đăng ký vào phòng chiếu</p>
+              ) : (
+                <>
+                  {pendingRegs.map(r => (
+                    <div key={r.uid} className="flex items-center gap-2 bg-amber-500/5 border border-amber-500/20 rounded-lg px-3 py-2">
+                      <img src={r.avatar} className="w-6 h-6 rounded-full bg-slate-700 shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <span className="text-xs font-bold text-white">{r.username}</span>
+                        <span className="block text-[10px] text-amber-400">Đang chờ duyệt</span>
+                      </div>
+                      <button onClick={() => handleDecide(r.uid, 'approved')} className="w-7 h-7 rounded-full bg-green-500/20 hover:bg-green-500/30 text-green-400 flex items-center justify-center shrink-0" title="Duyệt">
+                        <Check size={13} />
+                      </button>
+                      <button onClick={() => handleDecide(r.uid, 'rejected')} className="w-7 h-7 rounded-full bg-red-500/20 hover:bg-red-500/30 text-red-400 flex items-center justify-center shrink-0" title="Từ chối">
+                        <X size={13} />
+                      </button>
+                    </div>
+                  ))}
+                  {approvedRegs.map(r => (
+                    <div key={r.uid} className="flex items-center gap-2 bg-slate-800/40 border border-slate-700/30 rounded-lg px-3 py-2">
+                      <img src={r.avatar} className="w-6 h-6 rounded-full bg-slate-700 shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <span className="text-xs font-bold text-green-400">{r.username}</span>
+                        <span className="block text-[10px] text-slate-500">Đã duyệt — có thể xem</span>
+                      </div>
+                      <button onClick={() => handleRevoke(r.uid)} className="text-slate-600 hover:text-red-400 shrink-0" title="Thu hồi quyền xem">
+                        <Ban size={13} />
+                      </button>
+                    </div>
+                  ))}
+                </>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Chat moderation */}
         <div className="border-t border-slate-800/60 pt-4">

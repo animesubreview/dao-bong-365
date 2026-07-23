@@ -67,6 +67,19 @@ service cloud.firestore {
         allow create: if request.auth != null;
         allow delete: if true; // Admin xóa/kiểm duyệt tin nhắn
       }
+
+      // Đăng ký vào phòng chiếu — user chỉ tạo/sửa đăng ký của chính mình,
+      // việc duyệt/từ chối do admin thực hiện (admin tự bảo vệ bằng password riêng)
+      match /registrations/{uid} {
+        allow read: if true;
+        allow write: if true;
+      }
+
+      // Presence — số người đang xem phòng chiếu
+      match /viewers/{uid} {
+        allow read: if true;
+        allow write, delete: if true;
+      }
     }
 
     // Ad Banners — mọi người đọc, chỉ admin ghi

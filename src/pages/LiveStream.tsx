@@ -2,14 +2,18 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Radio, Send, Shield, LogIn, Play, Pause, Volume2, VolumeX, Maximize, Lock,
+  Eye, ClipboardCheck, Hourglass, XCircle, CalendarClock,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   subscribeLiveConfig, subscribeLiveChat, sendLiveChatMessage, LiveConfig,
   LiveChatMessage, buildLiveEmbed, postYouTubeCommand, DEFAULT_LIVE_CONFIG,
+  subscribeMyRegistration, requestRoomAccess, RoomRegistration,
+  startRoomPresence, subscribeRoomViewerCount,
 } from '../lib/livestream';
 import { getCurrentUser, getUserProfile, onAuthChange, UserProfile } from '../lib/auth';
 import { usePageTitle } from '../lib/utils';
+import { useRoomWatchGuard, RoomWatchGuardOverlay } from '../components/RoomWatchGuard';
 
 function timeAgo(ts: number): string {
   const diff = Math.floor((Date.now() - ts) / 1000);
@@ -19,12 +23,13 @@ function timeAgo(ts: number): string {
 }
 
 // ── Player chặn tua (chỉ dùng link nhúng, không cho kéo thanh tua) ───────────
-function LivePlayer({ embedUrl, title }: { embedUrl: string; title: string }) {
+function LivePlayer({ embedUrl, title, viewerCount }: { embedUrl: string; title: string; viewerCount: number }) {
   const { url, kind } = buildLiveEmbed(embedUrl);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [playing, setPlaying] = useState(true);
   const [muted, setMuted] = useState(false);
+  const { showWarning, dismiss } = useRoomWatchGuard(!!url);
 
   const togglePlay = () => {
     postYouTubeCommand(iframeRef.current, playing ? 'pauseVideo' : 'playVideo');
@@ -68,6 +73,13 @@ function LivePlayer({ embedUrl, title }: { embedUrl: string; title: string }) {
         <span className="w-2 h-2 bg-white rounded-full animate-pulse" />
         TRỰC TIẾP
       </div>
+
+      {/* Số người đang xem */}
+      <div className="absolute top-3 right-3 flex items-center gap-1.5 bg-black/60 backdrop-blur text-white text-[11px] font-bold px-2.5 py-1 rounded-full shadow-lg z-20 pointer-events-none">
+        <Eye size={12} /> {viewerCount} đang xem
+      </div>
+
+      <RoomWatchGuardOverlay show={showWarning} onDismiss={dismiss} />
 
       {kind === 'youtube' ? (
         /* Custom control bar cho YouTube — chặn tua hoàn toàn, không có thanh seek */
@@ -230,10 +242,111 @@ function LiveChatBox() {
   );
 }
 
+function formatSchedule(ts: number): string {
+  const d = new Date(ts);
+  return d.toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
+function useCountdown(target: number) {
+  const [left, setLeft] = useState(() => target - Date.now());
+  useEffect(() => {
+    if (!target) return;
+    const id = setInterval(() => setLeft(target - Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [target]);
+  return Math.max(0, left);
+}
+
+// ── Màn hình chờ tới giờ chiếu ────────────────────────────────────────────────
+function ScheduleGate({ scheduledAt }: { scheduledAt: number }) {
+  const left = useCountdown(scheduledAt);
+  const h = Math.floor(left / 3_600_000);
+  const m = Math.floor((left % 3_600_000) / 60_000);
+  const s = Math.floor((left % 60_000) / 1000);
+  return (
+    <div className="w-full aspect-video bg-black rounded-2xl flex flex-col items-center justify-center gap-3 text-center px-4">
+      <CalendarClock size={32} className="text-green-400" />
+      <p className="text-white font-bold">Buổi chiếu sẽ bắt đầu lúc {formatSchedule(scheduledAt)}</p>
+      <p className="text-2xl font-black text-green-400 tabular-nums">
+        {String(h).padStart(2, '0')}:{String(m).padStart(2, '0')}:{String(s).padStart(2, '0')}
+      </p>
+      <p className="text-slate-500 text-xs">Trang sẽ tự mở khi tới giờ, không cần tải lại</p>
+    </div>
+  );
+}
+
+// ── Màn hình đăng ký / chờ admin duyệt vào phòng chiếu ────────────────────────
+function ApprovalGate({
+  currentUser, profile, registration, onRequest, requesting,
+}: {
+  currentUser: ReturnType<typeof getCurrentUser>;
+  profile: UserProfile | null;
+  registration: RoomRegistration | null;
+  onRequest: () => void;
+  requesting: boolean;
+}) {
+  if (!currentUser || !profile) {
+    return (
+      <div className="w-full aspect-video bg-black rounded-2xl flex flex-col items-center justify-center gap-3 text-center px-4">
+        <Lock size={30} className="text-slate-500" />
+        <p className="text-white font-bold">Phòng chiếu này yêu cầu đăng nhập & đăng ký</p>
+        <Link to="/auth" className="flex items-center gap-2 bg-green-500 hover:bg-green-400 text-slate-950 font-bold text-sm px-5 py-2.5 rounded-full transition-colors">
+          <LogIn size={15} /> Đăng nhập ngay
+        </Link>
+      </div>
+    );
+  }
+
+  if (!registration || registration.status === 'rejected') {
+    return (
+      <div className="w-full aspect-video bg-black rounded-2xl flex flex-col items-center justify-center gap-3 text-center px-4">
+        {registration?.status === 'rejected' ? (
+          <>
+            <XCircle size={30} className="text-red-400" />
+            <p className="text-white font-bold">Yêu cầu vào phòng chiếu trước đó đã bị từ chối</p>
+            <p className="text-slate-500 text-xs">Bạn có thể gửi lại yêu cầu để admin xem xét lại</p>
+          </>
+        ) : (
+          <>
+            <ClipboardCheck size={30} className="text-green-400" />
+            <p className="text-white font-bold">Phòng chiếu yêu cầu đăng ký & được admin duyệt</p>
+            <p className="text-slate-500 text-xs max-w-xs">Nhấn nút bên dưới để gửi yêu cầu, admin duyệt xong bạn sẽ vào xem được ngay</p>
+          </>
+        )}
+        <button
+          onClick={onRequest}
+          disabled={requesting}
+          className="flex items-center gap-2 bg-green-500 hover:bg-green-400 disabled:opacity-50 text-slate-950 font-bold text-sm px-5 py-2.5 rounded-full transition-colors"
+        >
+          <ClipboardCheck size={15} /> {requesting ? 'Đang gửi...' : registration?.status === 'rejected' ? 'Gửi lại yêu cầu' : 'Đăng ký xem'}
+        </button>
+      </div>
+    );
+  }
+
+  if (registration.status === 'pending') {
+    return (
+      <div className="w-full aspect-video bg-black rounded-2xl flex flex-col items-center justify-center gap-3 text-center px-4">
+        <Hourglass size={30} className="text-amber-400 animate-pulse" />
+        <p className="text-white font-bold">Yêu cầu của bạn đang chờ admin duyệt</p>
+        <p className="text-slate-500 text-xs">Trang sẽ tự chuyển sang xem phim ngay khi được duyệt</p>
+      </div>
+    );
+  }
+
+  return null; // approved → LivePlayer sẽ hiển thị bên ngoài
+}
+
 // ── Trang chính ────────────────────────────────────────────────────────────────
 export default function LiveStreamPage() {
   const [config, setConfig] = useState<LiveConfig>(DEFAULT_LIVE_CONFIG);
   const [loading, setLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState(getCurrentUser());
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [registration, setRegistration] = useState<RoomRegistration | null>(null);
+  const [requesting, setRequesting] = useState(false);
+  const [viewerCount, setViewerCount] = useState(0);
+  const [now, setNow] = useState(Date.now());
 
   usePageTitle('Phát trực tiếp');
 
@@ -241,6 +354,50 @@ export default function LiveStreamPage() {
     const unsub = subscribeLiveConfig(cfg => { setConfig(cfg); setLoading(false); });
     return unsub;
   }, []);
+
+  useEffect(() => {
+    const unsub = onAuthChange(async (u) => {
+      setCurrentUser(u);
+      setProfile(u ? await getUserProfile(u.uid) : null);
+    });
+    return unsub;
+  }, []);
+
+  useEffect(() => {
+    if (!currentUser) { setRegistration(null); return; }
+    const unsub = subscribeMyRegistration(currentUser.uid, setRegistration);
+    return unsub;
+  }, [currentUser]);
+
+  // Đếm ngược tới giờ chiếu — tick mỗi giây để tự mở phòng đúng lúc
+  useEffect(() => {
+    if (!config.scheduledAt) return;
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [config.scheduledAt]);
+
+  const isScheduledYet = config.scheduledAt > 0 && config.scheduledAt > now;
+  const isApproved = !config.requireApproval || registration?.status === 'approved';
+  const canWatch = config.enabled && !isScheduledYet && isApproved;
+
+  // Bật đếm số người xem chỉ khi thực sự đang xem được phòng chiếu
+  useEffect(() => {
+    if (!canWatch || !currentUser) return;
+    const stop = startRoomPresence(currentUser.uid);
+    return stop;
+  }, [canWatch, currentUser]);
+
+  useEffect(() => {
+    const unsub = subscribeRoomViewerCount(setViewerCount);
+    return unsub;
+  }, []);
+
+  const handleRequest = async () => {
+    if (!currentUser || !profile) return;
+    setRequesting(true);
+    await requestRoomAccess(currentUser.uid, profile.username, profile.avatar);
+    setRequesting(false);
+  };
 
   if (loading) {
     return (
@@ -268,11 +425,28 @@ export default function LiveStreamPage() {
       <div className="flex items-center gap-2.5 mb-4">
         <span className="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse" />
         <h1 className="text-xl md:text-2xl font-black text-white">Phát Trực Tiếp</h1>
+        {config.requireApproval && (
+          <span className="flex items-center gap-1 text-[10px] font-bold text-green-400 bg-green-500/10 border border-green-500/30 px-2 py-0.5 rounded-full">
+            <Lock size={9} /> Phòng riêng — cần duyệt
+          </span>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:h-[520px]">
         <div className="lg:col-span-2 flex flex-col gap-3">
-          <LivePlayer embedUrl={config.embedUrl} title={config.title} />
+          {isScheduledYet ? (
+            <ScheduleGate scheduledAt={config.scheduledAt} />
+          ) : !isApproved ? (
+            <ApprovalGate
+              currentUser={currentUser}
+              profile={profile}
+              registration={registration}
+              onRequest={handleRequest}
+              requesting={requesting}
+            />
+          ) : (
+            <LivePlayer embedUrl={config.embedUrl} title={config.title} viewerCount={viewerCount} />
+          )}
           <div className="bg-[#141414] border border-slate-800/60 rounded-2xl p-4">
             <h2 className="text-white font-bold text-base">{config.title || 'Đang phát trực tiếp'}</h2>
             {config.description && <p className="text-slate-400 text-sm mt-1.5 leading-relaxed">{config.description}</p>}
