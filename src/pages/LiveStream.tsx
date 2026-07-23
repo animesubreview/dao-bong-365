@@ -102,6 +102,39 @@ function LivePlayer({ embedUrl, title, viewerCount }: { embedUrl: string; title:
     return () => document.removeEventListener('fullscreenchange', onFsChange);
   }, []);
 
+  // ── Đồng bộ về đúng thời điểm trực tiếp khi quay lại tab ────────────────────
+  // Khi chuyển tab / thoát app, trình duyệt tự tạm dừng <video>. Nếu chỉ play()
+  // lại bình thường, video sẽ tiếp tục từ đoạn buffer cũ (bị tụt lại phía sau)
+  // trông như đang "phát lại" đoạn đã qua. Ở đây ép nhảy về mép live thật sự.
+  useEffect(() => {
+    if (kind !== 'mux') return;
+    const syncToLiveEdge = () => {
+      if (document.visibilityState !== 'visible') return;
+      const video = videoRef.current;
+      const hls = hlsRef.current;
+      if (!video) return;
+      if (hls) {
+        try { hls.startLoad(); } catch { /* bỏ qua nếu hls đã bị destroy */ }
+      }
+      const liveEdge = hls?.liveSyncPosition;
+      if (liveEdge != null && Number.isFinite(liveEdge)) {
+        video.currentTime = liveEdge;
+      } else if (video.seekable.length > 0) {
+        // Safari (HLS gốc, không qua hls.js) — nhảy tới cuối vùng có thể tua được
+        video.currentTime = video.seekable.end(video.seekable.length - 1);
+      }
+      video.play().catch(() => {});
+    };
+    document.addEventListener('visibilitychange', syncToLiveEdge);
+    window.addEventListener('focus', syncToLiveEdge);
+    window.addEventListener('pageshow', syncToLiveEdge);
+    return () => {
+      document.removeEventListener('visibilitychange', syncToLiveEdge);
+      window.removeEventListener('focus', syncToLiveEdge);
+      window.removeEventListener('pageshow', syncToLiveEdge);
+    };
+  }, [kind]);
+
   const toggleMuxPlay = () => {
     const video = videoRef.current;
     if (!video) return;
