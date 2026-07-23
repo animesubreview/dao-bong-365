@@ -153,6 +153,52 @@ export default function SyncPlayer({
   // eslint-disable-next-line
   }, [sync.updatedAt, sync.isPlaying, ready]);
 
+  // ── Watchdog: chặn tua "chui" (console, phím tắt, thao tác lạ) ───────────────
+  // Guest không có quyền tua nên bất kỳ độ lệch nào xuất hiện ngoài chu kỳ
+  // sync bình thường (vd: video.currentTime bị chỉnh tay qua console) sẽ bị
+  // kéo về đúng vị trí của host ngay lập tức, không cần chờ host tương tác.
+  useEffect(() => {
+    if (isHost) return;
+    let lastKnownTime = videoRef.current?.currentTime ?? 0;
+
+    const watchdog = setInterval(() => {
+      const v = videoRef.current;
+      if (!v || !ready) return;
+
+      const elapsed = (Date.now() - sync.updatedAt) / 1000;
+      const targetTime = sync.isPlaying ? sync.currentTime + elapsed : sync.currentTime;
+      const diff = Math.abs(v.currentTime - targetTime);
+
+      // currentTime nhảy bất thường so với lần kiểm tra trước (bị tua tay/console)
+      // hoặc lệch quá xa so với host → ép về đúng vị trí ngay.
+      const jumpedSinceLastCheck = Math.abs(v.currentTime - lastKnownTime) > 1.5;
+      if (diff > 1.2 || (jumpedSinceLastCheck && diff > 0.5)) {
+        v.currentTime = targetTime;
+        showSyncToast('⛔ Không thể tua – chỉ host điều khiển');
+      }
+      lastKnownTime = v.currentTime;
+    }, 700);
+
+    return () => clearInterval(watchdog);
+  }, [isHost, ready, sync.updatedAt, sync.isPlaying, sync.currentTime]);
+
+  // Chặn phím tắt tua (mũi tên, J/K/L, Home/End, số 0-9 seek-to-%) với guest
+  useEffect(() => {
+    if (isHost) return;
+    const handler = (e: KeyboardEvent) => {
+      const seekKeys = [
+        'ArrowLeft', 'ArrowRight', 'Home', 'End', 'j', 'J', 'k', 'K', 'l', 'L',
+        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+      ];
+      if (seekKeys.includes(e.key)) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+    window.addEventListener('keydown', handler, true);
+    return () => window.removeEventListener('keydown', handler, true);
+  }, [isHost]);
+
   function showSyncToast(msg: string) {
     setSyncMsg(msg);
     setTimeout(() => setSyncMsg(''), 2500);
@@ -260,6 +306,11 @@ export default function SyncPlayer({
         className="w-full h-full"
         playsInline
         preload="auto"
+        tabIndex={-1}
+        disablePictureInPicture
+        controlsList="nodownload noplaybackrate nofullscreen"
+        onContextMenu={e => e.preventDefault()}
+        onDoubleClick={e => { e.preventDefault(); e.stopPropagation(); }}
       />
 
       {/* Buffering spinner */}
