@@ -6,7 +6,7 @@ import {
   RefreshCw, Link as LinkIcon, Info, Lock, LogOut, KeyRound,
   Bell, BellPlus, Users, Ban, UserCheck, Clock, Megaphone, MonitorPlay,
   Wallet, PlusCircle, MinusCircle, CreditCard, Wrench, Crown, Activity, Wifi,
-  History, Search, Radio, Trash,
+  History, Search, Radio, Trash, Pin, ArrowUp, ArrowDown,
 } from 'lucide-react';
 import { getAdBanners, createAdBanner, updateAdBanner, deleteAdBanner, AdBannerData } from '../components/AdBanner';
 import { createPopupAd, updatePopupAd, deletePopupAd, PopupAdData } from '../components/PopupAd';
@@ -48,6 +48,9 @@ import {
   getMovieOverride, saveMovieOverride, deleteMovieOverride,
   subscribeOverrides, MovieOverride,
 } from '../lib/movieOverrides';
+import {
+  savePinnedMovie, deletePinnedMovie, subscribePinnedMovies, PinnedMovie,
+} from '../lib/pinnedMovies';
 import { linkToEpisodeFields, buildEmbedUrl } from '../lib/embedUrl';
 import {
   saveMaintenanceConfig, subscribeMaintenanceConfig,
@@ -1810,6 +1813,7 @@ const NAV_SECTIONS = [
   { id: 'section-livestream',   label: 'Livestream',        icon: Radio },
   { id: 'section-upcoming',     label: 'Phim sắp chiếu',    icon: Clock },
   { id: 'section-override',     label: 'Sửa phim API',      icon: Edit3 },
+  { id: 'section-pinned',       label: 'Ghim phim KKPhim',  icon: Pin },
   { id: 'section-ads',          label: 'Quảng cáo',         icon: Megaphone },
   { id: 'section-members',      label: 'Thành viên',        icon: Users },
   { id: 'section-notifications',label: 'Thông báo',         icon: Bell },
@@ -2456,6 +2460,90 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
       setOverrideSearchSlug('');
     } catch {
       showToast('Lỗi khi lưu!', 'error');
+    }
+  };
+
+  // ─── Ghim phim KKPhim lên đầu trang chủ ───────────────────────────────────
+  const [pinnedMovies, setPinnedMovies] = useState<PinnedMovie[]>([]);
+  const [pinSearchSlug, setPinSearchSlug] = useState('');
+  const [pinSearching, setPinSearching] = useState(false);
+  const [pinPreview, setPinPreview] = useState<any>(null);
+
+  useEffect(() => {
+    const unsub = subscribePinnedMovies(setPinnedMovies);
+    return unsub;
+  }, []);
+
+  const searchMovieForPin = async () => {
+    if (!pinSearchSlug.trim()) return;
+    setPinSearching(true);
+    try {
+      const { movieApi } = await import('../services/api');
+      const res = await movieApi.getMovieDetail(pinSearchSlug.trim());
+      if (res.movie) {
+        setPinPreview(res.movie);
+      } else {
+        showToast('Không tìm thấy phim!', 'error');
+        setPinPreview(null);
+      }
+    } catch {
+      showToast('Lỗi khi tìm phim!', 'error');
+      setPinPreview(null);
+    }
+    setPinSearching(false);
+  };
+
+  const pinCurrentPreview = async () => {
+    if (!pinPreview?.slug) return;
+    try {
+      const nextOrder = pinnedMovies.length
+        ? Math.min(...pinnedMovies.map(p => p.order)) - 1
+        : 0;
+      await savePinnedMovie({
+        slug: pinPreview.slug,
+        name: pinPreview.name || '',
+        origin_name: pinPreview.origin_name || '',
+        thumb_url: pinPreview.thumb_url || '',
+        poster_url: pinPreview.poster_url || '',
+        year: pinPreview.year || 0,
+        quality: pinPreview.quality || '',
+        lang: pinPreview.lang || '',
+        type: pinPreview.type || '',
+        status: pinPreview.status || '',
+        episode_current: pinPreview.episode_current || '',
+        order: nextOrder,
+      });
+      showToast('📌 Đã ghim phim lên đầu trang chủ!');
+      setPinPreview(null);
+      setPinSearchSlug('');
+    } catch {
+      showToast('Lỗi khi ghim phim!', 'error');
+    }
+  };
+
+  const unpinMovie = async (slug: string) => {
+    if (!confirm('Bỏ ghim phim này khỏi đầu trang chủ?')) return;
+    try {
+      await deletePinnedMovie(slug);
+      showToast('Đã bỏ ghim phim.');
+    } catch {
+      showToast('Lỗi khi bỏ ghim!', 'error');
+    }
+  };
+
+  // Đổi thứ tự ghim: số order nhỏ hơn = lên trước. Đổi order giữa 2 phim liền kề.
+  const movePinnedOrder = async (index: number, direction: -1 | 1) => {
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= pinnedMovies.length) return;
+    const a = pinnedMovies[index];
+    const b = pinnedMovies[targetIndex];
+    try {
+      await Promise.all([
+        savePinnedMovie({ ...a, order: b.order }),
+        savePinnedMovie({ ...b, order: a.order }),
+      ]);
+    } catch {
+      showToast('Lỗi khi đổi thứ tự!', 'error');
     }
   };
 
@@ -3595,6 +3683,100 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
               className="flex items-center gap-2 px-6 py-3 bg-green-500/10 border border-green-500/30 rounded-xl text-green-400 font-bold text-sm hover:bg-green-500/20 transition-all">
               🎬 Mở Player Studio — Chỉnh logo & giao diện player
             </a>
+          </div>
+          )}
+
+          {/* GHIM PHIM KKPHIM LÊN ĐẦU TRANG CHỦ */}
+          {activeSection === 'section-pinned' && (
+          <div id="section-pinned">
+            <SectionCard title="Ghim phim KKPhim lên đầu trang chủ" icon={Pin} color="blue">
+              <div className="flex flex-col gap-4">
+                <p className="text-sm text-slate-400">
+                  Tìm phim theo slug (data gốc từ nguồn KKPhim/phimapi.com) → ghim lên đầu mục "Phim Mới Cập Nhật" ở trang chủ để mọi người dễ thấy ngay. Không cần chỉnh sửa nội dung phim — chỉ đơn giản là đưa lên top.
+                </p>
+
+                {/* Search box */}
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={pinSearchSlug}
+                    onChange={e => setPinSearchSlug(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && searchMovieForPin()}
+                    className="input-field flex-1 text-sm"
+                    placeholder="Nhập slug phim, VD: cu-soc, doraemon-movie-45..."
+                  />
+                  <button
+                    onClick={searchMovieForPin}
+                    disabled={pinSearching}
+                    className="btn-primary px-4 text-sm whitespace-nowrap"
+                  >
+                    {pinSearching ? '...' : '🔍 Tìm'}
+                  </button>
+                </div>
+
+                {/* Preview + confirm pin */}
+                {pinPreview && (
+                  <div className="bg-slate-800/40 border border-blue-500/30 rounded-2xl p-4 flex items-center gap-3">
+                    {pinPreview.thumb_url && (
+                      <img src={pinPreview.thumb_url.startsWith('http') ? pinPreview.thumb_url : `https://phimimg.com/${pinPreview.thumb_url}`}
+                        alt="" className="w-12 h-16 object-cover rounded-lg shrink-0" />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-white text-sm truncate">{pinPreview.name}</p>
+                      <p className="text-xs text-slate-500 font-mono truncate">slug: {pinPreview.slug}</p>
+                      <p className="text-[10px] text-blue-400 mt-1">
+                        {pinnedMovies.some(p => p.slug === pinPreview.slug) ? '📌 Phim này đang được ghim' : 'Chưa được ghim'}
+                      </p>
+                    </div>
+                    <button
+                      onClick={pinCurrentPreview}
+                      disabled={pinnedMovies.some(p => p.slug === pinPreview.slug)}
+                      className="btn-primary px-4 text-sm whitespace-nowrap flex items-center gap-1.5 disabled:opacity-40"
+                    >
+                      <Pin size={14} /> Ghim lên đầu
+                    </button>
+                  </div>
+                )}
+
+                {/* Pinned list */}
+                {pinnedMovies.length > 0 ? (
+                  <div className="flex flex-col gap-2">
+                    <p className="text-xs text-slate-500 font-semibold uppercase tracking-wide">Đang ghim ({pinnedMovies.length}) — trên cùng hiện trước tiên</p>
+                    {pinnedMovies.map((p, idx) => (
+                      <div key={p.slug} className="flex items-center gap-3 p-3 bg-slate-800/40 border border-blue-500/20 rounded-xl">
+                        <span className="text-[11px] font-bold text-blue-400 bg-blue-500/10 border border-blue-500/20 rounded-full w-6 h-6 flex items-center justify-center shrink-0">{idx + 1}</span>
+                        {p.thumb_url ? (
+                          <img src={p.thumb_url.startsWith('http') ? p.thumb_url : `https://phimimg.com/${p.thumb_url}`}
+                            alt="" className="w-10 h-14 object-cover rounded-lg shrink-0" />
+                        ) : (
+                          <div className="w-10 h-14 bg-slate-700 rounded-lg flex items-center justify-center shrink-0">
+                            <Film size={16} className="text-slate-500" />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-bold text-white truncate">{p.name}</p>
+                          <p className="text-[10px] text-slate-500 font-mono truncate">{p.slug}</p>
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button onClick={() => movePinnedOrder(idx, -1)} disabled={idx === 0}
+                            className="btn-icon p-2 hover:border-blue-500/40 hover:text-blue-400 disabled:opacity-30"><ArrowUp size={14} /></button>
+                          <button onClick={() => movePinnedOrder(idx, 1)} disabled={idx === pinnedMovies.length - 1}
+                            className="btn-icon p-2 hover:border-blue-500/40 hover:text-blue-400 disabled:opacity-30"><ArrowDown size={14} /></button>
+                          <button onClick={() => unpinMovie(p.slug)}
+                            className="btn-icon p-2 hover:border-red-500/40 hover:text-red-400"><Trash2 size={14} /></button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-10 text-slate-600">
+                    <Pin size={40} className="mx-auto mb-3 opacity-30" />
+                    <p className="text-sm">Chưa ghim phim nào.</p>
+                    <p className="text-xs mt-1 text-slate-500">Tìm phim theo slug ở trên rồi nhấn "Ghim lên đầu" để đưa phim lên top trang chủ.</p>
+                  </div>
+                )}
+              </div>
+            </SectionCard>
           </div>
           )}
 

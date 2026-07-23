@@ -7,6 +7,7 @@ import { Movie } from '../types';
 import { useManualMovies, ManualMovie } from '../components/ManualMoviesSection';
 import { subscribeUpcomingMovies as subscribeOldUpcoming } from '../lib/manualMovies';
 import { subscribeUpcomingMovies, UpcomingMovie } from '../lib/upcomingMovies';
+import { subscribePinnedMovies, pinnedToMovie, PinnedMovie } from '../lib/pinnedMovies';
 import { cn } from '../lib/utils';
 import { onAuthChange } from '../lib/auth';
 import Banner from '../components/Banner';
@@ -40,7 +41,7 @@ const CW = 'clamp(110px,30vw,155px)';
 const SKELETON_H = 220; // px — đủ để tránh layout shift
 
 /* ─── MCard với ảnh fade-in 500ms ────────────────────────────── */
-function MCard({ movie }: { movie: Movie }) {
+function MCard({ movie, pinned }: { movie: Movie; pinned?: boolean }) {
   const [ok, setOk] = useState(false);
   return (
     <Link to={`/phim/${movie.slug}`} className="group shrink-0 block" style={{ width: CW, scrollSnapAlign:'start' }}>
@@ -51,6 +52,11 @@ function MCard({ movie }: { movie: Movie }) {
           className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           style={{ opacity: ok ? 1 : 0, transition: 'opacity 500ms ease' }} />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/40 to-transparent" />
+        {pinned && (
+          <div className="absolute top-1 left-1 flex items-center gap-0.5 bg-blue-500/90 text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
+            📌 GHIM
+          </div>
+        )}
         <EpBadge ep={movie.episode_current} />
         <div className="absolute bottom-1 left-1"><LangBadge lang={movie.lang} /></div>
       </div>
@@ -452,6 +458,13 @@ export default function Home() {
   const upcomingMovies = useUpcomingMoviesHook();
   const oldUpcoming = useOldUpcomingHook();
 
+  // Phim ghim từ KKPhim - admin chọn ghim lên đầu mục "Phim Mới Cập Nhật"
+  const [pinnedMovies, setPinnedMovies] = useState<PinnedMovie[]>([]);
+  useEffect(() => {
+    const unsub = subscribePinnedMovies(setPinnedMovies);
+    return unsub;
+  }, []);
+
   useSEO({
     title: 'Xem Phim Miễn Phí - Phim Hay Cả Đảo',
     description: 'Đảo Phim - Xem phim online miễn phí chất lượng HD. Phim bộ, phim lẻ, hoạt hình, anime, phim chiếu rạp Vietsub, thuyết minh, lồng tiếng. Cập nhật liên tục mỗi ngày.',
@@ -561,13 +574,16 @@ export default function Home() {
           </section>
         )}
 
-        {/* Phim Mới Cập Nhật — load ngay */}
-        {(newUpdates.length > 0 || manualMovies.length > 0) && (
+        {/* Phim Mới Cập Nhật — load ngay (phim ghim của admin luôn hiện đầu tiên) */}
+        {(newUpdates.length > 0 || manualMovies.length > 0 || pinnedMovies.length > 0) && (
           <section>
             <SecHeader title="Phim Mới Cập Nhật" to="/type/phim-moi" label="Tất cả" />
             <HRow>
+              {pinnedMovies.map(p => <MCard key={p.slug} movie={pinnedToMovie(p)} pinned />)}
               {manualMovies.slice(0,4).map(m => <ManualMCard key={m.id} movie={m}/>)}
-              {newUpdates.map(m => <MCard key={m._id} movie={m}/>)}
+              {newUpdates
+                .filter(m => !pinnedMovies.some(p => p.slug === m.slug))
+                .map(m => <MCard key={m._id} movie={m}/>)}
             </HRow>
           </section>
         )}
