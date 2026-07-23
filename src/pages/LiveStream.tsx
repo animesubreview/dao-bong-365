@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Radio, Send, Shield, LogIn, Play, Pause, Volume2, VolumeX, Maximize, Lock,
-  Eye, ClipboardCheck, Hourglass, XCircle, CalendarClock,
+  Eye, ClipboardCheck, Hourglass, XCircle, CalendarClock, CheckCircle2,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
@@ -347,6 +347,8 @@ export default function LiveStreamPage() {
   const [requesting, setRequesting] = useState(false);
   const [viewerCount, setViewerCount] = useState(0);
   const [now, setNow] = useState(Date.now());
+  const [showApprovedToast, setShowApprovedToast] = useState(false);
+  const prevRegStatusRef = useRef<string | null>(null);
 
   usePageTitle('Phát trực tiếp');
 
@@ -368,6 +370,18 @@ export default function LiveStreamPage() {
     const unsub = subscribeMyRegistration(currentUser.uid, setRegistration);
     return unsub;
   }, [currentUser]);
+
+  // Vừa được admin duyệt (chuyển từ chưa duyệt/pending sang approved) → hiện thông báo xác nhận
+  useEffect(() => {
+    const prev = prevRegStatusRef.current;
+    const cur = registration?.status ?? null;
+    prevRegStatusRef.current = cur;
+    if (cur === 'approved' && prev !== 'approved' && prev !== null) {
+      setShowApprovedToast(true);
+      const t = setTimeout(() => setShowApprovedToast(false), 6000);
+      return () => clearTimeout(t);
+    }
+  }, [registration?.status]);
 
   // Đếm ngược tới giờ chiếu — tick mỗi giây để tự mở phòng đúng lúc
   useEffect(() => {
@@ -422,18 +436,37 @@ export default function LiveStreamPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-3 md:px-6 py-5">
-      <div className="flex items-center gap-2.5 mb-4">
+      <div className="flex items-center gap-2.5 mb-4 flex-wrap">
         <span className="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse" />
         <h1 className="text-xl md:text-2xl font-black text-white">Phát Trực Tiếp</h1>
         {config.requireApproval && (
-          <span className="flex items-center gap-1 text-[10px] font-bold text-green-400 bg-green-500/10 border border-green-500/30 px-2 py-0.5 rounded-full">
-            <Lock size={9} /> Phòng riêng — cần duyệt
-          </span>
+          registration?.status === 'approved' ? (
+            <span className="flex items-center gap-1 text-[10px] font-bold text-green-400 bg-green-500/10 border border-green-500/30 px-2 py-0.5 rounded-full">
+              <CheckCircle2 size={9} /> Bạn đã được duyệt
+            </span>
+          ) : (
+            <span className="flex items-center gap-1 text-[10px] font-bold text-green-400 bg-green-500/10 border border-green-500/30 px-2 py-0.5 rounded-full">
+              <Lock size={9} /> Phòng riêng — cần duyệt
+            </span>
+          )
         )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:h-[520px]">
         <div className="lg:col-span-2 flex flex-col gap-3">
+          <AnimatePresence>
+            {showApprovedToast && (
+              <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                className="flex items-center gap-2 bg-green-500/10 border border-green-500/30 text-green-400 text-sm font-bold rounded-xl px-4 py-3"
+              >
+                <CheckCircle2 size={18} className="shrink-0" />
+                Bạn đã được duyệt vào phòng chiếu!
+              </motion.div>
+            )}
+          </AnimatePresence>
           {isScheduledYet && <ScheduleGate scheduledAt={config.scheduledAt} />}
           {config.requireApproval && !isApproved && (
             <ApprovalGate
