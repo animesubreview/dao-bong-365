@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Crown, CheckCircle2, Loader2, Wallet, Zap, ShieldCheck } from 'lucide-react';
+import { Crown, CheckCircle2, Loader2, Wallet, Zap, ShieldCheck, KeyRound, Gift } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import {
   purchaseVip,
@@ -9,6 +9,7 @@ import {
   VIP_META,
   VipTier,
 } from '../lib/vip';
+import { redeemVipKey } from '../lib/vipKeys';
 import { formatVND } from '../lib/topup';
 import { onAuthChange, getUserProfile, UserProfile } from '../lib/auth';
 
@@ -18,6 +19,11 @@ export default function MuaVip() {
   const [vipLoading, setVipLoading] = useState(false);
   const [vipMsg, setVipMsg] = useState<{ text: string; ok: boolean } | null>(null);
   const [purchasedTier, setPurchasedTier] = useState<VipTier | null>(null);
+
+  // Nhập key VIP
+  const [keyInput, setKeyInput] = useState('');
+  const [keyLoading, setKeyLoading] = useState(false);
+  const [keyMsg, setKeyMsg] = useState<{ text: string; ok: boolean } | null>(null);
 
   useEffect(() => {
     const unsub = onAuthChange(async user => {
@@ -44,6 +50,23 @@ export default function MuaVip() {
       if (fresh) setSession(fresh);
     } else {
       setVipMsg({ text: result.error || 'Mua thất bại!', ok: false });
+    }
+  };
+
+  const handleRedeemKey = async () => {
+    if (!session) return;
+    if (!keyInput.trim()) return;
+    setKeyLoading(true);
+    setKeyMsg(null);
+    const result = await redeemVipKey(session.uid, keyInput.trim());
+    setKeyLoading(false);
+    if (result.ok) {
+      setKeyMsg({ text: `🎉 Đổi key thành công! Đã cộng ${result.tier} vào tài khoản.`, ok: true });
+      setKeyInput('');
+      const fresh = await getUserProfile(session.uid);
+      if (fresh) setSession(fresh);
+    } else {
+      setKeyMsg({ text: result.error || 'Đổi key thất bại!', ok: false });
     }
   };
 
@@ -116,6 +139,48 @@ export default function MuaVip() {
               className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white text-slate-950 text-sm font-black hover:bg-slate-100 transition-colors">
               Đăng nhập ngay
             </Link>
+          </div>
+        )}
+
+        {/* Nhập Key VIP */}
+        {session && (
+          <div className="bg-gradient-to-br from-violet-950/40 via-slate-900 to-slate-900 border border-violet-500/25 rounded-2xl p-4 flex flex-col gap-3">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-violet-500/20 border border-violet-500/40 rounded-xl flex items-center justify-center shrink-0">
+                <KeyRound size={15} className="text-violet-400" />
+              </div>
+              <div>
+                <p className="text-sm font-black text-white leading-tight">Nhập Key VIP</p>
+                <p className="text-[11px] text-violet-300/60">Có mã key từ admin? Nhập vào đây để nhận VIP miễn phí</p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={keyInput}
+                onChange={e => setKeyInput(e.target.value.toUpperCase())}
+                onKeyDown={e => e.key === 'Enter' && handleRedeemKey()}
+                placeholder="Nhập mã key, VD: DAOPHIM-XXXX-XXXX"
+                className="flex-1 bg-slate-900/60 border border-slate-700/50 rounded-xl px-3 py-2.5 text-sm text-white font-mono placeholder:text-slate-600 focus:outline-none focus:border-violet-500/60"
+              />
+              <button
+                onClick={handleRedeemKey}
+                disabled={keyLoading || !keyInput.trim()}
+                className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-black transition-all shrink-0"
+              >
+                {keyLoading ? <Loader2 size={13} className="animate-spin" /> : <Gift size={13} />}
+                {keyLoading ? '...' : 'Đổi Key'}
+              </button>
+            </div>
+            {keyMsg && (
+              <div className={`rounded-lg px-3 py-2 text-xs font-bold text-center ${
+                keyMsg.ok
+                  ? 'bg-green-950/60 border border-green-500/30 text-green-300'
+                  : 'bg-red-950/60 border border-red-500/30 text-red-300'
+              }`}>
+                {keyMsg.text}
+              </div>
+            )}
           </div>
         )}
 

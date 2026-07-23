@@ -86,7 +86,7 @@ export async function clearLiveChat(): Promise<void> {
 }
 
 // ── Helper: dựng URL nhúng + phát hiện nền tảng để áp dụng chặn tua ───────────
-export type LiveEmbedKind = 'youtube' | 'facebook' | 'generic';
+export type LiveEmbedKind = 'youtube' | 'facebook' | 'mux' | 'generic';
 
 export function buildLiveEmbed(raw: string): { url: string; kind: LiveEmbedKind } {
   const trimmed = (raw || '').trim();
@@ -110,6 +110,17 @@ export function buildLiveEmbed(raw: string): { url: string; kind: LiveEmbedKind 
       url: `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(trimmed)}&show_text=false&autoplay=true`,
       kind: 'facebook',
     };
+  }
+  // Mux Live: đã là link stream.mux.com sẵn (có thể thiếu .m3u8 ở cuối) → chuẩn hóa lại
+  if (trimmed.includes('stream.mux.com')) {
+    const clean = trimmed.split('?')[0].replace(/\/$/, '');
+    const withExt = clean.endsWith('.m3u8') ? clean : `${clean}.m3u8`;
+    return { url: withExt, kind: 'mux' };
+  }
+  // Mux Live: dán thẳng Playback ID (chuỗi chữ+số, không có domain/dấu chấm)
+  // VD: KTdOXrie8H1tHMEjEhsOpILRF0000stnBwDhDGM7lcly4
+  if (/^[a-zA-Z0-9]{20,80}$/.test(trimmed)) {
+    return { url: `https://stream.mux.com/${trimmed}.m3u8`, kind: 'mux' };
   }
   // Link nhúng khác (Twitch, player riêng...) — giữ nguyên
   return { url: trimmed, kind: 'generic' };

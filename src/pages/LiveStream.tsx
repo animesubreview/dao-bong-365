@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
+import Hls from 'hls.js';
 import {
-  Radio, Send, Shield, LogIn, Play, Pause, Volume2, VolumeX, Maximize, Lock,
-  Eye, ClipboardCheck, Hourglass, XCircle, CalendarClock, CheckCircle2,
+  Radio, Send, Shield, LogIn, Play, Pause, Volume2, VolumeX, Maximize, Minimize, Lock,
+  Eye, ClipboardCheck, Hourglass, XCircle, CalendarClock, CheckCircle2, WifiOff,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
@@ -31,6 +32,73 @@ function LivePlayer({ embedUrl, title, viewerCount }: { embedUrl: string; title:
   const [muted, setMuted] = useState(false);
   const { showWarning, dismiss } = useRoomWatchGuard(!!url);
 
+  // ── Mux (HLS qua hls.js) — video gốc, không phải iframe ────────────────────
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const hlsRef = useRef<Hls | null>(null);
+  const [muxMuted, setMuxMuted] = useState(true); // autoplay cần muted trước, user tự bật tiếng
+  const [muxPlaying, setMuxPlaying] = useState(true);
+  const [muxLoading, setMuxLoading] = useState(true);
+  const [muxOffline, setMuxOffline] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useEffect(() => {
+    if (kind !== 'mux' || !url || !videoRef.current) return;
+    const video = videoRef.current;
+    setMuxLoading(true);
+    setMuxOffline(false);
+
+    if (Hls.isSupported()) {
+      const hls = new Hls({ lowLatencyMode: true, liveDurationInfinity: true });
+      hlsRef.current = hls;
+      hls.loadSource(url);
+      hls.attachMedia(video);
+      hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        setMuxLoading(false);
+        video.play().catch(() => setMuxPlaying(false));
+      });
+      hls.on(Hls.Events.ERROR, (_evt, data) => {
+        if (data.fatal) {
+          setMuxLoading(false);
+          setMuxOffline(true);
+        }
+      });
+      return () => { hls.destroy(); hlsRef.current = null; };
+    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+      // Safari/iOS: hỗ trợ HLS gốc, không cần hls.js
+      video.src = url;
+      const onLoaded = () => { setMuxLoading(false); video.play().catch(() => setMuxPlaying(false)); };
+      const onErr = () => { setMuxLoading(false); setMuxOffline(true); };
+      video.addEventListener('loadedmetadata', onLoaded);
+      video.addEventListener('error', onErr);
+      return () => {
+        video.removeEventListener('loadedmetadata', onLoaded);
+        video.removeEventListener('error', onErr);
+      };
+    } else {
+      setMuxLoading(false);
+      setMuxOffline(true);
+    }
+  }, [kind, url]);
+
+  useEffect(() => {
+    const onFsChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', onFsChange);
+    return () => document.removeEventListener('fullscreenchange', onFsChange);
+  }, []);
+
+  const toggleMuxPlay = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    if (video.paused) { video.play().catch(() => {}); setMuxPlaying(true); }
+    else { video.pause(); setMuxPlaying(false); }
+  };
+  const toggleMuxMute = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    video.muted = !video.muted;
+    setMuxMuted(video.muted);
+  };
+
   const togglePlay = () => {
     postYouTubeCommand(iframeRef.current, playing ? 'pauseVideo' : 'playVideo');
     setPlaying(p => !p);
@@ -58,15 +126,46 @@ function LivePlayer({ embedUrl, title, viewerCount }: { embedUrl: string; title:
       onContextMenu={e => e.preventDefault()}
       className="relative w-full aspect-video bg-black rounded-2xl overflow-hidden group select-none"
     >
-      <iframe
-        ref={iframeRef}
-        src={url}
-        className="absolute inset-0 w-full h-full border-0"
-        allow="autoplay; encrypted-media; picture-in-picture"
-        allowFullScreen={kind !== 'youtube'}
-        title={title || 'Livestream'}
-        referrerPolicy="no-referrer"
-      />
+      {kind === 'youtube' && (
+        <iframe
+          ref={iframeRef}
+          src={url}
+          className="absolute inset-0 w-full h-full border-0"
+          allow="autoplay; encrypted-media; picture-in-picture"
+          allowFullScreen={false}
+          title={title || 'Livestream'}
+          referrerPolicy="no-referrer"
+        />
+      )}
+
+      {kind === 'mux' && (
+        <>
+          <video
+            ref={videoRef}
+            className="absolute inset-0 w-full h-full object-contain bg-black"
+            playsInline
+            autoPlay
+            muted={muxMuted}
+            onPlay={() => setMuxPlaying(true)}
+            onPause={() => setMuxPlaying(false)}
+          />
+
+          {muxLoading && !muxOffline && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/60 z-10">
+              <div className="w-10 h-10 border-4 border-red-500 border-t-transparent rounded-full animate-spin" />
+              <p className="text-slate-300 text-xs font-semibold">Đang kết nối luồng trực tiếp...</p>
+            </div>
+          )}
+
+          {muxOffline && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/80 z-10 text-center px-4">
+              <WifiOff size={30} className="text-slate-500" />
+              <p className="text-slate-300 text-sm font-bold">Chưa có tín hiệu trực tiếp</p>
+              <p className="text-slate-500 text-xs">Luồng Mux hiện chưa phát, vui lòng quay lại sau.</p>
+            </div>
+          )}
+        </>
+      )}
 
       {/* LIVE badge */}
       <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-red-600 text-white text-[11px] font-black px-2.5 py-1 rounded-full shadow-lg z-20 pointer-events-none">
@@ -81,7 +180,7 @@ function LivePlayer({ embedUrl, title, viewerCount }: { embedUrl: string; title:
 
       <RoomWatchGuardOverlay show={showWarning} onDismiss={dismiss} />
 
-      {kind === 'youtube' ? (
+      {kind === 'youtube' && (
         /* Custom control bar cho YouTube — chặn tua hoàn toàn, không có thanh seek */
         <div className="absolute inset-0 z-10">
           <button
@@ -111,7 +210,60 @@ function LivePlayer({ embedUrl, title, viewerCount }: { embedUrl: string; title:
             </button>
           </div>
         </div>
-      ) : (
+      )}
+
+      {kind === 'mux' && !muxOffline && (
+        /* Custom control bar cho Mux — play/pause, tắt/mở tiếng, nút full màn hình LỚN luôn hiện */
+        <div className="absolute inset-0 z-10">
+          <button
+            onClick={toggleMuxPlay}
+            className="absolute inset-0 flex items-center justify-center"
+            aria-label={muxPlaying ? 'Tạm dừng' : 'Phát'}
+          >
+            <span className={`w-16 h-16 rounded-full bg-black/40 backdrop-blur flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity ${!muxPlaying ? 'opacity-100' : ''}`}>
+              {muxPlaying ? <Pause size={26} className="text-white" /> : <Play size={26} className="text-white ml-1" />}
+            </span>
+          </button>
+
+          <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between gap-2 px-3 py-2 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="flex items-center gap-2">
+              <button onClick={toggleMuxPlay} className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors">
+                {muxPlaying ? <Pause size={15} /> : <Play size={15} className="ml-0.5" />}
+              </button>
+              <button onClick={toggleMuxMute} className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors">
+                {muxMuted ? <VolumeX size={15} /> : <Volume2 size={15} />}
+              </button>
+              <span className="flex items-center gap-1 text-[10px] text-slate-300 font-semibold bg-black/40 px-2 py-1 rounded-full">
+                <Lock size={9} /> Trực tiếp
+              </span>
+            </div>
+          </div>
+
+          {/* Nút Toàn màn hình — to, luôn hiện, dễ bấm trên mobile */}
+          <button
+            onClick={toggleFullscreen}
+            aria-label="Toàn màn hình"
+            className="absolute bottom-3 right-3 flex items-center gap-2 bg-black/60 hover:bg-black/80 active:scale-95 backdrop-blur border border-white/20 text-white font-bold rounded-2xl px-4 py-3 shadow-xl transition-all"
+          >
+            {isFullscreen ? <Minimize size={22} /> : <Maximize size={22} />}
+            <span className="hidden sm:inline text-sm">{isFullscreen ? 'Thoát' : 'Toàn màn hình'}</span>
+          </button>
+        </div>
+      )}
+
+      {(kind === 'facebook' || kind === 'generic') && (
+        <iframe
+          ref={iframeRef}
+          src={url}
+          className="absolute inset-0 w-full h-full border-0"
+          allow="autoplay; encrypted-media; picture-in-picture"
+          allowFullScreen
+          title={title || 'Livestream'}
+          referrerPolicy="no-referrer"
+        />
+      )}
+
+      {(kind === 'facebook' || kind === 'generic') && (
         /* Link nhúng dạng khác (abyssplayer, facebook, twitch...) — không sửa được
            player bên trong iframe (khác domain) nên chặn tua bằng lớp phủ trong suốt
            đè lên vùng thanh tua (thường nằm ở đáy player), chặn mọi click/kéo vào đó. */

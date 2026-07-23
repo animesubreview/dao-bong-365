@@ -1,179 +1,166 @@
-// ─── VIP Key System ────────────────────────────────────────────────────────────
-// Admin tạo mã Key (thủ công hoặc tự động hàng loạt) với thời hạn tuỳ chỉnh
-// (phút / giờ / ngày) → gửi cho member → member nhập mã tại trang VIP để
-// nhận thời hạn VIP + Chặn QC tương ứng, cộng dồn với VIP hiện có (nếu còn).
-//
-// Lưu trên Firestore, collection "vip_keys", doc id = chính mã code (viết hoa)
-// để tra cứu tức thời (getDoc theo id) khi redeem, tránh phải query.
+// ─── VIP Key System ────────────────────────────────────────────────────────
+// Admin tạo key (auto random hoặc gõ tay) → gán gói VIP (UVIP/SVIP/SSVIP) +
+// thời hạn tùy chỉnh theo phút/giờ/ngày + số lần sử dụng (1 lần hoặc theo số
+// lượng). User nhập key ở trang Mua VIP để cộng dồn thời hạn VIP vào tài khoản.
 
 import {
-  doc, getDoc, setDoc, updateDoc, deleteDoc,
-  collection, onSnapshot, query, orderBy, writeBatch,
+  doc, getDoc, setDoc, deleteDoc, updateDoc,
+  collection, query, orderBy, onSnapshot, runTransaction, arrayUnion,
 } from 'firebase/firestore';
 import { db } from './firebase';
-import { useEffect, useState } from 'react';
+import { VipTier } from './vip';
+
+const COL = 'vip_keys';
+
+export interface VipKey {
+  code: string;              // mã key - cũng là doc id (đã uppercase)
+  tier: VipTier;              // gói VIP key này cấp
+  durationMinutes: number;    // thời hạn VIP cấp, tính theo phút
+  maxUses: number;            // 1 = dùng 1 lần, >1 = theo số lượng
+  usedCount: number;
+  redeemedBy: string[];       // uid đã đổi (chặn 1 người đổi 1 key nhiều lần)
+  active: boolean;
+  note?: string;
+  createdAt: number;
+}
 
 export type DurationUnit = 'minute' | 'hour' | 'day';
 
-export const DURATION_UNIT_LABEL: Record<DurationUnit, string> = {
-  minute: 'Phút',
-  hour: 'Giờ',
-  day: 'Ngày',
-};
+export function toMinutes(value: number, unit: DurationUnit): number {
+  if (unit === 'minute') return value;
+  if (unit === 'hour') return value * 60;
+  return value * 60 * 24; // day
+}
 
-export const DURATION_UNIT_MS: Record<DurationUnit, number> = {
-  minute: 60_000,
-  hour: 3_600_000,
-  day: 86_400_000,
-};
+export function formatDuration(minutes: number): string {
+  if (minutes < 60) return `${minutes} phút`;
+  if (minutes < 1440) {
+    const h = Math.floor(minutes / 60);
+    const m = minutes % 60;
+    return m > 0 ? `${h} giờ ${m} phút` : `${h} giờ`;
+  }
+  const d = Math.floor(minutes / 1440);
+  const h = Math.floor((minutes % 1440) / 60);
+  return h > 0 ? `${d} ngày ${h} giờ` : `${d} ngày`;
+}
 
-export interface VipKey {
+/** Sinh mã key ngẫu nhiên dạng DAOPHIM-XXXX-XXXX */
+export function generateKeyCode(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // bỏ ký tự dễ nhầm (0,O,1,I)
+  const seg = () => Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+  return `DAOPHIM-${seg()}-${seg()}`;
+}
+
+function normalizeCode(raw: string): string {
+  return raw.trim().toUpperCase().replace(/\s+/g, '');
+}
+
+/** Admin tạo key mới (auto hoặc thủ công) */
+export async function createVipKey(params: {
   code: string;
-  durationMs: number;
+  tier: VipTier;
+  durationMinutes: number;
+  maxUses: number;
   note?: string;
-  createdBy: 'auto' | 'manual';
-  createdAt: number;
-  used: boolean;
-  usedBy?: string;
-  usedByName?: string;
-  usedAt?: number;
-}
+}): Promise<{ ok: boolean; error?: string }> {
+  const code = normalizeCode(params.code);
+  if (!code) return { ok: false, error: 'Mã key không được để trống!' };
+  if (params.durationMinutes <= 0) return { ok: false, error: 'Thời hạn phải lớn hơn 0!' };
+  if (params.maxUses <= 0) return { ok: false, error: 'Số lần sử dụng phải lớn hơn 0!' };
 
-// ─── Sinh mã ngẫu nhiên dạng XXXX-XXXX-XXXX (dễ đọc, tránh nhầm 0/O, 1/I) ─────
-const SAFE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-function generateCode(): string {
-  const group = () =>
-    Array.from({ length: 4 }, () => SAFE_CHARS[Math.floor(Math.random() * SAFE_CHARS.length)]).join('');
-  return `${group()}-${group()}-${group()}`;
-}
-
-// ─── Tạo 1 key thủ công ───────────────────────────────────────────────────────
-export async function createVipKey(
-  value: number,
-  unit: DurationUnit,
-  note?: string
-): Promise<VipKey> {
-  const code = generateCode();
-  const key: VipKey = {
-    code,
-    durationMs: value * DURATION_UNIT_MS[unit],
-    note: note || '',
-    createdBy: 'manual',
-    createdAt: Date.now(),
-    used: false,
-  };
-  await setDoc(doc(db, 'vip_keys', code), key);
-  return key;
-}
-
-// ─── Tạo nhiều key cùng lúc (tự động hàng loạt) ──────────────────────────────
-export async function createVipKeysBatch(
-  count: number,
-  value: number,
-  unit: DurationUnit,
-  note?: string
-): Promise<VipKey[]> {
-  const batch = writeBatch(db);
-  const keys: VipKey[] = [];
-  const usedCodes = new Set<string>();
-
-  for (let i = 0; i < count; i++) {
-    let code = generateCode();
-    while (usedCodes.has(code)) code = generateCode(); // tránh trùng trong cùng lô
-    usedCodes.add(code);
+  try {
+    const ref = doc(db, COL, code);
+    const existing = await getDoc(ref);
+    if (existing.exists()) return { ok: false, error: 'Mã key này đã tồn tại, vui lòng chọn mã khác!' };
 
     const key: VipKey = {
       code,
-      durationMs: value * DURATION_UNIT_MS[unit],
-      note: note || '',
-      createdBy: 'auto',
+      tier: params.tier,
+      durationMinutes: params.durationMinutes,
+      maxUses: params.maxUses,
+      usedCount: 0,
+      redeemedBy: [],
+      active: true,
+      note: params.note || '',
       createdAt: Date.now(),
-      used: false,
     };
-    keys.push(key);
-    batch.set(doc(db, 'vip_keys', code), key);
-  }
-
-  await batch.commit();
-  return keys;
-}
-
-export async function deleteVipKey(code: string): Promise<void> {
-  await deleteDoc(doc(db, 'vip_keys', code));
-}
-
-// ─── Lắng nghe real-time danh sách key (dùng cho Admin) ──────────────────────
-export function subscribeVipKeys(callback: (keys: VipKey[]) => void): () => void {
-  const q = query(collection(db, 'vip_keys'), orderBy('createdAt', 'desc'));
-  return onSnapshot(q, (snap) => {
-    callback(snap.docs.map((d) => d.data() as VipKey));
-  }, () => callback([]));
-}
-
-// ─── Đổi mã nhận VIP ──────────────────────────────────────────────────────────
-export async function redeemVipKey(
-  rawCode: string,
-  uid: string
-): Promise<{ ok: boolean; error?: string; durationMs?: number }> {
-  const code = rawCode.trim().toUpperCase();
-  if (!code) return { ok: false, error: 'Vui lòng nhập mã!' };
-
-  try {
-    const keySnap = await getDoc(doc(db, 'vip_keys', code));
-    if (!keySnap.exists()) return { ok: false, error: 'Mã không tồn tại hoặc đã bị xoá!' };
-
-    const key = keySnap.data() as VipKey;
-    if (key.used) return { ok: false, error: `Mã này đã được sử dụng${key.usedAt ? ' lúc ' + new Date(key.usedAt).toLocaleString('vi-VN') : ''}!` };
-
-    const userRef = doc(db, 'users', uid);
-    const userSnap = await getDoc(userRef);
-    if (!userSnap.exists()) return { ok: false, error: 'Không tìm thấy tài khoản!' };
-
-    const user = userSnap.data();
-    const nowMs = Date.now();
-    const currentExpiry = (user.vipExpiry as number) || 0;
-    const base = Math.max(currentExpiry, nowMs);
-    const newExpiry = base + key.durationMs;
-
-    // Đánh dấu key đã dùng
-    await updateDoc(doc(db, 'vip_keys', code), {
-      used: true,
-      usedBy: uid,
-      usedByName: user.username || '',
-      usedAt: nowMs,
-    });
-
-    // Cộng thời hạn VIP cho user (giữ nguyên tier cũ nếu có, mặc định SSVIP nếu chưa từng có VIP)
-    await updateDoc(userRef, {
-      vipExpiry: newExpiry,
-      vipTier: user.vipTier || 'SSVIP',
-    });
-
-    // Ghi lịch sử giao dịch
-    const txRef = doc(collection(db, 'transactions'));
-    await setDoc(txRef, {
-      id: txRef.id,
-      uid,
-      type: 'vip_key_redeem',
-      amount: 0,
-      note: `Đổi mã VIP: ${code}`,
-      createdAt: nowMs,
-      status: 'success',
-      vipExpiry: newExpiry,
-    });
-
-    return { ok: true, durationMs: key.durationMs };
+    await setDoc(ref, key);
+    return { ok: true };
   } catch (err: any) {
     return { ok: false, error: 'Lỗi hệ thống: ' + (err.message || '') };
   }
 }
 
-// ─── Format thời hạn dễ đọc (VD: "3 ngày", "12 giờ", "45 phút") ──────────────
-export function formatDuration(ms: number): string {
-  const days = ms / DURATION_UNIT_MS.day;
-  if (days >= 1 && Number.isInteger(days)) return `${days} ngày`;
-  const hours = ms / DURATION_UNIT_MS.hour;
-  if (hours >= 1 && Number.isInteger(hours)) return `${hours} giờ`;
-  const minutes = ms / DURATION_UNIT_MS.minute;
-  return `${minutes} phút`;
+/** Admin bật/tắt key (khóa key mà không cần xóa) */
+export async function setVipKeyActive(code: string, active: boolean): Promise<void> {
+  await updateDoc(doc(db, COL, normalizeCode(code)), { active });
+}
+
+/** Admin xóa key */
+export async function deleteVipKey(code: string): Promise<void> {
+  await deleteDoc(doc(db, COL, normalizeCode(code)));
+}
+
+/** Subscribe realtime danh sách key - dùng trong Admin */
+export function subscribeVipKeys(cb: (items: VipKey[]) => void): () => void {
+  const q = query(collection(db, COL), orderBy('createdAt', 'desc'));
+  return onSnapshot(q, snap => {
+    cb(snap.docs.map(d => d.data() as VipKey));
+  }, () => cb([]));
+}
+
+/**
+ * User nhập key để đổi VIP.
+ * Dùng transaction để đảm bảo key không bị "vượt" số lần dùng khi nhiều
+ * người đổi cùng lúc, và 1 người không đổi trùng 1 key nhiều lần.
+ */
+export async function redeemVipKey(
+  uid: string,
+  rawCode: string
+): Promise<{ ok: boolean; error?: string; tier?: VipTier; minutesAdded?: number; newExpiry?: number }> {
+  const code = normalizeCode(rawCode);
+  if (!code) return { ok: false, error: 'Vui lòng nhập mã key!' };
+  if (!uid) return { ok: false, error: 'Bạn cần đăng nhập để nhập key!' };
+
+  const keyRef = doc(db, COL, code);
+  const userRef = doc(db, 'users', uid);
+
+  try {
+    const result = await runTransaction(db, async (tx) => {
+      const keySnap = await tx.get(keyRef);
+      if (!keySnap.exists()) throw new Error('Mã key không tồn tại!');
+      const key = keySnap.data() as VipKey;
+
+      if (!key.active) throw new Error('Mã key này đã bị khóa hoặc ngừng hoạt động!');
+      if (key.usedCount >= key.maxUses) throw new Error('Mã key này đã được sử dụng hết lượt!');
+      if ((key.redeemedBy || []).includes(uid)) throw new Error('Bạn đã sử dụng mã key này rồi!');
+
+      const userSnap = await tx.get(userRef);
+      if (!userSnap.exists()) throw new Error('Không tìm thấy tài khoản!');
+      const user = userSnap.data();
+
+      const nowMs = Date.now();
+      const currentExpiry = (user.vipExpiry as number) || 0;
+      const base = Math.max(currentExpiry, nowMs);
+      const newExpiry = base + key.durationMinutes * 60000;
+      const newUsedCount = key.usedCount + 1;
+
+      tx.update(userRef, {
+        vipTier: key.tier,
+        vipExpiry: newExpiry,
+      });
+
+      tx.update(keyRef, {
+        usedCount: newUsedCount,
+        redeemedBy: arrayUnion(uid),
+        active: newUsedCount < key.maxUses,
+      });
+
+      return { tier: key.tier, minutesAdded: key.durationMinutes, newExpiry };
+    });
+
+    return { ok: true, ...result };
+  } catch (err: any) {
+    return { ok: false, error: err.message || 'Lỗi khi đổi key!' };
+  }
 }

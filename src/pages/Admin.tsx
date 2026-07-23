@@ -6,12 +6,12 @@ import {
   RefreshCw, Link as LinkIcon, Info, Lock, LogOut, KeyRound,
   Bell, BellPlus, Users, Ban, UserCheck, Clock, Megaphone, MonitorPlay,
   Wallet, PlusCircle, MinusCircle, CreditCard, Wrench, Crown, Activity, Wifi,
-  History, Search, Radio, Trash, Pin, ArrowUp, ArrowDown,
+  History, Search, Radio, Trash, Pin, ArrowUp, ArrowDown, Copy, Shuffle, Power,
 } from 'lucide-react';
 import { getAdBanners, createAdBanner, updateAdBanner, deleteAdBanner, AdBannerData } from '../components/AdBanner';
 import { createPopupAd, updatePopupAd, deletePopupAd, PopupAdData } from '../components/PopupAd';
 import { getClickAdConfig, saveClickAdConfig, ClickAdConfig, DEFAULT_CLICK_AD } from '../lib/clickAd';
-import { getVipPrices, saveVipPrices, VipPrices, DEFAULT_VIP_PRICES, VIP_META, VIP_DAYS } from '../lib/vip';
+import { getVipPrices, saveVipPrices, VipPrices, DEFAULT_VIP_PRICES, VIP_META, VIP_DAYS, VipTier } from '../lib/vip';
 import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
 import { fetchSiteSettings, saveSiteSettings as saveSiteSettingsFirestore } from '../lib/siteSettings';
 import { db } from '../lib/firebase';
@@ -51,6 +51,10 @@ import {
 import {
   savePinnedMovie, deletePinnedMovie, subscribePinnedMovies, PinnedMovie,
 } from '../lib/pinnedMovies';
+import {
+  createVipKey, setVipKeyActive, deleteVipKey, subscribeVipKeys,
+  generateKeyCode, toMinutes, formatDuration, VipKey, DurationUnit,
+} from '../lib/vipKeys';
 import { linkToEpisodeFields, buildEmbedUrl } from '../lib/embedUrl';
 import {
   saveMaintenanceConfig, subscribeMaintenanceConfig,
@@ -1510,6 +1514,314 @@ function VipSection({ onToast }: { onToast: (msg: string, t: 'success' | 'error'
   );
 }
 
+// ── VipKeysSection ────────────────────────────────────────────────────────
+function VipKeysSection({ onToast }: { onToast: (msg: string, t: 'success' | 'error') => void }) {
+  const [keys, setKeys] = useState<VipKey[]>([]);
+  const [code, setCode] = useState('');
+  const [tier, setTier] = useState<VipTier>('UVIP');
+  const [durationValue, setDurationValue] = useState(1);
+  const [durationUnit, setDurationUnit] = useState<DurationUnit>('day');
+  const [usageMode, setUsageMode] = useState<'single' | 'limit'>('single');
+  const [usageLimit, setUsageLimit] = useState(10);
+  const [note, setNote] = useState('');
+  const [creating, setCreating] = useState(false);
+  const [filter, setFilter] = useState<'all' | 'active' | 'used'>('all');
+
+  useEffect(() => {
+    const unsub = subscribeVipKeys(setKeys);
+    return unsub;
+  }, []);
+
+  const autoFillCode = () => setCode(generateKeyCode());
+
+  const resetForm = () => {
+    setCode(''); setTier('UVIP'); setDurationValue(1); setDurationUnit('day');
+    setUsageMode('single'); setUsageLimit(10); setNote('');
+  };
+
+  const handleCreate = async () => {
+    const finalCode = code.trim() || generateKeyCode();
+    const durationMinutes = toMinutes(durationValue, durationUnit);
+    const maxUses = usageMode === 'single' ? 1 : Math.max(1, usageLimit);
+
+    setCreating(true);
+    const res = await createVipKey({ code: finalCode, tier, durationMinutes, maxUses, note });
+    setCreating(false);
+
+    if (res.ok) {
+      onToast(`✅ Đã tạo key ${finalCode}!`, 'success');
+      resetForm();
+    } else {
+      onToast(res.error || 'Lỗi khi tạo key!', 'error');
+    }
+  };
+
+  const copyCode = (c: string) => {
+    navigator.clipboard?.writeText(c);
+    onToast('Đã copy mã key!', 'success');
+  };
+
+  const toggleActive = async (k: VipKey) => {
+    try {
+      await setVipKeyActive(k.code, !k.active);
+    } catch { onToast('Lỗi khi cập nhật key!', 'error'); }
+  };
+
+  const removeKey = async (c: string) => {
+    if (!confirm(`Xóa key ${c}? Hành động này không thể hoàn tác.`)) return;
+    try {
+      await deleteVipKey(c);
+      onToast('Đã xóa key.', 'success');
+    } catch { onToast('Lỗi khi xóa key!', 'error'); }
+  };
+
+  const filteredKeys = keys.filter(k => {
+    if (filter === 'active') return k.active && k.usedCount < k.maxUses;
+    if (filter === 'used') return !k.active || k.usedCount >= k.maxUses;
+    return true;
+  });
+
+  return (
+    <SectionCard title="Key VIP · Chặn Quảng Cáo" icon={KeyRound} color="violet">
+      <div className="flex flex-col gap-5">
+        <p className="text-sm text-slate-400">
+          Tạo key để tặng VIP cho user (không cần trừ tiền). User nhập key ở trang <span className="text-violet-400 font-semibold">Mua VIP</span> để nhận thời hạn chặn QC.
+          Có thể tạo key auto ngẫu nhiên hoặc gõ mã tùy ý, giới hạn dùng 1 lần hoặc theo số lượng lượt đổi.
+        </p>
+
+        {/* Form tạo key */}
+        <div className="bg-slate-800/40 border border-violet-500/20 rounded-2xl p-4 flex flex-col gap-4">
+          {/* Mã key */}
+          <div>
+            <label className="text-xs text-slate-400 font-semibold mb-1 block">Mã Key</label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={code}
+                onChange={e => setCode(e.target.value.toUpperCase())}
+                placeholder="Để trống = tự động tạo mã ngẫu nhiên"
+                className="admin-input flex-1 font-mono tracking-wide"
+              />
+              <button
+                type="button"
+                onClick={autoFillCode}
+                className="btn-icon px-3 flex items-center gap-1.5 text-xs font-bold hover:border-violet-500/40 hover:text-violet-400 whitespace-nowrap"
+              >
+                <Shuffle size={13} /> Tạo mã auto
+              </button>
+            </div>
+          </div>
+
+          {/* Gói VIP */}
+          <div>
+            <label className="text-xs text-slate-400 font-semibold mb-1.5 block">Gói VIP cấp cho user</label>
+            <div className="grid grid-cols-3 gap-2">
+              {(['UVIP', 'SVIP', 'SSVIP'] as VipTier[]).map(t => {
+                const meta = VIP_META[t];
+                const active = tier === t;
+                return (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => setTier(t)}
+                    className={cn(
+                      'flex flex-col items-center gap-0.5 py-2.5 rounded-xl border text-xs font-bold transition-all',
+                      active ? `bg-gradient-to-r ${meta.gradient} text-white border-transparent` : 'bg-slate-800/60 border-slate-700/40 text-slate-400 hover:border-slate-600'
+                    )}
+                  >
+                    <span>{meta.icon}</span> {t}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Thời hạn tùy chỉnh */}
+          <div>
+            <label className="text-xs text-slate-400 font-semibold mb-1.5 block">Thời hạn VIP (tùy chỉnh)</label>
+            <div className="flex gap-2">
+              <input
+                type="number"
+                min={1}
+                value={durationValue}
+                onChange={e => setDurationValue(Math.max(1, parseInt(e.target.value) || 1))}
+                className="admin-input w-24 text-center"
+              />
+              <div className="flex flex-1 gap-1.5">
+                {([
+                  { v: 'minute', l: 'Phút' },
+                  { v: 'hour', l: 'Giờ' },
+                  { v: 'day', l: 'Ngày' },
+                ] as { v: DurationUnit; l: string }[]).map(u => (
+                  <button
+                    key={u.v}
+                    type="button"
+                    onClick={() => setDurationUnit(u.v)}
+                    className={cn(
+                      'flex-1 text-xs font-bold py-2 rounded-lg border transition-all',
+                      durationUnit === u.v ? 'bg-violet-500/20 border-violet-500/50 text-violet-300' : 'bg-slate-800/60 border-slate-700/40 text-slate-500 hover:border-slate-600'
+                    )}
+                  >
+                    {u.l}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <p className="text-[11px] text-slate-500 mt-1.5">≈ {formatDuration(toMinutes(durationValue, durationUnit))} chặn quảng cáo mỗi lượt đổi key.</p>
+          </div>
+
+          {/* Số lần sử dụng */}
+          <div>
+            <label className="text-xs text-slate-400 font-semibold mb-1.5 block">Số lần key được sử dụng</label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setUsageMode('single')}
+                className={cn(
+                  'py-2.5 rounded-xl border text-xs font-bold transition-all',
+                  usageMode === 'single' ? 'bg-violet-500/20 border-violet-500/50 text-violet-300' : 'bg-slate-800/60 border-slate-700/40 text-slate-400 hover:border-slate-600'
+                )}
+              >
+                🔒 Dùng 1 lần
+              </button>
+              <button
+                type="button"
+                onClick={() => setUsageMode('limit')}
+                className={cn(
+                  'py-2.5 rounded-xl border text-xs font-bold transition-all',
+                  usageMode === 'limit' ? 'bg-violet-500/20 border-violet-500/50 text-violet-300' : 'bg-slate-800/60 border-slate-700/40 text-slate-400 hover:border-slate-600'
+                )}
+              >
+                🔁 Theo số lượng
+              </button>
+            </div>
+            {usageMode === 'limit' && (
+              <div className="flex items-center gap-2 mt-2">
+                <span className="text-xs text-slate-500">Giới hạn:</span>
+                <input
+                  type="number"
+                  min={1}
+                  value={usageLimit}
+                  onChange={e => setUsageLimit(Math.max(1, parseInt(e.target.value) || 1))}
+                  className="admin-input w-24 text-center"
+                />
+                <span className="text-xs text-slate-500">lượt đổi (nhiều user khác nhau có thể cùng dùng)</span>
+              </div>
+            )}
+          </div>
+
+          {/* Ghi chú */}
+          <div>
+            <label className="text-xs text-slate-400 font-semibold mb-1 block">Ghi chú (tùy chọn, chỉ admin thấy)</label>
+            <input
+              type="text"
+              value={note}
+              onChange={e => setNote(e.target.value)}
+              placeholder="VD: Tặng fanpage Facebook, sự kiện 20/10..."
+              className="admin-input w-full"
+            />
+          </div>
+
+          <button
+            onClick={handleCreate}
+            disabled={creating}
+            className="flex items-center justify-center gap-2 px-5 py-2.5 bg-violet-500 hover:bg-violet-400 disabled:opacity-60 text-white font-bold rounded-xl transition-colors"
+          >
+            <Plus size={16} />
+            {creating ? 'Đang tạo...' : 'Tạo Key VIP'}
+          </button>
+        </div>
+
+        {/* Danh sách key */}
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <p className="text-xs text-slate-500 font-semibold uppercase tracking-wide">Danh sách key ({filteredKeys.length})</p>
+            <div className="flex gap-1.5">
+              {([
+                { v: 'all', l: 'Tất cả' },
+                { v: 'active', l: 'Còn dùng được' },
+                { v: 'used', l: 'Hết lượt/Khóa' },
+              ] as { v: 'all' | 'active' | 'used'; l: string }[]).map(f => (
+                <button
+                  key={f.v}
+                  onClick={() => setFilter(f.v)}
+                  className={cn(
+                    'text-[11px] font-bold px-2.5 py-1.5 rounded-full border transition-all',
+                    filter === f.v ? 'bg-slate-700 border-slate-600 text-white' : 'border-transparent text-slate-500 hover:text-slate-300'
+                  )}
+                >
+                  {f.l}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {filteredKeys.length > 0 ? (
+            <div className="flex flex-col gap-2">
+              {filteredKeys.map(k => {
+                const meta = VIP_META[k.tier];
+                const exhausted = k.usedCount >= k.maxUses;
+                const usable = k.active && !exhausted;
+                return (
+                  <div key={k.code} className={cn(
+                    'flex items-center gap-3 p-3 rounded-xl border transition-all',
+                    usable ? 'bg-slate-800/40 border-violet-500/20' : 'bg-slate-800/20 border-slate-700/30 opacity-60'
+                  )}>
+                    <div className={`w-9 h-9 rounded-lg bg-gradient-to-br ${meta.gradient} flex items-center justify-center shrink-0 text-sm`}>
+                      {meta.icon}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <p className="text-sm font-black text-white font-mono tracking-wide truncate">{k.code}</p>
+                        <button onClick={() => copyCode(k.code)} className="text-slate-500 hover:text-violet-400 shrink-0"><Copy size={12} /></button>
+                      </div>
+                      <div className="flex gap-1.5 flex-wrap mt-1">
+                        <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${meta.color} bg-white/5 border border-white/10`}>{meta.label}</span>
+                        <span className="text-[9px] bg-sky-500/10 text-sky-400 border border-sky-500/20 px-1.5 py-0.5 rounded">{formatDuration(k.durationMinutes)}</span>
+                        <span className="text-[9px] bg-slate-700/40 text-slate-400 border border-slate-600/30 px-1.5 py-0.5 rounded">
+                          {k.usedCount}/{k.maxUses} lượt
+                        </span>
+                        {!k.active && <span className="text-[9px] bg-red-500/10 text-red-400 border border-red-500/20 px-1.5 py-0.5 rounded">Đã khóa</span>}
+                        {exhausted && k.active && <span className="text-[9px] bg-red-500/10 text-red-400 border border-red-500/20 px-1.5 py-0.5 rounded">Hết lượt</span>}
+                      </div>
+                      {k.note && <p className="text-[10px] text-slate-600 mt-1 italic truncate">📝 {k.note}</p>}
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        onClick={() => toggleActive(k)}
+                        disabled={exhausted}
+                        title={k.active ? 'Khóa key' : 'Mở khóa key'}
+                        className={cn('btn-icon p-2 disabled:opacity-30', k.active ? 'hover:border-amber-500/40 hover:text-amber-400' : 'hover:border-emerald-500/40 hover:text-emerald-400')}
+                      >
+                        <Power size={14} />
+                      </button>
+                      <button onClick={() => removeKey(k.code)} className="btn-icon p-2 hover:border-red-500/40 hover:text-red-400"><Trash2 size={14} /></button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="text-center py-10 text-slate-600">
+              <KeyRound size={40} className="mx-auto mb-3 opacity-30" />
+              <p className="text-sm">Chưa có key nào.</p>
+            </div>
+          )}
+        </div>
+
+        <div className="bg-slate-800/40 border border-violet-500/20 rounded-xl p-4 text-xs text-slate-500 flex flex-col gap-1">
+          <p className="font-bold text-violet-400 mb-1">📌 Lưu ý</p>
+          <p>• Key "Dùng 1 lần" chỉ 1 người đổi được, sau đó tự động hết hiệu lực.</p>
+          <p>• Key "Theo số lượng" cho phép nhiều user khác nhau cùng dùng chung 1 mã, tối đa theo số lượt bạn đặt.</p>
+          <p>• Mỗi user chỉ đổi được 1 lần cho cùng 1 mã key, kể cả key dùng theo số lượng.</p>
+          <p>• Thời hạn VIP cộng dồn nếu user đang còn VIP hạn cũ.</p>
+          <p>• Có thể khóa key tạm thời (🔌) mà không cần xóa hẳn.</p>
+        </div>
+      </div>
+    </SectionCard>
+  );
+}
+
 // ── MaintenanceSection ────────────────────────────────────────────────────────
 
 // ── RealtimeUsersSection ─────────────────────────────────────────────────────
@@ -1818,6 +2130,7 @@ const NAV_SECTIONS = [
   { id: 'section-members',      label: 'Thành viên',        icon: Users },
   { id: 'section-notifications',label: 'Thông báo',         icon: Bell },
   { id: 'section-vip',          label: 'Gói VIP',           icon: Crown },
+  { id: 'section-vipkeys',      label: 'Key VIP',           icon: KeyRound },
   { id: 'section-geoblock',     label: 'Chặn IP',           icon: Globe },
   { id: 'section-maintenance',  label: 'Bảo trì',           icon: Wrench },
   { id: 'section-manual-topup', label: 'Nạp thẻ TC',        icon: CreditCard },
@@ -1968,10 +2281,10 @@ function LivestreamAdminSection({ onToast }: { onToast: (msg: string, t: 'succes
               value={form.embedUrl}
               onChange={e => setForm(f => ({ ...f, embedUrl: e.target.value }))}
               className="input-field text-sm"
-              placeholder="https://www.youtube.com/watch?v=... hoặc link Facebook Live / link nhúng khác"
+              placeholder="Playback ID Mux, VD: KTdOXrie8H1tHMEjEhsOpILRF0000stnBwDhDGM7lcly4 — hoặc link YouTube/Facebook Live/nhúng khác"
             />
             <p className="text-[11px] text-slate-600 mt-1">
-              Hỗ trợ YouTube, Facebook Live, hoặc link nhúng khác (VD: abyssplayer...). Link YouTube được chặn tua đầy đủ nhất (ẩn cả thanh tua gốc); các link khác sẽ bị khóa vùng thanh tua ở đáy video bằng lớp phủ, có thể che luôn nút play/pause gốc của player đó.
+              Hỗ trợ <span className="text-violet-400 font-semibold">Mux Live</span> (dán thẳng Playback ID lấy từ dashboard.mux.com, hệ thống tự dựng link phát HLS — có nút toàn màn hình lớn khi xem), YouTube (chặn tua đầy đủ nhất, ẩn cả thanh tua gốc), Facebook Live, hoặc link nhúng khác (VD: abyssplayer...) sẽ bị khóa vùng thanh tua ở đáy video bằng lớp phủ.
             </p>
           </div>
           <div>
@@ -3805,6 +4118,12 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
           {activeSection === 'section-vip' && (
           <div id="section-vip">
             <VipSection onToast={(msg, t) => setToast({ message: msg, type: t })} />
+          </div>
+          )}
+
+          {activeSection === 'section-vipkeys' && (
+          <div id="section-vipkeys">
+            <VipKeysSection onToast={(msg, t) => setToast({ message: msg, type: t })} />
           </div>
           )}
 
