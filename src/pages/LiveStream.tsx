@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import Hls from 'hls.js';
 import {
   Radio, Send, Shield, LogIn, Play, Pause, Volume2, VolumeX, Maximize, Minimize, Lock,
-  Eye, ClipboardCheck, Hourglass, XCircle, CalendarClock, CheckCircle2, WifiOff,
+  Eye, ClipboardCheck, Hourglass, XCircle, CalendarClock, CheckCircle2, WifiOff, Settings, Check,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
@@ -41,20 +41,36 @@ function LivePlayer({ embedUrl, title, viewerCount }: { embedUrl: string; title:
   const [muxOffline, setMuxOffline] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
+  // ── Chất lượng video (chỉ áp dụng cho luồng Mux qua hls.js) ─────────────────
+  const [qualityLevels, setQualityLevels] = useState<{ index: number; height: number }[]>([]);
+  const [currentLevel, setCurrentLevel] = useState<number>(-1); // -1 = Tự động
+  const [activeLevel, setActiveLevel] = useState<number>(-1); // level thực tế đang phát khi ở chế độ Tự động
+  const [showQualityMenu, setShowQualityMenu] = useState(false);
+
   useEffect(() => {
     if (kind !== 'mux' || !url || !videoRef.current) return;
     const video = videoRef.current;
     setMuxLoading(true);
     setMuxOffline(false);
+    setQualityLevels([]);
+    setCurrentLevel(-1);
+    setActiveLevel(-1);
+    setShowQualityMenu(false);
 
     if (Hls.isSupported()) {
       const hls = new Hls({ lowLatencyMode: true, liveDurationInfinity: true });
       hlsRef.current = hls;
       hls.loadSource(url);
       hls.attachMedia(video);
-      hls.on(Hls.Events.MANIFEST_PARSED, () => {
+      hls.on(Hls.Events.MANIFEST_PARSED, (_evt, data) => {
         setMuxLoading(false);
         video.play().catch(() => setMuxPlaying(false));
+        if (data.levels && data.levels.length > 1) {
+          setQualityLevels(data.levels.map((lvl, index) => ({ index, height: lvl.height })));
+        }
+      });
+      hls.on(Hls.Events.LEVEL_SWITCHED, (_evt, data) => {
+        setActiveLevel(data.level);
       });
       hls.on(Hls.Events.ERROR, (_evt, data) => {
         if (data.fatal) {
@@ -98,6 +114,14 @@ function LivePlayer({ embedUrl, title, viewerCount }: { embedUrl: string; title:
     video.muted = !video.muted;
     setMuxMuted(video.muted);
   };
+  const changeQuality = (index: number) => {
+    if (hlsRef.current) hlsRef.current.currentLevel = index; // -1 = Tự động
+    setCurrentLevel(index);
+    setShowQualityMenu(false);
+  };
+  const qualityLabel = currentLevel === -1
+    ? `Tự động${activeLevel >= 0 && qualityLevels[activeLevel] ? ` (${qualityLevels[activeLevel].height}p)` : ''}`
+    : `${qualityLevels.find(l => l.index === currentLevel)?.height ?? ''}p`;
 
   const togglePlay = () => {
     postYouTubeCommand(iframeRef.current, playing ? 'pauseVideo' : 'playVideo');
@@ -213,41 +237,90 @@ function LivePlayer({ embedUrl, title, viewerCount }: { embedUrl: string; title:
       )}
 
       {kind === 'mux' && !muxOffline && (
-        /* Custom control bar cho Mux — play/pause, tắt/mở tiếng, nút full màn hình LỚN luôn hiện */
+        /* Custom control bar cho Mux — LIVE THẬT nên không có nút Tạm dừng.
+           Tự động phát ngay khi có tín hiệu; chỉ hiện nút "Xem trực tiếp" khi
+           trình duyệt chặn autoplay (hiếm khi xảy ra vì video đã muted sẵn). */
         <div className="absolute inset-0 z-10">
-          <button
-            onClick={toggleMuxPlay}
-            className="absolute inset-0 flex items-center justify-center"
-            aria-label={muxPlaying ? 'Tạm dừng' : 'Phát'}
-          >
-            <span className={`w-16 h-16 rounded-full bg-black/40 backdrop-blur flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity ${!muxPlaying ? 'opacity-100' : ''}`}>
-              {muxPlaying ? <Pause size={26} className="text-white" /> : <Play size={26} className="text-white ml-1" />}
-            </span>
-          </button>
-
-          <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between gap-2 px-3 py-2 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
-            <div className="flex items-center gap-2">
-              <button onClick={toggleMuxPlay} className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors">
-                {muxPlaying ? <Pause size={15} /> : <Play size={15} className="ml-0.5" />}
-              </button>
-              <button onClick={toggleMuxMute} className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors">
-                {muxMuted ? <VolumeX size={15} /> : <Volume2 size={15} />}
-              </button>
-              <span className="flex items-center gap-1 text-[10px] text-slate-300 font-semibold bg-black/40 px-2 py-1 rounded-full">
-                <Lock size={9} /> Trực tiếp
+          {/* Chỉ hiện khi autoplay bị chặn — bấm để bắt đầu xem trực tiếp */}
+          {!muxPlaying && (
+            <button
+              onClick={toggleMuxPlay}
+              className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/50"
+              aria-label="Xem trực tiếp"
+            >
+              <span className="w-16 h-16 rounded-full bg-red-600 flex items-center justify-center shadow-xl">
+                <Play size={26} className="text-white ml-1" />
               </span>
-            </div>
-          </div>
+              <span className="text-white text-xs font-bold bg-black/50 px-3 py-1 rounded-full">Bấm để xem trực tiếp</span>
+            </button>
+          )}
 
-          {/* Nút Toàn màn hình — to, luôn hiện, dễ bấm trên mobile */}
+          {/* Banner "đang tắt tiếng" — luôn hiện, bấm để bật tiếng ngay, không cần hover mới thấy */}
+          {muxMuted && muxPlaying && (
+            <button
+              onClick={toggleMuxMute}
+              className="absolute top-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-black/70 hover:bg-black/85 active:scale-95 backdrop-blur border border-white/20 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg transition-all z-20"
+            >
+              <VolumeX size={13} /> Đang tắt tiếng — Bấm để bật
+            </button>
+          )}
+
+          {/* Nút bật/tắt tiếng — LUÔN hiện rõ, không phụ thuộc hover, dễ bấm trên mobile */}
           <button
-            onClick={toggleFullscreen}
-            aria-label="Toàn màn hình"
-            className="absolute bottom-3 right-3 flex items-center gap-2 bg-black/60 hover:bg-black/80 active:scale-95 backdrop-blur border border-white/20 text-white font-bold rounded-2xl px-4 py-3 shadow-xl transition-all"
+            onClick={toggleMuxMute}
+            aria-label={muxMuted ? 'Bật tiếng' : 'Tắt tiếng'}
+            className="absolute bottom-3 left-3 flex items-center justify-center w-12 h-12 bg-black/60 hover:bg-black/80 active:scale-95 backdrop-blur border border-white/20 text-white rounded-2xl shadow-xl transition-all"
           >
-            {isFullscreen ? <Minimize size={22} /> : <Maximize size={22} />}
-            <span className="hidden sm:inline text-sm">{isFullscreen ? 'Thoát' : 'Toàn màn hình'}</span>
+            {muxMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
           </button>
+
+          {/* Nhóm nút góc phải dưới: chất lượng video + toàn màn hình */}
+          <div className="absolute bottom-3 right-3 flex items-center gap-2">
+            {/* Nút chỉnh chất lượng video — chỉ hiện khi luồng có nhiều mức chất lượng */}
+            {qualityLevels.length > 1 && (
+              <div className="relative">
+                {showQualityMenu && (
+                  <div className="absolute bottom-full mb-2 right-0 min-w-[140px] bg-black/90 backdrop-blur border border-white/15 rounded-xl shadow-xl overflow-hidden z-30">
+                    <button
+                      onClick={() => changeQuality(-1)}
+                      className="w-full flex items-center justify-between gap-2 px-3.5 py-2.5 text-xs font-semibold text-white hover:bg-white/10 transition-colors"
+                    >
+                      Tự động
+                      {currentLevel === -1 && <Check size={13} className="text-green-400" />}
+                    </button>
+                    {[...qualityLevels].sort((a, b) => b.height - a.height).map(lvl => (
+                      <button
+                        key={lvl.index}
+                        onClick={() => changeQuality(lvl.index)}
+                        className="w-full flex items-center justify-between gap-2 px-3.5 py-2.5 text-xs font-semibold text-white hover:bg-white/10 transition-colors"
+                      >
+                        {lvl.height}p
+                        {currentLevel === lvl.index && <Check size={13} className="text-green-400" />}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <button
+                  onClick={() => setShowQualityMenu(v => !v)}
+                  aria-label="Chỉnh chất lượng video"
+                  className="flex items-center gap-1.5 bg-black/60 hover:bg-black/80 active:scale-95 backdrop-blur border border-white/20 text-white font-bold rounded-2xl px-3 py-3 shadow-xl transition-all"
+                >
+                  <Settings size={18} />
+                  <span className="hidden sm:inline text-xs">{qualityLabel}</span>
+                </button>
+              </div>
+            )}
+
+            {/* Nút Toàn màn hình — to, luôn hiện, dễ bấm trên mobile */}
+            <button
+              onClick={toggleFullscreen}
+              aria-label="Toàn màn hình"
+              className="flex items-center gap-2 bg-black/60 hover:bg-black/80 active:scale-95 backdrop-blur border border-white/20 text-white font-bold rounded-2xl px-4 py-3 shadow-xl transition-all"
+            >
+              {isFullscreen ? <Minimize size={22} /> : <Maximize size={22} />}
+              <span className="hidden sm:inline text-sm">{isFullscreen ? 'Thoát' : 'Toàn màn hình'}</span>
+            </button>
+          </div>
         </div>
       )}
 
