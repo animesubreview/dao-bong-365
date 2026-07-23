@@ -6,12 +6,16 @@ import {
   RefreshCw, Link as LinkIcon, Info, Lock, LogOut, KeyRound,
   Bell, BellPlus, Users, Ban, UserCheck, Clock, Megaphone, MonitorPlay,
   Wallet, PlusCircle, MinusCircle, CreditCard, Wrench, Crown, Activity, Wifi,
-  History, Search, Radio, Trash,
+  History, Search, Radio, Trash, Copy,
 } from 'lucide-react';
 import { getAdBanners, createAdBanner, updateAdBanner, deleteAdBanner, AdBannerData } from '../components/AdBanner';
 import { createPopupAd, updatePopupAd, deletePopupAd, PopupAdData } from '../components/PopupAd';
 import { getClickAdConfig, saveClickAdConfig, ClickAdConfig, DEFAULT_CLICK_AD } from '../lib/clickAd';
 import { getVipPrices, saveVipPrices, VipPrices, DEFAULT_VIP_PRICES, VIP_META, VIP_DAYS } from '../lib/vip';
+import {
+  createVipKey, createVipKeysBatch, deleteVipKey, subscribeVipKeys,
+  formatDuration, VipKey, DurationUnit, DURATION_UNIT_LABEL,
+} from '../lib/vipKeys';
 import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
 import { fetchSiteSettings, saveSiteSettings as saveSiteSettingsFirestore } from '../lib/siteSettings';
 import { db } from '../lib/firebase';
@@ -108,6 +112,7 @@ function SectionCard({ id, title, icon: Icon, children, color = 'indigo' }: any)
     cyan: 'from-cyan-500 to-blue-500 shadow-cyan-500/20',
     red: 'from-red-500 to-orange-500 shadow-red-500/20',
     amber: 'from-amber-500 to-yellow-500 shadow-amber-500/20',
+    sky: 'from-sky-500 to-blue-500 shadow-sky-500/20',
   };
   const accent = accents[color] || accents.indigo;
   return (
@@ -1505,7 +1510,195 @@ function VipSection({ onToast }: { onToast: (msg: string, t: 'success' | 'error'
   );
 }
 
-// ── MaintenanceSection ────────────────────────────────────────────────────────
+// ── VipKeysSection: tạo & quản lý mã Key VIP (thủ công + tự động hàng loạt) ──
+function VipKeysSection({ onToast }: { onToast: (msg: string, t: 'success' | 'error') => void }) {
+  const [keys, setKeys] = useState<VipKey[]>([]);
+  const [value, setValue] = useState(1);
+  const [unit, setUnit] = useState<DurationUnit>('day');
+  const [note, setNote] = useState('');
+  const [batchCount, setBatchCount] = useState(10);
+  const [creating, setCreating] = useState(false);
+  const [filter, setFilter] = useState<'all' | 'unused' | 'used'>('all');
+  const [lastBatch, setLastBatch] = useState<VipKey[]>([]);
+
+  useEffect(() => subscribeVipKeys(setKeys), []);
+
+  const handleCreateOne = async () => {
+    if (value <= 0) { onToast('Thời hạn phải lớn hơn 0!', 'error'); return; }
+    setCreating(true);
+    try {
+      const key = await createVipKey(value, unit, note);
+      setLastBatch([key]);
+      onToast(`Đã tạo mã: ${key.code}`, 'success');
+      setNote('');
+    } catch { onToast('Lỗi khi tạo mã!', 'error'); }
+    setCreating(false);
+  };
+
+  const handleCreateBatch = async () => {
+    if (value <= 0) { onToast('Thời hạn phải lớn hơn 0!', 'error'); return; }
+    if (batchCount <= 0 || batchCount > 500) { onToast('Số lượng key: 1-500!', 'error'); return; }
+    setCreating(true);
+    try {
+      const newKeys = await createVipKeysBatch(batchCount, value, unit, note);
+      setLastBatch(newKeys);
+      onToast(`Đã tự động tạo ${newKeys.length} mã!`, 'success');
+      setNote('');
+    } catch { onToast('Lỗi khi tạo hàng loạt!', 'error'); }
+    setCreating(false);
+  };
+
+  const copyText = (text: string) => {
+    navigator.clipboard.writeText(text);
+    onToast('Đã copy!', 'success');
+  };
+
+  const filteredKeys = keys.filter(k => filter === 'all' ? true : filter === 'used' ? k.used : !k.used);
+  const unusedCount = keys.filter(k => !k.used).length;
+
+  return (
+    <SectionCard title="Mã Key VIP · Chặn QC" icon={KeyRound} color="sky">
+      <div className="flex flex-col gap-5">
+        <p className="text-sm text-slate-400">
+          Tạo mã Key có thời hạn tuỳ chỉnh (phút/giờ/ngày) để gửi cho member — member vào trang{' '}
+          <span className="text-sky-400 font-semibold">Mua VIP</span> nhập mã là nhận ngay thời hạn VIP + Chặn QC,
+          cộng dồn nếu còn VIP hiện tại. Mỗi mã chỉ dùng được <strong className="text-white">1 lần</strong>.
+        </p>
+
+        {/* Form tạo key */}
+        <div className="bg-slate-800/40 border border-slate-700/40 rounded-xl p-4 flex flex-col gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <div>
+              <label className="text-xs text-slate-400 font-semibold mb-1 block">Thời hạn</label>
+              <input
+                type="number"
+                min={1}
+                value={value}
+                onChange={e => setValue(Math.max(1, parseInt(e.target.value) || 1))}
+                className="admin-input w-full"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-slate-400 font-semibold mb-1 block">Đơn vị</label>
+              <select value={unit} onChange={e => setUnit(e.target.value as DurationUnit)} className="admin-input w-full">
+                {(['minute', 'hour', 'day'] as DurationUnit[]).map(u => (
+                  <option key={u} value={u}>{DURATION_UNIT_LABEL[u]}</option>
+                ))}
+              </select>
+            </div>
+            <div className="col-span-2 sm:col-span-1">
+              <label className="text-xs text-slate-400 font-semibold mb-1 block">Ghi chú (tuỳ chọn)</label>
+              <input type="text" value={note} onChange={e => setNote(e.target.value)} placeholder="VD: Tặng sự kiện..." className="admin-input w-full" />
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-3 pt-1">
+            <button
+              onClick={handleCreateOne}
+              disabled={creating}
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-sky-600 hover:bg-sky-500 disabled:opacity-60 text-white font-bold rounded-xl text-sm transition-colors"
+            >
+              <KeyRound size={15} /> Tạo 1 mã (thủ công)
+            </button>
+
+            <div className="flex-1 flex gap-2">
+              <input
+                type="number"
+                min={1}
+                max={500}
+                value={batchCount}
+                onChange={e => setBatchCount(Math.max(1, parseInt(e.target.value) || 1))}
+                className="admin-input w-20 text-center shrink-0"
+                title="Số lượng mã"
+              />
+              <button
+                onClick={handleCreateBatch}
+                disabled={creating}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-violet-600 hover:bg-violet-500 disabled:opacity-60 text-white font-bold rounded-xl text-sm transition-colors"
+              >
+                <Zap size={15} /> Tạo tự động hàng loạt
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Kết quả vừa tạo */}
+        {lastBatch.length > 0 && (
+          <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-sm font-bold text-emerald-300">✅ Vừa tạo {lastBatch.length} mã ({formatDuration(lastBatch[0].durationMs)})</p>
+              <button
+                onClick={() => copyText(lastBatch.map(k => k.code).join('\n'))}
+                className="text-xs font-bold text-emerald-400 hover:text-emerald-300 flex items-center gap-1"
+              >
+                <Copy size={12} /> Copy tất cả
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto">
+              {lastBatch.map(k => (
+                <button
+                  key={k.code}
+                  onClick={() => copyText(k.code)}
+                  className="text-xs font-mono bg-slate-900/60 border border-slate-700 hover:border-emerald-500/50 text-slate-300 px-2 py-1 rounded-lg transition-colors"
+                  title="Bấm để copy"
+                >
+                  {k.code}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Danh sách key */}
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-xs font-black text-slate-500 uppercase tracking-wider">
+              Tất cả mã ({keys.length}) — Chưa dùng: {unusedCount}
+            </p>
+            <div className="flex gap-1.5">
+              {(['all', 'unused', 'used'] as const).map(f => (
+                <button
+                  key={f}
+                  onClick={() => setFilter(f)}
+                  className={cn(
+                    'text-[11px] font-bold px-2.5 py-1 rounded-lg transition-colors',
+                    filter === f ? 'bg-sky-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+                  )}
+                >
+                  {f === 'all' ? 'Tất cả' : f === 'unused' ? 'Chưa dùng' : 'Đã dùng'}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2 max-h-96 overflow-y-auto">
+            {filteredKeys.length === 0 && (
+              <p className="text-xs text-slate-600 italic text-center py-4">Chưa có mã nào.</p>
+            )}
+            {filteredKeys.map(k => (
+              <div key={k.code} className="flex items-center gap-3 bg-slate-800/40 border border-slate-700/30 rounded-xl px-3 py-2.5">
+                <button onClick={() => copyText(k.code)} className="font-mono text-sm text-white hover:text-sky-400 transition-colors shrink-0" title="Bấm để copy">
+                  {k.code}
+                </button>
+                <span className="text-[11px] text-slate-500 shrink-0">{formatDuration(k.durationMs)}</span>
+                {k.note && <span className="text-[11px] text-slate-600 truncate hidden sm:inline">— {k.note}</span>}
+                <span className={cn(
+                  'text-[10px] font-bold px-2 py-0.5 rounded-full ml-auto shrink-0',
+                  k.used ? 'bg-slate-700 text-slate-400' : 'bg-green-500/15 text-green-400'
+                )}>
+                  {k.used ? `Đã dùng${k.usedByName ? ' · ' + k.usedByName : ''}` : 'Chưa dùng'}
+                </span>
+                <button onClick={() => deleteVipKey(k.code)} className="btn-icon p-1.5 hover:border-red-500/40 hover:text-red-400 shrink-0">
+                  <Trash2 size={13} />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </SectionCard>
+  );
+}
 
 // ── RealtimeUsersSection ─────────────────────────────────────────────────────
 function RealtimeUsersSection() {
@@ -3507,8 +3700,9 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
 
           {/* GÓI VIP */}
           {activeSection === 'section-vip' && (
-          <div id="section-vip">
+          <div id="section-vip" className="flex flex-col gap-6">
             <VipSection onToast={(msg, t) => setToast({ message: msg, type: t })} />
+            <VipKeysSection onToast={(msg, t) => setToast({ message: msg, type: t })} />
           </div>
           )}
 

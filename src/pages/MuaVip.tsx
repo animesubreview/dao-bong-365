@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Crown, CheckCircle2, Loader2, Wallet, Zap, ShieldCheck } from 'lucide-react';
+import { Crown, CheckCircle2, Loader2, Wallet, Zap, ShieldCheck, KeyRound } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import {
   purchaseVip,
@@ -9,6 +9,7 @@ import {
   VIP_META,
   VipTier,
 } from '../lib/vip';
+import { redeemVipKey, formatDuration } from '../lib/vipKeys';
 import { formatVND } from '../lib/topup';
 import { onAuthChange, getUserProfile, UserProfile } from '../lib/auth';
 
@@ -18,6 +19,10 @@ export default function MuaVip() {
   const [vipLoading, setVipLoading] = useState(false);
   const [vipMsg, setVipMsg] = useState<{ text: string; ok: boolean } | null>(null);
   const [purchasedTier, setPurchasedTier] = useState<VipTier | null>(null);
+
+  const [keyInput, setKeyInput] = useState('');
+  const [keyLoading, setKeyLoading] = useState(false);
+  const [keyMsg, setKeyMsg] = useState<{ text: string; ok: boolean } | null>(null);
 
   useEffect(() => {
     const unsub = onAuthChange(async user => {
@@ -44,6 +49,23 @@ export default function MuaVip() {
       if (fresh) setSession(fresh);
     } else {
       setVipMsg({ text: result.error || 'Mua thất bại!', ok: false });
+    }
+  };
+
+  const handleRedeemKey = async () => {
+    if (!session) return;
+    if (!keyInput.trim()) { setKeyMsg({ text: 'Vui lòng nhập mã!', ok: false }); return; }
+    setKeyLoading(true);
+    setKeyMsg(null);
+    const result = await redeemVipKey(keyInput, session.uid);
+    setKeyLoading(false);
+    if (result.ok) {
+      setKeyMsg({ text: `🎉 Nhận thành công ${formatDuration(result.durationMs || 0)} VIP · Chặn QC!`, ok: true });
+      setKeyInput('');
+      const fresh = await getUserProfile(session.uid);
+      if (fresh) setSession(fresh);
+    } else {
+      setKeyMsg({ text: result.error || 'Đổi mã thất bại!', ok: false });
     }
   };
 
@@ -116,6 +138,37 @@ export default function MuaVip() {
               className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white text-slate-950 text-sm font-black hover:bg-slate-100 transition-colors">
               Đăng nhập ngay
             </Link>
+          </div>
+        )}
+
+        {/* Nhập mã Key nhận VIP */}
+        {session && (
+          <div className="bg-slate-800/40 border border-sky-500/25 rounded-2xl p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <KeyRound size={16} className="text-sky-400" />
+              <p className="text-sm font-black text-white">Nhập mã Nhận VIP · Chặn QC</p>
+            </div>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={keyInput}
+                onChange={e => setKeyInput(e.target.value.toUpperCase())}
+                placeholder="XXXX-XXXX-XXXX"
+                className="flex-1 min-w-0 bg-slate-900/60 border border-slate-700 rounded-xl px-3 py-2.5 text-sm font-mono tracking-wider text-white placeholder:text-slate-600 focus:outline-none focus:border-sky-500/60"
+              />
+              <button
+                onClick={handleRedeemKey}
+                disabled={keyLoading || !keyInput.trim()}
+                className="shrink-0 flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-black transition-colors"
+              >
+                {keyLoading ? <Loader2 size={14} className="animate-spin" /> : 'Nhận'}
+              </button>
+            </div>
+            {keyMsg && (
+              <p className={`mt-2.5 text-xs font-bold ${keyMsg.ok ? 'text-green-400' : 'text-red-400'}`}>
+                {keyMsg.text}
+              </p>
+            )}
           </div>
         )}
 
