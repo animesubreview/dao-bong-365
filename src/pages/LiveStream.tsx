@@ -434,9 +434,8 @@ export default function LiveStreamPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:h-[520px]">
         <div className="lg:col-span-2 flex flex-col gap-3">
-          {isScheduledYet ? (
-            <ScheduleGate scheduledAt={config.scheduledAt} />
-          ) : !isApproved ? (
+          {isScheduledYet && <ScheduleGate scheduledAt={config.scheduledAt} />}
+          {config.requireApproval && !isApproved && (
             <ApprovalGate
               currentUser={currentUser}
               profile={profile}
@@ -444,7 +443,8 @@ export default function LiveStreamPage() {
               onRequest={handleRequest}
               requesting={requesting}
             />
-          ) : (
+          )}
+          {!isScheduledYet && isApproved && (
             <LivePlayer embedUrl={config.embedUrl} title={config.title} viewerCount={viewerCount} />
           )}
           <div className="bg-[#141414] border border-slate-800/60 rounded-2xl p-4">
