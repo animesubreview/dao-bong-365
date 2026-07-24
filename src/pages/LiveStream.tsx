@@ -102,6 +102,40 @@ function LivePlayer({ embedUrl, title, viewerCount }: { embedUrl: string; title:
     return () => document.removeEventListener('fullscreenchange', onFsChange);
   }, []);
 
+  // ── Tải lại iframe (YouTube/Facebook/nhúng khác) khi quay lại tab ───────────
+  // Với iframe nhúng từ domain khác, không có quyền can thiệp vào video bên trong
+  // (bị chặn bởi CORS) nên không thể gọi play()/seek() như luồng Mux. Nếu trình
+  // duyệt (đặc biệt trên di động) tạm dừng/đóng băng video khi rời tab, cách duy
+  // nhất để "nối" lại đúng thời điểm trực tiếp là tải lại iframe — vì đây là
+  // stream trực tiếp nên tải mới sẽ luôn vào đúng thời điểm hiện tại, không phải
+  // phát lại từ đầu.
+  const [iframeKey, setIframeKey] = useState(0);
+  const hiddenAtRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (kind !== 'youtube' && kind !== 'facebook' && kind !== 'generic') return;
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') {
+        hiddenAtRef.current = Date.now();
+      } else if (document.visibilityState === 'visible') {
+        const hiddenAt = hiddenAtRef.current;
+        hiddenAtRef.current = null;
+        // Chỉ tải lại nếu đã rời tab đủ lâu (tránh giật hình khi chỉ liếc qua nhanh)
+        if (hiddenAt && Date.now() - hiddenAt > 3000) {
+          setIframeKey(k => k + 1);
+        }
+      }
+    };
+    const onPageShow = (e: PageTransitionEvent) => {
+      if (e.persisted) setIframeKey(k => k + 1); // quay lại từ bfcache
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('pageshow', onPageShow);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('pageshow', onPageShow);
+    };
+  }, [kind]);
+
   // ── Đồng bộ về đúng thời điểm trực tiếp khi quay lại tab ────────────────────
   // Khi chuyển tab / thoát app, trình duyệt tự tạm dừng <video>. Nếu chỉ play()
   // lại bình thường, video sẽ tiếp tục từ đoạn buffer cũ (bị tụt lại phía sau)
@@ -185,6 +219,7 @@ function LivePlayer({ embedUrl, title, viewerCount }: { embedUrl: string; title:
     >
       {kind === 'youtube' && (
         <iframe
+          key={iframeKey}
           ref={iframeRef}
           src={url}
           className="absolute inset-0 w-full h-full border-0"
@@ -359,6 +394,7 @@ function LivePlayer({ embedUrl, title, viewerCount }: { embedUrl: string; title:
 
       {(kind === 'facebook' || kind === 'generic') && (
         <iframe
+          key={iframeKey}
           ref={iframeRef}
           src={url}
           className="absolute inset-0 w-full h-full border-0"
