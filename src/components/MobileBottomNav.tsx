@@ -1,12 +1,12 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Search, CalendarDays, User } from 'lucide-react';
+import { Home, Grid3x3, Tv, Search } from 'lucide-react';
 
 const NAV_ITEMS = [
   { to: '/', label: 'Trang chủ', icon: Home, match: (p: string) => p === '/' },
+  { to: '/type/hoat-hinh', label: 'Phim', icon: Grid3x3, match: (p: string) => p.startsWith('/type') },
+  { to: '/type/phim-bo', label: 'Phim bộ', icon: Tv, match: (p: string) => p === '/type/phim-bo' },
   { to: '/search', label: 'Tìm kiếm', icon: Search, match: (p: string) => p === '/search' },
-  { to: '/cinema', label: 'Lịch chiếu', icon: CalendarDays, match: (p: string) => p === '/cinema' || p === '/lich-chieu' },
-  { to: '/profile', label: 'Tài khoản', icon: User, match: (p: string) => p === '/profile' || p === '/auth' },
 ];
 
 export default function MobileBottomNav() {
@@ -17,29 +17,25 @@ export default function MobileBottomNav() {
   if (pathname.startsWith('/watch')) return null;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 md:hidden">
-      <div className="mx-3 mb-3 rounded-[28px] bg-slate-900/95 backdrop-blur-xl border border-slate-800/70 shadow-[0_8px_30px_rgba(0,0,0,0.5)]">
-        <div className="flex items-stretch justify-between px-2 py-2">
-          {NAV_ITEMS.map(({ to, label, icon: Icon, match }) => {
-            const active = match(pathname);
-            return (
-              <Link
-                key={to}
-                to={to}
-                className="flex-1 flex flex-col items-center justify-center gap-1 py-1.5 rounded-2xl transition-colors"
-              >
-                <Icon
-                  size={22}
-                  strokeWidth={2}
-                  className={active ? 'text-green-400 drop-shadow-[0_0_8px_rgba(34,197,94,0.7)]' : 'text-slate-500'}
-                />
-                <span className={`text-[11px] font-semibold ${active ? 'text-green-400' : 'text-slate-500'}`}>
-                  {label}
-                </span>
-              </Link>
-            );
-          })}
-        </div>
+    <nav className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-slate-950 border-t border-slate-800">
+      <div className="flex items-stretch justify-around" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+        {NAV_ITEMS.map(({ to, label, icon: Icon, match }) => {
+          const active = match(pathname);
+          return (
+            <Link
+              key={to}
+              to={to}
+              aria-label={label}
+              className="flex-1 flex items-center justify-center py-3.5 transition-colors"
+            >
+              <Icon
+                size={24}
+                strokeWidth={active ? 2.4 : 2}
+                className={active ? 'text-yellow-400' : 'text-slate-400'}
+              />
+            </Link>
+          );
+        })}
       </div>
     </nav>
   );

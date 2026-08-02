@@ -8,6 +8,7 @@ import {
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { useEffect, useState } from 'react';
+import { onAuthChange, getUserProfile, UserProfile } from './auth';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -87,6 +88,35 @@ export function useVipPrices(): VipPrices {
 export function isVipActive(vipExpiry?: number | null): boolean {
   if (!vipExpiry) return false;
   return Date.now() < vipExpiry;
+}
+
+// ─── Hook dùng chung: trạng thái VIP của user hiện tại ─────────────────────────
+// isVip = true nếu là admin HOẶC VIP còn hạn → dùng để ẩn quảng cáo / bỏ qua check
+export interface VipStatus {
+  profile: UserProfile | null;
+  isVip: boolean;
+  loading: boolean;
+}
+
+export function useVipStatus(): VipStatus {
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const unsub = onAuthChange(async (user) => {
+      if (user) {
+        const p = await getUserProfile(user.uid);
+        setProfile(p);
+      } else {
+        setProfile(null);
+      }
+      setLoading(false);
+    });
+    return unsub;
+  }, []);
+
+  const isVip = !loading && (profile?.role === 'admin' || isVipActive(profile?.vipExpiry));
+  return { profile, isVip, loading };
 }
 
 export function getVipTierFromExpiry(

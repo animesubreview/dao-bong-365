@@ -1,24 +1,22 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Heart, Film, ChevronRight, ChevronLeft, List, ExternalLink, Info, Server } from 'lucide-react';
+import { Heart, Film, ChevronRight, ChevronLeft, List, ExternalLink, Info, Server, ShieldAlert } from 'lucide-react';
 import { cn, usePageTitle } from '../lib/utils';
 import { motion } from 'motion/react';
 import CommentSection from '../components/CommentSection';
 import { getManualMovie, ManualMovie, ManualEpisode } from '../lib/manualMovies';
+import { subscribeSiteSettings } from '../lib/siteSettings';
 
-function buildEmbedUrl(raw: string): { url: string; isDrive: boolean; isM3u8: boolean } {
-  const trimmed = raw.trim();
-  const isM3u8 = /\.m3u8($|\?)/i.test(trimmed);
-  if (isM3u8) return { url: trimmed, isDrive: false, isM3u8: true };
-  const isDrive = trimmed.includes('drive.google.com') || trimmed.includes('docs.google.com');
-  if (!isDrive) return { url: trimmed, isDrive: false, isM3u8: false };
-  const fileMatch = trimmed.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
-  if (fileMatch) return { url: `https://drive.google.com/file/d/${fileMatch[1]}/preview`, isDrive: true, isM3u8: false };
-  const idMatch = trimmed.match(/[?&]id=([a-zA-Z0-9_-]+)/);
-  if (idMatch) return { url: `https://drive.google.com/file/d/${idMatch[1]}/preview`, isDrive: true, isM3u8: false };
-  if (trimmed.includes('/preview')) return { url: trimmed, isDrive: true, isM3u8: false };
-  return { url: trimmed.replace(/\/(view|edit)(\?.*)?$/, '/preview'), isDrive: true, isM3u8: false };
+function useSiteSettings() {
+  const [s, setS] = useState<Record<string, any>>({});
+  useEffect(() => {
+    const unsub = subscribeSiteSettings(setS);
+    return unsub;
+  }, []);
+  return s;
 }
+
+import { buildEmbedUrl } from '../lib/embedUrl';
 
 // ── HLS / M3U8 Player ────────────────────────────────────────────────────────
 function HlsPlayer({ src, movie }: { src: string; movie: ManualMovie }) {
@@ -319,6 +317,8 @@ export default function WatchManual() {
   const [embedError, setEmbedError] = useState(false);
   const [showThumbs, setShowThumbs] = useState(false);
   const navigate = useNavigate();
+  const settings = useSiteSettings();
+  const copyWarning = settings.manualCopyWarningEnabled !== false ? (settings.manualCopyWarning || '') : '';
 
   usePageTitle(movie ? movie.name : undefined);
 
@@ -374,14 +374,14 @@ export default function WatchManual() {
 
   if (loading) return (
     <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-      <div className="w-10 h-10 border-4 border-green-500 border-t-transparent rounded-full animate-spin" />
+      <div className="w-10 h-10 border-4 border-yellow-500 border-t-transparent rounded-full animate-spin" />
     </div>
   );
 
   if (!movie) return (
     <div className="min-h-screen bg-slate-950 flex items-center justify-center flex-col gap-4">
       <p className="text-slate-400">Không tìm thấy phim</p>
-      <Link to="/" className="text-green-400 font-bold">← Về trang chủ</Link>
+      <Link to="/" className="text-yellow-400 font-bold">← Về trang chủ</Link>
     </div>
   );
 
@@ -399,7 +399,11 @@ export default function WatchManual() {
   return (
     <div className="min-h-screen bg-[#0d0d0d] pb-24">
 
+      {/* ══ Khối bố cục: mobile/iPad giữ nguyên (cột đơn); PC/Laptop (xl+) chia 2 cột ══ */}
+      <div className="xl:max-w-[1500px] xl:mx-auto xl:px-8 xl:pt-4 xl:grid xl:grid-cols-[1fr_380px] xl:gap-6 xl:items-start">
+
       {/* ── Video Player + Watermark (fullscreen-safe) ── */}
+      <div className="xl:col-start-1">
       {isM3u8 ? (
         <HlsPlayer src={embedSrc} movie={movie} />
       ) : (
@@ -409,9 +413,17 @@ export default function WatchManual() {
           movie={movie}
         />
       )}
+      </div>
 
       {/* ── Content ── */}
-      <div className="max-w-2xl mx-auto px-3 pt-3 flex flex-col gap-3">
+      <div className="max-w-2xl xl:max-w-none mx-auto xl:mx-0 px-3 xl:px-0 pt-3 xl:pt-0 flex flex-col gap-3 xl:col-start-1">
+
+        {copyWarning && (
+          <div className="flex items-start gap-2.5 bg-red-500/10 border border-red-500/30 rounded-xl px-3.5 py-2.5">
+            <ShieldAlert size={16} className="text-red-400 shrink-0 mt-0.5" />
+            <p className="text-red-200/90 text-xs leading-relaxed">{copyWarning}</p>
+          </div>
+        )}
 
         {/* ── Title card ── */}
         <motion.div initial={{ y: 16, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
@@ -419,7 +431,7 @@ export default function WatchManual() {
           <div className="flex items-start justify-between gap-3 mb-3">
             <div className="flex-1 min-w-0">
               <h1 className="text-white font-bold text-base leading-snug line-clamp-2">{movie.name}</h1>
-              <p className="text-green-400 text-sm font-medium mt-0.5">{currentEp?.label || 'Full'}</p>
+              <p className="text-yellow-400 text-sm font-medium mt-0.5">{currentEp?.label || 'Full'}</p>
             </div>
           </div>
           {/* Action bar */}
@@ -440,8 +452,14 @@ export default function WatchManual() {
               </a>
             )}
           </div>
-          <div className="h-[2px] bg-green-500 rounded-full mt-2 w-16" />
+          <div className="h-[2px] bg-yellow-500 rounded-full mt-2 w-16" />
         </motion.div>
+
+      </div>
+      {/* ↑ đóng content-area phần 1 (để sidebar dưới đây thành ô lưới riêng, không bị lồng bên trong) */}
+
+        {/* ══ Sidebar (PC/Laptop): info phim + danh sách tập gộp chung 1 cột phải, dính khi cuộn ══ */}
+        <div className="max-w-2xl xl:max-w-none mx-auto xl:mx-0 px-3 xl:px-0 flex flex-col gap-3 xl:gap-4 xl:col-start-2 xl:[grid-row:1/-1] xl:sticky xl:top-6 xl:max-h-[calc(100vh-3rem)] xl:overflow-y-auto xl:pr-1">
 
         {/* ── Movie detail mini card ── */}
         <motion.div initial={{ y: 16, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.05 }}
@@ -455,7 +473,7 @@ export default function WatchManual() {
             <div className="flex flex-wrap gap-1.5 mt-2">
               {movie.year && <span className="text-xs text-slate-300">• {movie.year}</span>}
               {movie.quality && (
-                <span className="text-[10px] font-black bg-green-500/20 text-green-400 border border-green-500/30 px-1.5 py-0.5 rounded">
+                <span className="text-[10px] font-black bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 px-1.5 py-0.5 rounded">
                   {movie.quality}
                 </span>
               )}
@@ -492,13 +510,13 @@ export default function WatchManual() {
               <Server size={12} className="text-slate-500" />
               <span className="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Máy chủ:</span>
             </div>
-            <button className="px-3 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-wide bg-green-500/20 border border-green-500/50 text-green-400">
+            <button className="px-3 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-wide bg-yellow-500/20 border border-yellow-500/50 text-yellow-400">
               {serverLabel} | 1
             </button>
           </div>
 
           <div className="px-4 py-2.5 flex items-center justify-between">
-            <button className="flex items-center gap-1.5 text-green-400 border-b-2 border-green-500 pb-1 text-xs font-bold uppercase tracking-wide">
+            <button className="flex items-center gap-1.5 text-yellow-400 border-b-2 border-yellow-500 pb-1 text-xs font-bold uppercase tracking-wide">
               Phụ đề
             </button>
             <span className="text-slate-500 text-xs">Danh sách tập ({epIdx + 1} / {episodes.length})</span>
@@ -507,7 +525,7 @@ export default function WatchManual() {
           <div className="flex items-center gap-2 px-4 pb-3">
             <button
               onClick={() => setShowThumbs(v => !v)}
-              className={cn('w-9 h-5 rounded-full transition-colors relative', showThumbs ? 'bg-green-500' : 'bg-slate-700')}
+              className={cn('w-9 h-5 rounded-full transition-colors relative', showThumbs ? 'bg-yellow-500' : 'bg-slate-700')}
             >
               <span className={cn('absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform shadow', showThumbs ? 'translate-x-4' : 'translate-x-0.5')} />
             </button>
@@ -524,7 +542,7 @@ export default function WatchManual() {
                   className={cn(
                     'py-2 px-1 rounded-lg text-center text-[11px] font-bold transition-all border truncate',
                     i === epIdx
-                      ? 'bg-green-500 border-green-500 text-slate-950 shadow-md shadow-green-500/30'
+                      ? 'bg-yellow-500 border-yellow-500 text-slate-950 shadow-md shadow-yellow-500/30'
                       : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700 hover:border-slate-600'
                   )}
                 >
@@ -555,12 +573,17 @@ export default function WatchManual() {
           )}
         </motion.div>
 
+        </div>
+        {/* ↑ đóng sidebar (info phim + danh sách tập) ── */}
+
+      <div className="max-w-2xl xl:max-w-none mx-auto xl:mx-0 px-3 xl:px-0 flex flex-col gap-3 xl:col-start-1">
+
         {/* ── Nội dung ── */}
         {isDrive && (
           <motion.div initial={{ y: 16, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }}
             className="bg-[#181818] rounded-xl overflow-hidden">
             <div className="flex items-center gap-2 px-4 py-3 border-b border-white/5">
-              <Info size={15} className="text-green-400" />
+              <Info size={15} className="text-yellow-400" />
               <span className="text-white font-bold text-sm uppercase tracking-wide">Lưu ý</span>
             </div>
             <div className="p-4">
@@ -576,6 +599,7 @@ export default function WatchManual() {
           <CommentSection movieSlug={`manual-${movie.id || ''}`} />
         </motion.div>
 
+      </div>
       </div>
     </div>
   );

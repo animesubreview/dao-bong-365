@@ -3,16 +3,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
   User, Camera, Upload, Check, AlertCircle, ArrowLeft,
-  Pencil, X, Loader2, ImagePlus, Shuffle, Save,
-  Wallet, CreditCard, RefreshCw, ChevronDown, Clock, History, Crown, ShieldCheck, Zap,
+  Pencil, X, Loader2, ImagePlus, Save,
 } from 'lucide-react';
 import { onAuthChange, getUserProfile, updateUserProfile, UserProfile } from '../lib/auth';
 import { storage } from '../lib/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { formatVND } from '../lib/topup';
-import {
-  purchaseVip, useVipPrices, isVipActive, vipExpiryText, VIP_META, VipTier,
-} from '../lib/vip';
 
 // ─── Preset DiceBear avatars ──────────────────────────────────────────────────
 const AVATAR_SEEDS = [
@@ -170,10 +165,10 @@ function AvatarPickerModal({
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={uploading}
-              className="w-full flex items-center justify-center gap-2.5 bg-slate-800/80 border-2 border-dashed border-slate-600 hover:border-green-500/60 rounded-2xl py-4 text-sm font-bold text-slate-300 hover:text-green-400 transition-all disabled:opacity-60"
+              className="w-full flex items-center justify-center gap-2.5 bg-slate-800/80 border-2 border-dashed border-slate-600 hover:border-yellow-500/60 rounded-2xl py-4 text-sm font-bold text-slate-300 hover:text-yellow-400 transition-all disabled:opacity-60"
             >
               {uploading ? (
-                <><Loader2 size={18} className="animate-spin text-green-400" /> Đang tải lên...</>
+                <><Loader2 size={18} className="animate-spin text-yellow-400" /> Đang tải lên...</>
               ) : (
                 <><Upload size={18} /> Chọn ảnh từ máy (tối đa 5MB)</>
               )}
@@ -198,14 +193,14 @@ function AvatarPickerModal({
                     onClick={() => onSelect(url)}
                     className={`relative rounded-xl overflow-hidden aspect-square transition-all ${
                       isActive
-                        ? 'ring-2 ring-green-500 ring-offset-2 ring-offset-slate-900 scale-95'
+                        ? 'ring-2 ring-yellow-500 ring-offset-2 ring-offset-slate-900 scale-95'
                         : 'hover:scale-105 hover:ring-2 hover:ring-slate-500 ring-offset-2 ring-offset-slate-900'
                     }`}
                   >
                     <img src={url} alt={seed} className="w-full h-full object-cover bg-slate-800" />
                     {isActive && (
-                      <div className="absolute inset-0 bg-green-500/20 flex items-center justify-center">
-                        <Check size={14} className="text-green-400" strokeWidth={3} />
+                      <div className="absolute inset-0 bg-yellow-500/20 flex items-center justify-center">
+                        <Check size={14} className="text-yellow-400" strokeWidth={3} />
                       </div>
                     )}
                   </button>
@@ -234,12 +229,6 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-
-  // VIP
-  const vipPrices = useVipPrices();
-  const [vipLoading, setVipLoading] = useState(false);
-  const [vipMsg, setVipMsg] = useState<{ text: string; ok: boolean } | null>(null);
-  const [showVipShop, setShowVipShop] = useState(false);
 
   useEffect(() => {
     const unsub = onAuthChange(async (user) => {
@@ -290,25 +279,10 @@ export default function ProfilePage() {
     setError('');
   };
 
-  const handleBuyVip = async (tier: VipTier) => {
-    if (!profile) return;
-    setVipLoading(true);
-    setVipMsg(null);
-    const result = await purchaseVip(profile.uid, tier);
-    if (result.ok) {
-      const fresh = await getUserProfile(profile.uid);
-      if (fresh) setProfile(fresh);
-      setVipMsg({ text: `🎉 Mua ${tier} thành công! QC đã được tắt.`, ok: true });
-    } else {
-      setVipMsg({ text: result.error || 'Mua thất bại!', ok: false });
-    }
-    setVipLoading(false);
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="animate-spin text-green-400" size={32} />
+        <Loader2 className="animate-spin text-yellow-400" size={32} />
       </div>
     );
   }
@@ -319,7 +293,7 @@ export default function ProfilePage() {
     <div className="min-h-screen flex items-center justify-center px-4 py-10 relative overflow-hidden">
       {/* Background ambient */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-24 left-1/3 w-80 h-80 bg-green-500/4 rounded-full blur-3xl" />
+        <div className="absolute top-24 left-1/3 w-80 h-80 bg-yellow-500/4 rounded-full blur-3xl" />
         <div className="absolute bottom-16 right-1/4 w-72 h-72 bg-indigo-600/6 rounded-full blur-3xl" />
       </div>
 
@@ -332,7 +306,7 @@ export default function ProfilePage() {
         <div className="bg-slate-900/90 border border-slate-800/80 rounded-3xl overflow-hidden shadow-2xl backdrop-blur-xl">
 
           {/* Header gradient bar */}
-          <div className="h-20 bg-gradient-to-r from-green-500/20 via-green-500/10 to-indigo-600/10 relative">
+          <div className="h-20 bg-gradient-to-r from-yellow-500/20 via-yellow-500/10 to-indigo-600/10 relative">
             <div className="absolute inset-0 bg-slate-900/40" />
           </div>
 
@@ -349,7 +323,7 @@ export default function ProfilePage() {
                 </div>
                 <button
                   onClick={() => setShowAvatarPicker(true)}
-                  className="absolute -bottom-1.5 -right-1.5 w-7 h-7 bg-green-500 hover:bg-green-400 rounded-lg flex items-center justify-center transition-all shadow-lg shadow-green-500/30 active:scale-95"
+                  className="absolute -bottom-1.5 -right-1.5 w-7 h-7 bg-yellow-500 hover:bg-yellow-400 rounded-lg flex items-center justify-center transition-all shadow-lg shadow-yellow-500/30 active:scale-95"
                 >
                   <Camera size={13} className="text-slate-950" strokeWidth={2.5} />
                 </button>
@@ -366,7 +340,7 @@ export default function ProfilePage() {
             <div className="border-t border-slate-800/60 mb-5" />
 
             <h2 className="text-sm font-black text-white mb-4 flex items-center gap-2">
-              <User size={15} className="text-green-400" />
+              <User size={15} className="text-yellow-400" />
               Chỉnh sửa hồ sơ
             </h2>
 
@@ -382,7 +356,7 @@ export default function ProfilePage() {
                     value={username}
                     onChange={e => setUsername(e.target.value)}
                     maxLength={30}
-                    className="w-full bg-slate-800/80 border border-green-500/40 rounded-xl py-3 px-4 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-green-500/40 transition-all pr-10"
+                    className="w-full bg-slate-800/80 border border-yellow-500/40 rounded-xl py-3 px-4 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/40 transition-all pr-10"
                     placeholder="Nhập tên hiển thị..."
                   />
                   <button
@@ -398,7 +372,7 @@ export default function ProfilePage() {
                   className="w-full flex items-center justify-between bg-slate-800/60 border border-slate-700/50 hover:border-slate-600 rounded-xl py-3 px-4 text-sm text-white transition-all group"
                 >
                   <span>{username}</span>
-                  <Pencil size={13} className="text-slate-500 group-hover:text-green-400 transition-colors" />
+                  <Pencil size={13} className="text-slate-500 group-hover:text-yellow-400 transition-colors" />
                 </button>
               )}
             </div>
@@ -410,7 +384,7 @@ export default function ProfilePage() {
               </label>
               <button
                 onClick={() => setShowAvatarPicker(true)}
-                className="w-full flex items-center gap-3 bg-slate-800/60 border border-slate-700/50 hover:border-green-500/40 rounded-xl py-3 px-4 text-sm transition-all group"
+                className="w-full flex items-center gap-3 bg-slate-800/60 border border-slate-700/50 hover:border-yellow-500/40 rounded-xl py-3 px-4 text-sm transition-all group"
               >
                 <img
                   src={pendingAvatar}
@@ -420,7 +394,7 @@ export default function ProfilePage() {
                 <span className="text-slate-400 group-hover:text-white transition-colors flex-1 text-left">
                   {pendingAvatar !== profile.avatar ? 'Đã chọn ảnh mới ✓' : 'Thay đổi ảnh đại diện'}
                 </span>
-                <ImagePlus size={15} className="text-slate-500 group-hover:text-green-400 transition-colors shrink-0" />
+                <ImagePlus size={15} className="text-slate-500 group-hover:text-yellow-400 transition-colors shrink-0" />
               </button>
             </div>
 
@@ -448,7 +422,7 @@ export default function ProfilePage() {
                 <button
                   onClick={handleSave}
                   disabled={saving}
-                  className="flex-1 bg-green-500 hover:bg-green-400 text-slate-950 font-black py-3 rounded-xl text-sm transition-all shadow-lg shadow-green-500/20 disabled:opacity-60 flex items-center justify-center gap-2"
+                  className="flex-1 bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-black py-3 rounded-xl text-sm transition-all shadow-lg shadow-yellow-500/20 disabled:opacity-60 flex items-center justify-center gap-2"
                 >
                   {saving ? (
                     <><Loader2 size={15} className="animate-spin" /> Đang lưu...</>
@@ -469,118 +443,9 @@ export default function ProfilePage() {
         </div>
 
         <p className="text-center text-slate-600 text-xs mt-4">
-          © ĐẢO PHIM · Xem phim miễn phí
+          © PHIM TUỔI THƠ · Xem phim miễn phí
         </p>
 
-        {/* ─── Nạp tiền ─────────────────────────────────────────────── */}
-        <div className="w-full max-w-sm mt-4">
-          {/* Balance card */}
-          <div className="bg-gradient-to-br from-green-600/20 via-green-500/10 to-indigo-600/10 border border-green-500/20 rounded-2xl p-4 mb-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Wallet size={18} className="text-green-400" />
-                <span className="text-sm font-bold text-slate-300">Số dư tài khoản</span>
-              </div>
-              <button
-                onClick={async () => {
-                  const fresh = await getUserProfile(profile.uid);
-                  if (fresh) setProfile(fresh);
-                }}
-                className="text-slate-500 hover:text-green-400 transition-colors"
-                title="Làm mới số dư"
-              >
-                <RefreshCw size={14} />
-              </button>
-            </div>
-            <p className="text-2xl font-black text-green-400 mt-2">
-              {formatVND(profile.balance || 0)}
-            </p>
-          </div>
-
-          {/* ─── VIP Shop ─────────────────────────────────────────── */}
-          {/* VIP status badge */}
-          {isVipActive(profile.vipExpiry) && profile.vipTier && (() => {
-            const meta = VIP_META[profile.vipTier!];
-            return (
-              <div className={`flex items-center gap-3 bg-gradient-to-r ${meta.gradient} bg-opacity-10 border border-white/10 rounded-2xl px-4 py-3 mb-1`}>
-                <Crown size={20} className="text-white shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-black text-white">{meta.label} · Chặn QC đang bật</p>
-                  <p className="text-xs text-white/70">{vipExpiryText(profile.vipExpiry)}</p>
-                </div>
-                <ShieldCheck size={18} className="text-white/80 shrink-0" />
-              </div>
-            );
-          })()}
-
-          {/* Toggle VIP Shop */}
-          <button
-            onClick={() => setShowVipShop(v => !v)}
-            className="w-full flex items-center justify-between px-4 py-3 bg-gradient-to-r from-amber-500/10 to-orange-500/5 border border-amber-500/30 rounded-2xl text-sm font-bold text-white hover:border-amber-400/50 transition-all"
-          >
-            <div className="flex items-center gap-2">
-              <Crown size={16} className="text-amber-400" />
-              Mua VIP · Chặn quảng cáo
-            </div>
-            <ChevronDown size={16} className={`text-amber-500 transition-transform ${showVipShop ? 'rotate-180' : ''}`} />
-          </button>
-
-          {showVipShop && (
-            <div className="mt-2 bg-slate-900/90 border border-amber-500/20 rounded-2xl p-4 flex flex-col gap-3">
-              <p className="text-xs text-slate-400 text-center">Mua VIP để <span className="text-amber-300 font-bold">tắt hoàn toàn quảng cáo</span>. Gói mua bằng số dư tài khoản.</p>
-
-              {/* 3 gói */}
-              {(['UVIP', 'SVIP', 'SSVIP'] as VipTier[]).map(tier => {
-                const meta = VIP_META[tier];
-                const price = vipPrices[tier];
-                const canAfford = (profile.balance || 0) >= price;
-                return (
-                  <div key={tier} className={`flex items-center gap-3 bg-gradient-to-r ${meta.gradient} p-0.5 rounded-2xl`}>
-                    <div className="flex-1 flex items-center justify-between bg-slate-900/90 rounded-[14px] px-4 py-3 gap-3">
-                      <div>
-                        <p className={`text-sm font-black ${meta.color} flex items-center gap-1.5`}>
-                          <span>{meta.icon}</span> {meta.label}
-                        </p>
-                        <p className="text-xs text-slate-400 mt-0.5">Chặn QC · {meta.days} ngày</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm font-black text-white">{price.toLocaleString('vi-VN')}₫</p>
-                        <button
-                          onClick={() => handleBuyVip(tier)}
-                          disabled={vipLoading || !canAfford}
-                          className={`mt-1.5 flex items-center gap-1 text-[11px] font-black px-3 py-1.5 rounded-full transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed bg-gradient-to-r ${meta.gradient} text-white shadow-sm`}
-                        >
-                          <Zap size={11} />
-                          {vipLoading ? '...' : canAfford ? 'Mua ngay' : 'Không đủ tiền'}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-
-              {vipMsg && (
-                <div className={`text-xs text-center font-bold px-3 py-2 rounded-xl ${vipMsg.ok ? 'text-green-400 bg-green-500/10' : 'text-red-400 bg-red-500/10'}`}>
-                  {vipMsg.text}
-                </div>
-              )}
-
-              <p className="text-[10px] text-slate-600 text-center">Gói VIP cộng dồn thời gian nếu còn hạn. Admin không bị QC.</p>
-            </div>
-          )}
-
-          {/* Nạp thẻ — chuyển sang trang duyệt thủ công */}
-          <a
-            href="/nap-the"
-            className="w-full flex items-center justify-between px-4 py-3 bg-slate-900/90 border border-slate-700/60 rounded-2xl text-sm font-bold text-white hover:border-green-500/40 transition-all"
-          >
-            <div className="flex items-center gap-2">
-              <CreditCard size={16} className="text-green-400" />
-              Nạp thẻ cào
-            </div>
-            <span className="text-[11px] text-yellow-400 bg-yellow-500/10 border border-yellow-500/30 px-2 py-0.5 rounded-full font-bold">Duyệt thủ công</span>
-          </a>
-        </div>
       </div>
 
       {/* Avatar Picker Modal */}

@@ -2,7 +2,7 @@
 // Quản lý cấu hình phát trực tiếp (bật/tắt, link nhúng) + chat realtime kèm theo.
 import {
   collection, doc, addDoc, deleteDoc, getDoc, getDocs, setDoc,
-  onSnapshot, query, orderBy, limit,
+  onSnapshot, query, orderBy, limit, serverTimestamp, Timestamp,
 } from 'firebase/firestore';
 import { db } from './firebase';
 
@@ -16,6 +16,8 @@ export interface LiveConfig {
   embedUrl: string;
   posterUrl: string;
   updatedAt: number;
+  requireApproval: boolean; // true = phải đăng ký & được admin duyệt mới xem được
+  scheduledAt: number;      // 0 = phát ngay; > 0 = thời điểm (ms) admin hẹn giờ chiếu
 }
 
 export const DEFAULT_LIVE_CONFIG: LiveConfig = {
@@ -25,6 +27,8 @@ export const DEFAULT_LIVE_CONFIG: LiveConfig = {
   embedUrl: '',
   posterUrl: '',
   updatedAt: 0,
+  requireApproval: false,
+  scheduledAt: 0,
 };
 
 // ── Cấu hình livestream (realtime) ────────────────────────────────────────────
@@ -82,7 +86,7 @@ export async function clearLiveChat(): Promise<void> {
 }
 
 // ── Helper: dựng URL nhúng + phát hiện nền tảng để áp dụng chặn tua ───────────
-export type LiveEmbedKind = 'youtube' | 'facebook' | 'generic';
+export type LiveEmbedKind = 'youtube' | 'facebook' | 'mux' | 'generic';
 
 export function buildLiveEmbed(raw: string): { url: string; kind: LiveEmbedKind } {
   const trimmed = (raw || '').trim();
@@ -107,6 +111,17 @@ export function buildLiveEmbed(raw: string): { url: string; kind: LiveEmbedKind 
       kind: 'facebook',
     };
   }
+  // Mux Live: đã là link stream.mux.com sẵn (có thể thiếu .m3u8 ở cuối) → chuẩn hóa lại
+  if (trimmed.includes('stream.mux.com')) {
+    const clean = trimmed.split('?')[0].replace(/\/$/, '');
+    const withExt = clean.endsWith('.m3u8') ? clean : `${clean}.m3u8`;
+    return { url: withExt, kind: 'mux' };
+  }
+  // Mux Live: dán thẳng Playback ID (chuỗi chữ+số, không có domain/dấu chấm)
+  // VD: KTdOXrie8H1tHMEjEhsOpILRF0000stnBwDhDGM7lcly4
+  if (/^[a-zA-Z0-9]{20,80}$/.test(trimmed)) {
+    return { url: `https://stream.mux.com/${trimmed}.m3u8`, kind: 'mux' };
+  }
   // Link nhúng khác (Twitch, player riêng...) — giữ nguyên
   return { url: trimmed, kind: 'generic' };
 }
@@ -116,4 +131,92 @@ export function postYouTubeCommand(iframe: HTMLIFrameElement | null, func: strin
   try {
     iframe?.contentWindow?.postMessage(JSON.stringify({ event: 'command', func, args }), '*');
   } catch {}
+}
+
+// ── Đăng ký vào phòng chiếu — chờ admin duyệt ─────────────────────────────────
+export type RegistrationStatus = 'pending' | 'approved' | 'rejected';
+
+export interface RoomRegistration {
+  uid: string;
+  username: string;
+  avatar: string;
+  status: RegistrationStatus;
+  requestedAt: number;
+  decidedAt?: number;
+}
+
+const regDoc = (uid: string) => doc(db, COL, DOC_ID, 'registrations', uid);
+
+/** Gửi yêu cầu đăng ký xem phòng chiếu (hoặc gửi lại nếu trước đó bị từ chối) */
+export async function requestRoomAccess(uid: string, username: string, avatar: string): Promise<void> {
+  await setDoc(regDoc(uid), {
+    uid, username, avatar,
+    status: 'pending',
+    requestedAt: Date.now(),
+  }, { merge: true });
+}
+
+/** Theo dõi realtime trạng thái đăng ký của chính user hiện tại */
+export function subscribeMyRegistration(uid: string, cb: (reg: RoomRegistration | null) => void): () => void {
+  return onSnapshot(regDoc(uid), snap => {
+    cb(snap.exists() ? (snap.data() as RoomRegistration) : null);
+  }, () => cb(null));
+}
+
+/** [Admin] Theo dõi realtime toàn bộ danh sách đăng ký, mới nhất trước */
+export function subscribeRegistrations(cb: (regs: RoomRegistration[]) => void): () => void {
+  const q = query(collection(db, COL, DOC_ID, 'registrations'), orderBy('requestedAt', 'desc'));
+  return onSnapshot(q, snap => {
+    cb(snap.docs.map(d => d.data() as RoomRegistration));
+  }, () => cb([]));
+}
+
+/** [Admin] Duyệt / từ chối / thu hồi quyền xem của một user */
+export async function decideRegistration(uid: string, status: RegistrationStatus): Promise<void> {
+  await setDoc(regDoc(uid), { status, decidedAt: Date.now() }, { merge: true });
+}
+
+/** [Admin] Xoá hẳn đăng ký (user phải đăng ký lại từ đầu) */
+export async function removeRegistration(uid: string): Promise<void> {
+  await deleteDoc(regDoc(uid));
+}
+
+// ── Số người đang xem phòng chiếu (presence realtime, TTL 2 phút) ────────────
+const VIEWER_PING_INTERVAL = 30_000;
+const VIEWER_OFFLINE_TTL = 120_000;
+let _viewerTimer: ReturnType<typeof setInterval> | null = null;
+
+/** Gọi khi vào trang xem — bắt đầu báo hiệu "đang xem", trả về hàm dọn dẹp khi rời trang */
+export function startRoomPresence(uid: string): () => void {
+  const ref = doc(db, COL, DOC_ID, 'viewers', uid || `guest_${Math.random().toString(36).slice(2)}`);
+
+  const ping = () => {
+    setDoc(ref, { lastSeen: serverTimestamp() }, { merge: true }).catch(() => {});
+  };
+  ping();
+  _viewerTimer = setInterval(ping, VIEWER_PING_INTERVAL);
+
+  const stop = () => {
+    if (_viewerTimer) clearInterval(_viewerTimer);
+    deleteDoc(ref).catch(() => {});
+  };
+  window.addEventListener('beforeunload', stop);
+
+  return () => {
+    window.removeEventListener('beforeunload', stop);
+    stop();
+  };
+}
+
+/** Theo dõi realtime tổng số người đang xem phòng chiếu */
+export function subscribeRoomViewerCount(cb: (count: number) => void): () => void {
+  return onSnapshot(collection(db, COL, DOC_ID, 'viewers'), snap => {
+    const now = Date.now();
+    let count = 0;
+    snap.forEach(d => {
+      const lastSeen: Timestamp | undefined = d.data().lastSeen;
+      if (lastSeen && now - lastSeen.toMillis() <= VIEWER_OFFLINE_TTL) count++;
+    });
+    cb(count);
+  }, () => cb(0));
 }

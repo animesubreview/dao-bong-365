@@ -4,15 +4,14 @@ import {
   Plus, Trash2, Edit3, Check, X, AlertCircle, ChevronDown, ChevronUp,
   Facebook, Youtube, Phone, Mail, User, Palette, Layout, Shield,
   RefreshCw, Link as LinkIcon, Info, Lock, LogOut, KeyRound,
-  Bell, BellPlus, Users, Ban, UserCheck, Clock, Megaphone, MonitorPlay,
-  Wallet, PlusCircle, MinusCircle, CreditCard, Wrench, Crown, Activity, Wifi,
-  History, Search, Radio, Trash,
+  Bell, BellPlus, Users, Ban, UserCheck, Clock,
+  Wallet, PlusCircle, MinusCircle, CreditCard, Wrench, Crown,
+  History, Search, Radio, Trash, Pin, ArrowUp, ArrowDown, Copy, Shuffle, Power,
 } from 'lucide-react';
-import { getAdBanners, createAdBanner, updateAdBanner, deleteAdBanner, AdBannerData } from '../components/AdBanner';
-import { createPopupAd, updatePopupAd, deletePopupAd, PopupAdData } from '../components/PopupAd';
-import { getClickAdConfig, saveClickAdConfig, ClickAdConfig, DEFAULT_CLICK_AD } from '../lib/clickAd';
-import { getVipPrices, saveVipPrices, VipPrices, DEFAULT_VIP_PRICES, VIP_META, VIP_DAYS } from '../lib/vip';
+
+import { getVipPrices, saveVipPrices, VipPrices, DEFAULT_VIP_PRICES, VIP_META, VIP_DAYS, VipTier } from '../lib/vip';
 import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { fetchSiteSettings, saveSiteSettings as saveSiteSettingsFirestore } from '../lib/siteSettings';
 import { db } from '../lib/firebase';
 import { getAllUsers, banUser as apiBanUser, unbanUser as apiUnbanUser, deleteUserProfile, setUserRole, addUserBalance, UserProfile } from '../lib/auth';
 import {
@@ -38,6 +37,8 @@ import {
 import {
   subscribeLiveConfig, updateLiveConfig, LiveConfig, DEFAULT_LIVE_CONFIG,
   subscribeLiveChat, deleteLiveChatMessage, clearLiveChat, LiveChatMessage,
+  subscribeRegistrations, decideRegistration, removeRegistration, RoomRegistration,
+  subscribeRoomViewerCount,
 } from '../lib/livestream';
 import { cn } from '../lib/utils';
 import { notifyManualMovie } from '../lib/telegramNotify';
@@ -46,6 +47,14 @@ import {
   subscribeOverrides, MovieOverride,
 } from '../lib/movieOverrides';
 import {
+  savePinnedMovie, deletePinnedMovie, subscribePinnedMovies, PinnedMovie,
+} from '../lib/pinnedMovies';
+import {
+  createVipKey, createVipKeysBulk, setVipKeyActive, deleteVipKey, subscribeVipKeys,
+  generateKeyCode, toMinutes, formatDuration, VipKey, DurationUnit,
+} from '../lib/vipKeys';
+import { linkToEpisodeFields, buildEmbedUrl } from '../lib/embedUrl';
+import {
   saveMaintenanceConfig, subscribeMaintenanceConfig,
   MaintenanceConfig, DEFAULT_MAINTENANCE,
 } from '../lib/maintenance';
@@ -53,22 +62,25 @@ import {
   saveGeoblockConfig, subscribeGeoblockConfig,
   GeoblockConfig, DEFAULT_GEOBLOCK,
 } from '../lib/geoblock';
-import { subscribeOnlineUsers, PresenceStats } from '../lib/presence';
 
 const ADMIN_USERNAME = 'daophim';
 const ADMIN_PASSWORD = '0708';
 
 const DEFAULT_SETTINGS = {
-  siteName: 'ĐẢO PHIM',
+  siteName: 'PHIM TUỔI THƠ',
   siteDescription: 'Website xem phim miễn phí với kho phim khổng lồ, cập nhật liên tục mỗi ngày.',
   logoType: 'icon' as 'icon' | 'image' | 'text',
-  logoText: 'ĐẢO PHIM',
+  logoText: 'PHIM TUỔI THƠ',
   logoImage: '',
   facebookUrl: 'https://web.facebook.com/tai.uc.251170',
   youtubeUrl: '',
   phone: '09 4601 7826',
   email: '',
   adsEmail: 'adsdaophim@gmail.com',
+  adsTelegram: '',
+  manualCopyWarning: 'Video thuộc bản quyền độc quyền của Phim Tuổi Thơ. Nghiêm cấm sao chép, re-upload dưới mọi hình thức khi chưa được cho phép.',
+  manualCopyWarningEnabled: true,
+  apiBaseUrl: '',
   authorName: 'Đức Tài',
   accentColor: 'indigo',
   adminPassword: '',
@@ -97,7 +109,7 @@ function SectionCard({ id, title, icon: Icon, children, color = 'indigo' }: any)
     emerald: 'from-emerald-500 to-teal-500 shadow-emerald-500/20',
     orange: 'from-orange-500 to-amber-500 shadow-orange-500/20',
     pink: 'from-pink-500 to-rose-500 shadow-pink-500/20',
-    green: 'from-green-500 to-emerald-500 shadow-green-500/20',
+    green: 'from-yellow-500 to-emerald-500 shadow-yellow-500/20',
     blue: 'from-blue-500 to-indigo-500 shadow-blue-500/20',
     cyan: 'from-cyan-500 to-blue-500 shadow-cyan-500/20',
     red: 'from-red-500 to-orange-500 shadow-red-500/20',
@@ -168,7 +180,7 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
     <div className="min-h-screen bg-slate-950 flex items-center justify-center px-4">
       {/* Background glow */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-green-600/8 rounded-full blur-3xl" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-yellow-500/8 rounded-full blur-3xl" />
         <div className="absolute top-1/3 left-1/3 w-[300px] h-[300px] bg-yellow-500/6 rounded-full blur-3xl" />
       </div>
 
@@ -185,11 +197,11 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
 
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-yellow-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-2xl shadow-green-500/30">
+          <div className="w-16 h-16 bg-gradient-to-br from-yellow-500 to-yellow-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-2xl shadow-yellow-500/30">
             <Shield size={28} className="text-slate-950" />
           </div>
           <h1 className="text-3xl font-black text-white tracking-wider" style={{ fontFamily: 'Bebas Neue, sans-serif', letterSpacing: '0.08em' }}>
-            ĐẢO PHIM <span className="text-green-400">ADMIN</span>
+            PHIM TUỔI THƠ <span className="text-yellow-400">ADMIN</span>
           </h1>
           <p className="text-slate-500 text-sm mt-1">Đăng nhập để quản lý website</p>
         </div>
@@ -211,7 +223,7 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
                 type="text"
                 value={username}
                 onChange={e => { setUsername(e.target.value); setError(''); }}
-                className="w-full bg-slate-800/60 border border-slate-700/60 rounded-xl py-3 pl-10 pr-4 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500/40 transition-all"
+                className="w-full bg-slate-800/60 border border-slate-700/60 rounded-xl py-3 pl-10 pr-4 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-yellow-500/50 focus:border-yellow-500/40 transition-all"
                 placeholder="Nhập tên đăng nhập"
                 autoComplete="username"
               />
@@ -226,7 +238,7 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
                 type={showPass ? 'text' : 'password'}
                 value={password}
                 onChange={e => { setPassword(e.target.value); setError(''); }}
-                className="w-full bg-slate-800/60 border border-slate-700/60 rounded-xl py-3 pl-10 pr-10 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500/40 transition-all"
+                className="w-full bg-slate-800/60 border border-slate-700/60 rounded-xl py-3 pl-10 pr-10 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-yellow-500/50 focus:border-yellow-500/40 transition-all"
                 placeholder="Nhập mật khẩu"
                 autoComplete="current-password"
               />
@@ -238,7 +250,7 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
 
           <button
             type="submit"
-            className="w-full mt-2 bg-green-500 hover:bg-green-400 active:scale-95 text-slate-950 font-black py-3.5 rounded-xl transition-all shadow-lg shadow-green-500/25 flex items-center justify-center gap-2"
+            className="w-full mt-2 bg-yellow-500 hover:bg-yellow-400 active:scale-95 text-slate-950 font-black py-3.5 rounded-xl transition-all shadow-lg shadow-yellow-500/25 flex items-center justify-center gap-2"
           >
             <Lock size={16} />
             Đăng nhập
@@ -344,7 +356,7 @@ function MembersSection({ onToast }: { onToast: (msg: string, t: 'success' | 'er
           <p className="text-sm text-slate-400">
             Tổng: <span className="text-white font-bold">{users.length}</span> thành viên
             {users.filter(u => u.role === 'admin').length > 0 && (
-              <span className="ml-2 text-green-400">· {users.filter(u => u.role === 'admin').length} admin</span>
+              <span className="ml-2 text-yellow-400">· {users.filter(u => u.role === 'admin').length} admin</span>
             )}
             {users.filter(u => u.isBanned).length > 0 && (
               <span className="ml-2 text-red-400">· {users.filter(u => u.isBanned).length} bị khóa</span>
@@ -373,7 +385,7 @@ function MembersSection({ onToast }: { onToast: (msg: string, t: 'success' | 'er
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-bold text-white truncate">{u.username}</span>
                     {u.isBanned && <span className="text-[10px] font-black bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded">KHÓA</span>}
-                    {u.role === 'admin' && <span className="text-[10px] font-black bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded">ADMIN</span>}
+                    {u.role === 'admin' && <span className="text-[10px] font-black bg-yellow-500/20 text-yellow-400 px-1.5 py-0.5 rounded">ADMIN</span>}
                   </div>
                   <div className="text-xs text-slate-500 truncate">{u.email}</div>
                   <div className="text-[10px] mt-0.5 flex items-center gap-2">
@@ -382,7 +394,7 @@ function MembersSection({ onToast }: { onToast: (msg: string, t: 'success' | 'er
                       {new Date(u.createdAt).toLocaleDateString('vi-VN')}
                     </span>
                     {/* Số dư */}
-                    <span className="flex items-center gap-1 text-green-400 font-bold">
+                    <span className="flex items-center gap-1 text-yellow-400 font-bold">
                       <Wallet size={9} />
                       {formatVND(u.balance || 0)}
                     </span>
@@ -392,7 +404,7 @@ function MembersSection({ onToast }: { onToast: (msg: string, t: 'success' | 'er
                   {/* Cộng / Trừ tiền */}
                   <button
                     onClick={() => openBalanceModal(u)}
-                    className="btn-icon p-2.5 text-xs hover:border-green-500/40 hover:text-green-400"
+                    className="btn-icon p-2.5 text-xs hover:border-yellow-500/40 hover:text-yellow-400"
                     title="Cộng / Trừ số dư"
                   >
                     <Wallet size={14} />
@@ -400,7 +412,7 @@ function MembersSection({ onToast }: { onToast: (msg: string, t: 'success' | 'er
                   {/* Cấp / Thu hồi Admin */}
                   <button
                     onClick={() => handleRole(u)}
-                    className={`btn-icon p-2.5 text-xs ${u.role === 'admin' ? 'border-green-500/40 text-green-400 hover:border-red-500/40 hover:text-red-400' : 'hover:border-green-500/40 hover:text-green-400'}`}
+                    className={`btn-icon p-2.5 text-xs ${u.role === 'admin' ? 'border-yellow-500/40 text-yellow-400 hover:border-red-500/40 hover:text-red-400' : 'hover:border-yellow-500/40 hover:text-yellow-400'}`}
                     title={u.role === 'admin' ? 'Thu hồi Admin' : 'Cấp quyền Admin'}
                   >
                     <Shield size={14} />
@@ -450,7 +462,7 @@ function MembersSection({ onToast }: { onToast: (msg: string, t: 'success' | 'er
                   : <button
                       key={p}
                       onClick={() => setPage(p as number)}
-                      className={`btn-icon w-8 h-8 text-sm font-bold ${page === p ? 'border-green-500/60 text-green-400' : ''}`}
+                      className={`btn-icon w-8 h-8 text-sm font-bold ${page === p ? 'border-yellow-500/60 text-yellow-400' : ''}`}
                     >{p}</button>
               )
             }
@@ -475,7 +487,7 @@ function MembersSection({ onToast }: { onToast: (msg: string, t: 'success' | 'er
             {/* Header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800">
               <div className="flex items-center gap-2">
-                <Wallet size={18} className="text-green-400" />
+                <Wallet size={18} className="text-yellow-400" />
                 <span className="text-white font-black">Cập nhật số dư</span>
               </div>
               <button onClick={() => setBalanceModal(null)} className="text-slate-500 hover:text-white transition-colors">
@@ -488,7 +500,7 @@ function MembersSection({ onToast }: { onToast: (msg: string, t: 'success' | 'er
               <div className="bg-slate-800/60 rounded-xl px-4 py-3">
                 <p className="text-xs text-slate-500 mb-0.5">Tài khoản</p>
                 <p className="text-white font-bold">{balanceModal.username}</p>
-                <p className="text-green-400 text-sm font-black mt-1">
+                <p className="text-yellow-400 text-sm font-black mt-1">
                   Số dư hiện tại: {formatVND(balanceModal.balance)}
                 </p>
               </div>
@@ -527,8 +539,8 @@ function MembersSection({ onToast }: { onToast: (msg: string, t: 'success' | 'er
                       onClick={() => setBalanceAmount(String(a))}
                       className={`py-1.5 rounded-lg text-xs font-bold border transition-all ${
                         balanceAmount === String(a)
-                          ? 'bg-green-500 text-slate-950 border-green-500'
-                          : 'bg-slate-800/60 text-slate-400 border-slate-700/40 hover:border-green-500/30'
+                          ? 'bg-yellow-500 text-slate-950 border-yellow-500'
+                          : 'bg-slate-800/60 text-slate-400 border-slate-700/40 hover:border-yellow-500/30'
                       }`}
                     >
                       {a >= 1000000 ? `${a / 1000000}M` : `${a / 1000}K`}
@@ -546,7 +558,7 @@ function MembersSection({ onToast }: { onToast: (msg: string, t: 'success' | 'er
                   onChange={e => setBalanceAmount(e.target.value)}
                   placeholder="Nhập số tiền..."
                   min={1}
-                  className="w-full bg-slate-800/80 border border-slate-700/50 rounded-xl px-3 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-green-500/50 transition-colors"
+                  className="w-full bg-slate-800/80 border border-slate-700/50 rounded-xl px-3 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-yellow-500/50 transition-colors"
                 />
                 {balanceAmount && parseInt(balanceAmount) > 0 && (
                   <p className={`text-xs mt-1 font-bold ${balanceType === 'add' ? 'text-emerald-400' : 'text-red-400'}`}>
@@ -566,7 +578,7 @@ function MembersSection({ onToast }: { onToast: (msg: string, t: 'success' | 'er
                   value={balanceNote}
                   onChange={e => setBalanceNote(e.target.value)}
                   placeholder="Lý do cộng/trừ tiền..."
-                  className="w-full bg-slate-800/80 border border-slate-700/50 rounded-xl px-3 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-green-500/50 transition-colors"
+                  className="w-full bg-slate-800/80 border border-slate-700/50 rounded-xl px-3 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-yellow-500/50 transition-colors"
                 />
               </div>
 
@@ -621,6 +633,7 @@ function NotificationsSection({ onToast }: { onToast: (msg: string, t: 'success'
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ ...NOTIF_DEFAULTS });
   const [saving, setSaving] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   // Subscribe realtime từ Firebase
   useEffect(() => {
@@ -628,12 +641,12 @@ function NotificationsSection({ onToast }: { onToast: (msg: string, t: 'success'
     return unsub;
   }, []);
 
-  const handleCreate = async () => {
+  const handleSubmit = async () => {
     if (!form.title.trim()) { onToast('Vui lòng nhập tiêu đề thông báo', 'error'); return; }
     if (!form.message.trim()) { onToast('Vui lòng nhập nội dung thông báo', 'error'); return; }
     setSaving(true);
     try {
-      await createNotification({
+      const payload = {
         title: form.title.trim(),
         message: form.message.trim(),
         type: form.type,
@@ -644,12 +657,43 @@ function NotificationsSection({ onToast }: { onToast: (msg: string, t: 'success'
         imageUrl: form.displayStyle === 'image_link' ? (form.imageUrl.trim() || undefined) : undefined,
         displayStyle: form.displayStyle,
         expiresAt: form.expiresAt,
-      });
+      };
+      if (editingId) {
+        await updateNotification(editingId, payload);
+        onToast('Đã cập nhật thông báo!', 'success');
+      } else {
+        await createNotification(payload);
+        onToast('Đã gửi thông báo thành công! Tất cả người dùng sẽ thấy ngay.', 'success');
+      }
       setForm({ ...NOTIF_DEFAULTS });
+      setEditingId(null);
       setShowForm(false);
-      onToast('Đã gửi thông báo thành công! Tất cả người dùng sẽ thấy ngay.', 'success');
-    } catch { onToast('Lỗi khi gửi thông báo', 'error'); }
+    } catch { onToast(editingId ? 'Lỗi khi cập nhật thông báo' : 'Lỗi khi gửi thông báo', 'error'); }
     finally { setSaving(false); }
+  };
+
+  const startEdit = (n: SiteNotification) => {
+    setForm({
+      title: n.title,
+      message: n.message,
+      type: n.type,
+      category: n.category || 'phim',
+      active: n.active,
+      showAsPopup: n.showAsPopup ?? true,
+      targetUrl: n.targetUrl || '',
+      imageUrl: n.imageUrl || '',
+      displayStyle: n.displayStyle || 'default',
+      expiresAt: n.expiresAt,
+    });
+    setEditingId(n.id);
+    setShowForm(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const cancelEdit = () => {
+    setForm({ ...NOTIF_DEFAULTS });
+    setEditingId(null);
+    setShowForm(false);
   };
 
   const toggleActive = async (id: string, active: boolean) => {
@@ -665,7 +709,7 @@ function NotificationsSection({ onToast }: { onToast: (msg: string, t: 'success'
   const TYPE_LABELS = { info: '📘 Thông tin', warning: '⚠️ Cảnh báo', success: '✅ Thành công', error: '🚨 Khẩn cấp' };
   const TYPE_COLORS: Record<string, string> = {
     info: 'text-blue-400 bg-blue-500/10',
-    warning: 'text-green-400 bg-green-600/10',
+    warning: 'text-yellow-400 bg-yellow-500/10',
     success: 'text-emerald-400 bg-emerald-500/10',
     error: 'text-red-400 bg-red-500/10',
   };
@@ -679,7 +723,7 @@ function NotificationsSection({ onToast }: { onToast: (msg: string, t: 'success'
             {' · '}<span className="text-emerald-400">{notifs.filter(n => n.active).length} đang bật</span>
           </p>
           <button
-            onClick={() => setShowForm(v => !v)}
+            onClick={() => (showForm ? cancelEdit() : setShowForm(true))}
             className="btn-primary flex items-center gap-2 text-sm py-2"
           >
             {showForm ? <X size={15} /> : <BellPlus size={15} />}
@@ -689,7 +733,9 @@ function NotificationsSection({ onToast }: { onToast: (msg: string, t: 'success'
 
         {showForm && (
           <div className="bg-slate-800/40 border border-pink-500/20 rounded-2xl p-5 flex flex-col gap-4">
-            <h3 className="font-bold text-white text-base">🔔 Tạo thông báo mới</h3>
+            <h3 className="font-bold text-white text-base">
+              {editingId ? '✏️ Chỉnh sửa thông báo' : '🔔 Tạo thông báo mới'}
+            </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
@@ -769,7 +815,7 @@ function NotificationsSection({ onToast }: { onToast: (msg: string, t: 'success'
                     value={form.targetUrl}
                     onChange={e => setForm(f => ({ ...f, targetUrl: e.target.value }))}
                     className="input-field text-sm"
-                    placeholder="https://daophim.online/phim/ten-phim"
+                    placeholder="https://phimtuoitho.co/phim/ten-phim"
                   />
                 </div>
               </div>
@@ -807,10 +853,10 @@ function NotificationsSection({ onToast }: { onToast: (msg: string, t: 'success'
             </div>
 
             <div className="flex gap-2 pt-1">
-              <button onClick={handleCreate} disabled={saving} className="btn-primary flex items-center gap-2 text-sm flex-1 justify-center disabled:opacity-60">
-                <Bell size={15} /> {saving ? 'Đang gửi...' : 'Gửi thông báo'}
+              <button onClick={handleSubmit} disabled={saving} className="btn-primary flex items-center gap-2 text-sm flex-1 justify-center disabled:opacity-60">
+                <Bell size={15} /> {saving ? 'Đang lưu...' : editingId ? 'Cập nhật thông báo' : 'Gửi thông báo'}
               </button>
-              <button onClick={() => setShowForm(false)} className="btn-icon px-4 text-sm text-slate-400">
+              <button onClick={cancelEdit} className="btn-icon px-4 text-sm text-slate-400">
                 Hủy
               </button>
             </div>
@@ -837,6 +883,13 @@ function NotificationsSection({ onToast }: { onToast: (msg: string, t: 'success'
                   <p className="text-[10px] text-slate-600 mt-1">{new Date(n.createdAt).toLocaleString('vi-VN')}</p>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
+                  <button
+                    onClick={() => startEdit(n)}
+                    className="btn-icon p-2.5 hover:border-indigo-500/40 hover:text-indigo-400"
+                    title="Chỉnh sửa"
+                  >
+                    <Edit3 size={14} />
+                  </button>
                   <button
                     onClick={() => toggleActive(n.id, n.active)}
                     className={`btn-icon p-2.5 ${n.active ? 'hover:border-slate-500/40 text-emerald-400' : 'hover:border-emerald-500/40 text-slate-500'}`}
@@ -866,525 +919,6 @@ function NotificationsSection({ onToast }: { onToast: (msg: string, t: 'success'
     </SectionCard>
   );
 }
-
-// ─── Ads Management Section ───────────────────────────────────────────────────
-const BANNER_DEFAULTS: Omit<AdBannerData, 'id' | 'createdAt'> = {
-  title: '',
-  mediaUrl: '',
-  mediaType: 'image',
-  linkUrl: 'https://',
-  position: 'top',
-  active: true,
-};
-
-const POPUP_DEFAULTS: Omit<PopupAdData, 'id' | 'createdAt'> = {
-  title: '',
-  mediaUrl: '',
-  mediaType: 'image',
-  linkUrl: 'https://',
-  active: true,
-};
-
-function AdsSection({ onToast }: { onToast: (msg: string, t: 'success' | 'error') => void }) {
-  const [banners, setBanners] = useState<AdBannerData[]>([]);
-  const [popups, setPopups] = useState<PopupAdData[]>([]);
-  const [tab, setTab] = useState<'banner' | 'popup' | 'click'>('banner');
-
-  // Click-ad config
-  const [clickCfg, setClickCfg] = useState<ClickAdConfig>({ ...DEFAULT_CLICK_AD });
-  const [clickSaving, setClickSaving] = useState(false);
-
-  useEffect(() => {
-    getClickAdConfig().then(setClickCfg);
-  }, []);
-
-  const saveClickCfg = async () => {
-    setClickSaving(true);
-    try {
-      await saveClickAdConfig(clickCfg);
-      onToast('Đã lưu cài đặt Click QC!', 'success');
-    } catch { onToast('Lỗi khi lưu!', 'error'); }
-    setClickSaving(false);
-  };
-
-  // Banner form
-  const [showBannerForm, setShowBannerForm] = useState(false);
-  const [bannerForm, setBannerForm] = useState({ ...BANNER_DEFAULTS });
-  const [editBannerId, setEditBannerId] = useState<string | null>(null);
-
-  // Popup form
-  const [showPopupForm, setShowPopupForm] = useState(false);
-  const [popupForm, setPopupForm] = useState({ ...POPUP_DEFAULTS });
-  const [editPopupId, setEditPopupId] = useState<string | null>(null);
-
-  // Realtime listeners từ Firestore
-  useEffect(() => {
-    const qB = query(collection(db, 'ad_banners'), orderBy('createdAt', 'desc'));
-    const unsubB = onSnapshot(qB, snap => {
-      setBanners(snap.docs.map(d => ({ id: d.id, ...d.data() } as AdBannerData)));
-    });
-    const qP = query(collection(db, 'popup_ads'), orderBy('createdAt', 'desc'));
-    const unsubP = onSnapshot(qP, snap => {
-      setPopups(snap.docs.map(d => ({ id: d.id, ...d.data() } as PopupAdData)));
-    });
-    return () => { unsubB(); unsubP(); };
-  }, []);
-
-  // ── Banner handlers ──────────────────────────────────────────────────────────
-  const submitBanner = async () => {
-    if (!bannerForm.mediaUrl.trim()) { onToast('Vui lòng nhập URL media (GIF/MP4)', 'error'); return; }
-    if (!bannerForm.linkUrl.trim()) { onToast('Vui lòng nhập link chuyển trang', 'error'); return; }
-    try {
-      if (editBannerId) {
-        await updateAdBanner(editBannerId, bannerForm);
-        onToast('Đã cập nhật banner QC!', 'success');
-      } else {
-        await createAdBanner({ ...bannerForm, createdAt: Date.now() });
-        onToast('Đã thêm banner QC!', 'success');
-      }
-      setBannerForm({ ...BANNER_DEFAULTS });
-      setEditBannerId(null);
-      setShowBannerForm(false);
-    } catch { onToast('Lỗi khi lưu banner!', 'error'); }
-  };
-
-  const deleteBanner = async (id: string) => {
-    if (!confirm('Xóa banner QC này?')) return;
-    try { await deleteAdBanner(id); onToast('Đã xóa banner QC!', 'success'); }
-    catch { onToast('Lỗi khi xóa!', 'error'); }
-  };
-
-  const toggleBanner = async (b: AdBannerData) => {
-    try { await updateAdBanner(b.id, { active: !b.active }); } catch {}
-  };
-
-  const editBanner = (b: AdBannerData) => {
-    setBannerForm({ title: b.title, mediaUrl: b.mediaUrl, mediaType: b.mediaType, linkUrl: b.linkUrl, position: b.position, active: b.active });
-    setEditBannerId(b.id);
-    setShowBannerForm(true);
-  };
-
-  // ── Popup handlers ────────────────────────────────────────────────────────────
-  const submitPopup = async () => {
-    if (!popupForm.mediaUrl.trim()) { onToast('Vui lòng nhập URL media (GIF/MP4)', 'error'); return; }
-    if (!popupForm.linkUrl.trim()) { onToast('Vui lòng nhập link chuyển trang', 'error'); return; }
-    try {
-      if (editPopupId) {
-        await updatePopupAd(editPopupId, popupForm);
-        onToast('Đã cập nhật popup QC!', 'success');
-      } else {
-        await createPopupAd({ ...popupForm, createdAt: Date.now() });
-        onToast('Đã thêm popup QC!', 'success');
-      }
-      setPopupForm({ ...POPUP_DEFAULTS });
-      setEditPopupId(null);
-      setShowPopupForm(false);
-    } catch { onToast('Lỗi khi lưu popup!', 'error'); }
-  };
-
-  const deletePopup = async (id: string) => {
-    if (!confirm('Xóa popup QC này?')) return;
-    try { await deletePopupAd(id); onToast('Đã xóa popup QC!', 'success'); }
-    catch { onToast('Lỗi khi xóa!', 'error'); }
-  };
-
-  const togglePopup = async (p: PopupAdData) => {
-    try { await updatePopupAd(p.id, { active: !p.active }); } catch {}
-  };
-
-  const editPopup = (p: PopupAdData) => {
-    setPopupForm({ title: p.title, mediaUrl: p.mediaUrl, mediaType: p.mediaType, linkUrl: p.linkUrl, active: p.active });
-    setEditPopupId(p.id);
-    setShowPopupForm(true);
-  };
-
-  const POSITION_LABELS: Record<string, string> = { top: '⬆️ Trên trang', bottom: '⬇️ Dưới trang', middle: '↕️ Giữa trang' };
-
-  return (
-    <SectionCard title="Quản lý Quảng cáo (QC)" icon={Megaphone} color="orange">
-
-      {/* Tab switcher */}
-      <div className="flex gap-2 mb-5">
-        <button
-          onClick={() => setTab('banner')}
-          className={`flex-1 py-2.5 rounded-xl text-sm font-bold border transition-all ${tab === 'banner' ? 'bg-orange-500/20 border-orange-500/60 text-orange-300' : 'bg-slate-800/60 border-slate-700/40 text-slate-400 hover:border-slate-600'}`}
-        >
-          🖼️ Banner QC ({banners.length})
-        </button>
-        <button
-          onClick={() => setTab('popup')}
-          className={`flex-1 py-2.5 rounded-xl text-sm font-bold border transition-all ${tab === 'popup' ? 'bg-orange-500/20 border-orange-500/60 text-orange-300' : 'bg-slate-800/60 border-slate-700/40 text-slate-400 hover:border-slate-600'}`}
-        >
-          🪟 Popup QC ({popups.length})
-        </button>
-        <button
-          onClick={() => setTab('click')}
-          className={`flex-1 py-2.5 rounded-xl text-sm font-bold border transition-all ${tab === 'click' ? 'bg-orange-500/20 border-orange-500/60 text-orange-300' : 'bg-slate-800/60 border-slate-700/40 text-slate-400 hover:border-slate-600'}`}
-        >
-          👆 Click QC
-        </button>
-      </div>
-
-      {/* ── CLICK AD TAB ──────────────────────────────────────────────────────── */}
-      {tab === 'click' && (
-        <div className="flex flex-col gap-5">
-          <p className="text-sm text-slate-400">
-            Khi user click vào bất kỳ đâu trên trang sẽ mở link QC trong tab mới. Tài khoản <span className="text-orange-400 font-bold">Admin</span> không bị ảnh hưởng.
-          </p>
-
-          {/* Bật/tắt */}
-          <div className="flex items-center justify-between bg-slate-800/60 border border-slate-700/40 rounded-xl px-4 py-3">
-            <div>
-              <p className="text-sm font-bold text-white">Trạng thái Click QC</p>
-              <p className="text-xs text-slate-500 mt-0.5">Bật để kích hoạt quảng cáo ẩn khi click</p>
-            </div>
-            <button
-              onClick={() => setClickCfg(c => ({ ...c, enabled: !c.enabled }))}
-              className={`relative w-12 h-6 rounded-full transition-colors ${clickCfg.enabled ? 'bg-orange-500' : 'bg-slate-600'}`}
-            >
-              <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${clickCfg.enabled ? 'translate-x-6' : ''}`} />
-            </button>
-          </div>
-
-          {/* Link QC */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-semibold text-slate-300">Link QC (URL mở khi click)</label>
-            <p className="text-xs text-slate-500">Ví dụ: https://omg10.com/4/10101260</p>
-            <input
-              type="url"
-              value={clickCfg.link}
-              onChange={e => setClickCfg(c => ({ ...c, link: e.target.value }))}
-              placeholder="https://..."
-              className="admin-input w-full"
-            />
-          </div>
-
-          {/* Cooldown */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-semibold text-slate-300">Thời gian chờ giữa 2 lần hiện (giây)</label>
-            <p className="text-xs text-slate-500">Sau khi hiện QC, phải chờ bao lâu trước khi hiện lại. Mặc định: 60 giây</p>
-            <input
-              type="number"
-              min={5}
-              max={3600}
-              value={clickCfg.cooldown}
-              onChange={e => setClickCfg(c => ({ ...c, cooldown: Math.max(5, parseInt(e.target.value) || 60) }))}
-              className="admin-input w-40"
-            />
-          </div>
-
-          {/* Lưu */}
-          <button
-            onClick={saveClickCfg}
-            disabled={clickSaving}
-            className="flex items-center gap-2 px-5 py-2.5 bg-orange-500 hover:bg-orange-400 disabled:opacity-60 text-white font-bold rounded-xl transition-colors w-fit"
-          >
-            <Save size={15} />
-            {clickSaving ? 'Đang lưu...' : 'Lưu cài đặt Click QC'}
-          </button>
-
-          {/* Preview */}
-          {clickCfg.link && (
-            <div className="bg-slate-800/40 border border-slate-700/40 rounded-xl p-4 text-sm">
-              <p className="text-slate-400 mb-1">🔗 Link hiện tại:</p>
-              <a href={clickCfg.link} target="_blank" rel="noopener noreferrer" className="text-orange-400 hover:text-orange-300 break-all font-mono text-xs">
-                {clickCfg.link}
-              </a>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ── BANNER TAB ────────────────────────────────────────────────────────── */}
-      {tab === 'banner' && (
-        <div className="flex flex-col gap-4">
-          <div className="flex items-center justify-between flex-wrap gap-2">
-            <p className="text-sm text-slate-400">
-              Banner GIF/MP4 tích hợp link, hiển thị trong trang. &nbsp;
-              <span className="text-emerald-400">{banners.filter(b => b.active).length} đang bật</span>
-            </p>
-            <button
-              onClick={() => { setBannerForm({ ...BANNER_DEFAULTS }); setEditBannerId(null); setShowBannerForm(v => !v); }}
-              className="btn-primary flex items-center gap-2 text-sm py-2"
-            >
-              {showBannerForm ? <X size={15} /> : <Plus size={15} />}
-              {showBannerForm ? 'Đóng' : 'Thêm banner'}
-            </button>
-          </div>
-
-          {showBannerForm && (
-            <div className="bg-slate-800/40 border border-orange-500/20 rounded-2xl p-5 flex flex-col gap-4">
-              <h3 className="font-bold text-white text-base">{editBannerId ? '✏️ Sửa banner QC' : '➕ Thêm banner QC mới'}</h3>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs text-slate-400 font-semibold mb-1 block">Loại media</label>
-                  <select
-                    value={bannerForm.mediaType}
-                    onChange={e => setBannerForm(f => ({ ...f, mediaType: e.target.value as 'gif' | 'mp4' | 'image' }))}
-                    className="input-field text-sm"
-                  >
-                    <option value="image">🖼️ Ảnh (JPG/PNG/WEBP)</option>
-                    <option value="gif">✨ GIF (ảnh động)</option>
-                    <option value="mp4">🎬 MP4 (video)</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-xs text-slate-400 font-semibold mb-1 block">Vị trí hiển thị</label>
-                  <select
-                    value={bannerForm.position}
-                    onChange={e => setBannerForm(f => ({ ...f, position: e.target.value as AdBannerData['position'] }))}
-                    className="input-field text-sm"
-                  >
-                    <option value="top">⬆️ Trên trang (trước banner phim)</option>
-                    <option value="middle">↕️ Giữa trang (giữa các section)</option>
-                    <option value="bottom">⬇️ Dưới trang (sau danh sách phim)</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="text-xs text-slate-400 font-semibold mb-1 block">Tên banner (để nhận diện)</label>
-                <input
-                  value={bannerForm.title}
-                  onChange={e => setBannerForm(f => ({ ...f, title: e.target.value }))}
-                  className="input-field text-sm"
-                  placeholder="VD: Banner tháng 4, QC game..."
-                />
-              </div>
-
-              <div>
-                <label className="text-xs text-slate-400 font-semibold mb-1 flex items-center gap-1">
-                  URL media ({bannerForm.mediaType === 'mp4' ? 'link .mp4' : 'link .gif'})
-                  <span className="text-[10px] text-orange-400 bg-orange-500/10 px-1.5 py-0.5 rounded">Bắt buộc</span>
-                </label>
-                <input
-                  value={bannerForm.mediaUrl}
-                  onChange={e => setBannerForm(f => ({ ...f, mediaUrl: e.target.value }))}
-                  className="input-field text-sm"
-                  placeholder={bannerForm.mediaType === 'mp4' ? 'https://example.com/ad.mp4' : bannerForm.mediaType === 'gif' ? 'https://example.com/ad.gif' : 'https://example.com/banner.jpg'}
-                />
-                <p className="text-[11px] text-slate-600 mt-1">Dán link trực tiếp tới file GIF hoặc MP4 (CDN, hosting, v.v.)</p>
-              </div>
-
-              <div>
-                <label className="text-xs text-slate-400 font-semibold mb-1 flex items-center gap-1">
-                  Link chuyển trang khi ấn vào
-                  <span className="text-[10px] text-orange-400 bg-orange-500/10 px-1.5 py-0.5 rounded">Bắt buộc</span>
-                </label>
-                <input
-                  value={bannerForm.linkUrl}
-                  onChange={e => setBannerForm(f => ({ ...f, linkUrl: e.target.value }))}
-                  className="input-field text-sm"
-                  placeholder="https://example.com/..."
-                />
-              </div>
-
-              {/* Preview */}
-              {bannerForm.mediaUrl && (
-                <div className="rounded-xl overflow-hidden border border-slate-700/40 bg-slate-900">
-                  <p className="text-[10px] text-slate-500 px-3 pt-2 pb-1">👁️ Xem trước:</p>
-                  {bannerForm.mediaType === 'mp4' ? (
-                    <video src={bannerForm.mediaUrl} autoPlay loop muted playsInline className="w-full max-h-40 object-contain" />
-                  ) : (
-                    <img src={bannerForm.mediaUrl} alt="preview" className="w-full max-h-40 object-contain" />
-                  )}
-                </div>
-              )}
-
-              <div className="flex gap-2 pt-1">
-                <button onClick={submitBanner} className="btn-primary flex items-center gap-2 text-sm flex-1 justify-center">
-                  <Check size={16} /> {editBannerId ? 'Cập nhật banner' : 'Thêm banner'}
-                </button>
-                <button onClick={() => { setShowBannerForm(false); setBannerForm({ ...BANNER_DEFAULTS }); setEditBannerId(null); }} className="btn-icon px-4 text-sm text-slate-400">
-                  Hủy
-                </button>
-              </div>
-            </div>
-          )}
-
-          {banners.length > 0 ? (
-            <div className="flex flex-col gap-2">
-              {banners.map(b => (
-                <div key={b.id} className={`flex items-center gap-3 p-3 border rounded-xl transition-all ${b.active ? 'bg-slate-800/40 border-slate-700/30' : 'bg-slate-900/40 border-slate-800/30 opacity-60'}`}>
-                  {/* Thumbnail */}
-                  <div className="w-16 h-10 rounded-lg overflow-hidden bg-slate-800 shrink-0 border border-slate-700/40">
-                    {b.mediaUrl ? (
-                      b.mediaType === 'mp4'
-                        ? <video src={b.mediaUrl} muted className="w-full h-full object-cover" />
-                        : <img src={b.mediaUrl} alt={b.title} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-slate-600"><MonitorPlay size={14} /></div>
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-sm font-bold text-white truncate">{b.title || 'Banner QC'}</span>
-                      <span className="text-[10px] font-bold bg-orange-500/10 text-orange-400 px-1.5 py-0.5 rounded">{b.mediaType.toUpperCase()}</span>
-                      <span className="text-[10px] text-slate-500">{POSITION_LABELS[b.position]}</span>
-                      {!b.active && <span className="text-[10px] font-black text-slate-600 bg-slate-800 px-1.5 py-0.5 rounded">TẮT</span>}
-                    </div>
-                    <p className="text-[10px] text-slate-500 mt-0.5 truncate">🔗 {b.linkUrl}</p>
-                  </div>
-                  <div className="flex items-center gap-1 shrink-0">
-                    <button onClick={() => editBanner(b)} className="btn-icon p-2.5 hover:border-orange-500/40 hover:text-orange-400" title="Sửa"><Edit3 size={14} /></button>
-                    <button onClick={() => toggleBanner(b)} className={`btn-icon p-2.5 ${b.active ? 'text-emerald-400' : 'text-slate-500 hover:text-emerald-400'}`} title={b.active ? 'Tắt' : 'Bật'}>{b.active ? <Eye size={14} /> : <EyeOff size={14} />}</button>
-                    <button onClick={() => deleteBanner(b.id)} className="btn-icon p-2.5 hover:border-red-500/40 hover:text-red-400" title="Xóa"><Trash2 size={14} /></button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-10 text-slate-600">
-              <Megaphone size={40} className="mx-auto mb-3 opacity-30" />
-              <p className="text-sm">Chưa có banner QC nào.</p>
-              <p className="text-xs mt-1">Nhấn "Thêm banner" để bắt đầu.</p>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ── POPUP TAB ─────────────────────────────────────────────────────────── */}
-      {tab === 'popup' && (
-        <div className="flex flex-col gap-4">
-          <div className="flex items-center justify-between flex-wrap gap-2">
-            <p className="text-sm text-slate-400">
-              Popup xuất hiện <span className="text-green-400 font-bold">1 lần</span> khi người dùng bấm vào phim muốn xem. &nbsp;
-              <span className="text-emerald-400">{popups.filter(p => p.active).length} đang bật</span>
-            </p>
-            <button
-              onClick={() => { setPopupForm({ ...POPUP_DEFAULTS }); setEditPopupId(null); setShowPopupForm(v => !v); }}
-              className="btn-primary flex items-center gap-2 text-sm py-2"
-            >
-              {showPopupForm ? <X size={15} /> : <Plus size={15} />}
-              {showPopupForm ? 'Đóng' : 'Thêm popup'}
-            </button>
-          </div>
-
-          <div className="bg-green-600/5 border border-green-600/20 rounded-xl px-4 py-3 text-[12px] text-green-300/80">
-            ℹ️ Popup hiện <strong>1 lần duy nhất mỗi phiên</strong> khi người dùng nhấn vào chi tiết phim. Chỉ popup đầu tiên đang <strong>bật</strong> sẽ được hiển thị.
-          </div>
-
-          {showPopupForm && (
-            <div className="bg-slate-800/40 border border-orange-500/20 rounded-2xl p-5 flex flex-col gap-4">
-              <h3 className="font-bold text-white text-base">{editPopupId ? '✏️ Sửa popup QC' : '➕ Thêm popup QC mới'}</h3>
-
-              <div>
-                <label className="text-xs text-slate-400 font-semibold mb-1 block">Loại media</label>
-                <select
-                  value={popupForm.mediaType}
-                  onChange={e => setPopupForm(f => ({ ...f, mediaType: e.target.value as 'gif' | 'mp4' | 'image' }))}
-                  className="input-field text-sm"
-                >
-                  <option value="image">🖼️ Ảnh (JPG/PNG/WEBP)</option>
-                  <option value="gif">✨ GIF (ảnh động)</option>
-                  <option value="mp4">🎬 MP4 (video)</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="text-xs text-slate-400 font-semibold mb-1 block">Tên popup (để nhận diện)</label>
-                <input
-                  value={popupForm.title}
-                  onChange={e => setPopupForm(f => ({ ...f, title: e.target.value }))}
-                  className="input-field text-sm"
-                  placeholder="VD: QC tháng 4, Quảng cáo game..."
-                />
-              </div>
-
-              <div>
-                <label className="text-xs text-slate-400 font-semibold mb-1 flex items-center gap-1">
-                  URL media ({popupForm.mediaType === 'mp4' ? 'link .mp4' : 'link .gif'})
-                  <span className="text-[10px] text-orange-400 bg-orange-500/10 px-1.5 py-0.5 rounded">Bắt buộc</span>
-                </label>
-                <input
-                  value={popupForm.mediaUrl}
-                  onChange={e => setPopupForm(f => ({ ...f, mediaUrl: e.target.value }))}
-                  className="input-field text-sm"
-                  placeholder={popupForm.mediaType === 'mp4' ? 'https://example.com/popup.mp4' : popupForm.mediaType === 'gif' ? 'https://example.com/popup.gif' : 'https://example.com/popup.jpg'}
-                />
-              </div>
-
-              <div>
-                <label className="text-xs text-slate-400 font-semibold mb-1 flex items-center gap-1">
-                  Link chuyển trang khi ấn vào popup
-                  <span className="text-[10px] text-orange-400 bg-orange-500/10 px-1.5 py-0.5 rounded">Bắt buộc</span>
-                </label>
-                <input
-                  value={popupForm.linkUrl}
-                  onChange={e => setPopupForm(f => ({ ...f, linkUrl: e.target.value }))}
-                  className="input-field text-sm"
-                  placeholder="https://example.com/..."
-                />
-              </div>
-
-              {/* Preview */}
-              {popupForm.mediaUrl && (
-                <div className="rounded-xl overflow-hidden border border-slate-700/40 bg-slate-900">
-                  <p className="text-[10px] text-slate-500 px-3 pt-2 pb-1">👁️ Xem trước:</p>
-                  {popupForm.mediaType === 'mp4' ? (
-                    <video src={popupForm.mediaUrl} autoPlay loop muted playsInline className="w-full max-h-48 object-contain" />
-                  ) : (
-                    <img src={popupForm.mediaUrl} alt="preview" className="w-full max-h-48 object-contain" />
-                  )}
-                </div>
-              )}
-
-              <div className="flex gap-2 pt-1">
-                <button onClick={submitPopup} className="btn-primary flex items-center gap-2 text-sm flex-1 justify-center">
-                  <Check size={16} /> {editPopupId ? 'Cập nhật popup' : 'Thêm popup'}
-                </button>
-                <button onClick={() => { setShowPopupForm(false); setPopupForm({ ...POPUP_DEFAULTS }); setEditPopupId(null); }} className="btn-icon px-4 text-sm text-slate-400">
-                  Hủy
-                </button>
-              </div>
-            </div>
-          )}
-
-          {popups.length > 0 ? (
-            <div className="flex flex-col gap-2">
-              {popups.map((p, idx) => (
-                <div key={p.id} className={`flex items-center gap-3 p-3 border rounded-xl transition-all ${p.active ? 'bg-slate-800/40 border-slate-700/30' : 'bg-slate-900/40 border-slate-800/30 opacity-60'}`}>
-                  {/* Thumbnail */}
-                  <div className="w-16 h-10 rounded-lg overflow-hidden bg-slate-800 shrink-0 border border-slate-700/40">
-                    {p.mediaUrl ? (
-                      p.mediaType === 'mp4'
-                        ? <video src={p.mediaUrl} muted className="w-full h-full object-cover" />
-                        : <img src={p.mediaUrl} alt={p.title} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-slate-600"><MonitorPlay size={14} /></div>
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      {idx === 0 && p.active && <span className="text-[10px] font-black bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded">ĐANG DÙNG</span>}
-                      <span className="text-sm font-bold text-white truncate">{p.title || 'Popup QC'}</span>
-                      <span className="text-[10px] font-bold bg-orange-500/10 text-orange-400 px-1.5 py-0.5 rounded">{p.mediaType.toUpperCase()}</span>
-                      {!p.active && <span className="text-[10px] font-black text-slate-600 bg-slate-800 px-1.5 py-0.5 rounded">TẮT</span>}
-                    </div>
-                    <p className="text-[10px] text-slate-500 mt-0.5 truncate">🔗 {p.linkUrl}</p>
-                  </div>
-                  <div className="flex items-center gap-1 shrink-0">
-                    <button onClick={() => editPopup(p)} className="btn-icon p-2.5 hover:border-orange-500/40 hover:text-orange-400" title="Sửa"><Edit3 size={14} /></button>
-                    <button onClick={() => togglePopup(p)} className={`btn-icon p-2.5 ${p.active ? 'text-emerald-400' : 'text-slate-500 hover:text-emerald-400'}`} title={p.active ? 'Tắt' : 'Bật'}>{p.active ? <Eye size={14} /> : <EyeOff size={14} />}</button>
-                    <button onClick={() => deletePopup(p.id)} className="btn-icon p-2.5 hover:border-red-500/40 hover:text-red-400" title="Xóa"><Trash2 size={14} /></button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-10 text-slate-600">
-              <MonitorPlay size={40} className="mx-auto mb-3 opacity-30" />
-              <p className="text-sm">Chưa có popup QC nào.</p>
-              <p className="text-xs mt-1">Nhấn "Thêm popup" để bắt đầu.</p>
-            </div>
-          )}
-        </div>
-      )}
-    </SectionCard>
-  );
-}
-
 
 
 // ── VipSection ────────────────────────────────────────────────────────────────
@@ -1458,102 +992,356 @@ function VipSection({ onToast }: { onToast: (msg: string, t: 'success' | 'error'
   );
 }
 
-// ── MaintenanceSection ────────────────────────────────────────────────────────
-
-// ── RealtimeUsersSection ─────────────────────────────────────────────────────
-function RealtimeUsersSection() {
-  const [stats, setStats] = React.useState<PresenceStats>({ total: 0, byDevice: { mobile: 0, desktop: 0, tablet: 0, other: 0 } });
-  const [loading, setLoading] = React.useState(true);
-  const [blink, setBlink] = React.useState(false);
+// ── VipKeysSection ────────────────────────────────────────────────────────
+function VipKeysSection({ onToast }: { onToast: (msg: string, t: 'success' | 'error') => void }) {
+  const [keys, setKeys] = useState<VipKey[]>([]);
+  const [code, setCode] = useState('');
+  const [tier, setTier] = useState<VipTier>('UVIP');
+  const [durationValue, setDurationValue] = useState(1);
+  const [durationUnit, setDurationUnit] = useState<DurationUnit>('day');
+  const [usageMode, setUsageMode] = useState<'single' | 'limit'>('single');
+  const [usageLimit, setUsageLimit] = useState(10);
+  const [quantity, setQuantity] = useState(1);
+  const [note, setNote] = useState('');
+  const [creating, setCreating] = useState(false);
+  const [filter, setFilter] = useState<'all' | 'active' | 'used'>('all');
 
   useEffect(() => {
-    const unsub = subscribeOnlineUsers(s => {
-      setStats(s);
-      setLoading(false);
-      setBlink(true);
-      setTimeout(() => setBlink(false), 600);
-    });
+    const unsub = subscribeVipKeys(setKeys);
     return unsub;
   }, []);
 
-  const devices = [
-    { key: 'mobile', label: 'Mobile', color: 'text-sky-400', bg: 'bg-sky-500/20 border-sky-500/30', icon: '📱' },
-    { key: 'desktop', label: 'Desktop', color: 'text-emerald-400', bg: 'bg-emerald-500/20 border-emerald-500/30', icon: '🖥️' },
-    { key: 'tablet', label: 'Tablet', color: 'text-purple-400', bg: 'bg-purple-500/20 border-purple-500/30', icon: '📲' },
-    { key: 'other', label: 'Khác', color: 'text-slate-400', bg: 'bg-slate-700/40 border-slate-600/30', icon: '🔌' },
-  ] as const;
+  const autoFillCode = () => setCode(generateKeyCode());
+
+  const resetForm = () => {
+    setCode(''); setTier('UVIP'); setDurationValue(1); setDurationUnit('day');
+    setUsageMode('single'); setUsageLimit(10); setQuantity(1); setNote('');
+  };
+
+  const handleCreate = async () => {
+    const durationMinutes = toMinutes(durationValue, durationUnit);
+    const maxUses = usageMode === 'single' ? 1 : Math.max(1, usageLimit);
+    const qty = Math.max(1, quantity);
+
+    setCreating(true);
+
+    // Tạo nhiều key cùng lúc (mỗi key 1 mã auto riêng biệt)
+    if (qty > 1) {
+      const res = await createVipKeysBulk({ count: qty, tier, durationMinutes, maxUses, note });
+      setCreating(false);
+      if (res.ok) {
+        onToast(`✅ Đã tạo ${res.codes.length} key mới!`, 'success');
+        resetForm();
+      } else {
+        onToast(res.error || 'Lỗi khi tạo key!', 'error');
+      }
+      return;
+    }
+
+    // Tạo 1 key (mã auto hoặc gõ tay)
+    const finalCode = code.trim() || generateKeyCode();
+    const res = await createVipKey({ code: finalCode, tier, durationMinutes, maxUses, note });
+    setCreating(false);
+
+    if (res.ok) {
+      onToast(`✅ Đã tạo key ${finalCode}!`, 'success');
+      resetForm();
+    } else {
+      onToast(res.error || 'Lỗi khi tạo key!', 'error');
+    }
+  };
+
+  const copyCode = (c: string) => {
+    navigator.clipboard?.writeText(c);
+    onToast('Đã copy mã key!', 'success');
+  };
+
+  const toggleActive = async (k: VipKey) => {
+    try {
+      await setVipKeyActive(k.code, !k.active);
+    } catch { onToast('Lỗi khi cập nhật key!', 'error'); }
+  };
+
+  const removeKey = async (c: string) => {
+    if (!confirm(`Xóa key ${c}? Hành động này không thể hoàn tác.`)) return;
+    try {
+      await deleteVipKey(c);
+      onToast('Đã xóa key.', 'success');
+    } catch { onToast('Lỗi khi xóa key!', 'error'); }
+  };
+
+  const filteredKeys = keys.filter(k => {
+    if (filter === 'active') return k.active && k.usedCount < k.maxUses;
+    if (filter === 'used') return !k.active || k.usedCount >= k.maxUses;
+    return true;
+  });
 
   return (
-    <SectionCard title="Người dùng trực tuyến (Realtime)" icon={Activity} color="emerald">
-      {/* Tổng số */}
-      <div className={`flex items-center gap-4 mb-6 p-5 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 transition-all duration-300 ${blink ? 'border-emerald-400/60 bg-emerald-500/20' : ''}`}>
-        <div className="relative flex-shrink-0">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/30">
-            <Users size={26} className="text-white" />
+    <SectionCard title="Key VIP · Chặn Quảng Cáo" icon={KeyRound} color="violet">
+      <div className="flex flex-col gap-5">
+        <p className="text-sm text-slate-400">
+          Tạo key để tặng VIP cho user (không cần trừ tiền). User nhập key ở trang <span className="text-violet-400 font-semibold">Mua VIP</span> để nhận thời hạn chặn QC.
+          Có thể tạo key auto ngẫu nhiên hoặc gõ mã tùy ý, giới hạn dùng 1 lần hoặc theo số lượng lượt đổi.
+        </p>
+
+        {/* Form tạo key */}
+        <div className="bg-slate-800/40 border border-violet-500/20 rounded-2xl p-4 flex flex-col gap-4">
+          {/* Mã key */}
+          <div>
+            <label className="text-xs text-slate-400 font-semibold mb-1 block">Mã Key</label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={code}
+                onChange={e => setCode(e.target.value.toUpperCase())}
+                disabled={quantity > 1}
+                placeholder={quantity > 1 ? 'Tạo nhiều key → mã sẽ tự động random' : 'Để trống = tự động tạo mã ngẫu nhiên'}
+                className="admin-input flex-1 font-mono tracking-wide disabled:opacity-40"
+              />
+              <button
+                type="button"
+                onClick={autoFillCode}
+                disabled={quantity > 1}
+                className="btn-icon px-3 flex items-center gap-1.5 text-xs font-bold hover:border-violet-500/40 hover:text-violet-400 whitespace-nowrap disabled:opacity-40"
+              >
+                <Shuffle size={13} /> Tạo mã auto
+              </button>
+            </div>
           </div>
-          {/* pulse dot */}
-          <span className="absolute -top-1 -right-1 flex h-4 w-4">
-            <span className={`animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 ${loading ? 'hidden' : ''}`} />
-            <span className="relative inline-flex rounded-full h-4 w-4 bg-emerald-500 border-2 border-slate-900" />
-          </span>
+
+          {/* Số lượng key muốn tạo */}
+          <div>
+            <label className="text-xs text-slate-400 font-semibold mb-1 block">Số lượng key muốn tạo cùng lúc</label>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                min={1}
+                max={200}
+                value={quantity}
+                onChange={e => setQuantity(Math.min(200, Math.max(1, parseInt(e.target.value) || 1)))}
+                className="admin-input w-24 text-center"
+              />
+              <span className="text-[11px] text-slate-500">
+                {quantity > 1
+                  ? `→ sẽ tạo ${quantity} mã key khác nhau, mỗi mã random riêng biệt`
+                  : 'Nhập > 1 để tạo nhiều key khác nhau cùng lúc (mã auto random)'}
+              </span>
+            </div>
+          </div>
+
+          {/* Gói VIP */}
+          <div>
+            <label className="text-xs text-slate-400 font-semibold mb-1.5 block">Gói VIP cấp cho user</label>
+            <div className="grid grid-cols-3 gap-2">
+              {(['UVIP', 'SVIP', 'SSVIP'] as VipTier[]).map(t => {
+                const meta = VIP_META[t];
+                const active = tier === t;
+                return (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => setTier(t)}
+                    className={cn(
+                      'flex flex-col items-center gap-0.5 py-2.5 rounded-xl border text-xs font-bold transition-all',
+                      active ? `bg-gradient-to-r ${meta.gradient} text-white border-transparent` : 'bg-slate-800/60 border-slate-700/40 text-slate-400 hover:border-slate-600'
+                    )}
+                  >
+                    <span>{meta.icon}</span> {t}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Thời hạn tùy chỉnh */}
+          <div>
+            <label className="text-xs text-slate-400 font-semibold mb-1.5 block">Thời hạn VIP (tùy chỉnh)</label>
+            <div className="flex gap-2">
+              <input
+                type="number"
+                min={1}
+                value={durationValue}
+                onChange={e => setDurationValue(Math.max(1, parseInt(e.target.value) || 1))}
+                className="admin-input w-24 text-center"
+              />
+              <div className="flex flex-1 gap-1.5">
+                {([
+                  { v: 'minute', l: 'Phút' },
+                  { v: 'hour', l: 'Giờ' },
+                  { v: 'day', l: 'Ngày' },
+                ] as { v: DurationUnit; l: string }[]).map(u => (
+                  <button
+                    key={u.v}
+                    type="button"
+                    onClick={() => setDurationUnit(u.v)}
+                    className={cn(
+                      'flex-1 text-xs font-bold py-2 rounded-lg border transition-all',
+                      durationUnit === u.v ? 'bg-violet-500/20 border-violet-500/50 text-violet-300' : 'bg-slate-800/60 border-slate-700/40 text-slate-500 hover:border-slate-600'
+                    )}
+                  >
+                    {u.l}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <p className="text-[11px] text-slate-500 mt-1.5">≈ {formatDuration(toMinutes(durationValue, durationUnit))} chặn quảng cáo mỗi lượt đổi key.</p>
+          </div>
+
+          {/* Số lần sử dụng */}
+          <div>
+            <label className="text-xs text-slate-400 font-semibold mb-1.5 block">Số lần key được sử dụng</label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setUsageMode('single')}
+                className={cn(
+                  'py-2.5 rounded-xl border text-xs font-bold transition-all',
+                  usageMode === 'single' ? 'bg-violet-500/20 border-violet-500/50 text-violet-300' : 'bg-slate-800/60 border-slate-700/40 text-slate-400 hover:border-slate-600'
+                )}
+              >
+                🔒 Dùng 1 lần
+              </button>
+              <button
+                type="button"
+                onClick={() => setUsageMode('limit')}
+                className={cn(
+                  'py-2.5 rounded-xl border text-xs font-bold transition-all',
+                  usageMode === 'limit' ? 'bg-violet-500/20 border-violet-500/50 text-violet-300' : 'bg-slate-800/60 border-slate-700/40 text-slate-400 hover:border-slate-600'
+                )}
+              >
+                🔁 Theo số lượng
+              </button>
+            </div>
+            {usageMode === 'limit' && (
+              <div className="flex items-center gap-2 mt-2">
+                <span className="text-xs text-slate-500">Giới hạn:</span>
+                <input
+                  type="number"
+                  min={1}
+                  value={usageLimit}
+                  onChange={e => setUsageLimit(Math.max(1, parseInt(e.target.value) || 1))}
+                  className="admin-input w-24 text-center"
+                />
+                <span className="text-xs text-slate-500">lượt đổi (nhiều user khác nhau có thể cùng dùng)</span>
+              </div>
+            )}
+          </div>
+
+          {/* Ghi chú */}
+          <div>
+            <label className="text-xs text-slate-400 font-semibold mb-1 block">Ghi chú (tùy chọn, chỉ admin thấy)</label>
+            <input
+              type="text"
+              value={note}
+              onChange={e => setNote(e.target.value)}
+              placeholder="VD: Tặng fanpage Facebook, sự kiện 20/10..."
+              className="admin-input w-full"
+            />
+          </div>
+
+          <button
+            onClick={handleCreate}
+            disabled={creating}
+            className="flex items-center justify-center gap-2 px-5 py-2.5 bg-violet-500 hover:bg-violet-400 disabled:opacity-60 text-white font-bold rounded-xl transition-colors"
+          >
+            <Plus size={16} />
+            {creating ? 'Đang tạo...' : 'Tạo Key VIP'}
+          </button>
         </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-0.5">Đang truy cập (30 phút gần nhất)</p>
-          {loading ? (
-            <div className="flex gap-1 items-center mt-1">
-              <div className="w-8 h-7 bg-slate-700 rounded animate-pulse" />
-              <span className="text-slate-600 text-sm">đang tải...</span>
+
+        {/* Danh sách key */}
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <p className="text-xs text-slate-500 font-semibold uppercase tracking-wide">Danh sách key ({filteredKeys.length})</p>
+            <div className="flex gap-1.5">
+              {([
+                { v: 'all', l: 'Tất cả' },
+                { v: 'active', l: 'Còn dùng được' },
+                { v: 'used', l: 'Hết lượt/Khóa' },
+              ] as { v: 'all' | 'active' | 'used'; l: string }[]).map(f => (
+                <button
+                  key={f.v}
+                  onClick={() => setFilter(f.v)}
+                  className={cn(
+                    'text-[11px] font-bold px-2.5 py-1.5 rounded-full border transition-all',
+                    filter === f.v ? 'bg-slate-700 border-slate-600 text-white' : 'border-transparent text-slate-500 hover:text-slate-300'
+                  )}
+                >
+                  {f.l}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {filteredKeys.length > 0 ? (
+            <div className="flex flex-col gap-2">
+              {filteredKeys.map(k => {
+                const meta = VIP_META[k.tier];
+                const exhausted = k.usedCount >= k.maxUses;
+                const usable = k.active && !exhausted;
+                return (
+                  <div key={k.code} className={cn(
+                    'flex items-center gap-3 p-3 rounded-xl border transition-all',
+                    usable ? 'bg-slate-800/40 border-violet-500/20' : 'bg-slate-800/20 border-slate-700/30 opacity-60'
+                  )}>
+                    <div className={`w-9 h-9 rounded-lg bg-gradient-to-br ${meta.gradient} flex items-center justify-center shrink-0 text-sm`}>
+                      {meta.icon}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <p className="text-sm font-black text-white font-mono tracking-wide truncate">{k.code}</p>
+                        <button onClick={() => copyCode(k.code)} className="text-slate-500 hover:text-violet-400 shrink-0"><Copy size={12} /></button>
+                      </div>
+                      <div className="flex gap-1.5 flex-wrap mt-1">
+                        <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${meta.color} bg-white/5 border border-white/10`}>{meta.label}</span>
+                        <span className="text-[9px] bg-sky-500/10 text-sky-400 border border-sky-500/20 px-1.5 py-0.5 rounded">{formatDuration(k.durationMinutes)}</span>
+                        <span className="text-[9px] bg-slate-700/40 text-slate-400 border border-slate-600/30 px-1.5 py-0.5 rounded">
+                          {k.usedCount}/{k.maxUses} lượt
+                        </span>
+                        {!k.active && <span className="text-[9px] bg-red-500/10 text-red-400 border border-red-500/20 px-1.5 py-0.5 rounded">Đã khóa</span>}
+                        {exhausted && k.active && <span className="text-[9px] bg-red-500/10 text-red-400 border border-red-500/20 px-1.5 py-0.5 rounded">Hết lượt</span>}
+                      </div>
+                      {k.note && <p className="text-[10px] text-slate-600 mt-1 italic truncate">📝 {k.note}</p>}
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        onClick={() => toggleActive(k)}
+                        disabled={exhausted}
+                        title={k.active ? 'Khóa key' : 'Mở khóa key'}
+                        className={cn('btn-icon p-2 disabled:opacity-30', k.active ? 'hover:border-amber-500/40 hover:text-amber-400' : 'hover:border-emerald-500/40 hover:text-emerald-400')}
+                      >
+                        <Power size={14} />
+                      </button>
+                      <button onClick={() => removeKey(k.code)} className="btn-icon p-2 hover:border-red-500/40 hover:text-red-400"><Trash2 size={14} /></button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           ) : (
-            <div className="flex items-baseline gap-2">
-              <span className="text-4xl font-black text-white tabular-nums" style={{ fontFamily: 'Bebas Neue, monospace' }}>{stats.total}</span>
-              <span className="text-slate-400 text-sm font-semibold">người dùng</span>
+            <div className="text-center py-10 text-slate-600">
+              <KeyRound size={40} className="mx-auto mb-3 opacity-30" />
+              <p className="text-sm">Chưa có key nào.</p>
             </div>
           )}
         </div>
-        <div className="flex items-center gap-1.5 text-xs text-emerald-400 font-semibold">
-          <Wifi size={14} />
-          <span>Live</span>
+
+        <div className="bg-slate-800/40 border border-violet-500/20 rounded-xl p-4 text-xs text-slate-500 flex flex-col gap-1">
+          <p className="font-bold text-violet-400 mb-1">📌 Lưu ý</p>
+          <p>• Key "Dùng 1 lần" chỉ 1 người đổi được, sau đó tự động hết hiệu lực.</p>
+          <p>• Key "Theo số lượng" cho phép nhiều user khác nhau cùng dùng chung 1 mã, tối đa theo số lượt bạn đặt.</p>
+          <p>• Mỗi user chỉ đổi được 1 lần cho cùng 1 mã key, kể cả key dùng theo số lượng.</p>
+          <p>• Thời hạn VIP cộng dồn nếu user đang còn VIP hạn cũ.</p>
+          <p>• Có thể khóa key tạm thời (🔌) mà không cần xóa hẳn.</p>
         </div>
       </div>
-
-      {/* Phân theo thiết bị */}
-      <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-3">Theo thiết bị</p>
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {devices.map(d => {
-          const count = stats.byDevice[d.key];
-          const pct = stats.total > 0 ? Math.round((count / stats.total) * 100) : 0;
-          return (
-            <div key={d.key} className={`flex flex-col gap-2 p-4 rounded-xl border ${d.bg}`}>
-              <div className="flex items-center justify-between">
-                <span className="text-lg">{d.icon}</span>
-                <span className={`text-xs font-bold ${d.color}`}>{pct}%</span>
-              </div>
-              <div>
-                <p className={`text-xl font-black tabular-nums ${d.color}`} style={{ fontFamily: 'Bebas Neue, monospace' }}>
-                  {loading ? <span className="w-5 h-5 inline-block bg-slate-700 rounded animate-pulse align-middle" /> : count}
-                </p>
-                <p className="text-xs text-slate-500 font-semibold mt-0.5">{d.label}</p>
-              </div>
-              {/* progress bar */}
-              <div className="w-full h-1 bg-slate-800 rounded-full overflow-hidden">
-                <div
-                  className={`h-full rounded-full transition-all duration-700 ${d.key === 'mobile' ? 'bg-sky-400' : d.key === 'desktop' ? 'bg-emerald-400' : d.key === 'tablet' ? 'bg-purple-400' : 'bg-slate-500'}`}
-                  style={{ width: `${pct}%` }}
-                />
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      <p className="text-[11px] text-slate-600 mt-4 flex items-center gap-1.5">
-        <RefreshCw size={11} className="animate-spin" style={{ animationDuration: '3s' }} />
-        Cập nhật tự động mỗi 30 giây • Dựa trên Firestore Presence
-      </p>
     </SectionCard>
   );
 }
+
+// ── MaintenanceSection ────────────────────────────────────────────────────────
+
+// (Overview/Realtime users section removed)
 
 function MaintenanceSection() {
   const [cfg, setCfg] = useState<MaintenanceConfig>(DEFAULT_MAINTENANCE);
@@ -1630,7 +1418,7 @@ function MaintenanceSection() {
           <input type="datetime-local" value={cfg.endTime ? cfg.endTime.slice(0,16) : ''}
             onChange={e => setCfg(c => ({ ...c, endTime: e.target.value ? new Date(e.target.value).toISOString() : '' }))}
             className="input-field text-sm" />
-          {cfg.endTime && <p className="text-[11px] text-green-400 mt-1">⏱ Sẽ đếm ngược đến: {new Date(cfg.endTime).toLocaleString('vi-VN')}</p>}
+          {cfg.endTime && <p className="text-[11px] text-yellow-400 mt-1">⏱ Sẽ đếm ngược đến: {new Date(cfg.endTime).toLocaleString('vi-VN')}</p>}
         </div>
 
         {/* Media type */}
@@ -1639,7 +1427,7 @@ function MaintenanceSection() {
           <div className="grid grid-cols-3 gap-2">
             {(['none','image','video'] as const).map(type => (
               <button key={type} onClick={() => setCfg(c => ({ ...c, mediaType: type }))}
-                className={`py-2 rounded-xl text-xs font-bold border transition-all ${cfg.mediaType === type ? 'bg-green-600/20 border-green-600/60 text-green-300' : 'bg-slate-800/60 border-slate-700/40 text-slate-400 hover:border-slate-600'}`}>
+                className={`py-2 rounded-xl text-xs font-bold border transition-all ${cfg.mediaType === type ? 'bg-yellow-500/20 border-yellow-600/60 text-yellow-300' : 'bg-slate-800/60 border-slate-700/40 text-slate-400 hover:border-slate-600'}`}>
                 {type === 'none' ? '🚫 Không có' : type === 'image' ? '🖼 Ảnh' : '🎬 Video'}
               </button>
             ))}
@@ -1657,7 +1445,7 @@ function MaintenanceSection() {
             {cfg.mediaType === 'image' && (
               <>
                 <button onClick={() => fileRef.current?.click()}
-                  className="flex items-center justify-center gap-2 w-full py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-xs text-slate-300 hover:border-green-600/40 transition-all">
+                  className="flex items-center justify-center gap-2 w-full py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-xs text-slate-300 hover:border-yellow-600/40 transition-all">
                   📁 Tải ảnh từ máy
                 </button>
                 <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
@@ -1679,7 +1467,7 @@ function MaintenanceSection() {
 
         {/* Save button */}
         <button onClick={save} disabled={saving}
-          className={`w-full py-3 rounded-2xl font-black text-sm transition-all ${saved ? 'bg-green-500 text-white' : 'bg-green-600 hover:bg-green-500 text-slate-950'} disabled:opacity-60`}>
+          className={`w-full py-3 rounded-2xl font-black text-sm transition-all ${saved ? 'bg-yellow-500 text-white' : 'bg-yellow-500 hover:bg-yellow-500 text-slate-950'} disabled:opacity-60`}>
           {saving ? '⏳ Đang lưu...' : saved ? '✅ Đã lưu!' : '💾 Lưu cài đặt bảo trì'}
         </button>
       </div>
@@ -1744,7 +1532,7 @@ function GeoblockSection() {
       <button
         onClick={save}
         disabled={saving}
-        className={`w-full py-3 rounded-2xl font-black text-sm transition-all ${saved ? 'bg-green-500 text-white' : 'bg-cyan-600 hover:bg-cyan-500 text-slate-950'} disabled:opacity-60`}
+        className={`w-full py-3 rounded-2xl font-black text-sm transition-all ${saved ? 'bg-yellow-500 text-white' : 'bg-cyan-600 hover:bg-cyan-500 text-slate-950'} disabled:opacity-60`}
       >
         {saving ? '⏳ Đang lưu...' : saved ? '✅ Đã lưu!' : '💾 Lưu cài đặt'}
       </button>
@@ -1755,16 +1543,16 @@ function GeoblockSection() {
 
 // ─── Navigation sections map ─────────────────────────────────────────────────
 const NAV_SECTIONS = [
-  { id: 'section-realtime',     label: 'Tổng quan',         icon: Activity },
   { id: 'section-brand',        label: 'Logo & Thương hiệu', icon: Palette },
   { id: 'section-movies',       label: 'Phim thủ công',     icon: Film },
   { id: 'section-livestream',   label: 'Livestream',        icon: Radio },
   { id: 'section-upcoming',     label: 'Phim sắp chiếu',    icon: Clock },
   { id: 'section-override',     label: 'Sửa phim API',      icon: Edit3 },
-  { id: 'section-ads',          label: 'Quảng cáo',         icon: Megaphone },
+  { id: 'section-pinned',       label: 'Ghim phim KKPhim',  icon: Pin },
   { id: 'section-members',      label: 'Thành viên',        icon: Users },
   { id: 'section-notifications',label: 'Thông báo',         icon: Bell },
   { id: 'section-vip',          label: 'Gói VIP',           icon: Crown },
+  { id: 'section-vipkeys',      label: 'Key VIP',           icon: KeyRound },
   { id: 'section-geoblock',     label: 'Chặn IP',           icon: Globe },
   { id: 'section-maintenance',  label: 'Bảo trì',           icon: Wrench },
   { id: 'section-manual-topup', label: 'Nạp thẻ TC',        icon: CreditCard },
@@ -1777,6 +1565,8 @@ function LivestreamAdminSection({ onToast }: { onToast: (msg: string, t: 'succes
   const [form, setForm] = useState<LiveConfig>(DEFAULT_LIVE_CONFIG);
   const [saving, setSaving] = useState(false);
   const [messages, setMessages] = useState<LiveChatMessage[]>([]);
+  const [registrations, setRegistrations] = useState<RoomRegistration[]>([]);
+  const [viewerCount, setViewerCount] = useState(0);
 
   useEffect(() => {
     const unsub = subscribeLiveConfig(cfg => { setConfig(cfg); setForm(cfg); });
@@ -1787,6 +1577,35 @@ function LivestreamAdminSection({ onToast }: { onToast: (msg: string, t: 'succes
     const unsub = subscribeLiveChat(setMessages);
     return unsub;
   }, []);
+
+  useEffect(() => {
+    const unsub = subscribeRegistrations(setRegistrations);
+    return unsub;
+  }, []);
+
+  useEffect(() => {
+    const unsub = subscribeRoomViewerCount(setViewerCount);
+    return unsub;
+  }, []);
+
+  const pendingRegs = registrations.filter(r => r.status === 'pending');
+  const approvedRegs = registrations.filter(r => r.status === 'approved');
+
+  const handleDecide = async (uid: string, status: 'approved' | 'rejected') => {
+    await decideRegistration(uid, status);
+    onToast(status === 'approved' ? '✅ Đã duyệt vào phòng chiếu!' : '⛔ Đã từ chối yêu cầu', status === 'approved' ? 'success' : 'error');
+  };
+
+  const handleRevoke = async (uid: string) => {
+    if (!confirm('Thu hồi quyền xem phòng chiếu của người này?')) return;
+    await removeRegistration(uid);
+    onToast('🗑️ Đã thu hồi quyền xem');
+  };
+
+  // Chuyển giá trị input[type=datetime-local] <-> timestamp (ms)
+  const scheduledInputValue = form.scheduledAt
+    ? new Date(form.scheduledAt - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16)
+    : '';
 
   const handleToggle = async () => {
     const next = !config.enabled;
@@ -1832,12 +1651,48 @@ function LivestreamAdminSection({ onToast }: { onToast: (msg: string, t: 'succes
               </p>
             </div>
           </div>
-          <button
-            onClick={handleToggle}
-            className={cn('w-14 h-8 rounded-full transition-colors relative shrink-0', config.enabled ? 'bg-red-500' : 'bg-slate-700')}
-          >
-            <span className={cn('absolute top-1 w-6 h-6 rounded-full bg-white transition-transform shadow', config.enabled ? 'translate-x-7' : 'translate-x-1')} />
-          </button>
+          <div className="flex items-center gap-3">
+            <span className="flex items-center gap-1.5 text-xs font-bold text-slate-300 bg-slate-900/60 border border-slate-700/60 px-2.5 py-1.5 rounded-full">
+              <Eye size={13} /> {viewerCount} đang xem
+            </span>
+            <button
+              onClick={handleToggle}
+              className={cn('w-14 h-8 rounded-full transition-colors relative shrink-0', config.enabled ? 'bg-red-500' : 'bg-slate-700')}
+            >
+              <span className={cn('absolute top-1 w-6 h-6 rounded-full bg-white transition-transform shadow', config.enabled ? 'translate-x-7' : 'translate-x-1')} />
+            </button>
+          </div>
+        </div>
+
+        {/* Đăng ký & duyệt phòng chiếu + hẹn giờ chiếu */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="flex items-center justify-between bg-slate-800/40 border border-slate-700/40 rounded-2xl p-4">
+            <div>
+              <p className="text-white font-bold text-sm">Yêu cầu đăng ký & duyệt</p>
+              <p className="text-slate-500 text-xs mt-0.5">Bật lên: chỉ ai được admin duyệt mới xem được phòng</p>
+            </div>
+            <button
+              onClick={() => setForm(f => ({ ...f, requireApproval: !f.requireApproval }))}
+              className={cn('w-14 h-8 rounded-full transition-colors relative shrink-0', form.requireApproval ? 'bg-yellow-500' : 'bg-slate-700')}
+            >
+              <span className={cn('absolute top-1 w-6 h-6 rounded-full bg-white transition-transform shadow', form.requireApproval ? 'translate-x-7' : 'translate-x-1')} />
+            </button>
+          </div>
+          <div className="bg-slate-800/40 border border-slate-700/40 rounded-2xl p-4">
+            <label className="text-xs text-slate-400 font-semibold mb-1 block">Hẹn giờ chiếu (tùy chọn)</label>
+            <input
+              type="datetime-local"
+              value={scheduledInputValue}
+              onChange={e => {
+                const v = e.target.value;
+                setForm(f => ({ ...f, scheduledAt: v ? new Date(v).getTime() : 0 }));
+              }}
+              className="input-field text-sm"
+            />
+            <p className="text-[11px] text-slate-600 mt-1">
+              Để trống = chiếu ngay khi bật. Có giờ = người xem thấy đếm ngược, phòng tự mở đúng giờ.
+            </p>
+          </div>
         </div>
 
         {/* Form cấu hình */}
@@ -1848,10 +1703,10 @@ function LivestreamAdminSection({ onToast }: { onToast: (msg: string, t: 'succes
               value={form.embedUrl}
               onChange={e => setForm(f => ({ ...f, embedUrl: e.target.value }))}
               className="input-field text-sm"
-              placeholder="https://www.youtube.com/watch?v=... hoặc link Facebook Live / link nhúng khác"
+              placeholder="Playback ID Mux, VD: KTdOXrie8H1tHMEjEhsOpILRF0000stnBwDhDGM7lcly4 — hoặc link YouTube/Facebook Live/nhúng khác"
             />
             <p className="text-[11px] text-slate-600 mt-1">
-              Hỗ trợ YouTube, Facebook Live, hoặc link nhúng khác (VD: abyssplayer...). Link YouTube được chặn tua đầy đủ nhất (ẩn cả thanh tua gốc); các link khác sẽ bị khóa vùng thanh tua ở đáy video bằng lớp phủ, có thể che luôn nút play/pause gốc của player đó.
+              Hỗ trợ <span className="text-violet-400 font-semibold">Mux Live</span> (dán thẳng Playback ID lấy từ dashboard.mux.com, hệ thống tự dựng link phát HLS — có nút toàn màn hình lớn khi xem), YouTube (chặn tua đầy đủ nhất, ẩn cả thanh tua gốc), Facebook Live, hoặc link nhúng khác (VD: abyssplayer...) sẽ bị khóa vùng thanh tua ở đáy video bằng lớp phủ.
             </p>
           </div>
           <div>
@@ -1874,6 +1729,51 @@ function LivestreamAdminSection({ onToast }: { onToast: (msg: string, t: 'succes
           </button>
         </div>
 
+        {/* Duyệt đăng ký vào phòng chiếu */}
+        {form.requireApproval && (
+          <div className="border-t border-slate-800/60 pt-4">
+            <p className="text-sm font-bold text-white flex items-center gap-2 mb-2">
+              <UserCheck size={15} className="text-amber-400" /> Yêu cầu chờ duyệt
+              <span className="text-slate-500 text-xs font-normal">({pendingRegs.length} đang chờ · {approvedRegs.length} đã duyệt)</span>
+            </p>
+            <div className="max-h-72 overflow-y-auto flex flex-col gap-1.5 pr-1">
+              {pendingRegs.length === 0 && approvedRegs.length === 0 ? (
+                <p className="text-slate-600 text-xs text-center py-4">Chưa có ai đăng ký vào phòng chiếu</p>
+              ) : (
+                <>
+                  {pendingRegs.map(r => (
+                    <div key={r.uid} className="flex items-center gap-2 bg-amber-500/5 border border-amber-500/20 rounded-lg px-3 py-2">
+                      <img src={r.avatar} className="w-6 h-6 rounded-full bg-slate-700 shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <span className="text-xs font-bold text-white">{r.username}</span>
+                        <span className="block text-[10px] text-amber-400">Đang chờ duyệt</span>
+                      </div>
+                      <button onClick={() => handleDecide(r.uid, 'approved')} className="w-7 h-7 rounded-full bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 flex items-center justify-center shrink-0" title="Duyệt">
+                        <Check size={13} />
+                      </button>
+                      <button onClick={() => handleDecide(r.uid, 'rejected')} className="w-7 h-7 rounded-full bg-red-500/20 hover:bg-red-500/30 text-red-400 flex items-center justify-center shrink-0" title="Từ chối">
+                        <X size={13} />
+                      </button>
+                    </div>
+                  ))}
+                  {approvedRegs.map(r => (
+                    <div key={r.uid} className="flex items-center gap-2 bg-slate-800/40 border border-slate-700/30 rounded-lg px-3 py-2">
+                      <img src={r.avatar} className="w-6 h-6 rounded-full bg-slate-700 shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <span className="text-xs font-bold text-yellow-400">{r.username}</span>
+                        <span className="block text-[10px] text-slate-500">Đã duyệt — có thể xem</span>
+                      </div>
+                      <button onClick={() => handleRevoke(r.uid)} className="text-slate-600 hover:text-red-400 shrink-0" title="Thu hồi quyền xem">
+                        <Ban size={13} />
+                      </button>
+                    </div>
+                  ))}
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Chat moderation */}
         <div className="border-t border-slate-800/60 pt-4">
           <div className="flex items-center justify-between mb-2">
@@ -1894,7 +1794,7 @@ function LivestreamAdminSection({ onToast }: { onToast: (msg: string, t: 'succes
                 <div key={m.id} className="flex items-center gap-2 bg-slate-800/40 border border-slate-700/30 rounded-lg px-3 py-2">
                   <img src={m.avatar} className="w-6 h-6 rounded-full bg-slate-700 shrink-0" />
                   <div className="min-w-0 flex-1">
-                    <span className="text-xs font-bold text-green-400 mr-1.5">{m.username}</span>
+                    <span className="text-xs font-bold text-yellow-400 mr-1.5">{m.username}</span>
                     <span className="text-xs text-slate-300 break-words">{m.text}</span>
                   </div>
                   <button onClick={() => handleDeleteMsg(m.id)} className="text-slate-600 hover:text-red-400 shrink-0" title="Xóa tin nhắn">
@@ -2089,11 +1989,11 @@ function AdminSidebar({ activeSection, onNavigate, onLogout, onSave, onReset, dr
       {/* Logo */}
       <div className="px-4 py-4 border-b border-slate-800/70 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-gradient-to-br from-green-500 to-yellow-400 rounded-xl flex items-center justify-center shadow-lg shadow-green-500/25 shrink-0">
+          <div className="w-9 h-9 bg-gradient-to-br from-yellow-500 to-yellow-400 rounded-xl flex items-center justify-center shadow-lg shadow-yellow-500/25 shrink-0">
             <Shield size={17} className="text-slate-950" />
           </div>
           <div>
-            <p className="text-white font-black text-sm leading-tight" style={{ fontFamily: 'Bebas Neue, sans-serif', letterSpacing: '0.06em' }}>ĐẢO PHIM</p>
+            <p className="text-white font-black text-sm leading-tight" style={{ fontFamily: 'Bebas Neue, sans-serif', letterSpacing: '0.06em' }}>PHIM TUỔI THƠ</p>
             <p className="text-slate-500 text-[10px] font-semibold">ADMIN PANEL</p>
           </div>
         </div>
@@ -2113,13 +2013,13 @@ function AdminSidebar({ activeSection, onNavigate, onLogout, onSave, onReset, dr
               onClick={() => onNavigate(item.id)}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all mb-0.5 text-left ${
                 isActive
-                  ? 'bg-green-500/15 text-green-400 border border-green-500/20'
+                  ? 'bg-yellow-500/15 text-yellow-400 border border-yellow-500/20'
                   : 'text-slate-500 hover:text-slate-200 hover:bg-slate-800/60 border border-transparent'
               }`}
             >
               <Icon size={15} className="shrink-0" />
               <span className="truncate">{item.label}</span>
-              {isActive && <span className="ml-auto w-1.5 h-1.5 bg-green-400 rounded-full shrink-0" />}
+              {isActive && <span className="ml-auto w-1.5 h-1.5 bg-yellow-400 rounded-full shrink-0" />}
             </button>
           );
         })}
@@ -2129,7 +2029,7 @@ function AdminSidebar({ activeSection, onNavigate, onLogout, onSave, onReset, dr
       <div className="p-3 border-t border-slate-800/70 flex flex-col gap-2">
         <button
           onClick={onSave}
-          className="w-full bg-green-500 hover:bg-green-400 active:scale-95 text-slate-950 font-black py-2.5 rounded-xl text-sm flex items-center justify-center gap-2 transition-all shadow-lg shadow-green-500/20"
+          className="w-full bg-yellow-500 hover:bg-yellow-400 active:scale-95 text-slate-950 font-black py-2.5 rounded-xl text-sm flex items-center justify-center gap-2 transition-all shadow-lg shadow-yellow-500/20"
         >
           <Save size={14} /> Lưu tất cả
         </button>
@@ -2174,6 +2074,16 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
   const [settings, setSettings] = useState<typeof DEFAULT_SETTINGS>(() => {
     try { const v = localStorage.getItem('site_settings'); return v ? { ...DEFAULT_SETTINGS, ...JSON.parse(v) } : DEFAULT_SETTINGS; } catch { return DEFAULT_SETTINGS; }
   });
+
+  // Lấy cấu hình thật từ Firestore khi vào trang Admin (localStorage chỉ là cache hiển thị tạm)
+  useEffect(() => {
+    fetchSiteSettings().then((data) => {
+      if (data && Object.keys(data).length > 0) {
+        setSettings((prev) => ({ ...DEFAULT_SETTINGS, ...prev, ...data }));
+      }
+    });
+  }, []);
+
   const [movies, setMovies] = useState<ManualMovie[]>([]);
   const [upcomingMovies, setUpcomingMovies] = useState<UpcomingMovie[]>([]);
 
@@ -2229,7 +2139,24 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
         setOverrideApiMovie(res.movie);
         // Load existing override if any
         const existing = await getMovieOverride(overrideSearchSlug.trim());
-        setOverrideForm(existing || {
+
+        // Chuyển server/tập THẬT của phim (từ API) thành customServers để admin thấy ngay
+        // và chỉ cần sửa link, không cần tự gõ tên server/slug.
+        const realServers = (res.episodes || []).map((srv: any) => ({
+          server_name: srv.server_name,
+          server_data: (srv.server_data || []).map((ep: any) => {
+            const currentLink = ep.link_m3u8 || ep.link_embed || '';
+            return {
+              name: ep.name,
+              slug: ep.slug,
+              link_embed: ep.link_embed || '',
+              link_m3u8: ep.link_m3u8 || '',
+              _rawLink: currentLink,
+            };
+          }),
+        }));
+
+        setOverrideForm(existing && existing.customServers?.length ? existing : {
           slug: overrideSearchSlug.trim(),
           name: res.movie.name || '',
           origin_name: res.movie.origin_name || '',
@@ -2241,6 +2168,8 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
           status: res.movie.status || '',
           actor: res.movie.actor || [],
           director: res.movie.director || [],
+          ...(existing || {}),
+          customServers: realServers,
         });
         setShowOverrideForm(true);
       } else {
@@ -2269,6 +2198,156 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
     }
   };
 
+  // ─── Ghim phim KKPhim lên đầu trang chủ ───────────────────────────────────
+  const [pinnedMovies, setPinnedMovies] = useState<PinnedMovie[]>([]);
+  const [pinSearchSlug, setPinSearchSlug] = useState('');
+  const [pinSearching, setPinSearching] = useState(false);
+  const [pinPreview, setPinPreview] = useState<any>(null);
+
+  useEffect(() => {
+    const unsub = subscribePinnedMovies(setPinnedMovies);
+    return unsub;
+  }, []);
+
+  const searchMovieForPin = async () => {
+    if (!pinSearchSlug.trim()) return;
+    setPinSearching(true);
+    try {
+      const { movieApi } = await import('../services/api');
+      const res = await movieApi.getMovieDetail(pinSearchSlug.trim());
+      if (res.movie) {
+        setPinPreview(res.movie);
+      } else {
+        showToast('Không tìm thấy phim!', 'error');
+        setPinPreview(null);
+      }
+    } catch {
+      showToast('Lỗi khi tìm phim!', 'error');
+      setPinPreview(null);
+    }
+    setPinSearching(false);
+  };
+
+  const pinCurrentPreview = async () => {
+    if (!pinPreview?.slug) return;
+    try {
+      const nextOrder = pinnedMovies.length
+        ? Math.min(...pinnedMovies.map(p => p.order)) - 1
+        : 0;
+      await savePinnedMovie({
+        slug: pinPreview.slug,
+        name: pinPreview.name || '',
+        origin_name: pinPreview.origin_name || '',
+        thumb_url: pinPreview.thumb_url || '',
+        poster_url: pinPreview.poster_url || '',
+        year: pinPreview.year || 0,
+        quality: pinPreview.quality || '',
+        lang: pinPreview.lang || '',
+        type: pinPreview.type || '',
+        status: pinPreview.status || '',
+        episode_current: pinPreview.episode_current || '',
+        order: nextOrder,
+      });
+      showToast('📌 Đã ghim phim lên đầu trang chủ!');
+      setPinPreview(null);
+      setPinSearchSlug('');
+    } catch {
+      showToast('Lỗi khi ghim phim!', 'error');
+    }
+  };
+
+  const unpinMovie = async (slug: string) => {
+    if (!confirm('Bỏ ghim phim này khỏi đầu trang chủ?')) return;
+    try {
+      await deletePinnedMovie(slug);
+      showToast('Đã bỏ ghim phim.');
+    } catch {
+      showToast('Lỗi khi bỏ ghim!', 'error');
+    }
+  };
+
+  // Đổi thứ tự ghim: số order nhỏ hơn = lên trước. Đổi order giữa 2 phim liền kề.
+  const movePinnedOrder = async (index: number, direction: -1 | 1) => {
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= pinnedMovies.length) return;
+    const a = pinnedMovies[index];
+    const b = pinnedMovies[targetIndex];
+    try {
+      await Promise.all([
+        savePinnedMovie({ ...a, order: b.order }),
+        savePinnedMovie({ ...b, order: a.order }),
+      ]);
+    } catch {
+      showToast('Lỗi khi đổi thứ tự!', 'error');
+    }
+  };
+
+  // ─── Quản lý Server tùy chỉnh (ghi đè/thêm link embed & m3u8) ────────────
+  const addCustomServer = () => {
+    setOverrideForm(f => {
+      const list = f.customServers || [];
+      const n = list.length + 1;
+      return { ...f, customServers: [...list, { server_name: `Server ${n}`, server_data: [] }] };
+    });
+  };
+
+  const removeCustomServer = (idx: number) => {
+    setOverrideForm(f => ({ ...f, customServers: (f.customServers || []).filter((_, i) => i !== idx) }));
+  };
+
+  const updateCustomServerName = (idx: number, name: string) => {
+    setOverrideForm(f => ({
+      ...f,
+      customServers: (f.customServers || []).map((s, i) => i === idx ? { ...s, server_name: name } : s),
+    }));
+  };
+
+  const addCustomEpisode = (serverIdx: number) => {
+    setOverrideForm(f => ({
+      ...f,
+      customServers: (f.customServers || []).map((s, i) => {
+        if (i !== serverIdx) return s;
+        const n = s.server_data.length + 1;
+        return { ...s, server_data: [...s.server_data, { name: `Tập ${n}`, slug: `tap-${n}`, link_embed: '', link_m3u8: '' }] };
+      }),
+    }));
+  };
+
+  const removeCustomEpisode = (serverIdx: number, epIdx: number) => {
+    setOverrideForm(f => ({
+      ...f,
+      customServers: (f.customServers || []).map((s, i) => {
+        if (i !== serverIdx) return s;
+        return { ...s, server_data: s.server_data.filter((_, j) => j !== epIdx) };
+      }),
+    }));
+  };
+
+  const updateCustomEpisode = (serverIdx: number, epIdx: number, field: 'name' | 'slug' | 'link_embed' | 'link_m3u8', value: string) => {
+    setOverrideForm(f => ({
+      ...f,
+      customServers: (f.customServers || []).map((s, i) => {
+        if (i !== serverIdx) return s;
+        return { ...s, server_data: s.server_data.map((ep, j) => j === epIdx ? { ...ep, [field]: value } : ep) };
+      }),
+    }));
+  };
+
+  // Ô "Link video" duy nhất — tự nhận diện Google Drive / m3u8 / embed thường,
+  // giống hệt cách nhập link cho phim up thủ công (chỉ cần dán 1 link).
+  const updateCustomEpisodeLink = (serverIdx: number, epIdx: number, rawLink: string) => {
+    setOverrideForm(f => ({
+      ...f,
+      customServers: (f.customServers || []).map((s, i) => {
+        if (i !== serverIdx) return s;
+        return {
+          ...s,
+          server_data: s.server_data.map((ep, j) => j === epIdx ? { ...ep, ...linkToEpisodeFields(rawLink), _rawLink: rawLink } : ep),
+        };
+      }),
+    }));
+  };
+
   const deleteOverride = async (slug: string) => {
     if (!confirm('Xóa chỉnh sửa? Phim sẽ về data gốc từ API.')) return;
     try {
@@ -2282,7 +2361,7 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
   const logoInputRef = useRef<HTMLInputElement>(null);
 
   // ── Sidebar navigation state ──────────────────────────────────────────────
-  const [activeSection, setActiveSection] = useState('section-realtime');
+  const [activeSection, setActiveSection] = useState('section-brand');
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const scrollToSection = (id: string) => {
@@ -2293,12 +2372,14 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => setToast({ message, type });
 
-  const saveSettings = () => {
+  const saveSettings = async () => {
     try {
-      localStorage.setItem('site_settings', JSON.stringify(settings));
-      window.dispatchEvent(new Event('site_settings_updated'));
-      showToast('Đã lưu cài đặt thành công!');
-    } catch { showToast('Lỗi khi lưu cài đặt!', 'error'); }
+      await saveSiteSettingsFirestore(settings);
+      showToast('Đã lưu cài đặt thành công! (áp dụng cho mọi người dùng)');
+    } catch (e) {
+      console.error(e);
+      showToast('Lỗi khi lưu cài đặt lên máy chủ!', 'error');
+    }
   };
 
   // saveMovies không còn dùng localStorage — Firestore subscription tự cập nhật state
@@ -2454,10 +2535,11 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
     setTimeout(() => { const el = document.getElementById("upcoming-form-section"); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); }, 100);
   };
 
-  const resetSettings = () => {
+  const resetSettings = async () => {
     if (!confirm('Khôi phục cài đặt mặc định?')) return;
     setSettings(DEFAULT_SETTINGS);
     localStorage.removeItem('site_settings');
+    try { await saveSiteSettingsFirestore(DEFAULT_SETTINGS); } catch (e) { console.error(e); }
     window.dispatchEvent(new Event('site_settings_updated'));
     showToast('Đã khôi phục cài đặt mặc định!');
   };
@@ -2495,7 +2577,7 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
             <span className="text-white font-black text-sm tracking-widest" style={{ fontFamily: 'Bebas Neue, sans-serif' }}>
               {NAV_SECTIONS.find(s => s.id === activeSection)?.label?.toUpperCase() || 'ADMIN PANEL'}
             </span>
-            <button onClick={saveSettings} className="px-3 py-1.5 bg-green-500 hover:bg-green-400 text-slate-950 font-black text-xs rounded-xl flex items-center gap-1.5 transition-colors">
+            <button onClick={saveSettings} className="px-3 py-1.5 bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-black text-xs rounded-xl flex items-center gap-1.5 transition-colors">
               <Save size={12} /> Lưu
             </button>
           </div>
@@ -2510,7 +2592,7 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
                   onClick={() => { setActiveSection(item.id); window.scrollTo({ top: 0 }); }}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap border transition-all shrink-0 ${
                     isActive
-                      ? 'bg-green-500/20 border-green-500/50 text-green-400'
+                      ? 'bg-yellow-500/20 border-yellow-500/50 text-yellow-400'
                       : 'bg-slate-800/60 border-slate-700/40 text-slate-500 hover:text-slate-300'
                   }`}
                 >
@@ -2534,13 +2616,6 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
 
         {/* ── Tab content ──────────────────────────────────────────────────── */}
         <div className="pt-24 md:pt-0 pb-20 px-4 md:px-8 max-w-4xl mx-auto flex flex-col gap-4">
-
-          {/* REALTIME USERS */}
-          {activeSection === 'section-realtime' && (
-          <div id="section-realtime">
-            <RealtimeUsersSection />
-          </div>
-          )}
 
           {/* LOGO & THƯƠNG HIỆU */}
           {activeSection === 'section-brand' && (
@@ -2594,12 +2669,12 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
 
               {settings.logoType === 'text' && (
                 <InputRow label="Chữ Logo">
-                  <input type="text" value={settings.logoText} onChange={e => setSettings(s => ({ ...s, logoText: e.target.value }))} className="input-field" placeholder="ĐẢO PHIM" />
+                  <input type="text" value={settings.logoText} onChange={e => setSettings(s => ({ ...s, logoText: e.target.value }))} className="input-field" placeholder="PHIM TUỔI THƠ" />
                 </InputRow>
               )}
 
               <InputRow label="Tên Website">
-                <input type="text" value={settings.siteName} onChange={e => setSettings(s => ({ ...s, siteName: e.target.value }))} className="input-field" placeholder="ĐẢO PHIM" />
+                <input type="text" value={settings.siteName} onChange={e => setSettings(s => ({ ...s, siteName: e.target.value }))} className="input-field" placeholder="PHIM TUỔI THƠ" />
               </InputRow>
 
               <InputRow label="Mô tả Website" hint="Hiển thị ở footer">
@@ -2608,6 +2683,44 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
 
               <InputRow label="Email đặt quảng cáo" hint="Hiển thị ở phần liên hệ đặt ads cuối trang">
                 <input type="email" value={settings.adsEmail} onChange={e => setSettings(s => ({ ...s, adsEmail: e.target.value }))} className="input-field" placeholder="adsdaophim@gmail.com" />
+              </InputRow>
+
+              <InputRow label="Telegram đặt quảng cáo" hint="Username Telegram (không cần @), hiển thị thêm nút Telegram cạnh email ở footer. Để trống nếu không muốn hiện.">
+                <input type="text" value={settings.adsTelegram || ''} onChange={e => setSettings(s => ({ ...s, adsTelegram: e.target.value.replace(/^@/, '') }))} className="input-field" placeholder="daophim_ads" />
+              </InputRow>
+
+              <InputRow label="Cảnh báo copy (trang Up phim thủ công)" hint="Hiển thị dưới video ở trang xem phim up thủ công.">
+                <div className="flex items-center gap-3 mb-2">
+                  <button
+                    type="button"
+                    onClick={() => setSettings(s => ({ ...s, manualCopyWarningEnabled: !s.manualCopyWarningEnabled }))}
+                    className={cn(
+                      'relative w-11 h-6 rounded-full transition-colors shrink-0',
+                      settings.manualCopyWarningEnabled ? 'bg-yellow-500' : 'bg-slate-700'
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        'absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform',
+                        settings.manualCopyWarningEnabled ? 'translate-x-5' : 'translate-x-0'
+                      )}
+                    />
+                  </button>
+                  <span className="text-sm text-slate-300">
+                    {settings.manualCopyWarningEnabled ? 'Đang bật — hiện trên trang xem phim' : 'Đang tắt — ẩn hoàn toàn'}
+                  </span>
+                </div>
+                <textarea rows={2} value={settings.manualCopyWarning || ''} onChange={e => setSettings(s => ({ ...s, manualCopyWarning: e.target.value }))} className="input-field resize-none" placeholder="Video thuộc bản quyền độc quyền..." disabled={!settings.manualCopyWarningEnabled} />
+              </InputRow>
+
+              <InputRow label="Domain API phim (nâng cao)" hint="Domain gốc lấy dữ liệu phim (KKPhim/phimapi.com). Chỉ đổi khi domain gốc bị sập, cần chuyển sang domain mirror khác. Để trống = dùng mặc định phimapi.com.">
+                <input
+                  type="text"
+                  value={settings.apiBaseUrl || ''}
+                  onChange={e => setSettings(s => ({ ...s, apiBaseUrl: e.target.value }))}
+                  className="input-field font-mono text-sm"
+                  placeholder="https://phimapi.com"
+                />
               </InputRow>
             </div>
             </SectionCard>
@@ -2683,7 +2796,7 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
                       <button
                         type="button"
                         onClick={() => setMovieEpisodes(eps => [...eps, { label: `Tập ${eps.length + 1}`, embedUrl: '' }])}
-                        className="text-[11px] bg-green-500/20 hover:bg-green-500/30 text-green-400 border border-green-500/40 px-2.5 py-1 rounded-lg font-bold flex items-center gap-1 transition-colors"
+                        className="text-[11px] bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 border border-yellow-500/40 px-2.5 py-1 rounded-lg font-bold flex items-center gap-1 transition-colors"
                       >
                         + Thêm tập
                       </button>
@@ -2730,9 +2843,9 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
                   </div>
 
                   {/* ── Phim sắp chiếu ── */}
-                  <div className="border border-green-600/30 rounded-xl p-4 bg-green-600/5 flex flex-col gap-3">
+                  <div className="border border-yellow-600/30 rounded-xl p-4 bg-yellow-500/5 flex flex-col gap-3">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-green-400 text-sm font-black">🎬 Phim Sắp Chiếu</span>
+                      <span className="text-yellow-400 text-sm font-black">🎬 Phim Sắp Chiếu</span>
                       <span className="text-[10px] text-slate-500">(Hiển thị vào section "Anime/Phim Sắp Chiếu")</span>
                     </div>
                     {/* Toggle sắp chiếu */}
@@ -2740,7 +2853,7 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
                       <label className="text-xs text-slate-400 font-semibold">Đánh dấu là Sắp Chiếu</label>
                       <button
                         onClick={() => setMovieForm(f => ({ ...f, isUpcoming: !f.isUpcoming }))}
-                        className={`w-11 h-6 rounded-full border transition-all relative ${movieForm.isUpcoming ? 'bg-green-600 border-green-500' : 'bg-slate-700 border-slate-600'}`}>
+                        className={`w-11 h-6 rounded-full border transition-all relative ${movieForm.isUpcoming ? 'bg-yellow-500 border-yellow-500' : 'bg-slate-700 border-slate-600'}`}>
                         <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all ${movieForm.isUpcoming ? 'left-5' : 'left-0.5'}`} />
                       </button>
                     </div>
@@ -2951,7 +3064,7 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
               <div className="flex items-center justify-between">
                 <p className="text-sm text-slate-400">
                   Tổng: <span className="text-white font-bold">{upcomingMovies.length}</span> phim sắp chiếu
-                  <span className="text-xs text-green-400 ml-2">• Hiển thị trên trang chủ cho mọi người</span>
+                  <span className="text-xs text-yellow-400 ml-2">• Hiển thị trên trang chủ cho mọi người</span>
                 </p>
                 <button onClick={() => { setUpcomingForm({ upcomingType: 'movie' }); setEditingUpcomingId(null); setShowUpcomingForm(v => !v); }} className="btn-primary flex items-center gap-2 text-sm py-2">
                   {showUpcomingForm ? <X size={16} /> : <Plus size={16} />}
@@ -2960,7 +3073,7 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
               </div>
 
               {showUpcomingForm && (
-                <div id="upcoming-form-section" className="bg-slate-800/40 border border-green-500/30 rounded-2xl p-5 flex flex-col gap-4">
+                <div id="upcoming-form-section" className="bg-slate-800/40 border border-yellow-500/30 rounded-2xl p-5 flex flex-col gap-4">
                   <h3 className="font-bold text-white text-base">{editingUpcomingId ? '✏️ Chỉnh sửa' : '🎬 Thêm phim sắp chiếu'}</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
@@ -3015,7 +3128,7 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
                 <div className="flex flex-col gap-2">
                   {upcomingMovies.map(movie => (
                     <div key={movie.id} onClick={() => editUpcoming(movie)}
-                      className={`flex items-center gap-3 p-3 border rounded-xl transition-all cursor-pointer active:scale-[0.98] ${editingUpcomingId === movie.id ? 'bg-green-500/10 border-green-500/50' : 'bg-slate-800/40 border-slate-700/30 hover:border-green-500/40 hover:bg-slate-800/70'}`}>
+                      className={`flex items-center gap-3 p-3 border rounded-xl transition-all cursor-pointer active:scale-[0.98] ${editingUpcomingId === movie.id ? 'bg-yellow-500/10 border-yellow-500/50' : 'bg-slate-800/40 border-slate-700/30 hover:border-yellow-500/40 hover:bg-slate-800/70'}`}>
                       {movie.posterUrl ? (
                         <img src={movie.posterUrl} alt={movie.name} className="w-10 h-14 object-cover rounded-lg shrink-0" />
                       ) : (
@@ -3026,17 +3139,17 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
                       <div className="flex-1 min-w-0">
                         <div className="text-sm font-bold text-white truncate">{movie.name}</div>
                         <div className="text-[11px] text-slate-500 flex items-center gap-2 mt-0.5 flex-wrap">
-                          {movie.releaseDate && <span className="text-green-400 font-bold">📅 {movie.releaseDate}</span>}
-                          <span className="text-[10px] bg-green-500/10 text-green-400 border border-green-500/20 px-1.5 py-0.5 rounded font-bold">
+                          {movie.releaseDate && <span className="text-yellow-400 font-bold">📅 {movie.releaseDate}</span>}
+                          <span className="text-[10px] bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 px-1.5 py-0.5 rounded font-bold">
                             {movie.upcomingType === 'movie' ? '🎬 Chiếu rạp' : movie.upcomingType === 'anime' ? '🌸 Anime' : '📺 Phim bộ'}
                           </span>
                         </div>
-                        <div className="text-[10px] text-green-400 mt-1 font-bold">
+                        <div className="text-[10px] text-yellow-400 mt-1 font-bold">
                           {editingUpcomingId === movie.id ? '✏️ Đang chỉnh sửa...' : 'Nhấn để sửa'}
                         </div>
                       </div>
                       <div className="flex items-center gap-1 shrink-0">
-                        <button onClick={e => { e.stopPropagation(); editUpcoming(movie); }} className="btn-icon p-2.5 hover:border-green-500/40 hover:text-green-400"><Edit3 size={15} /></button>
+                        <button onClick={e => { e.stopPropagation(); editUpcoming(movie); }} className="btn-icon p-2.5 hover:border-yellow-500/40 hover:text-yellow-400"><Edit3 size={15} /></button>
                         <button onClick={e => { e.stopPropagation(); deleteUpcomingItem(movie.id); }} className="btn-icon p-2.5 hover:border-red-500/40 hover:text-red-400"><Trash2 size={15} /></button>
                       </div>
                     </div>
@@ -3168,6 +3281,84 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
                       className="input-field text-sm resize-none w-full font-mono" placeholder={overrideApiMovie.director?.join('\n') || 'Tên đạo diễn...'} />
                   </div>
 
+                  {/* ── Server tùy chỉnh: ghi đè hoặc thêm link embed/m3u8 ── */}
+                  <div className="border-t border-slate-700/50 pt-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <div>
+                        <label className="text-xs text-slate-300 font-bold block">🔗 Server & Link phim (đã tự điền từ API)</label>
+                        <p className="text-[10px] text-slate-500 mt-0.5">
+                          Danh sách server/tập <b>thật của phim</b> đã tự hiện sẵn bên dưới — chỉ cần sửa lại ô link của tập nào bị lỗi rồi lưu. Muốn thêm nguồn phát mới thì bấm "Thêm Server".
+                        </p>
+                      </div>
+                      <button onClick={addCustomServer} type="button" className="btn-icon px-3 py-1.5 text-xs shrink-0 flex items-center gap-1 hover:border-yellow-500/40 hover:text-yellow-400">
+                        <Plus size={13} /> Thêm Server
+                      </button>
+                    </div>
+
+                    <div className="flex flex-col gap-3">
+                      {(overrideForm.customServers || []).map((srv, sIdx) => (
+                        <div key={sIdx} className="bg-slate-900/50 border border-slate-700/40 rounded-xl p-3">
+                          <div className="flex items-center gap-2 mb-2">
+                            <input
+                              type="text"
+                              value={srv.server_name}
+                              onChange={e => updateCustomServerName(sIdx, e.target.value)}
+                              className="input-field text-sm flex-1 font-semibold"
+                              placeholder="Tên server, VD: Server 1"
+                            />
+                            <button onClick={() => removeCustomServer(sIdx)} type="button" className="btn-icon p-2 hover:border-red-500/40 hover:text-red-400 shrink-0">
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+
+                          <div className="flex flex-col gap-2">
+                            {srv.server_data.map((ep, eIdx) => {
+                              const preview = buildEmbedUrl(ep._rawLink ?? (ep.link_m3u8 || ep.link_embed || ''));
+                              return (
+                                <div key={eIdx} className="grid grid-cols-1 sm:grid-cols-[90px_90px_1fr_auto] gap-1.5 items-center bg-slate-800/40 rounded-lg p-2">
+                                  <input type="text" value={ep.name} onChange={e => updateCustomEpisode(sIdx, eIdx, 'name', e.target.value)}
+                                    className="input-field text-xs" placeholder="Tên tập" />
+                                  <input type="text" value={ep.slug} onChange={e => updateCustomEpisode(sIdx, eIdx, 'slug', e.target.value)}
+                                    className="input-field text-xs font-mono" placeholder="slug" />
+                                  <div className="flex flex-col gap-1">
+                                    <input
+                                      type="text"
+                                      value={ep._rawLink ?? (ep.link_m3u8 || ep.link_embed || '')}
+                                      onChange={e => updateCustomEpisodeLink(sIdx, eIdx, e.target.value)}
+                                      className="input-field text-xs"
+                                      placeholder="Dán link video: Google Drive / .m3u8 / embed bất kỳ"
+                                    />
+                                    {(ep._rawLink || ep.link_embed || ep.link_m3u8) && (
+                                      <span className={cn(
+                                        'text-[9px] font-bold w-fit px-1.5 py-0.5 rounded',
+                                        preview.isM3u8 ? 'bg-yellow-500/15 text-yellow-400' :
+                                        preview.isDrive ? 'bg-sky-500/15 text-sky-400' :
+                                        'bg-slate-600/30 text-slate-400'
+                                      )}>
+                                        {preview.isM3u8 ? '✓ M3U8' : preview.isDrive ? '✓ Google Drive' : '✓ Embed thường'}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <button onClick={() => removeCustomEpisode(sIdx, eIdx)} type="button" className="btn-icon p-1.5 hover:border-red-500/40 hover:text-red-400 justify-self-end">
+                                    <X size={13} />
+                                  </button>
+                                </div>
+                              );
+                            })}
+                          </div>
+
+                          <button onClick={() => addCustomEpisode(sIdx)} type="button" className="mt-2 text-xs text-yellow-400 hover:text-yellow-300 font-semibold flex items-center gap-1">
+                            <Plus size={12} /> Thêm tập
+                          </button>
+                        </div>
+                      ))}
+
+                      {(!overrideForm.customServers || overrideForm.customServers.length === 0) && (
+                        <p className="text-xs text-slate-600 italic text-center py-2">Chưa có server tùy chỉnh nào.</p>
+                      )}
+                    </div>
+                  </div>
+
                   <div className="flex gap-2 pt-2">
                     <button onClick={saveOverride} className="btn-primary flex items-center gap-2 text-sm flex-1 justify-center">
                       <Check size={16} /> Lưu chỉnh sửa
@@ -3190,10 +3381,11 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
                         <p className="text-[10px] text-slate-500 font-mono truncate">{ov.slug}</p>
                         <div className="flex gap-1.5 flex-wrap mt-1">
                           {ov.name && <span className="text-[9px] bg-blue-500/10 text-blue-400 border border-blue-500/20 px-1.5 py-0.5 rounded">Tên</span>}
-                          {ov.content && <span className="text-[9px] bg-green-500/10 text-green-400 border border-green-500/20 px-1.5 py-0.5 rounded">Mô tả</span>}
+                          {ov.content && <span className="text-[9px] bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 px-1.5 py-0.5 rounded">Mô tả</span>}
                           {ov.actor?.length && <span className="text-[9px] bg-purple-500/10 text-purple-400 border border-purple-500/20 px-1.5 py-0.5 rounded">Diễn viên</span>}
                           {ov.quality && <span className="text-[9px] bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 px-1.5 py-0.5 rounded">{ov.quality}</span>}
                           {ov.lang && <span className="text-[9px] bg-orange-500/10 text-orange-400 border border-orange-500/20 px-1.5 py-0.5 rounded">{ov.lang}</span>}
+                          {ov.customServers?.length ? <span className="text-[9px] bg-sky-500/10 text-sky-400 border border-sky-500/20 px-1.5 py-0.5 rounded">🔗 {ov.customServers.length} server</span> : null}
                         </div>
                       </div>
                       <div className="flex gap-1">
@@ -3216,16 +3408,103 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
           {activeSection === 'section-override' && (
           <div className="flex justify-center">
             <a href="/daophim/player-studio" target="_blank"
-              className="flex items-center gap-2 px-6 py-3 bg-green-500/10 border border-green-500/30 rounded-xl text-green-400 font-bold text-sm hover:bg-green-500/20 transition-all">
+              className="flex items-center gap-2 px-6 py-3 bg-yellow-500/10 border border-yellow-500/30 rounded-xl text-yellow-400 font-bold text-sm hover:bg-yellow-500/20 transition-all">
               🎬 Mở Player Studio — Chỉnh logo & giao diện player
             </a>
           </div>
           )}
 
-          {/* QUẢNG CÁO */}
-          {activeSection === 'section-ads' && (
-          <div id="section-ads">
-            <AdsSection onToast={(msg, t) => setToast({ message: msg, type: t })} />
+          {/* GHIM PHIM KKPHIM LÊN ĐẦU TRANG CHỦ */}
+          {activeSection === 'section-pinned' && (
+          <div id="section-pinned">
+            <SectionCard title="Ghim phim KKPhim lên đầu trang chủ" icon={Pin} color="blue">
+              <div className="flex flex-col gap-4">
+                <p className="text-sm text-slate-400">
+                  Tìm phim theo slug (data gốc từ nguồn KKPhim/phimapi.com) → ghim lên đầu mục "Phim Mới Cập Nhật" ở trang chủ để mọi người dễ thấy ngay. Không cần chỉnh sửa nội dung phim — chỉ đơn giản là đưa lên top.
+                </p>
+
+                {/* Search box */}
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={pinSearchSlug}
+                    onChange={e => setPinSearchSlug(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && searchMovieForPin()}
+                    className="input-field flex-1 text-sm"
+                    placeholder="Nhập slug phim, VD: cu-soc, doraemon-movie-45..."
+                  />
+                  <button
+                    onClick={searchMovieForPin}
+                    disabled={pinSearching}
+                    className="btn-primary px-4 text-sm whitespace-nowrap"
+                  >
+                    {pinSearching ? '...' : '🔍 Tìm'}
+                  </button>
+                </div>
+
+                {/* Preview + confirm pin */}
+                {pinPreview && (
+                  <div className="bg-slate-800/40 border border-blue-500/30 rounded-2xl p-4 flex items-center gap-3">
+                    {pinPreview.thumb_url && (
+                      <img src={pinPreview.thumb_url.startsWith('http') ? pinPreview.thumb_url : `https://phimimg.com/${pinPreview.thumb_url}`}
+                        alt="" className="w-12 h-16 object-cover rounded-lg shrink-0" />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-white text-sm truncate">{pinPreview.name}</p>
+                      <p className="text-xs text-slate-500 font-mono truncate">slug: {pinPreview.slug}</p>
+                      <p className="text-[10px] text-blue-400 mt-1">
+                        {pinnedMovies.some(p => p.slug === pinPreview.slug) ? '📌 Phim này đang được ghim' : 'Chưa được ghim'}
+                      </p>
+                    </div>
+                    <button
+                      onClick={pinCurrentPreview}
+                      disabled={pinnedMovies.some(p => p.slug === pinPreview.slug)}
+                      className="btn-primary px-4 text-sm whitespace-nowrap flex items-center gap-1.5 disabled:opacity-40"
+                    >
+                      <Pin size={14} /> Ghim lên đầu
+                    </button>
+                  </div>
+                )}
+
+                {/* Pinned list */}
+                {pinnedMovies.length > 0 ? (
+                  <div className="flex flex-col gap-2">
+                    <p className="text-xs text-slate-500 font-semibold uppercase tracking-wide">Đang ghim ({pinnedMovies.length}) — trên cùng hiện trước tiên</p>
+                    {pinnedMovies.map((p, idx) => (
+                      <div key={p.slug} className="flex items-center gap-3 p-3 bg-slate-800/40 border border-blue-500/20 rounded-xl">
+                        <span className="text-[11px] font-bold text-blue-400 bg-blue-500/10 border border-blue-500/20 rounded-full w-6 h-6 flex items-center justify-center shrink-0">{idx + 1}</span>
+                        {p.thumb_url ? (
+                          <img src={p.thumb_url.startsWith('http') ? p.thumb_url : `https://phimimg.com/${p.thumb_url}`}
+                            alt="" className="w-10 h-14 object-cover rounded-lg shrink-0" />
+                        ) : (
+                          <div className="w-10 h-14 bg-slate-700 rounded-lg flex items-center justify-center shrink-0">
+                            <Film size={16} className="text-slate-500" />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-bold text-white truncate">{p.name}</p>
+                          <p className="text-[10px] text-slate-500 font-mono truncate">{p.slug}</p>
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button onClick={() => movePinnedOrder(idx, -1)} disabled={idx === 0}
+                            className="btn-icon p-2 hover:border-blue-500/40 hover:text-blue-400 disabled:opacity-30"><ArrowUp size={14} /></button>
+                          <button onClick={() => movePinnedOrder(idx, 1)} disabled={idx === pinnedMovies.length - 1}
+                            className="btn-icon p-2 hover:border-blue-500/40 hover:text-blue-400 disabled:opacity-30"><ArrowDown size={14} /></button>
+                          <button onClick={() => unpinMovie(p.slug)}
+                            className="btn-icon p-2 hover:border-red-500/40 hover:text-red-400"><Trash2 size={14} /></button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-10 text-slate-600">
+                    <Pin size={40} className="mx-auto mb-3 opacity-30" />
+                    <p className="text-sm">Chưa ghim phim nào.</p>
+                    <p className="text-xs mt-1 text-slate-500">Tìm phim theo slug ở trên rồi nhấn "Ghim lên đầu" để đưa phim lên top trang chủ.</p>
+                  </div>
+                )}
+              </div>
+            </SectionCard>
           </div>
           )}
 
@@ -3247,6 +3526,12 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
           {activeSection === 'section-vip' && (
           <div id="section-vip">
             <VipSection onToast={(msg, t) => setToast({ message: msg, type: t })} />
+          </div>
+          )}
+
+          {activeSection === 'section-vipkeys' && (
+          <div id="section-vipkeys">
+            <VipKeysSection onToast={(msg, t) => setToast({ message: msg, type: t })} />
           </div>
           )}
 

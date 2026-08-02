@@ -1,31 +1,29 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Mail } from 'lucide-react';
+import { Mail, Send } from 'lucide-react';
+import { subscribeSiteSettings } from '../lib/siteSettings';
 
 function useSiteSettings() {
-  const [s, setS] = useState(() => {
-    try { const v = localStorage.getItem('site_settings'); return v ? JSON.parse(v) : {}; } catch { return {}; }
-  });
+  const [s, setS] = useState<Record<string, any>>({});
   useEffect(() => {
-    const cb = () => { try { const v = localStorage.getItem('site_settings'); if (v) setS(JSON.parse(v)); } catch {} };
-    window.addEventListener('storage', cb);
-    window.addEventListener('site_settings_updated', cb);
-    return () => { window.removeEventListener('storage', cb); window.removeEventListener('site_settings_updated', cb); };
+    const unsub = subscribeSiteSettings(setS);
+    return unsub;
   }, []);
   return s;
 }
 
 export default function Footer() {
   const settings = useSiteSettings();
-  const siteName = settings.siteName || 'ĐẢO PHIM';
+  const siteName = settings.siteName || 'PHIM TUỔI THƠ';
   const adsEmail  = settings.adsEmail  || 'adsdaophim@gmail.com';
+  const adsTelegram = settings.adsTelegram || '';
 
   return (
     <footer className="border-t border-slate-800/60 bg-slate-950 mt-10">
       <div className="max-w-4xl mx-auto px-4 py-10 flex flex-col items-center gap-6 text-center">
         {/* Logo */}
         <div className="flex items-center">
-          <img src="/assets/logo-daophim.png" alt={siteName} className="h-10 w-auto object-contain" />
+          <img src="/assets/logo-phimtuoitho.png" alt={siteName} className="h-10 w-auto object-contain" />
         </div>
         <p className="text-slate-500 text-xs max-w-sm leading-relaxed">
           Trang xem phim online chất lượng cao miễn phí Vietsub, thuyết minh, lồng tiếng full HD.
@@ -42,15 +40,26 @@ export default function Footer() {
         </div>
 
         {/* Liên hệ đặt quảng cáo */}
-        <div className="flex items-center gap-2 text-slate-500 text-xs">
+        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-slate-500 text-xs">
           <span>📢 Liên hệ đặt quảng cáo:</span>
           <a
             href={`mailto:${adsEmail}`}
-            className="flex items-center gap-1 text-green-400 hover:text-green-300 font-semibold transition-colors"
+            className="flex items-center gap-1 text-yellow-400 hover:text-yellow-300 font-semibold transition-colors"
           >
             <Mail size={12} />
             {adsEmail}
           </a>
+          {adsTelegram && (
+            <a
+              href={`https://t.me/${adsTelegram}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 text-sky-400 hover:text-sky-300 font-semibold transition-colors"
+            >
+              <Send size={12} />
+              @{adsTelegram}
+            </a>
+          )}
         </div>
 
         {/* Sovereign note */}

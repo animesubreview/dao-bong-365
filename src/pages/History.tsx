@@ -1,31 +1,46 @@
 import { useSEO } from '../hooks/useSEO';
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { History as HistoryIcon, Trash2, Play, Clock, ChevronRight } from 'lucide-react';
+import { History as HistoryIcon, Trash2, Play, Clock, ChevronRight, LogIn } from 'lucide-react';
 import { movieApi } from '../services/api';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
+import { onAuthChange } from '../lib/auth';
+import { getHistory, removeHistoryItem as removeHistoryDoc, clearHistory as clearHistoryDocs } from '../lib/history';
+import type { HistoryItem } from '../types';
 
 export default function History() {
   useSEO({ noIndex: true });
-  const [history, setHistory] = useState<any[]>([]);
+  const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [uid, setUid] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const savedHistory = JSON.parse(localStorage.getItem('watchHistory') || '[]');
-    setHistory(savedHistory);
+    const unsub = onAuthChange(async (user) => {
+      setUid(user?.uid || null);
+      if (user) {
+        const data = await getHistory(user.uid);
+        setHistory(data);
+      } else {
+        setHistory([]);
+      }
+      setLoading(false);
+    });
+    return unsub;
   }, []);
 
-  const clearHistory = () => {
+  const clearHistory = async () => {
+    if (!uid) return;
     if (window.confirm('Bạn có chắc chắn muốn xóa toàn bộ lịch sử xem?')) {
-      localStorage.removeItem('watchHistory');
+      await clearHistoryDocs(uid);
       setHistory([]);
     }
   };
 
-  const removeHistoryItem = (slug: string) => {
-    const newHistory = history.filter((h: any) => h.slug !== slug);
-    localStorage.setItem('watchHistory', JSON.stringify(newHistory));
-    setHistory(newHistory);
+  const removeHistoryItem = async (slug: string) => {
+    if (!uid) return;
+    setHistory(prev => prev.filter(h => h.slug !== slug));
+    await removeHistoryDoc(uid, slug);
   };
 
   return (
@@ -52,7 +67,18 @@ export default function History() {
           )}
         </div>
 
-        {history.length > 0 ? (
+        {!loading && !uid ? (
+          <div className="flex flex-col items-center justify-center py-20 gap-6 glass-card p-12">
+            <div className="w-20 h-20 bg-slate-900 rounded-full flex items-center justify-center text-slate-700">
+              <LogIn size={40} />
+            </div>
+            <div className="text-center">
+              <h3 className="text-xl font-bold text-white mb-2">Cần đăng nhập</h3>
+              <p className="text-slate-500 max-w-xs mx-auto">Đăng nhập để lưu và đồng bộ lịch sử xem phim theo tài khoản của bạn.</p>
+            </div>
+            <Link to="/auth" className="btn-primary">Đăng nhập</Link>
+          </div>
+        ) : history.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             <AnimatePresence>
               {history.map((item, idx) => (

@@ -287,8 +287,8 @@ export default function SyncPlayer({
       {/* Guest badge */}
       {!isHost && (
         <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-black/60 backdrop-blur px-2.5 py-1 rounded-full z-10 pointer-events-none">
-          <Wifi size={11} className="text-green-400" />
-          <span className="text-green-300 text-[10px] font-bold">Đồng bộ từ {hostName}</span>
+          <Wifi size={11} className="text-yellow-400" />
+          <span className="text-yellow-300 text-[10px] font-bold">Đồng bộ từ {hostName}</span>
         </div>
       )}
 
@@ -309,7 +309,7 @@ export default function SyncPlayer({
             <div className="flex-1 relative group">
               <div className="h-1 bg-white/20 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-green-500 rounded-full transition-all"
+                  className="h-full bg-yellow-500 rounded-full transition-all"
                   style={{ width: `${progress}%` }}
                 />
               </div>
@@ -361,7 +361,7 @@ export default function SyncPlayer({
             <div onClick={e => e.stopPropagation()} className="w-20 hidden sm:block">
               <input type="range" min={0} max={1} step={0.05} value={muted ? 0 : volume}
                 onChange={handleVolumeChange}
-                className="w-full accent-green-500 cursor-pointer" />
+                className="w-full accent-yellow-500 cursor-pointer" />
             </div>
 
             {/* Guest note */}

@@ -26,8 +26,9 @@ async function handleGachTheFast({ domain, partner_id, partner_key, limit = 100 
   }
 
   const cleanDomain = domain.replace(/^https?:\/\//, '').replace(/\/$/, '');
-  const signV1 = crypto.createHash('md5').update(partner_id + partner_key).digest('hex');
-  const signV2 = crypto.createHash('md5').update(partner_key + partner_id).digest('hex');
+  // Tài liệu chính thức GachTheFast xác nhận: sign = md5(partner_key . partner_id)
+  const signV1 = crypto.createHash('md5').update(partner_key + partner_id).digest('hex'); // đúng theo tài liệu — thử trước
+  const signV2 = crypto.createHash('md5').update(partner_id + partner_key).digest('hex'); // dự phòng
   const endpoints = [`https://${cleanDomain}/client/api/wallet/history-receive`];
 
   const controller = new AbortController();
@@ -35,7 +36,7 @@ async function handleGachTheFast({ domain, partner_id, partner_key, limit = 100 
   const attempts = [];
 
   for (const apiUrl of endpoints) {
-    for (const [signLabel, sign] of [['id+key', signV1], ['key+id', signV2]]) {
+    for (const [signLabel, sign] of [['key+id', signV1], ['id+key', signV2]]) {
       const params = new URLSearchParams({ partner_id, sign, limit: String(limit) });
       try {
         const res = await fetch(apiUrl, {

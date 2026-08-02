@@ -31,7 +31,7 @@ function InputField({
         placeholder={placeholder}
         value={value}
         onChange={e => onChange(e.target.value)}
-        className="w-full bg-slate-800/80 border border-slate-700/60 rounded-xl py-3.5 pl-11 pr-11 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500/40 transition-all"
+        className="w-full bg-slate-800/80 border border-slate-700/60 rounded-xl py-3.5 pl-11 pr-11 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/50 focus:border-yellow-500/40 transition-all"
       />
       {rightSlot && (
         <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -111,7 +111,7 @@ export default function AuthPage() {
     <div className="min-h-screen flex items-center justify-center px-4 py-10 relative overflow-hidden">
       {/* Background blur blobs */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-20 left-1/4 w-72 h-72 bg-green-500/5 rounded-full blur-3xl" />
+        <div className="absolute top-20 left-1/4 w-72 h-72 bg-yellow-500/5 rounded-full blur-3xl" />
         <div className="absolute bottom-20 right-1/4 w-80 h-80 bg-indigo-600/8 rounded-full blur-3xl" />
       </div>
 
@@ -125,10 +125,10 @@ export default function AuthPage() {
         <div className="bg-slate-900/90 border border-slate-800/80 rounded-3xl p-8 shadow-2xl backdrop-blur-xl">
           {/* Logo */}
           <div className="flex flex-col items-center mb-8">
-            <div className="w-14 h-14 bg-green-500 rounded-2xl flex items-center justify-center mb-3 shadow-lg shadow-green-500/20">
+            <div className="w-14 h-14 bg-yellow-500 rounded-2xl flex items-center justify-center mb-3 shadow-lg shadow-yellow-500/20">
               <Clapperboard size={26} className="text-slate-950" strokeWidth={2.5} />
             </div>
-            <h1 className="text-2xl font-black text-white tracking-tight">ĐẢO PHIM</h1>
+            <h1 className="text-2xl font-black text-white tracking-tight">PHIM TUỔI THƠ</h1>
             <p className="text-slate-500 text-sm mt-1">Xem phim không giới hạn</p>
           </div>
 
@@ -140,7 +140,7 @@ export default function AuthPage() {
                 onClick={() => setTab(t)}
                 className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-bold transition-all ${
                   tab === t
-                    ? 'bg-green-500 text-slate-950 shadow-md'
+                    ? 'bg-yellow-500 text-slate-950 shadow-md'
                     : 'text-slate-400 hover:text-white'
                 }`}
               >
@@ -190,13 +190,13 @@ export default function AuthPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-green-500 hover:bg-green-400 text-slate-950 font-black py-3.5 rounded-xl transition-all shadow-lg shadow-green-500/20 disabled:opacity-60 text-sm mt-1"
+                className="w-full bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-black py-3.5 rounded-xl transition-all shadow-lg shadow-yellow-500/20 disabled:opacity-60 text-sm mt-1"
               >
                 {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
               </button>
               <p className="text-center text-slate-500 text-sm">
                 Chưa có tài khoản?{' '}
-                <button type="button" onClick={() => setTab('register')} className="text-green-400 font-bold hover:underline">
+                <button type="button" onClick={() => setTab('register')} className="text-yellow-400 font-bold hover:underline">
                   Đăng ký ngay
                 </button>
               </p>
@@ -245,13 +245,13 @@ export default function AuthPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-green-500 hover:bg-green-400 text-slate-950 font-black py-3.5 rounded-xl transition-all shadow-lg shadow-green-500/20 disabled:opacity-60 text-sm mt-1"
+                className="w-full bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-black py-3.5 rounded-xl transition-all shadow-lg shadow-yellow-500/20 disabled:opacity-60 text-sm mt-1"
               >
                 {loading ? 'Đang tạo tài khoản...' : 'Tạo tài khoản'}
               </button>
               <p className="text-center text-slate-500 text-sm">
                 Đã có tài khoản?{' '}
-                <button type="button" onClick={() => setTab('login')} className="text-green-400 font-bold hover:underline">
+                <button type="button" onClick={() => setTab('login')} className="text-yellow-400 font-bold hover:underline">
                   Đăng nhập
                 </button>
               </p>
@@ -260,7 +260,7 @@ export default function AuthPage() {
         </div>
 
         <p className="text-center text-slate-600 text-xs mt-4">
-          © ĐẢO PHIM · Xem phim miễn phí
+          © PHIM TUỔI THƠ · Xem phim miễn phí
         </p>
       </div>
     </div>

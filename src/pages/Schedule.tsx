@@ -99,7 +99,7 @@ export default function SchedulePage() {
   return (
     <div className="max-w-3xl mx-auto px-4 py-6">
       <div className="flex items-center gap-2 mb-5">
-        <CalendarDays className="text-green-400" size={24} />
+        <CalendarDays className="text-yellow-400" size={24} />
         <h1 className="text-xl md:text-2xl font-black text-white">Lịch chiếu</h1>
       </div>
 
@@ -112,11 +112,11 @@ export default function SchedulePage() {
               key={d.key}
               onClick={() => setSelectedDay(d.key)}
               className={`shrink-0 flex flex-col items-center justify-center gap-1 px-5 py-2.5 rounded-xl border-b-2 transition-colors ${
-                active ? 'border-green-400 bg-slate-900/60' : 'border-transparent bg-slate-900/30'
+                active ? 'border-yellow-400 bg-slate-900/60' : 'border-transparent bg-slate-900/30'
               }`}
             >
               <span className={`text-sm ${active ? 'text-slate-300' : 'text-slate-500'}`}>{d.dayMonth}</span>
-              <span className={`text-sm font-bold ${active ? 'text-green-400' : 'text-slate-300'}`}>{d.weekday}</span>
+              <span className={`text-sm font-bold ${active ? 'text-yellow-400' : 'text-slate-300'}`}>{d.weekday}</span>
             </button>
           );
         })}

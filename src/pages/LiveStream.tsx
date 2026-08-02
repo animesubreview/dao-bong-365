@@ -1,15 +1,20 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
+import Hls from 'hls.js';
 import {
-  Radio, Send, Shield, LogIn, Play, Pause, Volume2, VolumeX, Maximize, Lock,
+  Radio, Send, Shield, LogIn, Play, Pause, Volume2, VolumeX, Maximize, Minimize, Lock,
+  Eye, ClipboardCheck, Hourglass, XCircle, CalendarClock, CheckCircle2, WifiOff, Settings, Check,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   subscribeLiveConfig, subscribeLiveChat, sendLiveChatMessage, LiveConfig,
   LiveChatMessage, buildLiveEmbed, postYouTubeCommand, DEFAULT_LIVE_CONFIG,
+  subscribeMyRegistration, requestRoomAccess, RoomRegistration,
+  startRoomPresence, subscribeRoomViewerCount,
 } from '../lib/livestream';
 import { getCurrentUser, getUserProfile, onAuthChange, UserProfile } from '../lib/auth';
 import { usePageTitle } from '../lib/utils';
+import { useRoomWatchGuard, RoomWatchGuardOverlay } from '../components/RoomWatchGuard';
 
 function timeAgo(ts: number): string {
   const diff = Math.floor((Date.now() - ts) / 1000);
@@ -19,12 +24,171 @@ function timeAgo(ts: number): string {
 }
 
 // ── Player chặn tua (chỉ dùng link nhúng, không cho kéo thanh tua) ───────────
-function LivePlayer({ embedUrl, title }: { embedUrl: string; title: string }) {
+function LivePlayer({ embedUrl, title, viewerCount }: { embedUrl: string; title: string; viewerCount: number }) {
   const { url, kind } = buildLiveEmbed(embedUrl);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [playing, setPlaying] = useState(true);
   const [muted, setMuted] = useState(false);
+  const { showWarning, dismiss } = useRoomWatchGuard(!!url);
+
+  // ── Mux (HLS qua hls.js) — video gốc, không phải iframe ────────────────────
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const hlsRef = useRef<Hls | null>(null);
+  const [muxMuted, setMuxMuted] = useState(true); // autoplay cần muted trước, user tự bật tiếng
+  const [muxPlaying, setMuxPlaying] = useState(true);
+  const [muxLoading, setMuxLoading] = useState(true);
+  const [muxOffline, setMuxOffline] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  // ── Chất lượng video (chỉ áp dụng cho luồng Mux qua hls.js) ─────────────────
+  const [qualityLevels, setQualityLevels] = useState<{ index: number; height: number }[]>([]);
+  const [currentLevel, setCurrentLevel] = useState<number>(-1); // -1 = Tự động
+  const [activeLevel, setActiveLevel] = useState<number>(-1); // level thực tế đang phát khi ở chế độ Tự động
+  const [showQualityMenu, setShowQualityMenu] = useState(false);
+
+  useEffect(() => {
+    if (kind !== 'mux' || !url || !videoRef.current) return;
+    const video = videoRef.current;
+    setMuxLoading(true);
+    setMuxOffline(false);
+    setQualityLevels([]);
+    setCurrentLevel(-1);
+    setActiveLevel(-1);
+    setShowQualityMenu(false);
+
+    if (Hls.isSupported()) {
+      const hls = new Hls({ lowLatencyMode: true, liveDurationInfinity: true });
+      hlsRef.current = hls;
+      hls.loadSource(url);
+      hls.attachMedia(video);
+      hls.on(Hls.Events.MANIFEST_PARSED, (_evt, data) => {
+        setMuxLoading(false);
+        video.play().catch(() => setMuxPlaying(false));
+        if (data.levels && data.levels.length > 1) {
+          setQualityLevels(data.levels.map((lvl, index) => ({ index, height: lvl.height })));
+        }
+      });
+      hls.on(Hls.Events.LEVEL_SWITCHED, (_evt, data) => {
+        setActiveLevel(data.level);
+      });
+      hls.on(Hls.Events.ERROR, (_evt, data) => {
+        if (data.fatal) {
+          setMuxLoading(false);
+          setMuxOffline(true);
+        }
+      });
+      return () => { hls.destroy(); hlsRef.current = null; };
+    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+      // Safari/iOS: hỗ trợ HLS gốc, không cần hls.js
+      video.src = url;
+      const onLoaded = () => { setMuxLoading(false); video.play().catch(() => setMuxPlaying(false)); };
+      const onErr = () => { setMuxLoading(false); setMuxOffline(true); };
+      video.addEventListener('loadedmetadata', onLoaded);
+      video.addEventListener('error', onErr);
+      return () => {
+        video.removeEventListener('loadedmetadata', onLoaded);
+        video.removeEventListener('error', onErr);
+      };
+    } else {
+      setMuxLoading(false);
+      setMuxOffline(true);
+    }
+  }, [kind, url]);
+
+  useEffect(() => {
+    const onFsChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', onFsChange);
+    return () => document.removeEventListener('fullscreenchange', onFsChange);
+  }, []);
+
+  // ── Tải lại iframe (YouTube/Facebook/nhúng khác) khi quay lại tab ───────────
+  // Với iframe nhúng từ domain khác, không có quyền can thiệp vào video bên trong
+  // (bị chặn bởi CORS) nên không thể gọi play()/seek() như luồng Mux. Nếu trình
+  // duyệt (đặc biệt trên di động) tạm dừng/đóng băng video khi rời tab, cách duy
+  // nhất để "nối" lại đúng thời điểm trực tiếp là tải lại iframe — vì đây là
+  // stream trực tiếp nên tải mới sẽ luôn vào đúng thời điểm hiện tại, không phải
+  // phát lại từ đầu.
+  const [iframeKey, setIframeKey] = useState(0);
+  const hiddenAtRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (kind !== 'youtube' && kind !== 'facebook' && kind !== 'generic') return;
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') {
+        hiddenAtRef.current = Date.now();
+      } else if (document.visibilityState === 'visible') {
+        const hiddenAt = hiddenAtRef.current;
+        hiddenAtRef.current = null;
+        // Chỉ tải lại nếu đã rời tab đủ lâu (tránh giật hình khi chỉ liếc qua nhanh)
+        if (hiddenAt && Date.now() - hiddenAt > 3000) {
+          setIframeKey(k => k + 1);
+        }
+      }
+    };
+    const onPageShow = (e: PageTransitionEvent) => {
+      if (e.persisted) setIframeKey(k => k + 1); // quay lại từ bfcache
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('pageshow', onPageShow);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('pageshow', onPageShow);
+    };
+  }, [kind]);
+
+  // ── Đồng bộ về đúng thời điểm trực tiếp khi quay lại tab ────────────────────
+  // Khi chuyển tab / thoát app, trình duyệt tự tạm dừng <video>. Nếu chỉ play()
+  // lại bình thường, video sẽ tiếp tục từ đoạn buffer cũ (bị tụt lại phía sau)
+  // trông như đang "phát lại" đoạn đã qua. Ở đây ép nhảy về mép live thật sự.
+  useEffect(() => {
+    if (kind !== 'mux') return;
+    const syncToLiveEdge = () => {
+      if (document.visibilityState !== 'visible') return;
+      const video = videoRef.current;
+      const hls = hlsRef.current;
+      if (!video) return;
+      if (hls) {
+        try { hls.startLoad(); } catch { /* bỏ qua nếu hls đã bị destroy */ }
+      }
+      const liveEdge = hls?.liveSyncPosition;
+      if (liveEdge != null && Number.isFinite(liveEdge)) {
+        video.currentTime = liveEdge;
+      } else if (video.seekable.length > 0) {
+        // Safari (HLS gốc, không qua hls.js) — nhảy tới cuối vùng có thể tua được
+        video.currentTime = video.seekable.end(video.seekable.length - 1);
+      }
+      video.play().catch(() => {});
+    };
+    document.addEventListener('visibilitychange', syncToLiveEdge);
+    window.addEventListener('focus', syncToLiveEdge);
+    window.addEventListener('pageshow', syncToLiveEdge);
+    return () => {
+      document.removeEventListener('visibilitychange', syncToLiveEdge);
+      window.removeEventListener('focus', syncToLiveEdge);
+      window.removeEventListener('pageshow', syncToLiveEdge);
+    };
+  }, [kind]);
+
+  const toggleMuxPlay = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    if (video.paused) { video.play().catch(() => {}); setMuxPlaying(true); }
+    else { video.pause(); setMuxPlaying(false); }
+  };
+  const toggleMuxMute = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    video.muted = !video.muted;
+    setMuxMuted(video.muted);
+  };
+  const changeQuality = (index: number) => {
+    if (hlsRef.current) hlsRef.current.currentLevel = index; // -1 = Tự động
+    setCurrentLevel(index);
+    setShowQualityMenu(false);
+  };
+  const qualityLabel = currentLevel === -1
+    ? `Tự động${activeLevel >= 0 && qualityLevels[activeLevel] ? ` (${qualityLevels[activeLevel].height}p)` : ''}`
+    : `${qualityLevels.find(l => l.index === currentLevel)?.height ?? ''}p`;
 
   const togglePlay = () => {
     postYouTubeCommand(iframeRef.current, playing ? 'pauseVideo' : 'playVideo');
@@ -53,15 +217,47 @@ function LivePlayer({ embedUrl, title }: { embedUrl: string; title: string }) {
       onContextMenu={e => e.preventDefault()}
       className="relative w-full aspect-video bg-black rounded-2xl overflow-hidden group select-none"
     >
-      <iframe
-        ref={iframeRef}
-        src={url}
-        className="absolute inset-0 w-full h-full border-0"
-        allow="autoplay; encrypted-media; picture-in-picture"
-        allowFullScreen={kind !== 'youtube'}
-        title={title || 'Livestream'}
-        referrerPolicy="no-referrer"
-      />
+      {kind === 'youtube' && (
+        <iframe
+          key={iframeKey}
+          ref={iframeRef}
+          src={url}
+          className="absolute inset-0 w-full h-full border-0"
+          allow="autoplay; encrypted-media; picture-in-picture"
+          allowFullScreen={false}
+          title={title || 'Livestream'}
+          referrerPolicy="no-referrer"
+        />
+      )}
+
+      {kind === 'mux' && (
+        <>
+          <video
+            ref={videoRef}
+            className="absolute inset-0 w-full h-full object-contain bg-black"
+            playsInline
+            autoPlay
+            muted={muxMuted}
+            onPlay={() => setMuxPlaying(true)}
+            onPause={() => setMuxPlaying(false)}
+          />
+
+          {muxLoading && !muxOffline && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/60 z-10">
+              <div className="w-10 h-10 border-4 border-red-500 border-t-transparent rounded-full animate-spin" />
+              <p className="text-slate-300 text-xs font-semibold">Đang kết nối luồng trực tiếp...</p>
+            </div>
+          )}
+
+          {muxOffline && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/80 z-10 text-center px-4">
+              <WifiOff size={30} className="text-slate-500" />
+              <p className="text-slate-300 text-sm font-bold">Chưa có tín hiệu trực tiếp</p>
+              <p className="text-slate-500 text-xs">Luồng Mux hiện chưa phát, vui lòng quay lại sau.</p>
+            </div>
+          )}
+        </>
+      )}
 
       {/* LIVE badge */}
       <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-red-600 text-white text-[11px] font-black px-2.5 py-1 rounded-full shadow-lg z-20 pointer-events-none">
@@ -69,7 +265,14 @@ function LivePlayer({ embedUrl, title }: { embedUrl: string; title: string }) {
         TRỰC TIẾP
       </div>
 
-      {kind === 'youtube' ? (
+      {/* Số người đang xem */}
+      <div className="absolute top-3 right-3 flex items-center gap-1.5 bg-black/60 backdrop-blur text-white text-[11px] font-bold px-2.5 py-1 rounded-full shadow-lg z-20 pointer-events-none">
+        <Eye size={12} /> {viewerCount} đang xem
+      </div>
+
+      <RoomWatchGuardOverlay show={showWarning} onDismiss={dismiss} />
+
+      {kind === 'youtube' && (
         /* Custom control bar cho YouTube — chặn tua hoàn toàn, không có thanh seek */
         <div className="absolute inset-0 z-10">
           <button
@@ -99,7 +302,110 @@ function LivePlayer({ embedUrl, title }: { embedUrl: string; title: string }) {
             </button>
           </div>
         </div>
-      ) : (
+      )}
+
+      {kind === 'mux' && !muxOffline && (
+        /* Custom control bar cho Mux — LIVE THẬT nên không có nút Tạm dừng.
+           Tự động phát ngay khi có tín hiệu; chỉ hiện nút "Xem trực tiếp" khi
+           trình duyệt chặn autoplay (hiếm khi xảy ra vì video đã muted sẵn). */
+        <div className="absolute inset-0 z-10">
+          {/* Chỉ hiện khi autoplay bị chặn — bấm để bắt đầu xem trực tiếp */}
+          {!muxPlaying && (
+            <button
+              onClick={toggleMuxPlay}
+              className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/50"
+              aria-label="Xem trực tiếp"
+            >
+              <span className="w-16 h-16 rounded-full bg-red-600 flex items-center justify-center shadow-xl">
+                <Play size={26} className="text-white ml-1" />
+              </span>
+              <span className="text-white text-xs font-bold bg-black/50 px-3 py-1 rounded-full">Bấm để xem trực tiếp</span>
+            </button>
+          )}
+
+          {/* Banner "đang tắt tiếng" — luôn hiện, bấm để bật tiếng ngay, không cần hover mới thấy */}
+          {muxMuted && muxPlaying && (
+            <button
+              onClick={toggleMuxMute}
+              className="absolute top-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-black/70 hover:bg-black/85 active:scale-95 backdrop-blur border border-white/20 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg transition-all z-20"
+            >
+              <VolumeX size={13} /> Đang tắt tiếng — Bấm để bật
+            </button>
+          )}
+
+          {/* Nút bật/tắt tiếng — LUÔN hiện rõ, không phụ thuộc hover, dễ bấm trên mobile */}
+          <button
+            onClick={toggleMuxMute}
+            aria-label={muxMuted ? 'Bật tiếng' : 'Tắt tiếng'}
+            className="absolute bottom-3 left-3 flex items-center justify-center w-12 h-12 bg-black/60 hover:bg-black/80 active:scale-95 backdrop-blur border border-white/20 text-white rounded-2xl shadow-xl transition-all"
+          >
+            {muxMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
+          </button>
+
+          {/* Nhóm nút góc phải dưới: chất lượng video + toàn màn hình */}
+          <div className="absolute bottom-3 right-3 flex items-center gap-2">
+            {/* Nút chỉnh chất lượng video — chỉ hiện khi luồng có nhiều mức chất lượng */}
+            {qualityLevels.length > 1 && (
+              <div className="relative">
+                {showQualityMenu && (
+                  <div className="absolute bottom-full mb-2 right-0 min-w-[140px] bg-black/90 backdrop-blur border border-white/15 rounded-xl shadow-xl overflow-hidden z-30">
+                    <button
+                      onClick={() => changeQuality(-1)}
+                      className="w-full flex items-center justify-between gap-2 px-3.5 py-2.5 text-xs font-semibold text-white hover:bg-white/10 transition-colors"
+                    >
+                      Tự động
+                      {currentLevel === -1 && <Check size={13} className="text-yellow-400" />}
+                    </button>
+                    {[...qualityLevels].sort((a, b) => b.height - a.height).map(lvl => (
+                      <button
+                        key={lvl.index}
+                        onClick={() => changeQuality(lvl.index)}
+                        className="w-full flex items-center justify-between gap-2 px-3.5 py-2.5 text-xs font-semibold text-white hover:bg-white/10 transition-colors"
+                      >
+                        {lvl.height}p
+                        {currentLevel === lvl.index && <Check size={13} className="text-yellow-400" />}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <button
+                  onClick={() => setShowQualityMenu(v => !v)}
+                  aria-label="Chỉnh chất lượng video"
+                  className="flex items-center gap-1.5 bg-black/60 hover:bg-black/80 active:scale-95 backdrop-blur border border-white/20 text-white font-bold rounded-2xl px-3 py-3 shadow-xl transition-all"
+                >
+                  <Settings size={18} />
+                  <span className="hidden sm:inline text-xs">{qualityLabel}</span>
+                </button>
+              </div>
+            )}
+
+            {/* Nút Toàn màn hình — to, luôn hiện, dễ bấm trên mobile */}
+            <button
+              onClick={toggleFullscreen}
+              aria-label="Toàn màn hình"
+              className="flex items-center gap-2 bg-black/60 hover:bg-black/80 active:scale-95 backdrop-blur border border-white/20 text-white font-bold rounded-2xl px-4 py-3 shadow-xl transition-all"
+            >
+              {isFullscreen ? <Minimize size={22} /> : <Maximize size={22} />}
+              <span className="hidden sm:inline text-sm">{isFullscreen ? 'Thoát' : 'Toàn màn hình'}</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {(kind === 'facebook' || kind === 'generic') && (
+        <iframe
+          key={iframeKey}
+          ref={iframeRef}
+          src={url}
+          className="absolute inset-0 w-full h-full border-0"
+          allow="autoplay; encrypted-media; picture-in-picture"
+          allowFullScreen
+          title={title || 'Livestream'}
+          referrerPolicy="no-referrer"
+        />
+      )}
+
+      {(kind === 'facebook' || kind === 'generic') && (
         /* Link nhúng dạng khác (abyssplayer, facebook, twitch...) — không sửa được
            player bên trong iframe (khác domain) nên chặn tua bằng lớp phủ trong suốt
            đè lên vùng thanh tua (thường nằm ở đáy player), chặn mọi click/kéo vào đó. */
@@ -162,7 +468,7 @@ function LiveChatBox() {
   return (
     <div className="flex flex-col bg-[#141414] border border-slate-800/60 rounded-2xl overflow-hidden h-[420px] lg:h-full">
       <div className="flex items-center gap-2 px-4 py-3 border-b border-slate-800/60 shrink-0">
-        <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+        <span className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse" />
         <span className="text-white font-bold text-sm">Chat trực tiếp</span>
         <span className="text-slate-500 text-xs ml-auto">{messages.length} tin nhắn</span>
       </div>
@@ -182,7 +488,7 @@ function LiveChatBox() {
               <img src={m.avatar} alt={m.username} className="w-7 h-7 rounded-full bg-slate-700 shrink-0" />
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className={`text-xs font-bold ${m.isAdmin ? 'text-amber-400' : 'text-green-400'}`}>{m.username}</span>
+                  <span className={`text-xs font-bold ${m.isAdmin ? 'text-amber-400' : 'text-yellow-400'}`}>{m.username}</span>
                   {m.isAdmin && (
                     <span className="inline-flex items-center gap-0.5 text-[9px] font-black px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30">
                       <Shield size={8} /> ADMIN
@@ -209,19 +515,19 @@ function LiveChatBox() {
                 onKeyDown={e => { if (e.key === 'Enter' && !sending) handleSend(); }}
                 maxLength={300}
                 placeholder="Nhắn gì đó..."
-                className="flex-1 bg-slate-900/60 border border-slate-700/60 rounded-full px-4 py-2 text-sm text-white placeholder:text-slate-600 outline-none focus:border-green-500/60 transition-colors"
+                className="flex-1 bg-slate-900/60 border border-slate-700/60 rounded-full px-4 py-2 text-sm text-white placeholder:text-slate-600 outline-none focus:border-yellow-500/60 transition-colors"
               />
               <button
                 onClick={handleSend}
                 disabled={sending || !text.trim()}
-                className="w-9 h-9 shrink-0 rounded-full bg-green-500 hover:bg-green-400 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center text-slate-950 transition-colors"
+                className="w-9 h-9 shrink-0 rounded-full bg-yellow-500 hover:bg-yellow-400 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center text-slate-950 transition-colors"
               >
                 <Send size={15} />
               </button>
             </div>
           )
         ) : (
-          <Link to="/auth" className="flex items-center justify-center gap-2 text-sm font-bold text-green-400 hover:text-green-300 py-2 transition-colors">
+          <Link to="/auth" className="flex items-center justify-center gap-2 text-sm font-bold text-yellow-400 hover:text-yellow-300 py-2 transition-colors">
             <LogIn size={15} /> Đăng nhập để trò chuyện
           </Link>
         )}
@@ -230,10 +536,113 @@ function LiveChatBox() {
   );
 }
 
+function formatSchedule(ts: number): string {
+  const d = new Date(ts);
+  return d.toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
+function useCountdown(target: number) {
+  const [left, setLeft] = useState(() => target - Date.now());
+  useEffect(() => {
+    if (!target) return;
+    const id = setInterval(() => setLeft(target - Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [target]);
+  return Math.max(0, left);
+}
+
+// ── Màn hình chờ tới giờ chiếu ────────────────────────────────────────────────
+function ScheduleGate({ scheduledAt }: { scheduledAt: number }) {
+  const left = useCountdown(scheduledAt);
+  const h = Math.floor(left / 3_600_000);
+  const m = Math.floor((left % 3_600_000) / 60_000);
+  const s = Math.floor((left % 60_000) / 1000);
+  return (
+    <div className="w-full aspect-video bg-black rounded-2xl flex flex-col items-center justify-center gap-3 text-center px-4">
+      <CalendarClock size={32} className="text-yellow-400" />
+      <p className="text-white font-bold">Buổi chiếu sẽ bắt đầu lúc {formatSchedule(scheduledAt)}</p>
+      <p className="text-2xl font-black text-yellow-400 tabular-nums">
+        {String(h).padStart(2, '0')}:{String(m).padStart(2, '0')}:{String(s).padStart(2, '0')}
+      </p>
+      <p className="text-slate-500 text-xs">Trang sẽ tự mở khi tới giờ, không cần tải lại</p>
+    </div>
+  );
+}
+
+// ── Màn hình đăng ký / chờ admin duyệt vào phòng chiếu ────────────────────────
+function ApprovalGate({
+  currentUser, profile, registration, onRequest, requesting,
+}: {
+  currentUser: ReturnType<typeof getCurrentUser>;
+  profile: UserProfile | null;
+  registration: RoomRegistration | null;
+  onRequest: () => void;
+  requesting: boolean;
+}) {
+  if (!currentUser || !profile) {
+    return (
+      <div className="w-full aspect-video bg-black rounded-2xl flex flex-col items-center justify-center gap-3 text-center px-4">
+        <Lock size={30} className="text-slate-500" />
+        <p className="text-white font-bold">Phòng chiếu này yêu cầu đăng nhập & đăng ký</p>
+        <Link to="/auth" className="flex items-center gap-2 bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-bold text-sm px-5 py-2.5 rounded-full transition-colors">
+          <LogIn size={15} /> Đăng nhập ngay
+        </Link>
+      </div>
+    );
+  }
+
+  if (!registration || registration.status === 'rejected') {
+    return (
+      <div className="w-full aspect-video bg-black rounded-2xl flex flex-col items-center justify-center gap-3 text-center px-4">
+        {registration?.status === 'rejected' ? (
+          <>
+            <XCircle size={30} className="text-red-400" />
+            <p className="text-white font-bold">Yêu cầu vào phòng chiếu trước đó đã bị từ chối</p>
+            <p className="text-slate-500 text-xs">Bạn có thể gửi lại yêu cầu để admin xem xét lại</p>
+          </>
+        ) : (
+          <>
+            <ClipboardCheck size={30} className="text-yellow-400" />
+            <p className="text-white font-bold">Phòng chiếu yêu cầu đăng ký & được admin duyệt</p>
+            <p className="text-slate-500 text-xs max-w-xs">Nhấn nút bên dưới để gửi yêu cầu, admin duyệt xong bạn sẽ vào xem được ngay</p>
+          </>
+        )}
+        <button
+          onClick={onRequest}
+          disabled={requesting}
+          className="flex items-center gap-2 bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 text-slate-950 font-bold text-sm px-5 py-2.5 rounded-full transition-colors"
+        >
+          <ClipboardCheck size={15} /> {requesting ? 'Đang gửi...' : registration?.status === 'rejected' ? 'Gửi lại yêu cầu' : 'Đăng ký xem'}
+        </button>
+      </div>
+    );
+  }
+
+  if (registration.status === 'pending') {
+    return (
+      <div className="w-full aspect-video bg-black rounded-2xl flex flex-col items-center justify-center gap-3 text-center px-4">
+        <Hourglass size={30} className="text-amber-400 animate-pulse" />
+        <p className="text-white font-bold">Yêu cầu của bạn đang chờ admin duyệt</p>
+        <p className="text-slate-500 text-xs">Trang sẽ tự chuyển sang xem phim ngay khi được duyệt</p>
+      </div>
+    );
+  }
+
+  return null; // approved → LivePlayer sẽ hiển thị bên ngoài
+}
+
 // ── Trang chính ────────────────────────────────────────────────────────────────
 export default function LiveStreamPage() {
   const [config, setConfig] = useState<LiveConfig>(DEFAULT_LIVE_CONFIG);
   const [loading, setLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState(getCurrentUser());
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [registration, setRegistration] = useState<RoomRegistration | null>(null);
+  const [requesting, setRequesting] = useState(false);
+  const [viewerCount, setViewerCount] = useState(0);
+  const [now, setNow] = useState(Date.now());
+  const [showApprovedToast, setShowApprovedToast] = useState(false);
+  const prevRegStatusRef = useRef<string | null>(null);
 
   usePageTitle('Phát trực tiếp');
 
@@ -242,10 +651,66 @@ export default function LiveStreamPage() {
     return unsub;
   }, []);
 
+  useEffect(() => {
+    const unsub = onAuthChange(async (u) => {
+      setCurrentUser(u);
+      setProfile(u ? await getUserProfile(u.uid) : null);
+    });
+    return unsub;
+  }, []);
+
+  useEffect(() => {
+    if (!currentUser) { setRegistration(null); return; }
+    const unsub = subscribeMyRegistration(currentUser.uid, setRegistration);
+    return unsub;
+  }, [currentUser]);
+
+  // Vừa được admin duyệt (chuyển từ chưa duyệt/pending sang approved) → hiện thông báo xác nhận
+  useEffect(() => {
+    const prev = prevRegStatusRef.current;
+    const cur = registration?.status ?? null;
+    prevRegStatusRef.current = cur;
+    if (cur === 'approved' && prev !== 'approved' && prev !== null) {
+      setShowApprovedToast(true);
+      const t = setTimeout(() => setShowApprovedToast(false), 6000);
+      return () => clearTimeout(t);
+    }
+  }, [registration?.status]);
+
+  // Đếm ngược tới giờ chiếu — tick mỗi giây để tự mở phòng đúng lúc
+  useEffect(() => {
+    if (!config.scheduledAt) return;
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [config.scheduledAt]);
+
+  const isScheduledYet = config.scheduledAt > 0 && config.scheduledAt > now;
+  const isApproved = !config.requireApproval || registration?.status === 'approved';
+  const canWatch = config.enabled && !isScheduledYet && isApproved;
+
+  // Bật đếm số người xem chỉ khi thực sự đang xem được phòng chiếu
+  useEffect(() => {
+    if (!canWatch || !currentUser) return;
+    const stop = startRoomPresence(currentUser.uid);
+    return stop;
+  }, [canWatch, currentUser]);
+
+  useEffect(() => {
+    const unsub = subscribeRoomViewerCount(setViewerCount);
+    return unsub;
+  }, []);
+
+  const handleRequest = async () => {
+    if (!currentUser || !profile) return;
+    setRequesting(true);
+    await requestRoomAccess(currentUser.uid, profile.username, profile.avatar);
+    setRequesting(false);
+  };
+
   if (loading) {
     return (
       <div className="min-h-[70vh] flex items-center justify-center">
-        <div className="w-9 h-9 border-4 border-green-500 border-t-transparent rounded-full animate-spin" />
+        <div className="w-9 h-9 border-4 border-yellow-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -258,21 +723,57 @@ export default function LiveStreamPage() {
         </div>
         <h2 className="text-xl font-black text-white">Hiện chưa có livestream nào</h2>
         <p className="text-slate-400 text-sm max-w-sm">Admin sẽ sớm phát trực tiếp, hãy quay lại sau nhé!</p>
-        <Link to="/" className="text-green-400 font-bold text-sm mt-2">← Về trang chủ</Link>
+        <Link to="/" className="text-yellow-400 font-bold text-sm mt-2">← Về trang chủ</Link>
       </div>
     );
   }
 
   return (
     <div className="max-w-6xl mx-auto px-3 md:px-6 py-5">
-      <div className="flex items-center gap-2.5 mb-4">
+      <div className="flex items-center gap-2.5 mb-4 flex-wrap">
         <span className="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse" />
         <h1 className="text-xl md:text-2xl font-black text-white">Phát Trực Tiếp</h1>
+        {config.requireApproval && (
+          registration?.status === 'approved' ? (
+            <span className="flex items-center gap-1 text-[10px] font-bold text-yellow-400 bg-yellow-500/10 border border-yellow-500/30 px-2 py-0.5 rounded-full">
+              <CheckCircle2 size={9} /> Bạn đã được duyệt
+            </span>
+          ) : (
+            <span className="flex items-center gap-1 text-[10px] font-bold text-yellow-400 bg-yellow-500/10 border border-yellow-500/30 px-2 py-0.5 rounded-full">
+              <Lock size={9} /> Phòng riêng — cần duyệt
+            </span>
+          )
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:h-[520px]">
         <div className="lg:col-span-2 flex flex-col gap-3">
-          <LivePlayer embedUrl={config.embedUrl} title={config.title} />
+          <AnimatePresence>
+            {showApprovedToast && (
+              <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                className="flex items-center gap-2 bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 text-sm font-bold rounded-xl px-4 py-3"
+              >
+                <CheckCircle2 size={18} className="shrink-0" />
+                Bạn đã được duyệt vào phòng chiếu!
+              </motion.div>
+            )}
+          </AnimatePresence>
+          {isScheduledYet && <ScheduleGate scheduledAt={config.scheduledAt} />}
+          {config.requireApproval && !isApproved && (
+            <ApprovalGate
+              currentUser={currentUser}
+              profile={profile}
+              registration={registration}
+              onRequest={handleRequest}
+              requesting={requesting}
+            />
+          )}
+          {!isScheduledYet && isApproved && (
+            <LivePlayer embedUrl={config.embedUrl} title={config.title} viewerCount={viewerCount} />
+          )}
           <div className="bg-[#141414] border border-slate-800/60 rounded-2xl p-4">
             <h2 className="text-white font-bold text-base">{config.title || 'Đang phát trực tiếp'}</h2>
             {config.description && <p className="text-slate-400 text-sm mt-1.5 leading-relaxed">{config.description}</p>}

@@ -1,8 +1,8 @@
-name: Check New Movies (cron 30p)
+name: Check New Movies (cron 10p)
 
 on:
   schedule:
-    - cron: "*/30 * * * *"
+    - cron: "*/10 * * * *"
   workflow_dispatch: {}
 
 jobs:
@@ -11,5 +11,5 @@ jobs:
     steps:
       - name: Gọi API check-new-movies trên Vercel
         run: |
-          curl -sS -X GET "https://daophim.online/api/check-new-movies" \
+          curl -sS -X GET "https://phimtuoitho.co/api/check-new-movies" \
             -H "x-cron-secret: ${{ secrets.CRON_SECRET }}"

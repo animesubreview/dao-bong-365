@@ -24,6 +24,24 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if true;
       allow write: if request.auth != null && request.auth.uid == userId;
+
+      // Phim yêu thích — chỉ chủ tài khoản mới thêm/xóa được
+      match /favorites/{favId} {
+        allow read: if true;
+        allow write: if request.auth != null && request.auth.uid == userId;
+      }
+
+      // Lịch sử xem — chỉ chủ tài khoản mới thêm/xóa được
+      match /history/{historyId} {
+        allow read: if true;
+        allow write: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+
+    // Đánh giá phim (rating) — phải đăng nhập mới được đánh giá
+    match /ratings/{id} {
+      allow read: if true;
+      allow write: if request.auth != null;
     }
 
     // Notifications
@@ -67,18 +85,19 @@ service cloud.firestore {
         allow create: if request.auth != null;
         allow delete: if true; // Admin xóa/kiểm duyệt tin nhắn
       }
-    }
 
-    // Ad Banners — mọi người đọc, chỉ admin ghi
-    match /ad_banners/{id} {
-      allow read: if true;
-      allow write: if true;
-    }
+      // Đăng ký vào phòng chiếu — user chỉ tạo/sửa đăng ký của chính mình,
+      // việc duyệt/từ chối do admin thực hiện (admin tự bảo vệ bằng password riêng)
+      match /registrations/{uid} {
+        allow read: if true;
+        allow write: if true;
+      }
 
-    // Popup Ads — mọi người đọc, chỉ admin ghi
-    match /popup_ads/{id} {
-      allow read: if true;
-      allow write: if true;
+      // Presence — số người đang xem phòng chiếu
+      match /viewers/{uid} {
+        allow read: if true;
+        allow write, delete: if true;
+      }
     }
 
     // Presence — realtime online tracking

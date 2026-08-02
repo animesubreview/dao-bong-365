@@ -44,6 +44,10 @@
   function = "seo-prerender"
 
 [[edge_functions]]
+  path = "/watch/*"
+  function = "seo-prerender"
+
+[[edge_functions]]
   path = "/type/*"
   function = "seo-prerender"
 

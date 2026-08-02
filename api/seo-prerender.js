@@ -8,10 +8,21 @@
 
 
 
-const SITE_NAME = 'Đảo Phim';
-const SITE_URL  = 'https://daophim.online';
+const SITE_NAME = 'Phim Tuổi Thơ';
+const SITE_URL  = 'https://phimtuoitho.co';
 const API_BASE  = 'https://phimapi.com';
-const DEFAULT_IMG = 'https://sf-static.upanhlaylink.com/img/image_2026051206bab16347f075d07864efb55a5224ea.jpg';
+const DEFAULT_IMG = 'https://phimtuoitho.co/og-image.png';
+
+// Ghép link ảnh poster/backdrop đúng domain thật của KKPhim (img.phimapi.com),
+// đồng bộ với movieApi.getImageUrl() bên client — tránh ảnh vỡ khi share link (Facebook/Zalo).
+function buildPosterUrl(raw) {
+  if (!raw) return DEFAULT_IMG;
+  if (raw.startsWith('http')) return raw;
+  if (raw.startsWith('//')) return `https:${raw}`;
+  const clean = raw.replace(/^\/+/, '').replace(/.*uploads\/movies\//, 'uploads/movies/');
+  if (raw.includes('ophim')) return `https://img.ophim.live/${clean}`;
+  return `https://img.phimapi.com/${clean}`;
+}
 
 // Danh sách bot cần prerender
 const BOT_AGENTS = [
@@ -64,9 +75,11 @@ export default async function handler(request) {
   const url = new URL(request.url);
 
   const movieMatch = url.pathname.match(/^\/phim\/([^/]+)$/);
+  const watchMatch = url.pathname.match(/^\/watch\/([^/]+)(?:\/[^/]+)?\/?$/);
   const typeMatch  = url.pathname.match(/^\/type\/([^/]+)$/);
 
   if (movieMatch) return handleMovieDetail(movieMatch[1], request);
+  if (watchMatch) return handleMovieDetail(watchMatch[1], request);
   if (typeMatch)  return handleTypeListing(typeMatch[1], url.searchParams, request);
 
   return passThrough(request);
@@ -123,8 +136,7 @@ async function handleTypeListing(type, searchParams, request) {
     };
 
     const cardsHtml = items.map((m) => {
-      const img = escapeHtml((m.thumb_url || m.poster_url || DEFAULT_IMG).startsWith('http')
-        ? m.thumb_url : `https://phimimg.com/${m.thumb_url}`);
+      const img = escapeHtml(buildPosterUrl(m.poster_url || m.thumb_url));
       return `<a href="${SITE_URL}/phim/${escapeHtml(m.slug)}">
         <img src="${img}" alt="${escapeHtml(m.name)}" width="220" height="330" loading="lazy" />
         <h3>${escapeHtml(m.name)}</h3>
@@ -160,7 +172,7 @@ async function handleTypeListing(type, searchParams, request) {
       headers: {
         'content-type': 'text/html; charset=utf-8',
         'cache-control': 'public, s-maxage=1800, stale-while-revalidate=3600',
-        'x-prerendered-by': 'daophim-edge',
+        'x-prerendered-by': 'phimtuoitho-edge',
       },
     });
   } catch {
@@ -179,16 +191,13 @@ async function handleMovieDetail(slug, request) {
 
     // ── Build meta data ─────────────────────────────────────────────
     const isTV     = movie.type === 'series';
-    const title    = escapeHtml(`${movie.name}${movie.origin_name && movie.origin_name !== movie.name ? ` - ${movie.origin_name}` : ''} (${movie.year || ''}) Vietsub HD`);
-    const fullTitle = `${title} | ${SITE_NAME}`;
+    const title    = escapeHtml(movie.name);
+    const fullTitle = `${title} | PHIM TUỔI THƠ`;
     const desc     = escapeHtml(
-      `Xem ${movie.name} (${movie.origin_name || ''}) ${movie.year || ''} Vietsub HD miễn phí tại Đảo Phim. ` +
+      `Xem ${movie.name} (${movie.origin_name || ''}) ${movie.year || ''} Vietsub HD miễn phí tại Phim Tuổi Thơ. ` +
       stripHtml(movie.content || '').slice(0, 150)
     );
-    const image    = escapeHtml(
-      (movie.poster_url || movie.thumb_url || DEFAULT_IMG)
-        .replace('https://phimimg.com/', 'https://img.ophim.live/')
-    );
+    const image    = escapeHtml(buildPosterUrl(movie.poster_url || movie.thumb_url));
     const pageUrl  = escapeHtml(`${SITE_URL}/phim/${slug}`);
     const genres   = (movie.category || []).map((c) => escapeHtml(c.name)).join(', ');
     const keywords = [
@@ -277,7 +286,7 @@ async function handleMovieDetail(slug, request) {
       headers: {
         'content-type': 'text/html; charset=utf-8',
         'cache-control': 'public, s-maxage=3600, stale-while-revalidate=86400',
-        'x-prerendered-by': 'daophim-edge',
+        'x-prerendered-by': 'phimtuoitho-edge',
       },
     });
 

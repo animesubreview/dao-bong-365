@@ -1,17 +1,20 @@
 import { useSEO } from '../hooks/useSEO';
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Play, ChevronRight, ChevronLeft, Heart, SkipForward, List, Server, Info, BookmarkPlus, Image as ImageIcon, Users, Copy, Check, X, Loader2, ArrowRightCircle } from 'lucide-react';
+import { Play, ChevronRight, ChevronLeft, Heart, SkipForward, List, Server, BookmarkPlus, Image as ImageIcon, Users, Copy, Check, X, Loader2, ArrowRightCircle } from 'lucide-react';
 import { movieApi, getNguonCDetail, mergeNguonCEpisodes, nguonCToMovie, getOPhimDetail, mergeOPhimEpisodes } from '../services/api';
 import { Movie, Episode } from '../types';
 import { cn, usePageTitle } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import CommentSection from '../components/CommentSection';
-import DaoPhimPlayer from '../components/DaoPhimPlayer';
-import { getMovieOverride, mergeOverride } from '../lib/movieOverrides';
+import MovieCard from '../components/MovieCard';
+import AppVideoPlayer from '../components/AppVideoPlayer';
+import { getMovieOverride, mergeOverride, mergeCustomServers } from '../lib/movieOverrides';
 import { createWatchRoom } from '../lib/watchRoom';
 import { getCurrentUser, getUserProfile, onAuthChange } from '../lib/auth';
 import type { UserProfile } from '../lib/auth';
+import { isFavorited, addFavorite, removeFavorite as removeFavoriteDoc } from '../lib/favorites';
+import { saveHistoryItem } from '../lib/history';
 
 export default function Watch() {
   const { slug, episodeSlug } = useParams<{ slug: string; episodeSlug: string }>();
@@ -34,7 +37,7 @@ export default function Watch() {
       ? `${movie.name}${epName && epName !== 'Full' ? ` - ${epName}` : ''} Vietsub HD`
       : undefined,
     description: movie
-      ? `Xem ${movie.name}${epName && epName !== 'Full' ? ` ${epName}` : ''} Vietsub HD miễn phí tại Đảo Phim.`
+      ? `Xem ${movie.name}${epName && epName !== 'Full' ? ` ${epName}` : ''} Vietsub HD miễn phí tại Phim Tuổi Thơ.`
       : undefined,
     image: movieApi.getImageUrl(movie?.thumb_url || movie?.poster_url || '') || undefined,
     url: slug && episodeSlug ? `/watch/${slug}/${episodeSlug}` : undefined,
@@ -51,6 +54,7 @@ export default function Watch() {
   const [lastWatchRoom, setLastWatchRoom] = useState<{ roomId: string; movieName: string; episodeName: string } | null>(null);
   const [currentUser, setCurrentUser] = useState(getCurrentUser());
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [recommended, setRecommended] = useState<Movie[]>([]);
 
   // Auth listener
   useEffect(() => {
@@ -63,6 +67,21 @@ export default function Watch() {
     });
     return unsub;
   }, []);
+
+  // Phim đề xuất cùng thể loại (hiện dưới phần bình luận)
+  useEffect(() => {
+    let cancelled = false;
+    if (!movie?.category?.length) { setRecommended([]); return; }
+    const genreSlug = movie.category[0].slug;
+    movieApi.filterMovies({ category: genreSlug, limit: 13 })
+      .then((res) => {
+        if (cancelled) return;
+        const items = (res.items || []).filter((m) => m.slug !== movie.slug).slice(0, 12);
+        setRecommended(items);
+      })
+      .catch(() => { if (!cancelled) setRecommended([]); });
+    return () => { cancelled = true; };
+  }, [movie?.slug]);
 
   // Load saved watch room
   useEffect(() => {
@@ -106,7 +125,7 @@ export default function Watch() {
         setMovie(mergeOverride(movieData, override));
 
         // Merge NguonC: phim đã có tập → chỉ thêm server NguonC; chưa có → dùng hẳn NguonC
-        const mergedEpisodes = mergeOPhimEpisodes(baseEpisodes, ophim);
+        const mergedEpisodes = mergeCustomServers(mergeOPhimEpisodes(baseEpisodes, ophim), override);
         setEpisodes(mergedEpisodes);
 
         let ep = null;
@@ -141,20 +160,16 @@ export default function Watch() {
           setSearchParams({ server: activeServerName }, { replace: true });
         }
 
-        // Save history
-        const history = JSON.parse(localStorage.getItem('watchHistory') || '[]');
-        const newHistory = history.filter((h: any) => h.slug !== slug);
-        newHistory.unshift({
-          id: movieData._id, name: movieData.name, slug: movieData.slug,
-          thumb_url: movieData.thumb_url,
-          poster_url: movieData.poster_url,
-          episodeName: ep?.name || '1',
-          episodeSlug: ep?.slug || '', updatedAt: Date.now()
-        });
-        localStorage.setItem('watchHistory', JSON.stringify(newHistory.slice(0, 20)));
-
-        const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
-        setIsFavorite(favorites.some((f: any) => f.slug === slug));
+        // Save history (chỉ lưu khi đã đăng nhập)
+        if (currentUser) {
+          saveHistoryItem(currentUser.uid, {
+            id: movieData._id, name: movieData.name, slug: movieData.slug,
+            thumb_url: movieData.thumb_url,
+            poster_url: movieData.poster_url,
+            episodeName: ep?.name || '1',
+            episodeSlug: ep?.slug || '',
+          });
+        }
       } catch (error) {
         console.error('Error:', error);
       } finally {
@@ -165,16 +180,32 @@ export default function Watch() {
     window.scrollTo(0, 0);
   }, [slug, episodeSlug, serverName]);
 
-  const toggleFavorite = () => {
-    if (!movie) return;
-    const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
-    if (isFavorite) {
-      localStorage.setItem('favorites', JSON.stringify(favorites.filter((f: any) => f.slug !== slug)));
+  // Kiểm tra trạng thái yêu thích theo tài khoản đang đăng nhập
+  useEffect(() => {
+    if (!slug) return;
+    if (currentUser) {
+      isFavorited(currentUser.uid, 'api', slug).then(setIsFavorite);
     } else {
-      favorites.push({ id: movie._id, name: movie.name, slug: movie.slug, thumb_url: movie.thumb_url, poster_url: movie.poster_url, year: movie.year, quality: movie.quality, lang: movie.lang });
-      localStorage.setItem('favorites', JSON.stringify(favorites));
+      setIsFavorite(false);
     }
-    setIsFavorite(!isFavorite);
+  }, [slug, currentUser]);
+
+  const toggleFavorite = async () => {
+    if (!movie) return;
+    if (!currentUser) {
+      alert('Vui lòng đăng nhập để lưu phim yêu thích');
+      navigate('/auth');
+      return;
+    }
+    setIsFavorite(!isFavorite); // optimistic
+    if (isFavorite) {
+      await removeFavoriteDoc(currentUser.uid, 'api', movie.slug);
+    } else {
+      await addFavorite(currentUser.uid, {
+        type: 'api', slug: movie.slug, name: movie.name, thumb_url: movie.thumb_url,
+        poster_url: movie.poster_url, year: movie.year, quality: movie.quality, lang: movie.lang,
+      });
+    }
   };
 
   const getPrevEpisode = () => {
@@ -213,8 +244,8 @@ export default function Watch() {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-10 h-10 border-4 border-green-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-green-400 font-bold text-sm">Đang tải phim...</p>
+          <div className="w-10 h-10 border-4 border-yellow-500 border-t-transparent rounded-full animate-spin" />
+          <p className="text-yellow-400 font-bold text-sm">Đang tải phim...</p>
         </div>
       </div>
     );
@@ -224,7 +255,7 @@ export default function Watch() {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center flex-col gap-4">
         <p className="text-slate-400">Không tìm thấy tập phim</p>
-        <Link to="/" className="text-green-400 font-bold">← Về trang chủ</Link>
+        <Link to="/" className="text-yellow-400 font-bold">← Về trang chủ</Link>
       </div>
     );
   }
@@ -261,12 +292,17 @@ export default function Watch() {
         )}
       </AnimatePresence>
 
+      {/* ══ Khối bố cục: mobile/iPad giữ nguyên (cột đơn); PC/Laptop (xl+) chia 2 cột ══ */}
+      <div className="xl:max-w-[1500px] xl:mx-auto xl:px-8 xl:pt-4 xl:grid xl:grid-cols-[1fr_380px] xl:gap-6 xl:items-start">
+
       {/* ── Video Player ── iframe + logo overlay ── */}
-      <DaoPhimPlayer
+      <div className="xl:col-start-1">
+      <AppVideoPlayer
         src={currentEpisode.link_embed}
         m3u8={currentEpisode.link_m3u8}
         title={`${movie.name} - Tập ${currentEpisode.name}`}
         className="w-full"
+        resumeKey={`${movie.slug}:${episodeSlug}`}
         onEnded={() => {
           if (autoNext && nextEpisode) {
             navigate(`/watch/${movie.slug}/${nextEpisode.slug}?server=${encodeURIComponent(nextEpisode.server_name)}`);
@@ -274,9 +310,10 @@ export default function Watch() {
         }}
         onNext={nextEpisode ? () => navigate(`/watch/${movie.slug}/${nextEpisode.slug}?server=${encodeURIComponent(nextEpisode.server_name)}`) : undefined}
       />
+      </div>
 
       {/* ── Content area ── */}
-      <div className="max-w-2xl mx-auto px-3 pt-3 flex flex-col gap-3">
+      <div className="max-w-2xl xl:max-w-none mx-auto xl:mx-0 px-3 xl:px-0 pt-3 xl:pt-0 flex flex-col gap-3 xl:col-start-1">
 
         {/* ── Movie info card (KhoiPhim style) ── */}
         <motion.div initial={{ y: 16, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
@@ -288,7 +325,7 @@ export default function Watch() {
               <h1 className="text-white font-bold text-base leading-snug line-clamp-2">
                 {movie.name}
               </h1>
-              <p className="text-green-400 text-sm font-medium mt-0.5">
+              <p className="text-yellow-400 text-sm font-medium mt-0.5">
                 {isFullMovie ? 'Tập Full' : `Tập ${currentEpisode.name}`}
               </p>
             </div>
@@ -324,12 +361,12 @@ export default function Watch() {
             <button
               onClick={() => setAutoNext(v => !v)}
               className={cn('flex flex-col items-center gap-1 px-3 py-1.5 rounded-lg min-w-[56px] transition-colors',
-                autoNext ? 'text-green-400' : 'text-slate-400 hover:text-white')}
+                autoNext ? 'text-yellow-400' : 'text-slate-400 hover:text-white')}
             >
               <SkipForward size={20} />
               <div className="flex items-center gap-1">
                 <span className="text-[10px] font-semibold">Chuyển tập</span>
-                <span className={cn('text-[9px] font-black px-1 rounded', autoNext ? 'bg-green-500 text-white' : 'bg-slate-700 text-slate-400')}>
+                <span className={cn('text-[9px] font-black px-1 rounded', autoNext ? 'bg-yellow-500 text-white' : 'bg-slate-700 text-slate-400')}>
                   {autoNext ? 'ON' : 'OFF'}
                 </span>
               </div>
@@ -348,7 +385,7 @@ export default function Watch() {
             {/* Xem chung button */}
             <button
               onClick={() => setShowRoomModal(true)}
-              className="flex flex-col items-center gap-1 px-3 py-1.5 rounded-lg min-w-[56px] text-slate-400 hover:text-green-400 transition-colors"
+              className="flex flex-col items-center gap-1 px-3 py-1.5 rounded-lg min-w-[56px] text-slate-400 hover:text-yellow-400 transition-colors"
             >
               <Users size={20} />
               <span className="text-[10px] font-semibold">Xem chung</span>
@@ -356,8 +393,37 @@ export default function Watch() {
           </div>
 
           {/* Underline nav indicator */}
-          <div className="h-[2px] bg-green-500 rounded-full mt-2 w-16" />
+          <div className="h-[2px] bg-yellow-500 rounded-full mt-2 w-16" />
         </motion.div>
+
+        {/* ── Nhắc đăng nhập để lưu lịch sử/tiến độ xem (chỉ hiện khi chưa đăng nhập) ── */}
+        {!currentUser && (
+          <motion.div initial={{ y: 16, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.06 }}
+            className="flex items-center gap-3 bg-yellow-500/10 border border-yellow-500/30 rounded-xl px-4 py-3">
+            <BookmarkPlus size={20} className="text-yellow-400 shrink-0" />
+            <p className="text-xs sm:text-sm text-slate-200 flex-1">
+              Đăng nhập để lưu <b className="text-white">lịch sử xem</b> và tự động nhớ tập bạn đang xem dở.
+            </p>
+            <Link
+              to="/auth"
+              className="shrink-0 bg-yellow-500 hover:bg-yellow-500 text-white text-xs font-bold px-3 py-1.5 rounded-full transition-colors"
+            >
+              Đăng nhập
+            </Link>
+          </motion.div>
+        )}
+
+        {/* ── Disclaimer — theo tinh thần mẫu Phim Tuổi Thơ ── */}
+        <div className="bg-slate-900/60 border border-slate-800 rounded-xl px-4 py-3 text-[11px] sm:text-xs text-slate-500 leading-relaxed">
+          <span className="font-bold text-slate-300">Lưu ý:</span> Phim Tuổi Thơ không lưu trữ file phim trên máy
+          chủ của mình. Toàn bộ nội dung được tổng hợp từ các nguồn/nhà cung cấp video bên thứ ba.
+        </div>
+
+      </div>
+      {/* ↑ đóng content-area phần 1 (để sidebar dưới đây thành ô lưới riêng, không bị lồng bên trong) */}
+
+        {/* ══ Sidebar (PC/Laptop): info phim + danh sách tập gộp chung 1 cột phải, dính khi cuộn ══ */}
+        <div className="max-w-2xl xl:max-w-none mx-auto xl:mx-0 px-3 xl:px-0 flex flex-col gap-3 xl:gap-4 xl:col-start-2 xl:[grid-row:1/-1] xl:sticky xl:top-6 xl:max-h-[calc(100vh-3rem)] xl:overflow-y-auto xl:pr-1">
 
         {/* ── Movie detail mini card ── */}
         <motion.div initial={{ y: 16, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.05 }}
@@ -375,7 +441,7 @@ export default function Watch() {
             <div className="flex flex-wrap gap-1.5 mt-2">
               {movie.year && <span className="text-xs text-slate-300">• {movie.year}</span>}
               {movie.quality && (
-                <span className="text-[10px] font-black bg-green-500/20 text-green-400 border border-green-500/30 px-1.5 py-0.5 rounded">
+                <span className="text-[10px] font-black bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 px-1.5 py-0.5 rounded">
                   {movie.quality}
                 </span>
               )}
@@ -393,10 +459,21 @@ export default function Watch() {
           </div>
         </motion.div>
 
+        {movie.content && (
+          <motion.div initial={{ y: 16, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.06 }}
+            className="bg-[#181818] rounded-xl p-4">
+            <p className="text-slate-400 text-xs leading-relaxed line-clamp-4">{movie.content}</p>
+            <Link to={`/phim/${movie.slug}`} className="text-yellow-400 hover:text-yellow-300 text-xs font-semibold mt-2 inline-block">
+              Thông tin phim ›
+            </Link>
+          </motion.div>
+        )}
+
+
         {/* ── Danh sách tập ── */}
         {currentServer && (
           <motion.div initial={{ y: 16, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.08 }}
-            className="bg-[#181818] rounded-xl overflow-hidden">
+            className="bg-[#181818] rounded-xl overflow-hidden xl:flex xl:flex-col xl:min-h-0">
 
             {/* Section header */}
             <div className="flex items-center gap-2 px-4 py-3 border-b border-white/5">
@@ -425,10 +502,10 @@ export default function Watch() {
                       key={idx}
                       onClick={() => handleServerChange(idx)}
                       className={cn(
-                        'px-3 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-wide transition-all border',
+                        'px-3.5 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-wide transition-all',
                         activeServerIdx === idx
-                          ? 'bg-green-500/20 border-green-500/50 text-green-400'
-                          : 'bg-[#2a2a2a] border-slate-700 text-slate-400 hover:text-white'
+                          ? 'bg-yellow-400 text-slate-950'
+                          : 'bg-[#2a2a2a] text-slate-400 hover:text-white'
                       )}
                     >
                       {movieApi.cleanServerName(server.server_name)} | {server.server_data.length}
@@ -441,7 +518,7 @@ export default function Watch() {
             {/* Sub tab + episode count */}
             <div className="px-4 py-2.5 flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <button className="flex items-center gap-1.5 text-green-400 border-b-2 border-green-500 pb-1 text-xs font-bold uppercase tracking-wide">
+                <button className="flex items-center gap-1.5 text-yellow-400 border-b-2 border-yellow-500 pb-1 text-xs font-bold uppercase tracking-wide">
                   Phụ đề
                 </button>
               </div>
@@ -456,7 +533,7 @@ export default function Watch() {
                 onClick={() => setShowThumbs(v => !v)}
                 className={cn(
                   'w-9 h-5 rounded-full transition-colors relative',
-                  showThumbs ? 'bg-green-500' : 'bg-slate-700'
+                  showThumbs ? 'bg-yellow-500' : 'bg-slate-700'
                 )}
               >
                 <span className={cn(
@@ -470,7 +547,7 @@ export default function Watch() {
             {/* Episode grid */}
             <div className="px-4 pb-4">
               <div className={cn(
-                'gap-2 max-h-56 overflow-y-auto pr-1',
+                'gap-2 max-h-56 xl:max-h-none xl:flex-1 overflow-y-auto pr-1',
                 showThumbs ? 'flex flex-col' : 'grid grid-cols-4 sm:grid-cols-6'
               )}>
                 {currentServer.server_data.map((ep, idx) => (
@@ -483,8 +560,8 @@ export default function Watch() {
                         ? 'flex items-center gap-3 px-3 py-2.5 text-left'
                         : 'py-2.5',
                       ep.slug === episodeSlug
-                        ? 'bg-green-500/20 border-green-500/60 text-green-400'
-                        : 'bg-[#2a2a2a] border-slate-700/50 text-slate-400 hover:border-green-500/40 hover:text-green-300'
+                        ? 'bg-yellow-500/20 border-yellow-500/60 text-yellow-400'
+                        : 'bg-[#2a2a2a] border-slate-700/50 text-slate-400 hover:border-yellow-500/40 hover:text-yellow-300'
                     )}
                   >
                     {showThumbs && (
@@ -499,60 +576,45 @@ export default function Watch() {
           </motion.div>
         )}
 
-        {/* ── Phụ đề / Nội dung section ── */}
-        <motion.div initial={{ y: 16, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }}
-          className="bg-[#181818] rounded-xl overflow-hidden">
-          <div className="flex items-center gap-2 px-4 py-3 border-b border-white/5">
-            <Info size={15} className="text-green-400" />
-            <span className="text-white font-bold text-sm uppercase tracking-wide">Nội dung</span>
-          </div>
-          <div className="p-4 flex flex-col gap-3">
-            {/* Tags */}
-            <div className="flex flex-wrap gap-2">
-              {movie.year && (
-                <span className="text-xs text-slate-300 bg-[#2a2a2a] border border-slate-700 px-3 py-1 rounded-full">
-                  Năm: {movie.year}
-                </span>
-              )}
-              {movie.quality && (
-                <span className="text-xs text-slate-300 bg-[#2a2a2a] border border-slate-700 px-3 py-1 rounded-full">
-                  Chất lượng: {movie.quality}
-                </span>
-              )}
-              {movie.time && (
-                <span className="text-xs text-slate-300 bg-[#2a2a2a] border border-slate-700 px-3 py-1 rounded-full">
-                  Thời lượng: {movie.time}
-                </span>
-              )}
-              {movie.lang && (
-                <span className="text-xs text-slate-300 bg-[#2a2a2a] border border-slate-700 px-3 py-1 rounded-full">
-                  Ngôn ngữ: {movie.lang}
-                </span>
-              )}
-            </div>
+        </div>
+        {/* ↑ đóng sidebar (info phim + danh sách tập) ── */}
 
-            {/* Actors */}
-            {movie.actor && movie.actor.length > 0 && (
-              <div>
-                <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-2">Diễn viên</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {movie.actor.map((a: string, i: number) => (
-                    <span key={i} className="text-xs text-slate-300 bg-[#2a2a2a] border border-slate-700/60 px-2.5 py-1 rounded-full">
-                      {a}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </motion.div>
+      <div className="max-w-2xl xl:max-w-none mx-auto xl:mx-0 px-3 xl:px-0 flex flex-col gap-3 xl:col-start-1">
 
         {/* ── Bình luận ── */}
         <motion.div initial={{ y: 16, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.12 }}>
           <CommentSection movieSlug={slug || ''} />
         </motion.div>
 
+        {/* ── Phim đề xuất cùng thể loại ── */}
+        {recommended.length > 0 && (
+          <motion.div initial={{ y: 16, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.14 }}>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-white font-black text-sm uppercase tracking-wide flex items-center gap-2">
+                <span className="w-1 h-4 bg-yellow-500 rounded-full inline-block shrink-0" />
+                Đề Xuất Cho Bạn
+              </h2>
+              {movie.category?.[0] && (
+                <Link
+                  to={`/type/phim-bo?category=${movie.category[0].slug}`}
+                  className="text-xs font-semibold text-slate-400 hover:text-yellow-400 transition-colors"
+                >
+                  Xem tất cả
+                </Link>
+              )}
+            </div>
+            <div className="grid grid-cols-3 sm:grid-cols-4 xl:grid-cols-3 gap-2.5 sm:gap-3">
+              {recommended.map((m) => (
+                <MovieCard key={m._id || m.slug} movie={m} />
+              ))}
+            </div>
+          </motion.div>
+        )}
+
       </div>
+      </div>
+
+      {/* ↑ đóng khối bố cục 2 cột (grid xl:) mở ở đầu component ── */}
 
       {/* ── Modal tạo phòng xem chung ── */}
       <AnimatePresence>
@@ -569,8 +631,8 @@ export default function Watch() {
                   {/* Header */}
                   <div className="flex items-center justify-between mb-5">
                     <div className="flex items-center gap-2">
-                      <div className="w-9 h-9 rounded-xl bg-green-500/15 flex items-center justify-center">
-                        <Users size={18} className="text-green-400" />
+                      <div className="w-9 h-9 rounded-xl bg-yellow-500/15 flex items-center justify-center">
+                        <Users size={18} className="text-yellow-400" />
                       </div>
                       <div>
                         <h3 className="text-white font-bold text-sm">Tạo phòng xem chung</h3>
@@ -591,7 +653,7 @@ export default function Watch() {
                     )}
                     <div className="min-w-0">
                       <p className="text-white text-xs font-bold line-clamp-1">{movie?.name}</p>
-                      <p className="text-green-400 text-[11px] mt-0.5">Tập {currentEpisode?.name}</p>
+                      <p className="text-yellow-400 text-[11px] mt-0.5">Tập {currentEpisode?.name}</p>
                     </div>
                   </div>
 
@@ -604,7 +666,7 @@ export default function Watch() {
                           className={cn(
                             'py-2.5 rounded-xl border-2 text-sm font-black transition-all flex flex-col items-center gap-0.5',
                             roomMaxMembers === n
-                              ? 'bg-green-500/15 border-green-500 text-green-400'
+                              ? 'bg-yellow-500/15 border-yellow-500 text-yellow-400'
                               : 'bg-[#2a2a2a] border-transparent text-slate-400 hover:border-slate-600'
                           )}>
                           <span className="text-base leading-none">
@@ -649,7 +711,7 @@ export default function Watch() {
                         setCreatingRoom(false);
                       }
                     }}
-                    className="w-full py-3 rounded-xl bg-green-500 text-white font-bold text-sm hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                    className="w-full py-3 rounded-xl bg-yellow-500 text-white font-bold text-sm hover:bg-yellow-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
                   >
                     {creatingRoom ? <Loader2 size={16} className="animate-spin" /> : <Users size={16} />}
                     {creatingRoom ? 'Đang tạo phòng...' : 'Tạo phòng xem'}
@@ -659,16 +721,16 @@ export default function Watch() {
                 <>
                   {/* Room created success */}
                   <div className="text-center mb-5">
-                    <div className="w-14 h-14 rounded-full bg-green-500/15 flex items-center justify-center mx-auto mb-3">
-                      <Check size={26} className="text-green-400" />
+                    <div className="w-14 h-14 rounded-full bg-yellow-500/15 flex items-center justify-center mx-auto mb-3">
+                      <Check size={26} className="text-yellow-400" />
                     </div>
                     <h3 className="text-white font-bold text-base">Phòng đã được tạo!</h3>
                     <p className="text-slate-400 text-xs mt-1">Chia sẻ link bên dưới cho bạn bè</p>
                   </div>
 
                   {/* Link box */}
-                  <div className="bg-[#0d0d0d] rounded-xl p-3 flex items-center gap-2 mb-4 border border-green-500/20">
-                    <p className="flex-1 text-green-300 text-xs font-mono truncate">
+                  <div className="bg-[#0d0d0d] rounded-xl p-3 flex items-center gap-2 mb-4 border border-yellow-500/20">
+                    <p className="flex-1 text-yellow-300 text-xs font-mono truncate">
                       {window.location.origin}/watch-room/{roomCreated}
                     </p>
                     <button onClick={() => {
@@ -678,7 +740,7 @@ export default function Watch() {
                     }}
                       className={cn(
                         'shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-all',
-                        roomLinkCopied ? 'bg-green-500 text-white' : 'bg-[#2a2a2a] text-slate-300 hover:bg-[#333]'
+                        roomLinkCopied ? 'bg-yellow-500 text-white' : 'bg-[#2a2a2a] text-slate-300 hover:bg-[#333]'
                       )}>
                       {roomLinkCopied ? <Check size={12} /> : <Copy size={12} />}
                       {roomLinkCopied ? 'Đã copy!' : 'Copy'}
@@ -691,7 +753,7 @@ export default function Watch() {
                       Đóng
                     </button>
                     <button onClick={() => navigate(`/watch-room/${roomCreated}`)}
-                      className="flex-1 py-2.5 rounded-xl bg-green-500 text-white font-bold text-sm hover:bg-green-600 transition-colors flex items-center justify-center gap-1.5">
+                      className="flex-1 py-2.5 rounded-xl bg-yellow-500 text-white font-bold text-sm hover:bg-yellow-500 transition-colors flex items-center justify-center gap-1.5">
                       <Users size={14} />
                       Vào phòng
                     </button>

@@ -27,15 +27,15 @@ export function getSiteSettings() {
 export function usePageTitle(pageTitle?: string) {
   useEffect(() => {
     const settings = getSiteSettings();
-    const suffix = settings.siteUrl || 'DaoPhim.lol';
-    const base = settings.siteName || 'Đảo Phim';
+    const suffix = 'PHIMTUOITHO';
+    const base = settings.siteName || 'Phim Tuổi Thơ';
     if (pageTitle) {
       document.title = `${pageTitle} | ${suffix}`;
     } else {
-      document.title = `${base} - Xem phim miễn phí`;
+      document.title = `${base} - Xem phim miễn phí | ${suffix}`;
     }
     return () => {
-      document.title = `${base} - Xem phim miễn phí`;
+      document.title = `${base} - Xem phim miễn phí | ${suffix}`;
     };
   }, [pageTitle]);
 }

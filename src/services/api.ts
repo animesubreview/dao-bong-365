@@ -1,6 +1,25 @@
 import { Movie, APIResponse, MovieDetailResponse, Episode } from '../types';
 
-const BASE_URL = 'https://phimapi.com';
+// Domain API chính (KKPhim/phimapi.com) — có thể đổi trong Admin → Cài đặt Website
+// nếu domain gốc bị sập, dùng domain mirror khác mà không cần sửa code.
+const DEFAULT_API_BASE = 'https://phimapi.com';
+
+function readApiBaseFromSettings(): string {
+  try {
+    const raw = localStorage.getItem('site_settings');
+    if (!raw) return DEFAULT_API_BASE;
+    const settings = JSON.parse(raw);
+    const custom = (settings.apiBaseUrl || '').trim().replace(/\/+$/, '');
+    return custom || DEFAULT_API_BASE;
+  } catch { return DEFAULT_API_BASE; }
+}
+
+let BASE_URL = readApiBaseFromSettings();
+if (typeof window !== 'undefined') {
+  const refresh = () => { BASE_URL = readApiBaseFromSettings(); };
+  window.addEventListener('site_settings_updated', refresh);
+  window.addEventListener('storage', refresh);
+}
 
 // Cache ảnh chất lượng cao lấy được từ NguonC theo slug (nếu có), dùng trong getImageUrl.
 // Populate cache này ở nơi nào lấy được ảnh đẹp từ NguonC bằng: NguonCImageCache.set(slug, { poster, thumb });
@@ -553,13 +572,13 @@ export const movieApi = {
   },
 
   searchMovies: async (keyword: string, page: number = 1, limit: number = 20): Promise<APIResponse<Movie>> => {
-    const response = await fetch(`${BASE_URL}/v1/api/tim-kiem?keyword=${keyword}&page=${page}&limit=${limit}`);
+    const response = await fetch(`${BASE_URL}/v1/api/tim-kiem?keyword=${encodeURIComponent(keyword)}&page=${page}&limit=${limit}`);
     const data = await response.json();
     // The search API structure is slightly different in items
     return {
       status: data.status,
-      items: data.data.items,
-      pagination: data.data.params.pagination
+      items: data.data?.items || [],
+      pagination: data.data?.params?.pagination || { totalItems: 0, totalItemsPerPage: limit, currentPage: page, totalPages: 1 }
     };
   },
 
@@ -625,14 +644,16 @@ export const movieApi = {
     const cachedImages = NguonCImageCache.get(path);
     if (cachedImages) return cachedImages.poster;
 
-    // Điều hướng chính xác tên miền CDN dựa trên cấu trúc đường dẫn
-    if (path.includes('ophim') || path.includes('uploads/movies')) {
-      // Sửa lỗi các domain ảnh của OPhim bị chết bằng cách chuyển sang img.ophim.live ổn định hơn
-      return `https://img.ophim.live/uploads/movies/${path.replace(/.*uploads\/movies\//, '')}`;
+    // Chuẩn hóa path về dạng "uploads/movies/..."
+    const cleanPath = path.replace(/^\/+/, '').replace(/.*uploads\/movies\//, 'uploads/movies/');
+
+    // Chỉ dùng img.ophim.live khi path thực sự ghi rõ nguồn OPhim
+    if (path.includes('ophim')) {
+      return `https://img.ophim.live/${cleanPath}`;
     }
 
-    // Mặc định đối với KKPhim/OPhim khác
-    return `https://phimimg.com/uploads/movies/${path.replace(/.*uploads\/movies\//, '')}`;
+    // Mặc định: KKPhim/phimapi dùng đúng domain ảnh img.phimapi.com
+    return `https://img.phimapi.com/${cleanPath}`;
   },
 
   // Lấy ảnh chất lượng cao (poster/backdrop) trực tiếp từ TMDB qua endpoint

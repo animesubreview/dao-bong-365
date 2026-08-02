@@ -39,7 +39,7 @@ function SeatMap({ room, mySeats, onBook, onUnbook }: {
     <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5">
       {/* Screen */}
       <div className="mb-6 flex flex-col items-center">
-        <div className="w-3/4 h-2 bg-gradient-to-r from-transparent via-green-500/60 to-transparent rounded-full mb-1" />
+        <div className="w-3/4 h-2 bg-gradient-to-r from-transparent via-yellow-500/60 to-transparent rounded-full mb-1" />
         <span className="text-xs text-slate-500 font-semibold tracking-widest uppercase">Màn hình</span>
       </div>
 
@@ -64,10 +64,10 @@ function SeatMap({ room, mySeats, onBook, onUnbook }: {
                       title={seatId}
                       className={`w-8 h-7 rounded-t-lg text-[10px] font-bold transition-all border-b-2 ${
                         isMine
-                          ? 'bg-green-500 border-green-700 text-slate-900 scale-105'
+                          ? 'bg-yellow-500 border-yellow-700 text-slate-900 scale-105'
                           : isBooked
                           ? 'bg-slate-700 border-slate-600 text-slate-500 cursor-not-allowed opacity-60'
-                          : 'bg-slate-800 border-slate-600 text-slate-400 hover:bg-green-500/20 hover:border-green-500/50 hover:text-green-300'
+                          : 'bg-slate-800 border-slate-600 text-slate-400 hover:bg-yellow-500/20 hover:border-yellow-500/50 hover:text-yellow-300'
                       }`}
                     >
                       {cIdx + 1}
@@ -87,7 +87,7 @@ function SeatMap({ room, mySeats, onBook, onUnbook }: {
           <span>Trống</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <div className="w-5 h-4 bg-green-500 border-b-2 border-green-700 rounded-t" />
+          <div className="w-5 h-4 bg-yellow-500 border-b-2 border-yellow-700 rounded-t" />
           <span>Ghế bạn</span>
         </div>
         <div className="flex items-center gap-1.5">
@@ -141,13 +141,13 @@ function WatchingView({ room, mySeats, onBack }: { room: CinemaRoom; mySeats: st
           {room.description && <p className="text-slate-400 text-sm mt-1">{room.description}</p>}
           {mySeats.length > 0 && (
             <div className="flex items-center gap-2 mt-2">
-              <Ticket size={14} className="text-green-400" />
-              <span className="text-green-400 text-sm font-bold">Ghế của bạn: {mySeats.join(', ')}</span>
+              <Ticket size={14} className="text-yellow-400" />
+              <span className="text-yellow-400 text-sm font-bold">Ghế của bạn: {mySeats.join(', ')}</span>
             </div>
           )}
         </div>
         <div className="flex items-center gap-2 bg-slate-800 px-4 py-2 rounded-full">
-          <Users size={16} className="text-green-400" />
+          <Users size={16} className="text-yellow-400" />
           <span className="text-white font-bold text-sm">{room.viewerCount} đang xem</span>
         </div>
       </div>
@@ -189,8 +189,8 @@ function SeatSelectionView({ room, onConfirm, onBack }: {
       </button>
 
       <div className="flex items-center gap-3 mb-5">
-        <div className="w-10 h-10 bg-green-500/10 border border-green-500/30 rounded-xl flex items-center justify-center">
-          <Ticket size={20} className="text-green-400" />
+        <div className="w-10 h-10 bg-yellow-500/10 border border-yellow-500/30 rounded-xl flex items-center justify-center">
+          <Ticket size={20} className="text-yellow-400" />
         </div>
         <div>
           <h1 className="text-white font-black text-xl">Chọn ghế ngồi</h1>
@@ -202,19 +202,19 @@ function SeatSelectionView({ room, onConfirm, onBack }: {
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 mb-5 flex flex-wrap items-center justify-between gap-3">
         {room.scheduledAt && (
           <div className="flex items-center gap-2 text-sm">
-            <Calendar size={15} className="text-green-400" />
+            <Calendar size={15} className="text-yellow-400" />
             <span className="text-slate-300">{formatSchedule(room.scheduledAt)}</span>
           </div>
         )}
         <div className="flex items-center gap-2 text-sm">
-          <Users size={15} className="text-green-400" />
+          <Users size={15} className="text-yellow-400" />
           <span className="text-slate-300">
             {(room.bookedSeats?.length || 0)}/{room.totalSeats || 40} ghế đã đặt
           </span>
         </div>
         <div className="flex items-center gap-2 text-sm">
-          <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-          <span className="text-green-400 font-bold">{room.viewerCount} đang xem</span>
+          <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse" />
+          <span className="text-yellow-400 font-bold">{room.viewerCount} đang xem</span>
         </div>
       </div>
 
@@ -223,7 +223,7 @@ function SeatSelectionView({ room, onConfirm, onBack }: {
       <button
         disabled={mySeats.length === 0 || booking}
         onClick={() => onConfirm(mySeats)}
-        className="mt-5 w-full py-4 bg-green-500 hover:bg-green-400 disabled:opacity-40 disabled:cursor-not-allowed text-slate-950 font-black rounded-2xl flex items-center justify-center gap-2 text-base transition-all shadow-lg shadow-green-500/25"
+        className="mt-5 w-full py-4 bg-yellow-500 hover:bg-yellow-400 disabled:opacity-40 disabled:cursor-not-allowed text-slate-950 font-black rounded-2xl flex items-center justify-center gap-2 text-base transition-all shadow-lg shadow-yellow-500/25"
       >
         <Play size={18} className="fill-current" />
         {mySeats.length > 0 ? `Xem phim (Ghế: ${mySeats.join(', ')})` : 'Chọn ít nhất 1 ghế'}
@@ -266,7 +266,7 @@ export default function CinemaPage() {
   if (user === undefined || loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="w-10 h-10 border-t-transparent rounded-full animate-spin border-green-500" style={{ borderWidth: 3, borderStyle: 'solid' }} />
+        <div className="w-10 h-10 border-t-transparent rounded-full animate-spin border-yellow-500" style={{ borderWidth: 3, borderStyle: 'solid' }} />
       </div>
     );
   }
@@ -275,15 +275,15 @@ export default function CinemaPage() {
   if (!user) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-5 text-center px-4">
-        <div className="w-20 h-20 bg-green-500/10 border border-green-500/30 rounded-full flex items-center justify-center">
-          <Lock size={36} className="text-green-400" />
+        <div className="w-20 h-20 bg-yellow-500/10 border border-yellow-500/30 rounded-full flex items-center justify-center">
+          <Lock size={36} className="text-yellow-400" />
         </div>
         <div>
           <h2 className="text-2xl font-black text-white mb-2">Chỉ dành cho thành viên</h2>
-          <p className="text-slate-400 text-sm max-w-xs">Bạn cần đăng nhập để vào xem phim tại Rạp Chiếu của Đảo Phim.</p>
+          <p className="text-slate-400 text-sm max-w-xs">Bạn cần đăng nhập để vào xem phim tại Rạp Chiếu của Phim Tuổi Thơ.</p>
         </div>
         <Link to="/auth"
-          className="flex items-center gap-2 bg-green-500 hover:bg-green-400 text-slate-950 font-black px-6 py-3 rounded-2xl transition-all shadow-lg shadow-green-500/25">
+          className="flex items-center gap-2 bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-black px-6 py-3 rounded-2xl transition-all shadow-lg shadow-yellow-500/25">
           <LogIn size={18} />
           Đăng nhập ngay
         </Link>
@@ -319,8 +319,8 @@ export default function CinemaPage() {
   return (
     <div className="max-w-6xl mx-auto px-4 py-6">
       <div className="flex items-center gap-3 mb-8">
-        <div className="w-12 h-12 bg-green-500/10 border border-green-500/30 rounded-2xl flex items-center justify-center">
-          <MonitorPlay size={24} className="text-green-400" />
+        <div className="w-12 h-12 bg-yellow-500/10 border border-yellow-500/30 rounded-2xl flex items-center justify-center">
+          <MonitorPlay size={24} className="text-yellow-400" />
         </div>
         <div>
           <h1 className="text-2xl font-black text-white">Rạp Chiếu Phim</h1>
@@ -339,7 +339,7 @@ export default function CinemaPage() {
           {liveRooms.length > 0 && (
             <section className="mb-8">
               <div className="flex items-center gap-2 mb-4">
-                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse" />
                 <h2 className="text-white font-black text-lg">Đang Chiếu</h2>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -371,7 +371,7 @@ function RoomCard({ room, onEnter, scheduled }: { room: CinemaRoom; onEnter: () 
 
   return (
     <button onClick={onEnter}
-      className="group text-left rounded-2xl overflow-hidden bg-slate-900 border border-slate-800 hover:border-green-500/60 transition-all hover:scale-[1.02]">
+      className="group text-left rounded-2xl overflow-hidden bg-slate-900 border border-slate-800 hover:border-yellow-500/60 transition-all hover:scale-[1.02]">
       <div className="relative" style={{ aspectRatio: '16/9' }}>
         {room.thumbnail ? (
           <img src={room.thumbnail} alt={room.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
@@ -387,23 +387,23 @@ function RoomCard({ room, onEnter, scheduled }: { room: CinemaRoom; onEnter: () 
             <span className="text-white text-xs font-bold">Sắp chiếu</span>
           </div>
         ) : (
-          <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-green-500/90 backdrop-blur px-2.5 py-1 rounded-full">
+          <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-yellow-500/90 backdrop-blur px-2.5 py-1 rounded-full">
             <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
             <span className="text-white text-xs font-bold">Đang chiếu</span>
           </div>
         )}
         <div className="absolute bottom-3 right-3 flex items-center gap-1.5 bg-slate-950/80 backdrop-blur px-2.5 py-1 rounded-full">
-          <Users size={12} className="text-green-400" />
+          <Users size={12} className="text-yellow-400" />
           <span className="text-white text-xs font-bold">{room.viewerCount}</span>
         </div>
         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-          <div className="w-14 h-14 bg-green-500 rounded-full flex items-center justify-center shadow-xl">
+          <div className="w-14 h-14 bg-yellow-500 rounded-full flex items-center justify-center shadow-xl">
             <Ticket size={22} className="text-slate-950" />
           </div>
         </div>
       </div>
       <div className="p-4">
-        <h3 className="text-white font-black text-base line-clamp-1 group-hover:text-green-400 transition-colors">{room.title}</h3>
+        <h3 className="text-white font-black text-base line-clamp-1 group-hover:text-yellow-400 transition-colors">{room.title}</h3>
         {room.description && <p className="text-slate-400 text-sm mt-1 line-clamp-2">{room.description}</p>}
         {room.scheduledAt && (
           <div className="flex items-center gap-1.5 mt-2 text-xs text-slate-400">
@@ -418,7 +418,7 @@ function RoomCard({ room, onEnter, scheduled }: { room: CinemaRoom; onEnter: () 
             <span>{pct}% đã đặt</span>
           </div>
           <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
-            <div className="h-full bg-green-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
+            <div className="h-full bg-yellow-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
           </div>
         </div>
       </div>
