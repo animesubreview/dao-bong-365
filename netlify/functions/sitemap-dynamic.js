@@ -22,7 +22,7 @@ async function fetchPage(type, page) {
 }
 
 async function getAllMovies() {
-  const types = ['phim-bo', 'phim-le', 'hoat-hinh', 'phim-chieu-rap'];
+  const types = ['phim-bo', 'phim-le', 'hoat-hinh'];
   // 8 page × 64 limit × 4 type = ~2048 phim tối đa, đủ cho Netlify 10s timeout
   const pages = [1, 2, 3, 4, 5, 6, 7, 8];
 
@@ -74,7 +74,6 @@ export const handler = async () => {
       `<url><loc>${BASE_SITE}/type/phim-bo</loc><changefreq>daily</changefreq><priority>0.9</priority><lastmod>${today}</lastmod></url>`,
       `<url><loc>${BASE_SITE}/type/phim-le</loc><changefreq>daily</changefreq><priority>0.9</priority><lastmod>${today}</lastmod></url>`,
       `<url><loc>${BASE_SITE}/type/hoat-hinh</loc><changefreq>daily</changefreq><priority>0.9</priority><lastmod>${today}</lastmod></url>`,
-      `<url><loc>${BASE_SITE}/type/phim-chieu-rap</loc><changefreq>daily</changefreq><priority>0.9</priority><lastmod>${today}</lastmod></url>`,
       `<url><loc>${BASE_SITE}/search</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>`,
       `<url><loc>${BASE_SITE}/truyen-tranh</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>`,
     ];

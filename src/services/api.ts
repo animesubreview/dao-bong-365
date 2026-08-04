@@ -526,10 +526,30 @@ export function mergeOPhimEpisodes(
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const movieApi = {
+// ─── Bộ lọc: ẩn "Phim Chiếu Rạp" (mọi quốc gia) và "Phim Việt Nam" không phải
+// hoạt hình. Phim hoạt hình Việt Nam (anime/cartoon VN) vẫn được giữ lại.
+function isBlockedMovie(movie: Movie): boolean {
+  if (!movie) return false;
+  const type = (movie.type || '').toLowerCase();
+  if (type === 'phim-chieu-rap') return true; // luôn ẩn phim chiếu rạp, mọi quốc gia
+
+  const countries = (movie.country || []).map(c => (c.slug || c.name || '').toLowerCase());
+  const isVietnam = countries.some(c => c.includes('viet-nam') || c.includes('việt nam') || c === 'vn');
+  if (isVietnam && type !== 'hoat-hinh') return true; // ẩn phim Việt Nam trừ hoạt hình
+
+  return false;
+}
+
+function filterBlockedMovies(items: Movie[] | undefined | null): Movie[] {
+  if (!items) return [];
+  return items.filter(m => !isBlockedMovie(m));
+}
+
+
   getNewUpdates: async (page: number = 1): Promise<APIResponse<Movie>> => {
     const response = await fetch(`${BASE_URL}/danh-sach/phim-moi-cap-nhat?page=${page}`);
-    return response.json();
+    const data = await response.json();
+    return { ...data, items: filterBlockedMovies(data.items) };
   },
 
   /**
@@ -546,7 +566,7 @@ export const movieApi = {
         const data = await res.json();
         const items: Movie[] = data?.items || [];
         if (items.length === 0) break;
-        allMovies.push(...items);
+        allMovies.push(...filterBlockedMovies(items));
       } catch {
         break;
       }
@@ -577,17 +597,20 @@ export const movieApi = {
     // The search API structure is slightly different in items
     return {
       status: data.status,
-      items: data.data?.items || [],
+      items: filterBlockedMovies(data.data?.items),
       pagination: data.data?.params?.pagination || { totalItems: 0, totalItemsPerPage: limit, currentPage: page, totalPages: 1 }
     };
   },
 
   getMoviesByType: async (type: string, page: number = 1, limit: number = 20): Promise<APIResponse<Movie>> => {
+    if (type === 'phim-chieu-rap') {
+      return { status: true, items: [], pagination: { totalItems: 0, totalItemsPerPage: limit, currentPage: page, totalPages: 1 } };
+    }
     const response = await fetch(`${BASE_URL}/v1/api/danh-sach/${type}?page=${page}&limit=${limit}`);
     const data = await response.json();
     return {
       status: data.status,
-      items: data.data.items,
+      items: filterBlockedMovies(data.data.items),
       pagination: data.data.params.pagination
     };
   },
@@ -603,6 +626,9 @@ export const movieApi = {
     limit?: number;
   }): Promise<APIResponse<Movie>> => {
     const { type = 'phim-bo', category = '', country = '', year = '', sort = 'modified.time', page = 1, limit = 24 } = params;
+    if (type === 'phim-chieu-rap') {
+      return { status: true, items: [], pagination: { totalItems: 0, totalItemsPerPage: limit, currentPage: page, totalPages: 1 } };
+    }
     let url = `${BASE_URL}/v1/api/danh-sach/${type}?page=${page}&limit=${limit}&sort_field=${sort}`;
     if (category) url += `&category=${category}`;
     if (country) url += `&country=${country}`;
@@ -611,7 +637,7 @@ export const movieApi = {
     const data = await response.json();
     return {
       status: data.status,
-      items: data.data?.items || [],
+      items: filterBlockedMovies(data.data?.items),
       pagination: data.data?.params?.pagination || { totalItems: 0, totalItemsPerPage: limit, currentPage: page, totalPages: 1 }
     };
   },
@@ -711,7 +737,7 @@ export const movieApi = {
       const items: any[] = data?.items || data?.movies || data?.data?.items || [];
       if (!items.length) return [];
 
-      return items.map((m: any): Movie => {
+      return filterBlockedMovies(items.map((m: any): Movie => {
         // NguonC image: nếu thumb_url có http dùng trực tiếp, không thì prepend base
         const img = (url: string) => {
           if (!url) return '';
@@ -736,7 +762,7 @@ export const movieApi = {
           category: Array.isArray(m.category) ? m.category : [],
           country: Array.isArray(m.country) ? m.country : [],
         };
-      });
+      }));
     } catch {
       return [];
     }
@@ -758,7 +784,7 @@ export const movieApi = {
         const data = await response.json();
         return {
           status: data.status,
-          items: (data.data?.items || []) as Movie[],
+          items: filterBlockedMovies(data.data?.items) as Movie[],
           pagination: data.data?.params?.pagination as APIResponse<Movie>['pagination'],
         };
       })(),

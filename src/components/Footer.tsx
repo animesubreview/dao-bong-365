@@ -35,7 +35,6 @@ export default function Footer() {
           <Link to="/type/phim-bo" className="hover:text-white transition-colors">Phim bộ</Link>
           <Link to="/type/phim-le" className="hover:text-white transition-colors">Phim lẻ</Link>
           <Link to="/type/hoat-hinh" className="hover:text-white transition-colors">Hoạt hình</Link>
-          <Link to="/type/phim-chieu-rap" className="hover:text-white transition-colors">Chiếu rạp</Link>
           <Link to="/site-map" className="hover:text-white transition-colors">Sơ đồ trang web</Link>
         </div>
 

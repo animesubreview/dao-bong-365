@@ -43,7 +43,6 @@ const COUNTRIES = [
   { label: 'Âu Mỹ',     value: 'au-my' },
   { label: 'Nhật Bản',  value: 'nhat-ban' },
   { label: 'Thái Lan',  value: 'thai-lan' },
-  { label: 'Việt Nam',  value: 'viet-nam' },
   { label: 'Đài Loan',  value: 'dai-loan' },
   { label: 'Hồng Kông', value: 'hong-kong' },
   { label: 'Ấn Độ',     value: 'an-do' },

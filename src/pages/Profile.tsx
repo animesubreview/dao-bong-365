@@ -6,8 +6,7 @@ import {
   Pencil, X, Loader2, ImagePlus, Save,
 } from 'lucide-react';
 import { onAuthChange, getUserProfile, updateUserProfile, UserProfile } from '../lib/auth';
-import { storage } from '../lib/firebase';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { uploadToCloudinary } from '../lib/cloudinary';
 
 // ─── Preset DiceBear avatars ──────────────────────────────────────────────────
 const AVATAR_SEEDS = [
@@ -129,12 +128,10 @@ function AvatarPickerModal({
     setUploading(true);
     try {
       const normalizedBlob = await normalizeImage(file);
-      const storageRef = ref(storage, `avatars/${Date.now()}.jpg`);
-      const snap = await uploadBytes(storageRef, normalizedBlob, { contentType: 'image/jpeg' });
-      const url = await getDownloadURL(snap.ref);
-      onSelect(url);
+      const result = await uploadToCloudinary(normalizedBlob, 'avatars');
+      onSelect(result.url);
     } catch (err: any) {
-      setUploadError('Upload thất bại, thử lại nhé');
+      setUploadError(err?.message || 'Upload thất bại, thử lại nhé');
     } finally {
       setUploading(false);
     }

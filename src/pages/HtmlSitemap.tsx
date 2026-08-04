@@ -5,7 +5,6 @@ const TYPES = [
   { label: 'Phim Bộ', value: 'phim-bo' },
   { label: 'Phim Lẻ', value: 'phim-le' },
   { label: 'Hoạt Hình / Anime', value: 'hoat-hinh' },
-  { label: 'Phim Chiếu Rạp', value: 'phim-chieu-rap' },
   { label: 'TV Shows', value: 'tv-shows' },
 ];
 
@@ -23,7 +22,7 @@ const CATEGORIES = [
 const COUNTRIES = [
   { label: 'Hàn Quốc', value: 'han-quoc' }, { label: 'Trung Quốc', value: 'trung-quoc' },
   { label: 'Âu Mỹ', value: 'au-my' }, { label: 'Nhật Bản', value: 'nhat-ban' },
-  { label: 'Thái Lan', value: 'thai-lan' }, { label: 'Việt Nam', value: 'viet-nam' },
+  { label: 'Thái Lan', value: 'thai-lan' },
   { label: 'Đài Loan', value: 'dai-loan' }, { label: 'Hồng Kông', value: 'hong-kong' },
   { label: 'Ấn Độ', value: 'an-do' }, { label: 'Anh', value: 'anh' },
   { label: 'Pháp', value: 'phap' }, { label: 'Đức', value: 'duc' },

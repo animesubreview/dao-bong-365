@@ -41,6 +41,7 @@ import {
   subscribeRoomViewerCount,
 } from '../lib/livestream';
 import { cn } from '../lib/utils';
+import { uploadToCloudinary } from '../lib/cloudinary';
 import { notifyManualMovie } from '../lib/telegramNotify';
 import {
   getMovieOverride, saveMovieOverride, deleteMovieOverride,
@@ -1369,12 +1370,21 @@ function MaintenanceSection() {
     }
   };
 
-  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const [fileUploading, setFileUploading] = useState(false);
+
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; if (!file) return;
     if (file.size > 5 * 1024 * 1024) { alert('File tối đa 5MB!'); return; }
-    const reader = new FileReader();
-    reader.onload = ev => setCfg(c => ({ ...c, mediaUrl: ev.target?.result as string }));
-    reader.readAsDataURL(file);
+    setFileUploading(true);
+    try {
+      const result = await uploadToCloudinary(file, 'maintenance');
+      setCfg(c => ({ ...c, mediaUrl: result.url }));
+    } catch (err: any) {
+      alert(err?.message || 'Upload lên Cloudinary thất bại, thử lại nhé');
+    } finally {
+      setFileUploading(false);
+      e.target.value = '';
+    }
   };
 
   return (
@@ -1444,9 +1454,9 @@ function MaintenanceSection() {
               className="input-field text-sm" placeholder={cfg.mediaType === 'image' ? 'https://... hoặc tải lên bên dưới' : 'https://... link video mp4'} />
             {cfg.mediaType === 'image' && (
               <>
-                <button onClick={() => fileRef.current?.click()}
-                  className="flex items-center justify-center gap-2 w-full py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-xs text-slate-300 hover:border-yellow-600/40 transition-all">
-                  📁 Tải ảnh từ máy
+                <button onClick={() => fileRef.current?.click()} disabled={fileUploading}
+                  className="flex items-center justify-center gap-2 w-full py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-xs text-slate-300 hover:border-yellow-600/40 transition-all disabled:opacity-60">
+                  {fileUploading ? '⏳ Đang tải lên Cloudinary...' : '📁 Tải ảnh từ máy'}
                 </button>
                 <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
               </>
