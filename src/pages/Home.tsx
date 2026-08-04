@@ -476,23 +476,23 @@ const TOP_SRCS = [null,'phim-moi','phim-chieu-rap','phim-bo','phim-le'] as const
 
 /* ─── All lazy sections từ KKPhim API ────────────────────────── */
 const LAZY_SECTIONS = [
-  { title:'Phim Hàn Quốc',    to:'/type/phim-bo',       fetch: () => movieApi.searchMovies('hàn quốc',1,24).then(r=>r.items) },
-  { title:'Phim Trung Quốc',  to:'/type/phim-bo',       fetch: () => movieApi.searchMovies('trung quốc',1,24).then(r=>r.items), variant:'grid' as const },
-  { title:'Phim Hành Động',   to:'/type/phim-le',       fetch: () => movieApi.searchMovies('hành động',1,24).then(r=>r.items) },
+  { title:'Phim Hàn Quốc',    to:'/type/phim-bo',       fetch: () => movieApi.filterMovies({ type:'phim-bo', country:'han-quoc', page:1, limit:24 }).then(r=>r.items) },
+  { title:'Phim Trung Quốc',  to:'/type/phim-bo',       fetch: () => movieApi.filterMovies({ type:'phim-bo', country:'trung-quoc', page:1, limit:24 }).then(r=>r.items), variant:'grid' as const },
+  { title:'Phim Hành Động',   to:'/type/phim-le',       fetch: () => movieApi.filterMovies({ type:'phim-le', category:'hanh-dong', page:1, limit:24 }).then(r=>r.items) },
   { title:'Phim Bộ Đang Chiếu',to:'/type/phim-bo',      fetch: () => movieApi.getMoviesByType('phim-bo',1,24).then(r=>r.items) },
   { title:'Phim Lẻ Mới',      to:'/type/phim-le',       fetch: () => movieApi.getMoviesByType('phim-le',1,24).then(r=>r.items) },
   { title:'Phim Hoạt Hình',   to:'/type/hoat-hinh',     fetch: () => movieApi.getMoviesByType('hoat-hinh',1,24).then(r=>r.items) },
-  { title:'Tâm Lý - Tình Cảm',to:'/type/phim-bo',       fetch: () => movieApi.searchMovies('tình cảm',1,24).then(r=>r.items) },
-  { title:'Phim Kinh Dị',     to:'/type/phim-le',       fetch: () => movieApi.searchMovies('kinh dị',1,24).then(r=>r.items) },
+  { title:'Tâm Lý - Tình Cảm',to:'/type/phim-bo',       fetch: () => movieApi.filterMovies({ type:'phim-bo', category:'tinh-cam', page:1, limit:24 }).then(r=>r.items) },
+  { title:'Phim Kinh Dị',     to:'/type/phim-le',       fetch: () => movieApi.filterMovies({ type:'phim-le', category:'kinh-di', page:1, limit:24 }).then(r=>r.items) },
   { title:'Phim Âu Mỹ',       to:'/type/phim-le',       fetch: () => movieApi.filterMovies({ type:'phim-le', country:'au-my', page:1, limit:24 }).then(r=>r.items) },
-  { title:'Phim Nhật Bản',    to:'/type/phim-bo',       fetch: () => movieApi.searchMovies('nhật bản',1,24).then(r=>r.items) },
-  { title:'Phim Thái Lan',    to:'/type/phim-bo',       fetch: () => movieApi.searchMovies('thái lan',1,24).then(r=>r.items) },
+  { title:'Phim Nhật Bản',    to:'/type/phim-bo',       fetch: () => movieApi.filterMovies({ type:'phim-bo', country:'nhat-ban', page:1, limit:24 }).then(r=>r.items) },
+  { title:'Phim Thái Lan',    to:'/type/phim-bo',       fetch: () => movieApi.filterMovies({ type:'phim-bo', country:'thai-lan', page:1, limit:24 }).then(r=>r.items) },
   { title:'Phim Viễn Tưởng',  to:'/type/phim-le',       fetch: () => movieApi.filterMovies({ type:'phim-le', category:'vien-tuong', page:1, limit:24 }).then(r=>r.items) },
-  { title:'Phim Hài Hước',    to:'/type/phim-le',       fetch: () => movieApi.searchMovies('hài hước',1,24).then(r=>r.items) },
+  { title:'Phim Hài Hước',    to:'/type/phim-le',       fetch: () => movieApi.filterMovies({ type:'phim-le', category:'hai-huoc', page:1, limit:24 }).then(r=>r.items) },
   { title:'TV Shows',          to:'/type/tv-shows',      fetch: () => movieApi.getMoviesByType('tv-shows',1,24).then(r=>r.items) },
   { title:'Phim Hoạt Hình Nhiều Người Xem',to:'/type/hoat-hinh',fetch: () => movieApi.getMoviesByType('hoat-hinh',2,24).then(r=>r.items) },
-  { title:'Phim Cổ Trang',    to:'/type/phim-bo',       fetch: () => movieApi.searchMovies('cổ trang',1,24).then(r=>r.items) },
-  { title:'Phim Hình Sự',     to:'/type/phim-le',       fetch: () => movieApi.searchMovies('hình sự',1,24).then(r=>r.items) },
+  { title:'Phim Cổ Trang',    to:'/type/phim-bo',       fetch: () => movieApi.filterMovies({ type:'phim-bo', category:'co-trang', page:1, limit:24 }).then(r=>r.items) },
+  { title:'Phim Hình Sự',     to:'/type/phim-le',       fetch: () => movieApi.filterMovies({ type:'phim-le', category:'hinh-su', page:1, limit:24 }).then(r=>r.items) },
 ];
 
 /* ─── "Phim Mới" — carousel nổi bật dạng thẻ bo góc + chấm phân trang ─── */

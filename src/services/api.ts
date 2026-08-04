@@ -21,6 +21,30 @@ if (typeof window !== 'undefined') {
   window.addEventListener('storage', refresh);
 }
 
+/**
+ * Fetch có fallback: thử BASE_URL hiện tại (mặc định hoặc domain custom trong Admin) trước,
+ * nếu lỗi mạng / CORS / status xấu / JSON hỏng thì tự động thử lại bằng domain gốc
+ * (DEFAULT_API_BASE). Giúp trang không bị "trắng phim" khi domain custom trong
+ * Admin → Cài đặt Website bị sập hoặc gõ sai, mà không cần người dùng tự sửa lại.
+ * path phải bắt đầu bằng "/" và không chứa domain.
+ */
+async function fetchApiJson(path: string): Promise<any> {
+  const tryFetch = async (base: string) => {
+    const res = await fetch(`${base}${path}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status} từ ${base}`);
+    return res.json();
+  };
+  try {
+    return await tryFetch(BASE_URL);
+  } catch (err) {
+    if (BASE_URL !== DEFAULT_API_BASE) {
+      console.warn(`[api] BASE_URL "${BASE_URL}" lỗi (${(err as Error).message}), thử lại bằng domain mặc định...`);
+      return await tryFetch(DEFAULT_API_BASE);
+    }
+    throw err;
+  }
+}
+
 // Cache ảnh chất lượng cao lấy được từ NguonC theo slug (nếu có), dùng trong getImageUrl.
 // Populate cache này ở nơi nào lấy được ảnh đẹp từ NguonC bằng: NguonCImageCache.set(slug, { poster, thumb });
 const NguonCImageCache = new Map<string, { poster: string; thumb?: string }>();
@@ -528,8 +552,7 @@ export function mergeOPhimEpisodes(
 
 export const movieApi = {
   getNewUpdates: async (page: number = 1): Promise<APIResponse<Movie>> => {
-    const response = await fetch(`${BASE_URL}/danh-sach/phim-moi-cap-nhat?page=${page}`);
-    return response.json();
+    return fetchApiJson(`/danh-sach/phim-moi-cap-nhat?page=${page}`);
   },
 
   /**
@@ -542,8 +565,7 @@ export const movieApi = {
     const allMovies: Movie[] = [];
     for (let page = 1; page <= maxPages; page++) {
       try {
-        const res = await fetch(`${BASE_URL}/danh-sach/phim-moi-cap-nhat?page=${page}`);
-        const data = await res.json();
+        const data = await fetchApiJson(`/danh-sach/phim-moi-cap-nhat?page=${page}`);
         const items: Movie[] = data?.items || [];
         if (items.length === 0) break;
         allMovies.push(...items);
@@ -567,13 +589,11 @@ export const movieApi = {
   },
 
   getMovieDetail: async (slug: string): Promise<MovieDetailResponse> => {
-    const response = await fetch(`${BASE_URL}/phim/${slug}`);
-    return response.json();
+    return fetchApiJson(`/phim/${slug}`);
   },
 
   searchMovies: async (keyword: string, page: number = 1, limit: number = 20): Promise<APIResponse<Movie>> => {
-    const response = await fetch(`${BASE_URL}/v1/api/tim-kiem?keyword=${keyword}&page=${page}&limit=${limit}`);
-    const data = await response.json();
+    const data = await fetchApiJson(`/v1/api/tim-kiem?keyword=${encodeURIComponent(keyword)}&page=${page}&limit=${limit}`);
     // The search API structure is slightly different in items
     return {
       status: data.status,
@@ -583,8 +603,7 @@ export const movieApi = {
   },
 
   getMoviesByType: async (type: string, page: number = 1, limit: number = 20): Promise<APIResponse<Movie>> => {
-    const response = await fetch(`${BASE_URL}/v1/api/danh-sach/${type}?page=${page}&limit=${limit}`);
-    const data = await response.json();
+    const data = await fetchApiJson(`/v1/api/danh-sach/${type}?page=${page}&limit=${limit}`);
     return {
       status: data.status,
       items: data.data.items,
@@ -603,12 +622,11 @@ export const movieApi = {
     limit?: number;
   }): Promise<APIResponse<Movie>> => {
     const { type = 'phim-bo', category = '', country = '', year = '', sort = 'modified.time', page = 1, limit = 24 } = params;
-    let url = `${BASE_URL}/v1/api/danh-sach/${type}?page=${page}&limit=${limit}&sort_field=${sort}`;
-    if (category) url += `&category=${category}`;
-    if (country) url += `&country=${country}`;
-    if (year) url += `&year=${year}`;
-    const response = await fetch(url);
-    const data = await response.json();
+    let path = `/v1/api/danh-sach/${type}?page=${page}&limit=${limit}&sort_field=${sort}`;
+    if (category) path += `&category=${category}`;
+    if (country) path += `&country=${country}`;
+    if (year) path += `&year=${year}`;
+    const data = await fetchApiJson(path);
     return {
       status: data.status,
       items: data.data?.items || [],
@@ -754,8 +772,7 @@ export const movieApi = {
   }> => {
     const [kkRes, ncItems] = await Promise.allSettled([
       (async () => {
-        const response = await fetch(`${BASE_URL}/v1/api/tim-kiem?keyword=${keyword}&page=${page}&limit=${limit}`);
-        const data = await response.json();
+        const data = await fetchApiJson(`/v1/api/tim-kiem?keyword=${encodeURIComponent(keyword)}&page=${page}&limit=${limit}`);
         return {
           status: data.status,
           items: (data.data?.items || []) as Movie[],
