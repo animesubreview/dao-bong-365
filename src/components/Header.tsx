@@ -48,6 +48,7 @@ export const COUNTRIES = [
   { name: 'Âu Mỹ', slug: 'au-my' },
   { name: 'Nhật Bản', slug: 'nhat-ban' },
   { name: 'Thái Lan', slug: 'thai-lan' },
+  { name: 'Việt Nam', slug: 'viet-nam' },
   { name: 'Đài Loan', slug: 'dai-loan' },
   { name: 'Hồng Kông', slug: 'hong-kong' },
 ];
@@ -224,6 +225,7 @@ export default function Header() {
               { to: '/type/phim-bo', label: 'Phim Bộ' },
               { to: '/type/phim-le', label: 'Phim Lẻ' },
               { to: '/type/hoat-hinh', label: 'Hoạt Hình' },
+              { to: '/type/phim-chieu-rap', label: 'Chiếu Rạp' },
             ].map(l => (
               <Link key={l.to} to={l.to}
                 className={cn('px-3 py-1.5 rounded-lg text-sm font-semibold transition-all whitespace-nowrap',

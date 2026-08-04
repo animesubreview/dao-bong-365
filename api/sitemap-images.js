@@ -21,7 +21,7 @@ async function fetchPage(type, page) {
 }
 
 async function getAllMovies() {
-  const types = ['phim-bo', 'phim-le', 'hoat-hinh'];
+  const types = ['phim-bo', 'phim-le', 'hoat-hinh', 'phim-chieu-rap'];
   const pages = [1, 2, 3, 4];
 
   const tasks = types.flatMap(type => pages.map(page => fetchPage(type, page)));

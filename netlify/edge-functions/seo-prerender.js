@@ -198,7 +198,7 @@ async function handleMovieDetail(slug, context) {
     const keywords = [
       movie.name, movie.origin_name,
       ...(movie.category || []).map((c) => c.name),
-      'vietsub', 'hd', 'xem phim miễn phí',
+      'vietsub', 'hd', 'xem phim miễn phí', 'đảo phim',
     ].filter(Boolean).map(escapeHtml).join(', ');
 
     // ── JSON-LD Schema ──────────────────────────────────────────────
