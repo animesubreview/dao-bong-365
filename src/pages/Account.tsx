@@ -2,9 +2,9 @@ import { useSEO } from '../hooks/useSEO';
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  User, Bell, LayoutGrid, MonitorPlay, History, Bookmark, Heart,
+  User, Bell, Crown, LayoutGrid, MonitorPlay, History, Bookmark, Heart,
   ChevronRight, ChevronDown, LogOut, Home, Tv2, Film, Smile, Clapperboard,
-  BookOpen, Globe, Users,
+  BookOpen, Globe, Users, Wallet,
 } from 'lucide-react';
 import { onAuthChange, getUserProfile, UserProfile, logout } from '../lib/auth';
 import { GENRES, COUNTRIES } from '../components/Header';
@@ -20,7 +20,7 @@ function Row({
       <Icon size={19} className={`${iconColor} shrink-0`} />
       <span className="flex-1 text-[15px] font-medium text-slate-200">{label}</span>
       {badge && (
-        <span className="text-[9px] font-black text-white px-1.5 py-0.5 rounded bg-yellow-500 shrink-0">{badge}</span>
+        <span className="text-[9px] font-black text-white px-1.5 py-0.5 rounded bg-green-600 shrink-0">{badge}</span>
       )}
       {chevron && <ChevronRight size={18} className="text-slate-600 shrink-0" />}
     </div>
@@ -122,7 +122,7 @@ export default function Account() {
   const [authChecked, setAuthChecked] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
 
-  useSEO({ title: 'Tài khoản', description: 'Quản lý tài khoản Phim Tuổi Thơ của bạn.', url: '/profile', noIndex: true });
+  useSEO({ title: 'Tài khoản', description: 'Quản lý tài khoản Đảo Phim của bạn.', url: '/profile', noIndex: true });
 
   useEffect(() => {
     const u = onAuthChange(async (user) => {
@@ -139,14 +139,14 @@ export default function Account() {
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 pb-10">
       <div className="flex items-center gap-2 mb-5">
-        <User className="text-yellow-400" size={22} />
+        <User className="text-green-400" size={22} />
         <h1 className="text-xl font-black text-white">Tài khoản</h1>
       </div>
 
       {/* ── User card / Auth buttons ── */}
       {authChecked && !profile && (
         <div className="flex gap-3 mb-6">
-          <Link to="/auth" className="flex-1 flex items-center justify-center gap-2 bg-yellow-500 hover:bg-yellow-400 text-black font-black text-sm py-3.5 rounded-2xl transition-colors">
+          <Link to="/auth" className="flex-1 flex items-center justify-center gap-2 bg-green-500 hover:bg-green-400 text-black font-black text-sm py-3.5 rounded-2xl transition-colors">
             <User size={16} /> Đăng nhập
           </Link>
           <Link to="/auth" className="flex-1 flex items-center justify-center bg-white hover:bg-slate-100 text-slate-950 font-black text-sm py-3.5 rounded-2xl transition-colors">
@@ -165,8 +165,22 @@ export default function Account() {
             </div>
           </div>
 
+          {/* ── Số dư ví ── */}
+          <Link
+            to="/nap-tien"
+            className="flex items-center justify-between bg-green-500/10 border border-green-500/30 rounded-xl px-3.5 py-2.5 mb-3 hover:bg-green-500/15 transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <Wallet size={16} className="text-green-400 shrink-0" />
+              <span className="text-xs text-slate-300 font-medium">Số dư ví</span>
+            </div>
+            <span className="text-sm font-black text-green-400">
+              {(profile.balance || 0).toLocaleString('vi-VN')}đ
+            </span>
+          </Link>
+
           <div className="flex gap-2.5">
-            <Link to="/profile/edit" className="flex-1 text-center bg-transparent border border-yellow-500/50 text-yellow-400 font-bold text-sm py-2.5 rounded-xl hover:bg-yellow-500/10 transition-colors">
+            <Link to="/profile/edit" className="flex-1 text-center bg-transparent border border-green-500/50 text-green-400 font-bold text-sm py-2.5 rounded-xl hover:bg-green-500/10 transition-colors">
               Hồ sơ
             </Link>
             <button onClick={() => logout()} className="flex-1 bg-transparent border border-slate-700 text-slate-300 font-bold text-sm py-2.5 rounded-xl hover:bg-slate-800 transition-colors">
@@ -179,8 +193,10 @@ export default function Account() {
       {/* ── Danh sách mục ── */}
       <div className="bg-slate-900/40 border border-slate-800/60 rounded-2xl overflow-hidden mb-4">
         <Row icon={Bell} label="Thông báo" to="/profile/edit" />
+        <Row icon={Crown} label="Nâng cấp VIP · Chặn QC" to="/mua-vip" iconColor="text-amber-400" />
+        <Row icon={Wallet} label="Nạp thẻ" to="/nap-tien" iconColor="text-green-400" />
         <Row icon={LayoutGrid} label="Menu" onClick={() => setShowMenu(true)} />
-        <Row icon={Users} label="Xem chung" onClick={openWatchRoom} badge="NEW" iconColor="text-yellow-400" />
+        <Row icon={Users} label="Xem chung" onClick={openWatchRoom} badge="NEW" iconColor="text-green-400" />
         <Row icon={History} label="Đang xem" to="/history" />
         <Row icon={Bookmark} label="Danh sách phim của tôi" to="/favorites" />
         <Row icon={Heart} label="Yêu thích" to="/favorites" />

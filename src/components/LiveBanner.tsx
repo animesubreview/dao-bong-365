@@ -57,7 +57,7 @@ export default function LiveBanner() {
             )}
           </div>
 
-          <span className="shrink-0 hidden sm:flex items-center gap-1.5 bg-white text-slate-950 font-black text-xs md:text-sm px-4 py-2 rounded-full group-hover:bg-yellow-400 transition-colors">
+          <span className="shrink-0 hidden sm:flex items-center gap-1.5 bg-white text-slate-950 font-black text-xs md:text-sm px-4 py-2 rounded-full group-hover:bg-green-400 transition-colors">
             Xem ngay
           </span>
         </Link>

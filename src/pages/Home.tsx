@@ -8,20 +8,67 @@ import { useManualMovies, ManualMovie } from '../components/ManualMoviesSection'
 import { subscribeUpcomingMovies as subscribeOldUpcoming } from '../lib/manualMovies';
 import { subscribeUpcomingMovies, UpcomingMovie } from '../lib/upcomingMovies';
 import { subscribePinnedMovies, pinnedToMovie, PinnedMovie } from '../lib/pinnedMovies';
+import { subscribeBilingualMovies, bilingualToMovie, BilingualMovie } from '../lib/bilingualMovies';
 import { cn } from '../lib/utils';
 import { onAuthChange } from '../lib/auth';
-import { getHistory } from '../lib/history';
 import Banner from '../components/Banner';
-import { QualityBadge, DurationBadge } from '../components/MovieCard';
-
+import AdBanner from '../components/AdBanner';
 import LiveBanner from '../components/LiveBanner';
+import { RecentCommentsSection, TrendingMoviesSection } from '../components/CommunityWidgets';
 
 /* ─── helpers ─────────────────────────────────────────────────── */
 function dec(s: string) {
   return (s || '').replace(/&#039;/g,"'").replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"');
 }
+function stripHtml(s?: string) {
+  if (!s) return '';
+  return dec(s.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim());
+}
+
 
 /* ─── Badges ──────────────────────────────────────────────────── */
+function EpBadge({ ep }: { ep?: string }) {
+  if (!ep) return null;
+  const c = ep.match(/hoàn tất\s*\((\d+)\/(\d+)\)/i);
+  const n = ep.match(/tập\s*(\d+)/i);
+  const label = c ? `HT (${c[1]}/${c[2]})` : n ? `Tập ${n[1]}` : /^full$/i.test(ep.trim()) ? 'FULL' : /hoàn tất/i.test(ep) ? 'FULL' : '';
+  if (!label) return null;
+  return <span className="absolute top-1 right-1 text-[8px] font-black px-1.5 py-0.5 rounded bg-black/80 text-white z-10 leading-none">{label}</span>;
+}
+function LangBadge({ lang }: { lang?: string }) {
+  if (!lang) return null;
+  const l = lang.toLowerCase();
+  const label = l.includes('vietsub')||l.includes('phụ đề') ? 'P.ĐỀ' : l.includes('thuyết minh') ? 'T.MINH' : l.includes('lồng tiếng') ? 'L.TIẾNG' : null;
+  if (!label) return null;
+  return <span className={`text-[8px] font-black px-1.5 py-0.5 rounded text-white leading-none ${label==='P.ĐỀ'?'bg-red-600':label==='T.MINH'?'bg-blue-600':'bg-green-700'}`}>{label}</span>;
+}
+// Trả về TẤT CẢ badge ngôn ngữ+tập cùng lúc (vd: PĐ.4 + TM.4 + LT.4 nếu phim có đủ 3 bản)
+function langEpBadgeList(movie: Movie): { label: string; color: string }[] {
+  const ep = movie.episode_current || '';
+  const c = ep.match(/hoàn tất\s*\((\d+)\/(\d+)\)/i);
+  const n = ep.match(/tập\s*(\d+)/i);
+  const epNum = c ? c[2] : n ? n[1] : null;
+  const isFull = /^full$/i.test(ep.trim()) || /hoàn tất/i.test(ep);
+  const l = (movie.lang || '').toLowerCase();
+  const suffix = epNum ? `. ${epNum}` : isFull ? '. FULL' : '';
+  const list: { label: string; color: string }[] = [];
+  if (l.includes('vietsub') || l.includes('phụ đề')) list.push({ label: `PĐ${suffix}`, color: 'bg-pink-600' });
+  if (l.includes('thuyết minh')) list.push({ label: `TM${suffix}`, color: 'bg-emerald-600' });
+  if (l.includes('lồng tiếng')) list.push({ label: `LT${suffix}`, color: 'bg-blue-600' });
+  return list;
+}
+// Badge gộp ngôn ngữ + số tập, kiểu "PĐ. 4" "TM. 4" "LT. 4" — hiện TẤT CẢ cùng lúc, góc dưới-trái poster
+function LangEpBadge({ movie }: { movie: Movie }) {
+  const list = langEpBadgeList(movie);
+  if (!list.length) return null;
+  return (
+    <div className="absolute bottom-1.5 left-1.5 right-1.5 flex flex-wrap gap-1 z-10">
+      {list.map(b => (
+        <span key={b.label} className={`text-[9px] font-black text-white px-1.5 py-0.5 rounded-md leading-none ${b.color}`}>{b.label}</span>
+      ))}
+    </div>
+  );
+}
 
 /* ─── Card sizes ──────────────────────────────────────────────── */
 const CW = 'clamp(110px,30vw,155px)';
@@ -40,21 +87,18 @@ function MCard({ movie, pinned }: { movie: Movie; pinned?: boolean }) {
           style={{ opacity: ok ? 1 : 0, transition: 'opacity 500ms ease' }} />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/40 to-transparent" />
         {pinned && (
-          <div className="absolute bottom-1 left-1 flex items-center gap-0.5 bg-blue-500/90 text-white text-[9px] font-bold px-1.5 py-0.5 rounded z-10">
+          <div className="absolute top-1 left-1 flex items-center gap-0.5 bg-blue-500/90 text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
             📌 GHIM
           </div>
         )}
-        {/* Badge trên cùng: trái hồng (chất lượng+ngôn ngữ), phải tím (thời lượng/tập) */}
-        <div className="absolute top-1.5 left-1.5 right-1.5 flex items-start justify-between gap-1 z-10">
-          <QualityBadge movie={movie} />
-          <DurationBadge movie={movie} />
-        </div>
+        <EpBadge ep={movie.episode_current} />
+        <div className="absolute bottom-1 left-1"><LangBadge lang={movie.lang} /></div>
       </div>
       <div className="mt-1.5">
-        <div className="font-semibold text-[12px] text-slate-100 group-hover:text-yellow-400 transition-colors line-clamp-1">{dec(movie.name)}</div>
+        <div className="font-semibold text-[12px] text-slate-100 group-hover:text-green-400 transition-colors line-clamp-1">{dec(movie.name)}</div>
         <div className="text-[10px] text-slate-500 mt-0.5 flex items-center gap-1">
           <span className="truncate">{dec(movie.origin_name)}</span>
-          {movie.year && <span className="shrink-0 text-yellow-400/60">{movie.year}</span>}
+          {movie.year && <span className="shrink-0 text-green-400/50">{movie.year}</span>}
         </div>
       </div>
     </Link>
@@ -71,7 +115,7 @@ function ManualMCard({ movie }: { movie: ManualMovie }) {
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/40 to-transparent" />
       </div>
       <div className="mt-1.5">
-        <div className="font-semibold text-[12px] text-slate-100 group-hover:text-yellow-400 transition-colors line-clamp-1">{movie.name}</div>
+        <div className="font-semibold text-[12px] text-slate-100 group-hover:text-green-400 transition-colors line-clamp-1">{movie.name}</div>
         <div className="text-[10px] text-slate-500 mt-0.5 truncate">{movie.originName}</div>
       </div>
     </Link>
@@ -95,19 +139,19 @@ function UpcomingCard({ movie }: { movie: ManualMovie }) {
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" />
         {/* Release date badge */}
         {movie.releaseDate && (
-          <div className="absolute bottom-1.5 left-1 right-1 flex items-center gap-1 bg-yellow-500/90 rounded-md px-1.5 py-0.5 backdrop-blur-sm">
+          <div className="absolute bottom-1.5 left-1 right-1 flex items-center gap-1 bg-green-600/90 rounded-md px-1.5 py-0.5 backdrop-blur-sm">
             <Calendar size={9} className="text-slate-950 shrink-0" />
             <span className="text-[9px] font-black text-slate-950 truncate">{movie.releaseDate}</span>
           </div>
         )}
         {!movie.releaseDate && (
-          <div className="absolute top-1 right-1 bg-yellow-500 text-slate-950 text-[8px] font-black px-1.5 py-0.5 rounded">
+          <div className="absolute top-1 right-1 bg-green-600 text-slate-950 text-[8px] font-black px-1.5 py-0.5 rounded">
             SẮP RA
           </div>
         )}
       </div>
       <div className="mt-1.5">
-        <div className="font-semibold text-[12px] text-slate-100 group-hover:text-yellow-400 transition-colors line-clamp-1">{movie.name}</div>
+        <div className="font-semibold text-[12px] text-slate-100 group-hover:text-green-400 transition-colors line-clamp-1">{movie.name}</div>
         <div className="text-[10px] text-slate-500 mt-0.5 truncate">{movie.originName || movie.year}</div>
       </div>
     </Link>
@@ -150,18 +194,18 @@ function UpcomingNewCard({ movie }: { movie: UpcomingMovie }) {
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" />
         {/* Release date badge */}
         {movie.releaseDate ? (
-          <div className="absolute bottom-1.5 left-1 right-1 flex items-center gap-1 bg-yellow-500/90 rounded-md px-1.5 py-0.5 backdrop-blur-sm">
+          <div className="absolute bottom-1.5 left-1 right-1 flex items-center gap-1 bg-green-600/90 rounded-md px-1.5 py-0.5 backdrop-blur-sm">
             <Calendar size={9} className="text-slate-950 shrink-0" />
             <span className="text-[9px] font-black text-slate-950 truncate">{movie.releaseDate}</span>
           </div>
         ) : (
-          <div className="absolute top-1 right-1 bg-yellow-500 text-slate-950 text-[8px] font-black px-1.5 py-0.5 rounded">
+          <div className="absolute top-1 right-1 bg-green-600 text-slate-950 text-[8px] font-black px-1.5 py-0.5 rounded">
             SẮP RA
           </div>
         )}
       </div>
       <div className="mt-1.5">
-        <div className="font-semibold text-[12px] text-slate-100 group-hover:text-yellow-400 transition-colors line-clamp-1">{movie.name}</div>
+        <div className="font-semibold text-[12px] text-slate-100 group-hover:text-green-400 transition-colors line-clamp-1">{movie.name}</div>
         <div className="text-[10px] text-slate-500 mt-0.5 truncate">{movie.originName || movie.year}</div>
       </div>
     </div>
@@ -172,23 +216,31 @@ function Top10Card({ movie, rank }: { movie: Movie; rank: number }) {
   const [ok, setOk] = useState(false);
   return (
     <Link to={`/phim/${movie.slug}`} className="group shrink-0 block" style={{ width: CW, scrollSnapAlign:'start' }}>
-      <div className="relative rounded-lg overflow-hidden bg-slate-800" style={{ aspectRatio:'2/3' }}>
+      <div className="relative rounded-2xl overflow-hidden bg-slate-800 shadow-lg" style={{ aspectRatio:'2/3' }}>
         <div className="absolute inset-0 bg-slate-800" />
         <img src={movieApi.getImageUrl(movie.poster_url||movie.thumb_url)} alt={dec(movie.name)}
           loading="lazy" referrerPolicy="no-referrer" onLoad={() => setOk(true)}
           className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           style={{ opacity: ok ? 1 : 0, transition: 'opacity 500ms ease' }} />
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" />
-        <div className="absolute top-1.5 left-1.5 right-1.5 flex items-start justify-between gap-1 z-10">
-          <QualityBadge movie={movie} />
-          <DurationBadge movie={movie} />
-        </div>
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent" />
+        <LangEpBadge movie={movie} />
       </div>
-      <div className="flex items-start gap-1.5 mt-1">
-        <span className={cn('text-3xl font-black leading-none shrink-0 mt-0.5', rank<=3?'text-yellow-400':'text-slate-600')} style={{fontStyle:'italic'}}>{rank}</span>
-        <div className="flex-1 min-w-0">
-          <div className="font-semibold text-[12px] text-slate-100 group-hover:text-yellow-400 transition-colors line-clamp-2 leading-snug">{dec(movie.name)}</div>
-          {movie.year && <div className="text-[10px] text-slate-500 mt-0.5">{movie.year}</div>}
+      {/* Số hạng + thông tin phim — nằm hẳn bên dưới poster, KHÔNG đè lên tiêu đề */}
+      <div className="flex items-start gap-2 mt-2">
+        <span
+          className={cn('text-3xl md:text-4xl font-black leading-none shrink-0 select-none', rank<=3?'text-green-400':'text-slate-600')}
+          style={{ fontStyle:'italic' }}
+        >{rank}</span>
+        <div className="min-w-0 pt-0.5">
+          <div className="font-bold text-[13px] text-slate-100 group-hover:text-green-400 transition-colors line-clamp-1 leading-snug">{dec(movie.name)}</div>
+          {movie.origin_name && <div className="text-[11px] text-slate-500 mt-0.5 truncate">{dec(movie.origin_name)}</div>}
+          {(movie.year || movie.quality) && (
+            <div className="text-[10px] text-slate-500 mt-1 flex items-center gap-1.5">
+              {movie.year && <span>{movie.year}</span>}
+              {movie.year && movie.quality && <span className="w-0.5 h-0.5 rounded-full bg-slate-600" />}
+              {movie.quality && <span>{movie.quality}</span>}
+            </div>
+          )}
         </div>
       </div>
     </Link>
@@ -215,12 +267,12 @@ function HRow({ children }: { children: React.ReactNode }) {
   const scroll = (d: 'left'|'right') => ref.current?.scrollBy({ left: d==='right'?500:-500, behavior:'smooth' });
   return (
     <div className="relative group/row">
-      {canL && <button onClick={() => scroll('left')} className="absolute left-0 top-[35%] -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-slate-800/95 border border-slate-700 text-white flex items-center justify-center opacity-0 group-hover/row:opacity-100 transition-all hover:bg-yellow-500 hover:text-slate-950 shadow-xl -translate-x-1/2"><ChevronLeft size={16}/></button>}
+      {canL && <button onClick={() => scroll('left')} className="absolute left-0 top-[35%] -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-slate-800/95 border border-slate-700 text-white flex items-center justify-center opacity-0 group-hover/row:opacity-100 transition-all hover:bg-green-500 hover:text-slate-950 shadow-xl -translate-x-1/2"><ChevronLeft size={16}/></button>}
       <div ref={ref} className="flex gap-2 overflow-x-auto -mx-4 md:-mx-0 px-4 md:px-0"
         style={{ scrollSnapType:'x mandatory', scrollbarWidth:'none', msOverflowStyle:'none', WebkitOverflowScrolling:'touch' }}>
         {children}
       </div>
-      {canR && <button onClick={() => scroll('right')} className="absolute right-0 top-[35%] -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-slate-800/95 border border-slate-700 text-white flex items-center justify-center opacity-0 group-hover/row:opacity-100 transition-all hover:bg-yellow-500 hover:text-slate-950 shadow-xl translate-x-1/2"><ChevronRight size={16}/></button>}
+      {canR && <button onClick={() => scroll('right')} className="absolute right-0 top-[35%] -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-slate-800/95 border border-slate-700 text-white flex items-center justify-center opacity-0 group-hover/row:opacity-100 transition-all hover:bg-green-500 hover:text-slate-950 shadow-xl translate-x-1/2"><ChevronRight size={16}/></button>}
     </div>
   );
 }
@@ -242,15 +294,13 @@ function ContinueWatchingSection() {
   const [history, setHistory] = useState<any[]>([]);
 
   useEffect(() => {
-    const unsub = onAuthChange(async (user) => {
+    const unsub = onAuthChange((user) => {
       setLoggedIn(!!user);
       if (user) {
         try {
-          const saved = await getHistory(user.uid, 12);
-          setHistory(saved);
+          const saved = JSON.parse(localStorage.getItem('watchHistory') || '[]');
+          setHistory(Array.isArray(saved) ? saved.slice(0, 12) : []);
         } catch { setHistory([]); }
-      } else {
-        setHistory([]);
       }
     });
     return () => unsub();
@@ -279,14 +329,14 @@ function ContinueWatchingSection() {
                 if (item.poster_url && !t.src.includes(item.poster_url)) {
                   t.src = movieApi.getImageUrl(item.poster_url);
                 } else {
-                  t.src = '/assets/logo-phimtuoitho.png';
+                  t.src = '/assets/logo-daophim.png';
                 }
               }}
               className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/10 to-transparent" />
             <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-              <div className="w-10 h-10 rounded-full bg-yellow-500/90 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-full bg-green-500/90 flex items-center justify-center">
                 <Play size={18} className="text-white fill-current" />
               </div>
             </div>
@@ -306,24 +356,14 @@ function ContinueWatchingSection() {
   );
 }
 
-/* ─── SecHeader — tiêu đề trắng, gạch chân vàng, nút "Tất Cả" viên vàng + "Xem thêm »" (theo mẫu Phim Tuổi Thơ) ── */
-function SecHeader({ title, to, label='Tất Cả' }: { title:string; to?:string; label?:string }) {
+/* ─── SecHeader ───────────────────────────────────────────────── */
+function SecHeader({ title, to, label='Tất cả' }: { title:string; to?:string; label?:string }) {
   return (
-    <div className="flex items-end justify-between mb-3 gap-2">
-      <div className="min-w-0">
-        <h2 className="text-base sm:text-lg font-black text-white leading-tight truncate">{title}</h2>
-        <span className="block w-9 h-[3px] rounded-full bg-yellow-400 mt-1.5" />
-      </div>
-      {to && (
-        <div className="flex items-center gap-2.5 shrink-0">
-          <Link to={to} className="text-[11px] font-black text-slate-950 bg-yellow-400 hover:bg-yellow-300 px-3.5 py-[7px] rounded-full transition-colors whitespace-nowrap">
-            {label}
-          </Link>
-          <Link to={to} className="hidden sm:inline text-xs font-extrabold text-yellow-400 hover:text-yellow-300 transition-colors whitespace-nowrap">
-            Xem thêm »
-          </Link>
-        </div>
-      )}
+    <div className="flex items-center justify-between mb-3">
+      <h2 className="text-base md:text-lg font-black flex items-center gap-2.5 tracking-tight text-white">
+        <span className="w-1 h-4 md:h-5 rounded-full inline-block shrink-0 bg-white" />{title}
+      </h2>
+      {to && <Link to={to} className="flex items-center gap-1 text-xs font-semibold text-slate-400 hover:text-green-400 transition-colors bg-slate-800/60 border border-slate-700/60 px-2.5 py-1.5 rounded-full shrink-0">{label} <ChevronRight size={11}/></Link>}
     </div>
   );
 }
@@ -340,10 +380,44 @@ function SkeletonRow() {
   );
 }
 
+/* ─── Thẻ lưới ngang 2 cột (poster 16:10, badge tập + ngôn ngữ, mô tả ngắn) ── */
+function GridLandscapeCard({ movie }: { movie: Movie }) {
+  const [ok, setOk] = useState(false);
+  return (
+    <Link to={`/phim/${movie.slug}`} className="group block min-w-0">
+      <div className="relative rounded-xl overflow-hidden bg-slate-800" style={{ aspectRatio: '16/10' }}>
+        <div className="absolute inset-0 bg-slate-800" />
+        <img src={movieApi.getImageUrl(movie.thumb_url || movie.poster_url)} alt={dec(movie.name)}
+          loading="lazy" referrerPolicy="no-referrer" onLoad={() => setOk(true)}
+          className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          style={{ opacity: ok ? 1 : 0, transition: 'opacity 500ms ease' }} />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-transparent to-transparent" />
+        <EpBadge ep={movie.episode_current} />
+        <LangEpBadge movie={movie} />
+      </div>
+      <div className="mt-2 min-w-0">
+        <div className="font-bold text-[13px] text-slate-100 group-hover:text-green-400 transition-colors line-clamp-1">{dec(movie.name)}</div>
+        <div className="text-[11px] text-slate-500 mt-0.5 truncate">{dec(movie.origin_name) || (movie.year ? String(movie.year) : '')}</div>
+      </div>
+    </Link>
+  );
+}
+
+function GridSkeleton() {
+  return (
+    <div className="grid grid-cols-2 gap-3">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div key={i} className="rounded-xl bg-slate-800/50 animate-pulse" style={{ aspectRatio: '16/10' }} />
+      ))}
+    </div>
+  );
+}
+
 /* ─── LazySection — scroll trigger, 500ms delay, KHÔNG bị đen ── */
-function LazySection({ title, to, fetch: fetchFn, label }: {
+function LazySection({ title, to, fetch: fetchFn, label, variant = 'row' }: {
   title: string; to: string; label?: string;
   fetch: () => Promise<Movie[]>;
+  variant?: 'row' | 'grid';
 }) {
   const [movies, setMovies] = useState<Movie[] | null>(null); // null = chưa fetch
   const [fetching, setFetching] = useState(false);
@@ -372,49 +446,253 @@ function LazySection({ title, to, fetch: fetchFn, label }: {
     // min-height cố định → layout KHÔNG bao giờ collapse → không bị đen
     <section ref={ref} style={{ minHeight: SKELETON_H + 60 }}>
       <SecHeader title={title} to={to} label={label} />
-      {movies && movies.length > 0
-        ? <HRow>{movies.map(m => <MCard key={m._id} movie={m} />)}</HRow>
-        : <SkeletonRow />
-      }
+      {variant === 'grid' ? (
+        movies && movies.length > 0
+          ? <div className="grid grid-cols-2 gap-x-3 gap-y-4">{movies.slice(0, 4).map(m => <GridLandscapeCard key={m._id} movie={m} />)}</div>
+          : <GridSkeleton />
+      ) : (
+        movies && movies.length > 0
+          ? <HRow>{movies.map(m => <MCard key={m._id} movie={m} />)}</HRow>
+          : <SkeletonRow />
+      )}
     </section>
   );
 }
 
-/* ─── Interest cards — chỉ hoạt hình (Phim Tuổi Thơ ưu tiên hoạt hình) ──── */
+/* ─── Interest cards ──────────────────────────────────────────── */
 const INTEREST = [
-  { label:'Anime Nhật', sub:'Hoạt Hình', to:'/type/hoat-hinh', g:'from-purple-600/70 via-blue-500/60 to-blue-400/50' },
-  { label:'Hoạt Hình Trung', sub:'Hoa Ngữ', to:'/type/hoat-hinh', g:'from-pink-500/70 via-rose-400/60 to-pink-300/50' },
-  { label:'Hoạt Hình Âu Mỹ', sub:'Cực Hay', to:'/type/hoat-hinh', g:'from-blue-500/70 via-cyan-400/60 to-teal-400/50' },
-  { label:'Hoạt Hình Bộ', sub:'Trọn Bộ', to:'/type/hoat-hinh', g:'from-emerald-500/70 via-teal-400/60 to-cyan-400/50' },
-  { label:'Hoạt Hình Chiếu Rạp', sub:'Mới Nhất', to:'/type/hoat-hinh', g:'from-yellow-600/70 via-orange-400/60 to-yellow-400/50' },
-  { label:'Hoạt Hình Việt', sub:'Vietsub', to:'/type/hoat-hinh', g:'from-indigo-500/70 via-purple-400/60 to-violet-400/50' },
+  { label:'Hàn Quốc', sub:'Phim Bộ', to:'/type/phim-bo', g:'from-purple-600/70 via-blue-500/60 to-blue-400/50' },
+  { label:'Trung Quốc', sub:'Hoa Ngữ', to:'/type/phim-bo', g:'from-pink-500/70 via-rose-400/60 to-pink-300/50' },
+  { label:'Thái Lan', sub:'Cực Hay', to:'/type/phim-le', g:'from-blue-500/70 via-cyan-400/60 to-teal-400/50' },
+  { label:'Sitcom', sub:'TV Shows', to:'/type/tv-shows', g:'from-emerald-500/70 via-teal-400/60 to-cyan-400/50' },
+  { label:'Âu Mỹ', sub:'Hollywood', to:'/type/phim-le', g:'from-green-600/70 via-orange-400/60 to-yellow-400/50' },
+  { label:'Hoạt Hình', sub:'Anime', to:'/type/hoat-hinh', g:'from-indigo-500/70 via-purple-400/60 to-violet-400/50' },
 ];
 
-/* ─── Top tabs config — chỉ hoạt hình ───────────────────────────── */
-const TOP_TABS = ['Top ngày','Top tuần','Top tháng','Hoạt hình bộ','Hoạt hình lẻ'];
-const TOP_TITLES = ['Top 10 Hoạt Hình Hôm Nay','Top 10 Hoạt Hình Tuần Này','Top 10 Hoạt Hình Tháng Này','Top 10 Hoạt Hình Bộ','Top 10 Hoạt Hình Lẻ'];
-const TOP_SRCS = [null,'hoat-hinh-2','hoat-hinh-3','hoat-hinh-bo','hoat-hinh-le'] as const;
+/* ─── Top tabs config ─────────────────────────────────────────── */
+const TOP_TABS = ['Top ngày','Top tuần','Top tháng','Top bộ','Top lẻ'];
+const TOP_TITLES = ['Top 10 Hôm Nay','Top 10 Tuần Này','Top 10 Tháng Này','Top 10 Phim Bộ','Top 10 Phim Lẻ'];
+const TOP_SRCS = [null,'phim-moi','phim-chieu-rap','phim-bo','phim-le'] as const;
 
-/* ─── Tabs khối "Gợi ý phim truyền hình" (phim bộ hoạt hình nhiều tập) ── */
-const SERIES_TABS = ['Phổ Biến','Mới Cập Nhật','Hoàn Thành','Đang Chiếu'];
-const SERIES_TITLES = ['Phim Truyền Hình Hoạt Hình Nổi Bật','Phim Truyền Hình Hoạt Hình Mới Cập Nhật','Phim Truyền Hình Hoạt Hình Hoàn Thành','Phim Truyền Hình Hoạt Hình Đang Chiếu'];
-const SERIES_SRCS = [null,'moi-cap-nhat','hoan-thanh','dang-chieu'] as const;
-
-/* ─── Tất cả lazy sections — chỉ nguồn hoạt hình (KKPhim/OPhim/NguonC ưu tiên hoạt hình) ── */
+/* ─── All lazy sections từ KKPhim API ────────────────────────── */
 const LAZY_SECTIONS = [
-  { title:'Hoạt Hình Nhật Bản (Anime)', to:'/type/hoat-hinh', fetch: () => movieApi.filterMovies({ type:'hoat-hinh', country:'nhat-ban', page:1, limit:24 }).then(r=>r.items) },
-  { title:'Hoạt Hình Âu Mỹ',            to:'/type/hoat-hinh', fetch: () => movieApi.filterMovies({ type:'hoat-hinh', country:'au-my', page:1, limit:24 }).then(r=>r.items) },
-  { title:'Hoạt Hình Trung Quốc',       to:'/type/hoat-hinh', fetch: () => movieApi.filterMovies({ type:'hoat-hinh', country:'trung-quoc', page:1, limit:24 }).then(r=>r.items) },
-  { title:'Hoạt Hình Trọn Bộ',          to:'/type/hoat-hinh', fetch: () => movieApi.getMoviesByType('hoat-hinh',2,24).then(r=>r.items) },
-  { title:'Hoạt Hình Mới Cập Nhật',     to:'/type/hoat-hinh', fetch: () => movieApi.getMoviesByType('hoat-hinh',3,24).then(r=>r.items) },
-  { title:'Hoạt Hình Hài Hước',         to:'/type/hoat-hinh', fetch: () => movieApi.filterMovies({ type:'hoat-hinh', category:'hai-huoc', page:1, limit:24 }).then(r=>r.items) },
-  { title:'Hoạt Hình Gia Đình',         to:'/type/hoat-hinh', fetch: () => movieApi.filterMovies({ type:'hoat-hinh', category:'gia-dinh', page:1, limit:24 }).then(r=>r.items) },
-  { title:'Hoạt Hình Phiêu Lưu',        to:'/type/hoat-hinh', fetch: () => movieApi.filterMovies({ type:'hoat-hinh', category:'phieu-luu', page:1, limit:24 }).then(r=>r.items) },
-  { title:'Hoạt Hình Siêu Anh Hùng',    to:'/type/hoat-hinh', fetch: () => movieApi.filterMovies({ type:'hoat-hinh', category:'hanh-dong', page:1, limit:24 }).then(r=>r.items) },
-  { title:'Hoạt Hình Học Đường',        to:'/type/hoat-hinh', fetch: () => movieApi.filterMovies({ type:'hoat-hinh', category:'hoc-duong', page:1, limit:24 }).then(r=>r.items) },
-  { title:'Hoạt Hình Kinh Điển Tuổi Thơ',to:'/type/hoat-hinh',fetch: () => movieApi.getMoviesByType('hoat-hinh',4,24).then(r=>r.items) },
-  { title:'Hoạt Hình Việt Nam',         to:'/type/hoat-hinh', fetch: () => movieApi.filterMovies({ type:'hoat-hinh', country:'viet-nam', page:1, limit:24 }).then(r=>r.items) },
+  { title:'Phim Hàn Quốc',    to:'/type/phim-bo',       fetch: () => movieApi.searchMovies('hàn quốc',1,24).then(r=>r.items) },
+  { title:'Phim Trung Quốc',  to:'/type/phim-bo',       fetch: () => movieApi.searchMovies('trung quốc',1,24).then(r=>r.items), variant:'grid' as const },
+  { title:'Phim Hành Động',   to:'/type/phim-le',       fetch: () => movieApi.searchMovies('hành động',1,24).then(r=>r.items) },
+  { title:'Phim Bộ Đang Chiếu',to:'/type/phim-bo',      fetch: () => movieApi.getMoviesByType('phim-bo',1,24).then(r=>r.items) },
+  { title:'Phim Lẻ Mới',      to:'/type/phim-le',       fetch: () => movieApi.getMoviesByType('phim-le',1,24).then(r=>r.items) },
+  { title:'Phim Hoạt Hình',   to:'/type/hoat-hinh',     fetch: () => movieApi.getMoviesByType('hoat-hinh',1,24).then(r=>r.items) },
+  { title:'Tâm Lý - Tình Cảm',to:'/type/phim-bo',       fetch: () => movieApi.searchMovies('tình cảm',1,24).then(r=>r.items) },
+  { title:'Phim Kinh Dị',     to:'/type/phim-le',       fetch: () => movieApi.searchMovies('kinh dị',1,24).then(r=>r.items) },
+  { title:'Phim Âu Mỹ',       to:'/type/phim-le',       fetch: () => movieApi.filterMovies({ type:'phim-le', country:'au-my', page:1, limit:24 }).then(r=>r.items) },
+  { title:'Phim Nhật Bản',    to:'/type/phim-bo',       fetch: () => movieApi.searchMovies('nhật bản',1,24).then(r=>r.items) },
+  { title:'Phim Thái Lan',    to:'/type/phim-bo',       fetch: () => movieApi.searchMovies('thái lan',1,24).then(r=>r.items) },
+  { title:'Phim Viễn Tưởng',  to:'/type/phim-le',       fetch: () => movieApi.filterMovies({ type:'phim-le', category:'vien-tuong', page:1, limit:24 }).then(r=>r.items) },
+  { title:'Phim Hài Hước',    to:'/type/phim-le',       fetch: () => movieApi.searchMovies('hài hước',1,24).then(r=>r.items) },
+  { title:'TV Shows',          to:'/type/tv-shows',      fetch: () => movieApi.getMoviesByType('tv-shows',1,24).then(r=>r.items) },
+  { title:'Phim Hoạt Hình Nhiều Người Xem',to:'/type/hoat-hinh',fetch: () => movieApi.getMoviesByType('hoat-hinh',2,24).then(r=>r.items) },
+  { title:'Phim Cổ Trang',    to:'/type/phim-bo',       fetch: () => movieApi.searchMovies('cổ trang',1,24).then(r=>r.items) },
+  { title:'Phim Hình Sự',     to:'/type/phim-le',       fetch: () => movieApi.searchMovies('hình sự',1,24).then(r=>r.items) },
 ];
+
+/* ─── "Phim Mới" — carousel nổi bật dạng thẻ bo góc + chấm phân trang ─── */
+function NewMovieSpotlight({ movies }: { movies: Movie[] }) {
+  const [idx, setIdx] = useState(0);
+  const [detailMap, setDetailMap] = useState<Record<string, Movie>>({});
+  const list = movies.slice(0, 8);
+
+  // ── Vuốt (touch) / kéo chuột (mouse) để chuyển slide ─────────────
+  const dragStartX = useRef<number | null>(null);
+  const dragDeltaX = useRef(0);
+  const dragged = useRef(false);
+
+  const goNext = useCallback(() => setIdx(i => (i + 1) % Math.max(list.length, 1)), [list.length]);
+  const goPrev = useCallback(() => setIdx(i => (i - 1 + Math.max(list.length, 1)) % Math.max(list.length, 1)), [list.length]);
+
+  const dragStart = (x: number) => { dragStartX.current = x; dragDeltaX.current = 0; dragged.current = false; };
+  const dragMove = (x: number) => {
+    if (dragStartX.current == null) return;
+    dragDeltaX.current = x - dragStartX.current;
+    if (Math.abs(dragDeltaX.current) > 8) dragged.current = true;
+  };
+  const dragEnd = () => {
+    const dx = dragDeltaX.current;
+    dragStartX.current = null;
+    if (Math.abs(dx) > 40) { dx < 0 ? goNext() : goPrev(); }
+  };
+  // Chặn click điều hướng (Link) nếu vừa mới kéo/vuốt (tránh mở nhầm phim khi lướt)
+  const guardClick = (e: React.MouseEvent) => { if (dragged.current) { e.preventDefault(); e.stopPropagation(); } };
+
+  useEffect(() => {
+    const missing = list.filter(m => !detailMap[m.slug]);
+    if (!missing.length) return;
+    let cancelled = false;
+    Promise.all(missing.map(m => movieApi.getMovieDetail(m.slug).then(r => ({ slug: m.slug, movie: r?.movie })).catch(() => null)))
+      .then(results => {
+        if (cancelled) return;
+        setDetailMap(prev => {
+          const next = { ...prev };
+          results.forEach(r => { if (r?.movie) next[r.slug] = r.movie; });
+          return next;
+        });
+      });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [movies]);
+
+  useEffect(() => {
+    if (!list.length) return;
+    const t = setInterval(() => setIdx(i => (i + 1) % list.length), 7000);
+    return () => clearInterval(t);
+  }, [list.length]);
+
+  if (!list.length) return null;
+  const base = list[idx];
+  const movie = detailMap[base.slug] || base;
+  const synopsis = stripHtml(movie.content);
+
+  return (
+    <section>
+      <SecHeader title="Phim Mới" to="/type/phim-moi" label="Xem thêm" />
+      <div
+        className="relative rounded-2xl overflow-hidden bg-slate-900 border border-slate-800/80 select-none"
+        onTouchStart={e => dragStart(e.touches[0].clientX)}
+        onTouchMove={e => dragMove(e.touches[0].clientX)}
+        onTouchEnd={dragEnd}
+        onMouseDown={e => dragStart(e.clientX)}
+        onMouseMove={e => { if (dragStartX.current != null) dragMove(e.clientX); }}
+        onMouseUp={dragEnd}
+        onMouseLeave={() => { if (dragStartX.current != null) dragEnd(); }}
+      >
+        <Link to={`/phim/${movie.slug}`} onClick={guardClick} onClickCapture={guardClick} className="block relative" style={{ aspectRatio: '16/9' }} draggable={false}>
+          <img src={movieApi.getImageUrl(movie.thumb_url || movie.poster_url)} alt={dec(movie.name)}
+            referrerPolicy="no-referrer" loading="lazy" draggable={false}
+            className="absolute inset-0 w-full h-full object-cover pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/10 to-transparent" />
+          <EpBadge ep={movie.episode_current} />
+        </Link>
+        {/* Mũi tên điều hướng — chỉ hiện trên PC (hover), mobile dùng vuốt */}
+        {list.length > 1 && (
+          <>
+            <button onClick={goPrev} aria-label="Phim trước"
+              className="hidden md:flex absolute left-2 top-[38%] -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-slate-950/70 hover:bg-slate-950/90 border border-slate-700 text-white items-center justify-center transition-colors">
+              <ChevronLeft size={18} />
+            </button>
+            <button onClick={goNext} aria-label="Phim tiếp theo"
+              className="hidden md:flex absolute right-2 top-[38%] -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-slate-950/70 hover:bg-slate-950/90 border border-slate-700 text-white items-center justify-center transition-colors">
+              <ChevronRight size={18} />
+            </button>
+          </>
+        )}
+        <div className="p-4">
+          <h3 className="text-lg md:text-xl font-black text-white line-clamp-1">{dec(movie.name)}</h3>
+          {movie.origin_name && <p className="text-orange-400 text-xs md:text-sm font-bold mt-0.5 line-clamp-1">{dec(movie.origin_name)}</p>}
+          <div className="flex flex-wrap items-center gap-1.5 mt-2.5">
+            {movie.quality && <span className="text-[10px] font-black bg-teal-400 text-slate-950 px-2 py-0.5 rounded-md">{movie.quality}</span>}
+            {movie.year && <span className="text-[10px] font-bold border border-slate-600 text-slate-300 px-2 py-0.5 rounded-md">{movie.year}</span>}
+            {movie.time && <span className="text-[10px] font-bold border border-slate-600 text-slate-300 px-2 py-0.5 rounded-md">{dec(movie.time)}</span>}
+          </div>
+          {synopsis && <p className="text-slate-400 text-xs leading-relaxed line-clamp-2 mt-2.5">{synopsis}</p>}
+          <div className="flex justify-center gap-1.5 mt-4">
+            {list.map((_, i) => (
+              <button key={i} onClick={() => setIdx(i)} aria-label={`Slide ${i + 1}`}
+                className={cn('h-1.5 rounded-full transition-all', i === idx ? 'w-6 bg-orange-400' : 'w-1.5 bg-slate-700 hover:bg-slate-600')} />
+            ))}
+          </div>
+        </div>
+      </div>
+
+    </section>
+  );
+}
+
+/* ─── "Phim Song Ngữ" — banner gradient + hàng thẻ nghiêng, lọc theo dữ liệu thật ── */
+function BilingualCard({ movie }: { movie: Movie }) {
+  const [ok, setOk] = useState(false);
+  return (
+    <Link to={`/phim/${movie.slug}`} className="group shrink-0 block" style={{ width: CW, scrollSnapAlign: 'start' }}>
+      <div className="relative rounded-lg overflow-hidden bg-slate-800 transition-transform duration-300 group-hover:-translate-y-1" style={{ aspectRatio: '2/3' }}>
+        <div className="absolute inset-0 bg-slate-800" />
+        <img src={movieApi.getImageUrl(movie.poster_url || movie.thumb_url)} alt={dec(movie.name)}
+          loading="lazy" referrerPolicy="no-referrer" onLoad={() => setOk(true)}
+          className="absolute inset-0 w-full h-full object-cover"
+          style={{ opacity: ok ? 1 : 0, transition: 'opacity 500ms ease' }} />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent" />
+        <span className="absolute top-1.5 left-1.5 right-1.5 text-center text-[8px] font-black bg-gradient-to-r from-fuchsia-500 to-violet-500 text-white px-1 py-0.5 rounded leading-none">
+          SONG NGỮ
+        </span>
+        <LangEpBadge movie={movie} />
+      </div>
+      <div className="mt-1.5">
+        <div className="font-semibold text-[12px] text-slate-100 group-hover:text-green-400 transition-colors line-clamp-1">{dec(movie.name)}</div>
+        <div className="text-[10px] text-slate-500 mt-0.5 truncate">{dec(movie.origin_name)}</div>
+      </div>
+    </Link>
+  );
+}
+
+function BilingualSection({ movies }: { movies: Movie[] }) {
+  // Danh sách này do admin tự tìm & thêm tay ở trang Admin (mục "Phim Song Ngữ"),
+  // không lọc tự động theo movie.lang nữa.
+  if (!movies.length) return null;
+  return (
+    <section className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-indigo-950 via-slate-900 to-slate-950 border border-slate-800/80 p-4 md:p-6">
+      <h2 className="text-lg md:text-2xl font-black text-white leading-tight">
+        Phim Song Ngữ <span className="bg-gradient-to-r from-orange-400 to-yellow-300 bg-clip-text text-transparent">luyện nghe mượt hơn</span>
+      </h2>
+      <p className="text-slate-400 text-[11px] md:text-sm mt-1.5 max-w-xl">
+        Tuyển chọn những phim có phụ đề + thuyết minh/lồng tiếng — dễ theo dõi, hợp để vừa giải trí vừa luyện nghe.
+      </p>
+      <Link to="/type/phim-bo" className="inline-flex items-center gap-1 bg-white text-slate-900 font-bold text-xs px-4 py-2 rounded-full mt-3.5">
+        Xem tất cả <ChevronRight size={13} />
+      </Link>
+      <div className="mt-4">
+        <HRow>{movies.map(m => <BilingualCard key={m._id} movie={m} />)}</HRow>
+      </div>
+    </section>
+  );
+}
+
+/* ─── "Phim Việt Mới Nhất" — mọi thẻ đều là banner ngang, poster nhỏ chồng góc dưới-trái ── */
+function VietBannerCard({ movie }: { movie: Movie }) {
+  const [ok, setOk] = useState(false);
+  return (
+    <Link to={`/phim/${movie.slug}`} className="group shrink-0 block" style={{ width: 'min(78vw,360px)', scrollSnapAlign: 'start' }}>
+      <div className="relative rounded-xl overflow-hidden bg-slate-800" style={{ aspectRatio: '16/9' }}>
+        <div className="absolute inset-0 bg-slate-800" />
+        <img src={movieApi.getImageUrl(movie.thumb_url || movie.poster_url)} alt={dec(movie.name)}
+          loading="lazy" referrerPolicy="no-referrer" onLoad={() => setOk(true)}
+          className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          style={{ opacity: ok ? 1 : 0, transition: 'opacity 500ms ease' }} />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/30 via-transparent to-transparent" />
+        <EpBadge ep={movie.episode_current} />
+        {/* Poster nhỏ chồng lên góc dưới-trái, xoay nhẹ — hiệu ứng "xếp chồng ảnh" */}
+        <img src={movieApi.getImageUrl(movie.poster_url)} alt="" referrerPolicy="no-referrer"
+          className="absolute -bottom-3 left-2.5 w-11 h-16 rounded-md object-cover border-2 border-slate-950 shadow-lg -rotate-6 group-hover:rotate-0 transition-transform duration-300 z-10" />
+      </div>
+      <div className="mt-3.5 pl-1">
+        <div className="font-black text-white text-sm line-clamp-1 group-hover:text-green-400 transition-colors">{dec(movie.name)}</div>
+        {movie.origin_name && <div className="text-green-400 text-[11px] font-semibold line-clamp-1 mt-0.5">{dec(movie.origin_name)}</div>}
+        <div className="text-slate-500 text-[10px] mt-1 truncate">
+          {[movie.episode_current, movie.year, movie.time].filter(Boolean).map(v => dec(String(v))).join(' • ')}
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+function VietFeaturedSection({ movies }: { movies: Movie[] }) {
+  if (!movies.length) return null;
+  return (
+    <section>
+      <SecHeader title="Phim Việt Mới Nhất" to="/type/phim-bo" label="Xem tất cả" />
+      <div className="flex gap-4 overflow-x-auto -mx-4 md:-mx-0 px-4 md:px-0 pb-1"
+        style={{ scrollSnapType: 'x mandatory', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+        {movies.slice(0, 10).map(m => <VietBannerCard key={m._id} movie={m} />)}
+      </div>
+    </section>
+  );
+}
 
 /* ════════════════════════════════════════════════════════════════
    MAIN HOME
@@ -425,12 +703,9 @@ export default function Home() {
   const [topTabMovies, setTopTabMovies] = useState<Movie[]>([]);
   const [topTabLoading, setTopTabLoading] = useState(false);
   const [topTab, setTopTab] = useState(0);
-  const [seriesTop10, setSeriesTop10] = useState<Movie[]>([]);
-  const [seriesTabMovies, setSeriesTabMovies] = useState<Movie[]>([]);
-  const [seriesTabLoading, setSeriesTabLoading] = useState(false);
-  const [seriesTab, setSeriesTab] = useState(0);
   const [cinema, setCinema] = useState<Movie[]>([]);
   const [newUpdates, setNewUpdates] = useState<Movie[]>([]);
+  const [vietMovies, setVietMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(true);
   const manualMovies = useManualMovies();
   const upcomingMovies = useUpcomingMoviesHook();
@@ -443,8 +718,16 @@ export default function Home() {
     return unsub;
   }, []);
 
+  // Phim Song Ngữ - admin tự tìm & thêm tay ở trang Admin
+  const [bilingualMovies, setBilingualMovies] = useState<BilingualMovie[]>([]);
+  useEffect(() => {
+    const unsub = subscribeBilingualMovies(setBilingualMovies);
+    return unsub;
+  }, []);
+
   useSEO({
-    description: 'Phim Tuổi Thơ - Xem phim hoạt hình, anime online miễn phí chất lượng HD. Vietsub, thuyết minh, lồng tiếng. Cập nhật liên tục mỗi ngày.',
+    title: 'Xem Phim Miễn Phí - Phim Hay Cả Đảo',
+    description: 'Đảo Phim - Xem phim online miễn phí chất lượng HD. Phim bộ, phim lẻ, hoạt hình, anime, phim chiếu rạp Vietsub, thuyết minh, lồng tiếng. Cập nhật liên tục mỗi ngày.',
     url: '/',
     type: 'website',
   });
@@ -453,11 +736,10 @@ export default function Home() {
     let cancelled = false;
     (async () => {
       try {
-        // Trang chủ chỉ ưu tiên & hiển thị phim hoạt hình (nguồn KKPhim → OPhim → NguonC)
         const [r1, r2, r3] = await Promise.all([
-          movieApi.getMoviesByType('hoat-hinh', 1, 24),
-          movieApi.getMoviesByType('hoat-hinh', 5, 20),
-          movieApi.searchMovies('hoạt hình bộ', 1, 10),
+          movieApi.getNewUpdates(1),
+          movieApi.getMoviesByType('phim-chieu-rap', 1, 20),
+          movieApi.searchMovies('việt nam', 1, 12),
         ]);
         if (cancelled) return;
         const t10 = r1.items.slice(0, 10);
@@ -466,8 +748,7 @@ export default function Home() {
         setTopTabMovies(t10);
         setCinema(r2.items);
         setNewUpdates(r1.items.slice(0, 30));
-        setSeriesTop10(r3.items.slice(0, 10));
-        setSeriesTabMovies(r3.items.slice(0, 10));
+        setVietMovies(r3.items);
       } catch (e) { console.error(e); }
       finally { if (!cancelled) setLoading(false); }
     })();
@@ -480,37 +761,18 @@ export default function Home() {
     setTopTabLoading(true);
     try {
       const src = TOP_SRCS[i];
-      let res;
-      if (src === 'hoat-hinh-2') res = await movieApi.getMoviesByType('hoat-hinh', 2, 10);
-      else if (src === 'hoat-hinh-3') res = await movieApi.getMoviesByType('hoat-hinh', 3, 10);
-      else if (src === 'hoat-hinh-bo') res = await movieApi.searchMovies('hoạt hình trọn bộ', 1, 10);
-      else if (src === 'hoat-hinh-le') res = await movieApi.searchMovies('hoạt hình lẻ', 1, 10);
-      else res = await movieApi.getMoviesByType('hoat-hinh', 1, 10);
+      const res = src === 'phim-moi'
+        ? await movieApi.getNewUpdates(2)
+        : await movieApi.getMoviesByType(src!, 1, 10);
       setTopTabMovies(res.items.slice(0, 10));
     } catch { setTopTabMovies(top10); }
     finally { setTopTabLoading(false); }
   };
 
-  const handleSeriesTab = async (i: number) => {
-    setSeriesTab(i);
-    if (i === 0) { setSeriesTabMovies(seriesTop10); return; }
-    setSeriesTabLoading(true);
-    try {
-      const src = SERIES_SRCS[i];
-      let res;
-      if (src === 'moi-cap-nhat') res = await movieApi.getMoviesByType('hoat-hinh', 6, 10);
-      else if (src === 'hoan-thanh') res = await movieApi.searchMovies('hoạt hình trọn bộ', 1, 10);
-      else if (src === 'dang-chieu') res = await movieApi.searchMovies('hoạt hình đang chiếu', 1, 10);
-      else res = await movieApi.searchMovies('hoạt hình bộ', 1, 10);
-      setSeriesTabMovies(res.items.slice(0, 10));
-    } catch { setSeriesTabMovies(seriesTop10); }
-    finally { setSeriesTabLoading(false); }
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center" style={{ paddingTop:'56px' }}>
-        <div className="w-8 h-8 border-t-transparent rounded-full animate-spin border-yellow-500" style={{ borderWidth:3, borderStyle:'solid' }} />
+        <div className="w-8 h-8 border-t-transparent rounded-full animate-spin border-green-500" style={{ borderWidth:3, borderStyle:'solid' }} />
       </div>
     );
   }
@@ -518,11 +780,12 @@ export default function Home() {
   return (
     <div className="pb-20 bg-slate-950 min-h-screen">
       <h1 className="sr-only">
-        Phim Tuổi Thơ - Xem Phim Hoạt Hình Online Miễn Phí HD Vietsub, Thuyết Minh, Lồng Tiếng
+        Đảo Phim - Xem Phim Online Miễn Phí HD Vietsub, Thuyết Minh, Lồng Tiếng
       </h1>
       <Banner movies={bannerMovies} />
       <ContinueWatchingSection />
       <LiveBanner />
+      <AdBanner position="top" className="max-w-2xl md:max-w-5xl lg:max-w-[1400px] mx-auto px-4 md:px-6 lg:px-8 mt-3" />
 
       <main className="max-w-2xl md:max-w-5xl lg:max-w-[1400px] mx-auto px-4 md:px-6 lg:px-8 mt-6 flex flex-col gap-8">
 
@@ -545,60 +808,48 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Gợi ý phim */}
+        {/* Top 10 */}
         {top10.length > 0 && (
           <section>
-            <h2 className="text-white font-black text-lg mb-1.5">Gợi ý phim</h2>
             <div className="flex items-center gap-1.5 mb-3 overflow-x-auto" style={{ scrollbarWidth:'none' }}>
               {TOP_TABS.map((t,i) => (
                 <button key={t} onClick={() => handleTopTab(i)}
-                  className={cn('shrink-0 text-xs sm:text-sm font-black px-3.5 py-2 rounded-full transition-all',
-                    topTab===i ? 'bg-yellow-400 text-slate-950' : 'text-yellow-400 hover:text-yellow-300')}>
+                  className={cn('shrink-0 text-xs font-bold px-3.5 py-2 rounded-full border transition-all',
+                    topTab===i ? 'bg-slate-800 border-slate-600 text-white' : 'border-transparent text-slate-500 hover:text-slate-300')}>
                   {t}
                 </button>
               ))}
             </div>
-            <SecHeader title={TOP_TITLES[topTab]} to="/type/hoat-hinh" label="Xem tất cả" />
+            <SecHeader title={TOP_TITLES[topTab]} to="/type/phim-moi" label="Xem tất cả" />
             {topTabLoading
-              ? <div className="flex items-center justify-center py-8"><Loader2 size={24} className="animate-spin text-yellow-400"/></div>
+              ? <div className="flex items-center justify-center py-8"><Loader2 size={24} className="animate-spin text-green-400"/></div>
               : <HRow>{topTabMovies.map((m,i) => <Top10Card key={m._id} movie={m} rank={i+1}/>)}</HRow>
             }
           </section>
         )}
 
-        {/* Gợi ý phim truyền hình */}
-        {seriesTop10.length > 0 && (
-          <section>
-            <h2 className="text-white font-black text-lg mb-1.5">Gợi ý phim truyền hình</h2>
-            <div className="flex items-center gap-1.5 mb-3 overflow-x-auto" style={{ scrollbarWidth:'none' }}>
-              {SERIES_TABS.map((t,i) => (
-                <button key={t} onClick={() => handleSeriesTab(i)}
-                  className={cn('shrink-0 text-xs sm:text-sm font-black px-3.5 py-2 rounded-full transition-all',
-                    seriesTab===i ? 'bg-yellow-400 text-slate-950' : 'text-yellow-400 hover:text-yellow-300')}>
-                  {t}
-                </button>
-              ))}
-            </div>
-            <SecHeader title={SERIES_TITLES[seriesTab]} to="/type/hoat-hinh" label="Xem tất cả" />
-            {seriesTabLoading
-              ? <div className="flex items-center justify-center py-8"><Loader2 size={24} className="animate-spin text-yellow-400"/></div>
-              : <HRow>{seriesTabMovies.map((m,i) => <Top10Card key={m._id} movie={m} rank={i+1}/>)}</HRow>
-            }
-          </section>
-        )}
+        {/* Phim Mới — carousel nổi bật, chấm phân trang */}
+        <NewMovieSpotlight movies={top10} />
 
-        {/* Hoạt Hình Nổi Bật — load ngay */}
+        {/* Phim Chiếu Rạp — load ngay */}
         {cinema.length > 0 && (
           <section>
-            <SecHeader title="Hoạt Hình Nổi Bật" to="/type/hoat-hinh" label="Tất cả" />
+            <SecHeader title="Phim Chiếu Rạp Mới" to="/type/phim-chieu-rap" label="Tất cả" />
             <HRow>{cinema.map(m => <MCard key={m._id} movie={m}/>)}</HRow>
           </section>
         )}
 
-        {/* Hoạt Hình Mới Cập Nhật — load ngay (phim ghim của admin luôn hiện đầu tiên) */}
+        {/* Phim Việt Mới Nhất — thẻ lớn nổi bật */}
+        <VietFeaturedSection movies={vietMovies} />
+
+        {/* Cộng đồng — bình luận mới nhất & phim sôi nổi (theo lượng bình luận thật) */}
+        <RecentCommentsSection />
+        <TrendingMoviesSection />
+
+        {/* Phim Mới Cập Nhật — load ngay (phim ghim của admin luôn hiện đầu tiên) */}
         {(newUpdates.length > 0 || manualMovies.length > 0 || pinnedMovies.length > 0) && (
           <section>
-            <SecHeader title="Hoạt Hình Mới Cập Nhật" to="/type/hoat-hinh" label="Tất cả" />
+            <SecHeader title="Phim Mới Cập Nhật" to="/type/phim-moi" label="Tất cả" />
             <HRow>
               {pinnedMovies.map(p => <MCard key={p.slug} movie={pinnedToMovie(p)} pinned />)}
               {manualMovies.slice(0,4).map(m => <ManualMCard key={m.id} movie={m}/>)}
@@ -609,28 +860,74 @@ export default function Home() {
           </section>
         )}
 
-        {/* Anime / Hoạt Hình Sắp Chiếu — từ collection riêng (gộp cả 2 nguồn cũ + mới) */}
-        {(upcomingMovies.filter(m => m.upcomingType === 'anime').length > 0
-          || oldUpcoming.filter(m => m.upcomingType === 'anime' || !m.upcomingType).length > 0) && (
+        {/* Phim Song Ngữ — banner gradient, danh sách do admin tự thêm */}
+        <BilingualSection movies={bilingualMovies.map(bilingualToMovie)} />
+
+        {/* Phim Sắp Chiếu Rạp — từ collection riêng */}
+        {upcomingMovies.filter(m => m.upcomingType === 'movie').length > 0 && (
           <section>
-            <SecHeader title="Hoạt Hình Sắp Chiếu" to="/type/hoat-hinh" label="Tất cả" />
+            <SecHeader title="Phim Sắp Chiếu Rạp" to="/type/phim-chieu-rap" label="Tất cả" />
+            <HRow>
+              {upcomingMovies
+                .filter(m => m.upcomingType === 'movie')
+                .map(m => <UpcomingNewCard key={m.id} movie={m} />)}
+            </HRow>
+          </section>
+        )}
+
+        {/* Anime Sắp Chiếu — từ collection riêng */}
+        {upcomingMovies.filter(m => m.upcomingType === 'anime').length > 0 && (
+          <section>
+            <SecHeader title="Anime Sắp Chiếu" to="/type/hoat-hinh" label="Tất cả" />
             <HRow>
               {upcomingMovies
                 .filter(m => m.upcomingType === 'anime')
                 .map(m => <UpcomingNewCard key={m.id} movie={m} />)}
+            </HRow>
+          </section>
+        )}
+
+        {/* Phim Bộ Sắp Chiếu — từ collection riêng */}
+        {upcomingMovies.filter(m => m.upcomingType === 'series').length > 0 && (
+          <section>
+            <SecHeader title="Phim Bộ Sắp Chiếu" to="/type/phim-bo" label="Tất cả" />
+            <HRow>
+              {upcomingMovies
+                .filter(m => m.upcomingType === 'series')
+                .map(m => <UpcomingNewCard key={m.id} movie={m} />)}
+            </HRow>
+          </section>
+        )}
+
+        {/* Fallback: sắp chiếu cũ từ manualMovies (isUpcoming=true) nếu chưa migrate */}
+        {oldUpcoming.filter(m => m.upcomingType === 'anime' || !m.upcomingType).length > 0 && (
+          <section>
+            <SecHeader title="Anime Sắp Chiếu" to="/type/hoat-hinh" label="Tất cả" />
+            <HRow>
               {oldUpcoming
                 .filter(m => m.upcomingType === 'anime' || !m.upcomingType)
                 .map(m => <UpcomingCard key={m.id} movie={m} />)}
             </HRow>
           </section>
         )}
+        {oldUpcoming.filter(m => m.upcomingType === 'movie').length > 0 && (
+          <section>
+            <SecHeader title="Phim Sắp Chiếu Rạp" to="/type/phim-chieu-rap" label="Tất cả" />
+            <HRow>
+              {oldUpcoming
+                .filter(m => m.upcomingType === 'movie')
+                .map(m => <UpcomingCard key={m.id} movie={m} />)}
+            </HRow>
+          </section>
+        )}
 
-        {/* Tất cả lazy sections — chỉ hoạt hình (KKPhim → OPhim → NguonC) */}
+        {/* Tất cả lazy sections từ KKPhim API */}
         {LAZY_SECTIONS.map(s => (
-          <LazySection key={s.title} title={s.title} to={s.to} fetch={s.fetch} />
+          <LazySection key={s.title} title={s.title} to={s.to} fetch={s.fetch} variant={(s as any).variant} />
         ))}
 
       </main>
+      <AdBanner position="bottom" className="max-w-2xl md:max-w-5xl lg:max-w-[1400px] mx-auto px-4 md:px-6 lg:px-8 mt-4" />
     </div>
   );
 }

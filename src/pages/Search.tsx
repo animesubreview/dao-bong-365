@@ -32,8 +32,8 @@ export default function Search() {
   useSEO({
     title: query ? `Tìm kiếm: ${query}` : 'Tìm kiếm phim',
     description: query
-      ? `Kết quả tìm kiếm phim "${query}" tại Phim Tuổi Thơ. Xem phim online miễn phí HD Vietsub.`
-      : 'Tìm kiếm phim online tại Phim Tuổi Thơ. Hơn 50,000 bộ phim Vietsub HD miễn phí.',
+      ? `Kết quả tìm kiếm phim "${query}" tại Đảo Phim. Xem phim online miễn phí HD Vietsub.`
+      : 'Tìm kiếm phim online tại Đảo Phim. Hơn 50,000 bộ phim Vietsub HD miễn phí.',
     url: query ? `/search?q=${encodeURIComponent(query)}` : '/search',
     noIndex: true,
   });
@@ -120,12 +120,12 @@ export default function Search() {
               onChange={(e) => setInputVal(e.target.value)}
               placeholder="Tìm phim, diễn viên..."
               autoFocus
-              className="w-full bg-slate-900/80 border border-slate-700/60 rounded-2xl pl-11 pr-4 py-3.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-yellow-500/60 focus:ring-1 focus:ring-yellow-500/30 transition-all"
+              className="w-full bg-slate-900/80 border border-slate-700/60 rounded-2xl pl-11 pr-4 py-3.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-green-500/60 focus:ring-1 focus:ring-green-500/30 transition-all"
             />
           </div>
           <button
             type="submit"
-            className="shrink-0 bg-yellow-500 hover:bg-yellow-400 text-black font-bold px-5 rounded-2xl text-sm transition-colors"
+            className="shrink-0 bg-green-500 hover:bg-green-400 text-black font-bold px-5 rounded-2xl text-sm transition-colors"
           >
             Tìm
           </button>
@@ -135,12 +135,12 @@ export default function Search() {
         {query && (
           <div className="mb-4">
             <div className="flex items-center gap-2 mb-1">
-              <SearchIcon size={18} className="text-yellow-400" />
+              <SearchIcon size={18} className="text-green-400" />
               <h1 className="text-lg font-black text-white">Kết quả cho "{query}"</h1>
             </div>
             {!loading && (
               <p className="text-slate-500 text-sm ml-7">
-                Tìm thấy <span className="text-yellow-400 font-bold">{totalCount}</span> kết quả
+                Tìm thấy <span className="text-green-400 font-bold">{totalCount}</span> kết quả
                 {nguoncCount > 0 && (
                   <span className="ml-2 text-xs text-slate-600">
                     (bao gồm <span className="text-amber-400 font-semibold">{nguoncCount}</span> từ{' '}
@@ -182,7 +182,7 @@ export default function Search() {
             {pagination && pagination.totalPages > 1 && (
               <div className="flex items-center justify-center gap-2 mt-10">
                 <button onClick={() => handlePageChange(page - 1)} disabled={page === 1}
-                  className="w-9 h-9 rounded-xl border border-white/10 flex items-center justify-center text-slate-400 disabled:opacity-30 hover:border-yellow-500/50 hover:text-yellow-400 transition-all">
+                  className="w-9 h-9 rounded-xl border border-white/10 flex items-center justify-center text-slate-400 disabled:opacity-30 hover:border-green-500/50 hover:text-green-400 transition-all">
                   <ChevronLeft size={16} />
                 </button>
                 {[...Array(Math.min(5, pagination.totalPages))].map((_, idx) => {
@@ -191,14 +191,14 @@ export default function Search() {
                   return (
                     <button key={p} onClick={() => handlePageChange(p)}
                       className={cn('w-9 h-9 rounded-xl text-sm font-bold transition-all border',
-                        page === p ? 'bg-yellow-500 text-black border-yellow-500' : 'border-white/10 text-slate-400 hover:border-yellow-500/50 hover:text-yellow-400'
+                        page === p ? 'bg-green-500 text-black border-green-500' : 'border-white/10 text-slate-400 hover:border-green-500/50 hover:text-green-400'
                       )}>
                       {p}
                     </button>
                   );
                 })}
                 <button onClick={() => handlePageChange(page + 1)} disabled={page === pagination.totalPages}
-                  className="w-9 h-9 rounded-xl border border-white/10 flex items-center justify-center text-slate-400 disabled:opacity-30 hover:border-yellow-500/50 hover:text-yellow-400 transition-all">
+                  className="w-9 h-9 rounded-xl border border-white/10 flex items-center justify-center text-slate-400 disabled:opacity-30 hover:border-green-500/50 hover:text-green-400 transition-all">
                   <ChevronRight size={16} />
                 </button>
               </div>
@@ -223,7 +223,7 @@ export default function Search() {
         {!query && (
           <>
             <div className="flex items-center gap-2 mb-4">
-              <LayoutGrid size={18} className="text-yellow-400" />
+              <LayoutGrid size={18} className="text-green-400" />
               <h2 className="text-base font-black text-white">Duyệt tìm</h2>
             </div>
             {browseLoading && (

@@ -1,46 +1,32 @@
 import { useSEO } from '../hooks/useSEO';
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Heart, Trash2, Play, Star, ChevronRight, LogIn } from 'lucide-react';
+import { Heart, Trash2, Play, Star, ChevronRight } from 'lucide-react';
 import { movieApi } from '../services/api';
 import MovieCard from '../components/MovieCard';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
-import { onAuthChange } from '../lib/auth';
-import { getFavorites, removeFavorite as removeFavoriteDoc, clearFavorites as clearFavoritesDocs, FavoriteItem } from '../lib/favorites';
 
 export default function Favorites() {
   useSEO({ noIndex: true });
-  const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
-  const [uid, setUid] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [favorites, setFavorites] = useState<any[]>([]);
 
   useEffect(() => {
-    const unsub = onAuthChange(async (user) => {
-      setUid(user?.uid || null);
-      if (user) {
-        const data = await getFavorites(user.uid);
-        setFavorites(data);
-      } else {
-        setFavorites([]);
-      }
-      setLoading(false);
-    });
-    return unsub;
+    const savedFavorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+    setFavorites(savedFavorites);
   }, []);
 
-  const clearFavorites = async () => {
-    if (!uid) return;
+  const clearFavorites = () => {
     if (window.confirm('Bạn có chắc chắn muốn xóa toàn bộ danh sách yêu thích?')) {
-      await clearFavoritesDocs(uid);
+      localStorage.removeItem('favorites');
       setFavorites([]);
     }
   };
 
-  const removeFavorite = async (item: FavoriteItem) => {
-    if (!uid) return;
-    setFavorites(prev => prev.filter(f => f.id !== item.id));
-    await removeFavoriteDoc(uid, item.type, item.slug);
+  const removeFavorite = (slug: string) => {
+    const newFavorites = favorites.filter((f: any) => f.slug !== slug);
+    localStorage.setItem('favorites', JSON.stringify(newFavorites));
+    setFavorites(newFavorites);
   };
 
   return (
@@ -67,18 +53,7 @@ export default function Favorites() {
           )}
         </div>
 
-        {!loading && !uid ? (
-          <div className="flex flex-col items-center justify-center py-20 gap-6 glass-card p-12">
-            <div className="w-20 h-20 bg-slate-900 rounded-full flex items-center justify-center text-slate-700">
-              <LogIn size={40} />
-            </div>
-            <div className="text-center">
-              <h3 className="text-xl font-bold text-white mb-2">Cần đăng nhập</h3>
-              <p className="text-slate-500 max-w-xs mx-auto">Đăng nhập để lưu và đồng bộ danh sách phim yêu thích theo tài khoản của bạn.</p>
-            </div>
-            <Link to="/auth" className="btn-primary">Đăng nhập</Link>
-          </div>
-        ) : favorites.length > 0 ? (
+        {favorites.length > 0 ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 md:gap-6">
             <AnimatePresence>
               {favorites.map((movie, idx) => (
@@ -94,7 +69,7 @@ export default function Favorites() {
                   <button
                     onClick={(e) => {
                       e.preventDefault();
-                      removeFavorite(movie);
+                      removeFavorite(movie.slug);
                     }}
                     className="absolute top-2 right-2 z-20 w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
                   >

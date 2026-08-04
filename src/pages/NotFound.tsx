@@ -5,13 +5,13 @@ import { useSEO } from '../hooks/useSEO';
 export default function NotFound() {
   useSEO({
     title: 'Không Tìm Thấy Trang (404)',
-    description: 'Trang bạn tìm không tồn tại hoặc đã bị xoá. Quay lại trang chủ Phim Tuổi Thơ để tiếp tục xem phim online miễn phí HD.',
+    description: 'Trang bạn tìm không tồn tại hoặc đã bị xoá. Quay lại trang chủ Đảo Phim để tiếp tục xem phim online miễn phí HD.',
     noIndex: true,
   });
 
   return (
     <div className="min-h-[70vh] flex flex-col items-center justify-center text-center px-4 py-16">
-      <p className="text-7xl md:text-8xl font-black text-yellow-500 mb-2">404</p>
+      <p className="text-7xl md:text-8xl font-black text-green-500 mb-2">404</p>
       <h1 className="text-xl md:text-2xl font-bold text-white mb-3">
         Rất tiếc, không tìm thấy trang này
       </h1>
@@ -22,7 +22,7 @@ export default function NotFound() {
       <div className="flex flex-wrap gap-3 justify-center">
         <Link
           to="/"
-          className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-yellow-500 hover:bg-yellow-500 text-white font-semibold transition-colors"
+          className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-green-600 hover:bg-green-500 text-white font-semibold transition-colors"
         >
           <Home size={18} /> Về trang chủ
         </Link>

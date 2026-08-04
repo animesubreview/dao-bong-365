@@ -1,13 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Mail, Send } from 'lucide-react';
-import { subscribeSiteSettings } from '../lib/siteSettings';
+import { Clapperboard, Mail } from 'lucide-react';
 
 function useSiteSettings() {
-  const [s, setS] = useState<Record<string, any>>({});
+  const [s, setS] = useState(() => {
+    try { const v = localStorage.getItem('site_settings'); return v ? JSON.parse(v) : {}; } catch { return {}; }
+  });
   useEffect(() => {
-    const unsub = subscribeSiteSettings(setS);
-    return unsub;
+    const cb = () => { try { const v = localStorage.getItem('site_settings'); if (v) setS(JSON.parse(v)); } catch {} };
+    window.addEventListener('storage', cb);
+    window.addEventListener('site_settings_updated', cb);
+    return () => { window.removeEventListener('storage', cb); window.removeEventListener('site_settings_updated', cb); };
   }, []);
   return s;
 }
@@ -16,14 +19,16 @@ export default function Footer() {
   const settings = useSiteSettings();
   const siteName = settings.siteName || 'ĐẢO PHIM';
   const adsEmail  = settings.adsEmail  || 'adsdaophim@gmail.com';
-  const adsTelegram = settings.adsTelegram || '';
 
   return (
     <footer className="border-t border-slate-800/60 bg-slate-950 mt-10">
       <div className="max-w-4xl mx-auto px-4 py-10 flex flex-col items-center gap-6 text-center">
         {/* Logo */}
-        <div className="flex items-center">
-          <img src="/assets/logo-daophim.png" alt={siteName} className="h-10 w-auto object-contain" />
+        <div className="flex items-center gap-2">
+          <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
+            <Clapperboard className="text-slate-950" size={18} strokeWidth={2.5} />
+          </div>
+          <span className="text-lg font-black text-white">{siteName}</span>
         </div>
         <p className="text-slate-500 text-xs max-w-sm leading-relaxed">
           Trang xem phim online chất lượng cao miễn phí Vietsub, thuyết minh, lồng tiếng full HD.
@@ -36,11 +41,10 @@ export default function Footer() {
           <Link to="/type/phim-le" className="hover:text-white transition-colors">Phim lẻ</Link>
           <Link to="/type/hoat-hinh" className="hover:text-white transition-colors">Hoạt hình</Link>
           <Link to="/type/phim-chieu-rap" className="hover:text-white transition-colors">Chiếu rạp</Link>
-          <Link to="/site-map" className="hover:text-white transition-colors">Sơ đồ trang web</Link>
         </div>
 
         {/* Liên hệ đặt quảng cáo */}
-        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-slate-500 text-xs">
+        <div className="flex items-center gap-2 text-slate-500 text-xs">
           <span>📢 Liên hệ đặt quảng cáo:</span>
           <a
             href={`mailto:${adsEmail}`}
@@ -49,17 +53,6 @@ export default function Footer() {
             <Mail size={12} />
             {adsEmail}
           </a>
-          {adsTelegram && (
-            <a
-              href={`https://t.me/${adsTelegram}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1 text-sky-400 hover:text-sky-300 font-semibold transition-colors"
-            >
-              <Send size={12} />
-              @{adsTelegram}
-            </a>
-          )}
         </div>
 
         {/* Sovereign note */}

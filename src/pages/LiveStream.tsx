@@ -354,7 +354,7 @@ function LivePlayer({ embedUrl, title, viewerCount }: { embedUrl: string; title:
                       className="w-full flex items-center justify-between gap-2 px-3.5 py-2.5 text-xs font-semibold text-white hover:bg-white/10 transition-colors"
                     >
                       Tự động
-                      {currentLevel === -1 && <Check size={13} className="text-yellow-400" />}
+                      {currentLevel === -1 && <Check size={13} className="text-green-400" />}
                     </button>
                     {[...qualityLevels].sort((a, b) => b.height - a.height).map(lvl => (
                       <button
@@ -363,7 +363,7 @@ function LivePlayer({ embedUrl, title, viewerCount }: { embedUrl: string; title:
                         className="w-full flex items-center justify-between gap-2 px-3.5 py-2.5 text-xs font-semibold text-white hover:bg-white/10 transition-colors"
                       >
                         {lvl.height}p
-                        {currentLevel === lvl.index && <Check size={13} className="text-yellow-400" />}
+                        {currentLevel === lvl.index && <Check size={13} className="text-green-400" />}
                       </button>
                     ))}
                   </div>
@@ -468,7 +468,7 @@ function LiveChatBox() {
   return (
     <div className="flex flex-col bg-[#141414] border border-slate-800/60 rounded-2xl overflow-hidden h-[420px] lg:h-full">
       <div className="flex items-center gap-2 px-4 py-3 border-b border-slate-800/60 shrink-0">
-        <span className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse" />
+        <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
         <span className="text-white font-bold text-sm">Chat trực tiếp</span>
         <span className="text-slate-500 text-xs ml-auto">{messages.length} tin nhắn</span>
       </div>
@@ -488,7 +488,7 @@ function LiveChatBox() {
               <img src={m.avatar} alt={m.username} className="w-7 h-7 rounded-full bg-slate-700 shrink-0" />
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className={`text-xs font-bold ${m.isAdmin ? 'text-amber-400' : 'text-yellow-400'}`}>{m.username}</span>
+                  <span className={`text-xs font-bold ${m.isAdmin ? 'text-amber-400' : 'text-green-400'}`}>{m.username}</span>
                   {m.isAdmin && (
                     <span className="inline-flex items-center gap-0.5 text-[9px] font-black px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30">
                       <Shield size={8} /> ADMIN
@@ -515,19 +515,19 @@ function LiveChatBox() {
                 onKeyDown={e => { if (e.key === 'Enter' && !sending) handleSend(); }}
                 maxLength={300}
                 placeholder="Nhắn gì đó..."
-                className="flex-1 bg-slate-900/60 border border-slate-700/60 rounded-full px-4 py-2 text-sm text-white placeholder:text-slate-600 outline-none focus:border-yellow-500/60 transition-colors"
+                className="flex-1 bg-slate-900/60 border border-slate-700/60 rounded-full px-4 py-2 text-sm text-white placeholder:text-slate-600 outline-none focus:border-green-500/60 transition-colors"
               />
               <button
                 onClick={handleSend}
                 disabled={sending || !text.trim()}
-                className="w-9 h-9 shrink-0 rounded-full bg-yellow-500 hover:bg-yellow-400 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center text-slate-950 transition-colors"
+                className="w-9 h-9 shrink-0 rounded-full bg-green-500 hover:bg-green-400 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center text-slate-950 transition-colors"
               >
                 <Send size={15} />
               </button>
             </div>
           )
         ) : (
-          <Link to="/auth" className="flex items-center justify-center gap-2 text-sm font-bold text-yellow-400 hover:text-yellow-300 py-2 transition-colors">
+          <Link to="/auth" className="flex items-center justify-center gap-2 text-sm font-bold text-green-400 hover:text-green-300 py-2 transition-colors">
             <LogIn size={15} /> Đăng nhập để trò chuyện
           </Link>
         )}
@@ -559,9 +559,9 @@ function ScheduleGate({ scheduledAt }: { scheduledAt: number }) {
   const s = Math.floor((left % 60_000) / 1000);
   return (
     <div className="w-full aspect-video bg-black rounded-2xl flex flex-col items-center justify-center gap-3 text-center px-4">
-      <CalendarClock size={32} className="text-yellow-400" />
+      <CalendarClock size={32} className="text-green-400" />
       <p className="text-white font-bold">Buổi chiếu sẽ bắt đầu lúc {formatSchedule(scheduledAt)}</p>
-      <p className="text-2xl font-black text-yellow-400 tabular-nums">
+      <p className="text-2xl font-black text-green-400 tabular-nums">
         {String(h).padStart(2, '0')}:{String(m).padStart(2, '0')}:{String(s).padStart(2, '0')}
       </p>
       <p className="text-slate-500 text-xs">Trang sẽ tự mở khi tới giờ, không cần tải lại</p>
@@ -584,7 +584,7 @@ function ApprovalGate({
       <div className="w-full aspect-video bg-black rounded-2xl flex flex-col items-center justify-center gap-3 text-center px-4">
         <Lock size={30} className="text-slate-500" />
         <p className="text-white font-bold">Phòng chiếu này yêu cầu đăng nhập & đăng ký</p>
-        <Link to="/auth" className="flex items-center gap-2 bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-bold text-sm px-5 py-2.5 rounded-full transition-colors">
+        <Link to="/auth" className="flex items-center gap-2 bg-green-500 hover:bg-green-400 text-slate-950 font-bold text-sm px-5 py-2.5 rounded-full transition-colors">
           <LogIn size={15} /> Đăng nhập ngay
         </Link>
       </div>
@@ -602,7 +602,7 @@ function ApprovalGate({
           </>
         ) : (
           <>
-            <ClipboardCheck size={30} className="text-yellow-400" />
+            <ClipboardCheck size={30} className="text-green-400" />
             <p className="text-white font-bold">Phòng chiếu yêu cầu đăng ký & được admin duyệt</p>
             <p className="text-slate-500 text-xs max-w-xs">Nhấn nút bên dưới để gửi yêu cầu, admin duyệt xong bạn sẽ vào xem được ngay</p>
           </>
@@ -610,7 +610,7 @@ function ApprovalGate({
         <button
           onClick={onRequest}
           disabled={requesting}
-          className="flex items-center gap-2 bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 text-slate-950 font-bold text-sm px-5 py-2.5 rounded-full transition-colors"
+          className="flex items-center gap-2 bg-green-500 hover:bg-green-400 disabled:opacity-50 text-slate-950 font-bold text-sm px-5 py-2.5 rounded-full transition-colors"
         >
           <ClipboardCheck size={15} /> {requesting ? 'Đang gửi...' : registration?.status === 'rejected' ? 'Gửi lại yêu cầu' : 'Đăng ký xem'}
         </button>
@@ -710,7 +710,7 @@ export default function LiveStreamPage() {
   if (loading) {
     return (
       <div className="min-h-[70vh] flex items-center justify-center">
-        <div className="w-9 h-9 border-4 border-yellow-500 border-t-transparent rounded-full animate-spin" />
+        <div className="w-9 h-9 border-4 border-green-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -723,7 +723,7 @@ export default function LiveStreamPage() {
         </div>
         <h2 className="text-xl font-black text-white">Hiện chưa có livestream nào</h2>
         <p className="text-slate-400 text-sm max-w-sm">Admin sẽ sớm phát trực tiếp, hãy quay lại sau nhé!</p>
-        <Link to="/" className="text-yellow-400 font-bold text-sm mt-2">← Về trang chủ</Link>
+        <Link to="/" className="text-green-400 font-bold text-sm mt-2">← Về trang chủ</Link>
       </div>
     );
   }
@@ -735,11 +735,11 @@ export default function LiveStreamPage() {
         <h1 className="text-xl md:text-2xl font-black text-white">Phát Trực Tiếp</h1>
         {config.requireApproval && (
           registration?.status === 'approved' ? (
-            <span className="flex items-center gap-1 text-[10px] font-bold text-yellow-400 bg-yellow-500/10 border border-yellow-500/30 px-2 py-0.5 rounded-full">
+            <span className="flex items-center gap-1 text-[10px] font-bold text-green-400 bg-green-500/10 border border-green-500/30 px-2 py-0.5 rounded-full">
               <CheckCircle2 size={9} /> Bạn đã được duyệt
             </span>
           ) : (
-            <span className="flex items-center gap-1 text-[10px] font-bold text-yellow-400 bg-yellow-500/10 border border-yellow-500/30 px-2 py-0.5 rounded-full">
+            <span className="flex items-center gap-1 text-[10px] font-bold text-green-400 bg-green-500/10 border border-green-500/30 px-2 py-0.5 rounded-full">
               <Lock size={9} /> Phòng riêng — cần duyệt
             </span>
           )
@@ -754,7 +754,7 @@ export default function LiveStreamPage() {
                 initial={{ opacity: 0, y: -8 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -8 }}
-                className="flex items-center gap-2 bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 text-sm font-bold rounded-xl px-4 py-3"
+                className="flex items-center gap-2 bg-green-500/10 border border-green-500/30 text-green-400 text-sm font-bold rounded-xl px-4 py-3"
               >
                 <CheckCircle2 size={18} className="shrink-0" />
                 Bạn đã được duyệt vào phòng chiếu!

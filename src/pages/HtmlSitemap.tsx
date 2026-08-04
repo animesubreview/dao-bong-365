@@ -42,7 +42,7 @@ function Pill({ to, label }: { to: string; label: string }) {
   return (
     <Link
       to={to}
-      className="px-3 py-1.5 rounded-full bg-slate-800 hover:bg-yellow-500 text-slate-200 hover:text-white text-sm transition-colors"
+      className="px-3 py-1.5 rounded-full bg-slate-800 hover:bg-green-600 text-slate-200 hover:text-white text-sm transition-colors"
     >
       {label}
     </Link>
@@ -52,7 +52,7 @@ function Pill({ to, label }: { to: string; label: string }) {
 export default function HtmlSitemap() {
   useSEO({
     title: 'Sơ Đồ Trang Web (Sitemap)',
-    description: 'Toàn bộ chuyên mục phim bộ, phim lẻ, hoạt hình, thể loại và quốc gia tại Phim Tuổi Thơ.',
+    description: 'Toàn bộ chuyên mục phim bộ, phim lẻ, hoạt hình, thể loại và quốc gia tại Đảo Phim.',
     url: '/site-map',
   });
 

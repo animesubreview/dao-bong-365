@@ -572,13 +572,13 @@ export const movieApi = {
   },
 
   searchMovies: async (keyword: string, page: number = 1, limit: number = 20): Promise<APIResponse<Movie>> => {
-    const response = await fetch(`${BASE_URL}/v1/api/tim-kiem?keyword=${encodeURIComponent(keyword)}&page=${page}&limit=${limit}`);
+    const response = await fetch(`${BASE_URL}/v1/api/tim-kiem?keyword=${keyword}&page=${page}&limit=${limit}`);
     const data = await response.json();
     // The search API structure is slightly different in items
     return {
       status: data.status,
-      items: data.data?.items || [],
-      pagination: data.data?.params?.pagination || { totalItems: 0, totalItemsPerPage: limit, currentPage: page, totalPages: 1 }
+      items: data.data.items,
+      pagination: data.data.params.pagination
     };
   },
 

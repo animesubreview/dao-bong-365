@@ -1,12 +1,44 @@
 // ─── Comments Service ──────────────────────────────────────────────────────────
 import {
   collection, addDoc, getDocs, deleteDoc, doc, query,
-  orderBy, where, updateDoc, arrayUnion, arrayRemove, serverTimestamp, Timestamp,
+  orderBy, where, updateDoc, arrayUnion, arrayRemove, serverTimestamp, Timestamp, limit,
 } from 'firebase/firestore';
 import { db } from './firebase';
 import type { Comment } from '../types';
 
 const COL = 'comments';
+
+/** Lấy N bình luận mới nhất trên TOÀN site (mọi phim) — dùng cho widget "Bình luận mới" ở trang chủ */
+export async function getRecentComments(limitN: number = 9): Promise<Comment[]> {
+  try {
+    const q = query(collection(db, COL), orderBy('createdAt', 'desc'), limit(limitN));
+    const snap = await getDocs(q);
+    return snap.docs.map(d => ({ id: d.id, ...d.data() } as Comment));
+  } catch {
+    return [];
+  }
+}
+
+/** Đếm số bình luận theo từng phim (movieSlug) kể từ mốc thời gian `sinceTs` — dùng để xếp hạng phim "sôi nổi" theo lượng bình luận thật */
+export async function getCommentCountsSince(sinceTs: number, limitN: number = 500): Promise<Record<string, number>> {
+  try {
+    const q = query(
+      collection(db, COL),
+      where('createdAt', '>=', sinceTs),
+      orderBy('createdAt', 'desc'),
+      limit(limitN)
+    );
+    const snap = await getDocs(q);
+    const counts: Record<string, number> = {};
+    snap.docs.forEach(d => {
+      const slug = (d.data() as any).movieSlug;
+      if (slug) counts[slug] = (counts[slug] || 0) + 1;
+    });
+    return counts;
+  } catch {
+    return {};
+  }
+}
 
 export async function getComments(movieSlug: string): Promise<Comment[]> {
   try {
