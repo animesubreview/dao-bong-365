@@ -6,7 +6,7 @@
  * theo đúng yêu cầu chuẩn SEO, một số công cụ audit tìm sitemap ảnh riêng biệt.)
  */
 
-const BASE_SITE = 'https://daophim.online';
+const BASE_SITE = 'https://phimtuoitho.co';
 const API_BASE  = 'https://phimapi.com';
 
 async function fetchPage(type, page) {
@@ -21,7 +21,7 @@ async function fetchPage(type, page) {
 }
 
 async function getAllMovies() {
-  const types = ['phim-bo', 'phim-le', 'hoat-hinh', 'phim-chieu-rap'];
+  const types = ['phim-bo', 'phim-le', 'hoat-hinh'];
   const pages = [1, 2, 3, 4];
 
   const tasks = types.flatMap(type => pages.map(page => fetchPage(type, page)));

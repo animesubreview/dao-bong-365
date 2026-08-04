@@ -53,10 +53,11 @@ export interface HistoryItem {
   name: string;
   slug: string;
   thumb_url: string;
+  poster_url?: string;
   episodeName: string;
   episodeSlug: string;
-  time: number;
-  duration: number;
+  time?: number;
+  duration?: number;
   updatedAt: number;
 }
 

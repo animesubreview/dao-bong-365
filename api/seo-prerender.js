@@ -8,10 +8,10 @@
 
 
 
-const SITE_NAME = 'Đảo Phim';
-const SITE_URL  = 'https://daophim.online';
+const SITE_NAME = 'Phim Tuổi Thơ';
+const SITE_URL  = 'https://phimtuoitho.co';
 const API_BASE  = 'https://phimapi.com';
-const DEFAULT_IMG = 'https://daophim.online/og-image.png';
+const DEFAULT_IMG = 'https://phimtuoitho.co/og-image.png';
 
 // Ghép link ảnh poster/backdrop đúng domain thật của KKPhim (img.phimapi.com),
 // đồng bộ với movieApi.getImageUrl() bên client — tránh ảnh vỡ khi share link (Facebook/Zalo).
@@ -172,7 +172,7 @@ async function handleTypeListing(type, searchParams, request) {
       headers: {
         'content-type': 'text/html; charset=utf-8',
         'cache-control': 'public, s-maxage=1800, stale-while-revalidate=3600',
-        'x-prerendered-by': 'daophim-edge',
+        'x-prerendered-by': 'phimtuoitho-edge',
       },
     });
   } catch {
@@ -192,9 +192,9 @@ async function handleMovieDetail(slug, request) {
     // ── Build meta data ─────────────────────────────────────────────
     const isTV     = movie.type === 'series';
     const title    = escapeHtml(movie.name);
-    const fullTitle = `${title} | DAOPHIM`;
+    const fullTitle = `${title} | PHIM TUỔI THƠ`;
     const desc     = escapeHtml(
-      `Xem ${movie.name} (${movie.origin_name || ''}) ${movie.year || ''} Vietsub HD miễn phí tại Đảo Phim. ` +
+      `Xem ${movie.name} (${movie.origin_name || ''}) ${movie.year || ''} Vietsub HD miễn phí tại Phim Tuổi Thơ. ` +
       stripHtml(movie.content || '').slice(0, 150)
     );
     const image    = escapeHtml(buildPosterUrl(movie.poster_url || movie.thumb_url));
@@ -203,7 +203,7 @@ async function handleMovieDetail(slug, request) {
     const keywords = [
       movie.name, movie.origin_name,
       ...(movie.category || []).map((c) => c.name),
-      'vietsub', 'hd', 'xem phim miễn phí', 'đảo phim',
+      'vietsub', 'hd', 'xem phim miễn phí',
     ].filter(Boolean).map(escapeHtml).join(', ');
 
     // ── JSON-LD Schema ──────────────────────────────────────────────
@@ -286,7 +286,7 @@ async function handleMovieDetail(slug, request) {
       headers: {
         'content-type': 'text/html; charset=utf-8',
         'cache-control': 'public, s-maxage=3600, stale-while-revalidate=86400',
-        'x-prerendered-by': 'daophim-edge',
+        'x-prerendered-by': 'phimtuoitho-edge',
       },
     });
 

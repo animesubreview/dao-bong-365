@@ -14,7 +14,7 @@ function useSiteSettings() {
 
 export default function Footer() {
   const settings = useSiteSettings();
-  const siteName = settings.siteName || 'ĐẢO PHIM';
+  const siteName = settings.siteName || 'PHIM TUỔI THƠ';
   const adsEmail  = settings.adsEmail  || 'adsdaophim@gmail.com';
   const adsTelegram = settings.adsTelegram || '';
 
@@ -23,7 +23,7 @@ export default function Footer() {
       <div className="max-w-4xl mx-auto px-4 py-10 flex flex-col items-center gap-6 text-center">
         {/* Logo */}
         <div className="flex items-center">
-          <img src="/assets/logo-daophim.png" alt={siteName} className="h-10 w-auto object-contain" />
+          <img src="/assets/logo-phimtuoitho.png" alt={siteName} className="h-10 w-auto object-contain" />
         </div>
         <p className="text-slate-500 text-xs max-w-sm leading-relaxed">
           Trang xem phim online chất lượng cao miễn phí Vietsub, thuyết minh, lồng tiếng full HD.
@@ -35,7 +35,6 @@ export default function Footer() {
           <Link to="/type/phim-bo" className="hover:text-white transition-colors">Phim bộ</Link>
           <Link to="/type/phim-le" className="hover:text-white transition-colors">Phim lẻ</Link>
           <Link to="/type/hoat-hinh" className="hover:text-white transition-colors">Hoạt hình</Link>
-          <Link to="/type/phim-chieu-rap" className="hover:text-white transition-colors">Chiếu rạp</Link>
           <Link to="/site-map" className="hover:text-white transition-colors">Sơ đồ trang web</Link>
         </div>
 
@@ -44,7 +43,7 @@ export default function Footer() {
           <span>📢 Liên hệ đặt quảng cáo:</span>
           <a
             href={`mailto:${adsEmail}`}
-            className="flex items-center gap-1 text-green-400 hover:text-green-300 font-semibold transition-colors"
+            className="flex items-center gap-1 text-yellow-400 hover:text-yellow-300 font-semibold transition-colors"
           >
             <Mail size={12} />
             {adsEmail}

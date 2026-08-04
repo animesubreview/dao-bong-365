@@ -13,7 +13,7 @@ import { cn } from '../lib/utils';
 
 const TYPE_CONFIG = {
   info:    { icon: Info,          color: 'text-blue-400',    bg: 'bg-blue-500/10' },
-  warning: { icon: AlertTriangle, color: 'text-green-400',   bg: 'bg-green-500/10' },
+  warning: { icon: AlertTriangle, color: 'text-yellow-400',   bg: 'bg-yellow-500/10' },
   success: { icon: CheckCircle,   color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
   error:   { icon: AlertCircle,   color: 'text-red-400',     bg: 'bg-red-500/10' },
 };
@@ -39,7 +39,7 @@ export default function Notifications() {
 
   useSEO({
     title: 'Thông báo',
-    description: 'Xem tất cả thông báo mới nhất từ Đảo Phim.',
+    description: 'Xem tất cả thông báo mới nhất từ Phim Tuổi Thơ.',
     url: '/notifications',
     noIndex: true,
   });
@@ -88,13 +88,13 @@ export default function Notifications() {
         {/* ── Tiêu đề + nút Đã đọc ── */}
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-2">
-            <Bell size={20} className="text-green-400" />
+            <Bell size={20} className="text-yellow-400" />
             <h1 className="text-xl font-black text-white">Thông báo</h1>
           </div>
           <button
             onClick={handleMarkAllRead}
             disabled={unreadInTab.length === 0}
-            className="flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-full border border-slate-700 text-slate-300 hover:border-green-500/50 hover:text-green-400 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-full border border-slate-700 text-slate-300 hover:border-yellow-500/50 hover:text-yellow-400 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <CheckCheck size={14} /> Đã đọc
           </button>
@@ -117,7 +117,7 @@ export default function Notifications() {
                 {count > 0 && (
                   <span className={cn(
                     'inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-black',
-                    tab === t.key ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+                    tab === t.key ? 'bg-yellow-500 text-white' : 'bg-red-500 text-white'
                   )}>
                     {count > 9 ? '9+' : count}
                   </span>
@@ -157,7 +157,7 @@ export default function Notifications() {
                   className={cn(
                     'w-full flex items-start gap-3 p-3.5 rounded-2xl border text-left transition-all',
                     isUnread
-                      ? 'bg-slate-900/80 border-slate-700/50 hover:border-green-500/40'
+                      ? 'bg-slate-900/80 border-slate-700/50 hover:border-yellow-500/40'
                       : 'bg-slate-900/30 border-slate-800/40 opacity-70 hover:opacity-100'
                   )}
                 >
@@ -169,13 +169,13 @@ export default function Notifications() {
                       <p className={cn('text-sm truncate', isUnread ? 'font-bold text-white' : 'font-semibold text-slate-300')}>
                         {n.title}
                       </p>
-                      {isUnread && <span className="w-2 h-2 rounded-full bg-green-400 shrink-0" />}
+                      {isUnread && <span className="w-2 h-2 rounded-full bg-yellow-400 shrink-0" />}
                     </div>
                     <p className="text-slate-500 text-xs mt-0.5 line-clamp-2 whitespace-pre-wrap">{n.message}</p>
                     <div className="flex items-center gap-2 mt-1.5">
                       <span className="text-[10px] text-slate-600">{timeAgo(n.createdAt)}</span>
                       {n.targetUrl && (
-                        <span className="text-[10px] text-green-400 font-bold flex items-center gap-0.5">
+                        <span className="text-[10px] text-yellow-400 font-bold flex items-center gap-0.5">
                           Xem thêm <ExternalLink size={10} />
                         </span>
                       )}

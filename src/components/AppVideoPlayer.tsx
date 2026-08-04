@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { subscribePlayerConfig, PlayerConfig, DEFAULT_CONFIG } from '../lib/playerConfig';
 
-interface DaoPhimPlayerProps {
+interface AppVideoPlayerProps {
   src: string;        // link_embed (iframe) - dùng làm fallback
   m3u8?: string;       // link_m3u8 - ưu tiên dùng nếu có
   title?: string;
@@ -74,7 +74,7 @@ function clearProgress(key: string) {
 
 type SettingsPane = 'main' | 'quality' | 'subtitle';
 
-export default function DaoPhimPlayer({ src, m3u8, title, className = '', onEnded, onNext, resumeKey }: DaoPhimPlayerProps) {
+export default function AppVideoPlayer({ src, m3u8, title, className = '', onEnded, onNext, resumeKey }: AppVideoPlayerProps) {
   const [config, setConfig] = useState<PlayerConfig>(DEFAULT_CONFIG);
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -219,10 +219,10 @@ export default function DaoPhimPlayer({ src, m3u8, title, className = '', onEnde
       hls.on(Hls.Events.ERROR, (_, data) => {
         if (data.fatal) {
           if (mode === 'direct') {
-            console.warn('DaoPhimPlayer: gọi trực tiếp m3u8 lỗi (có thể do Referer/CORS), chuyển sang proxy', data);
+            console.warn('AppVideoPlayer: gọi trực tiếp m3u8 lỗi (có thể do Referer/CORS), chuyển sang proxy', data);
             setMode('proxy');
           } else {
-            console.warn('DaoPhimPlayer: proxy cũng lỗi, chuyển sang iframe dự phòng', data);
+            console.warn('AppVideoPlayer: proxy cũng lỗi, chuyển sang iframe dự phòng', data);
             setM3u8Failed(true);
           }
         }
@@ -448,7 +448,7 @@ export default function DaoPhimPlayer({ src, m3u8, title, className = '', onEnde
                 <div className="flex gap-3">
                   <button
                     onClick={handleResumeContinue}
-                    className="flex-1 bg-green-600 hover:bg-green-500 text-white font-bold text-sm py-2.5 rounded-xl transition-colors"
+                    className="flex-1 bg-yellow-500 hover:bg-yellow-500 text-white font-bold text-sm py-2.5 rounded-xl transition-colors"
                   >
                     Tiếp tục xem
                   </button>
@@ -465,7 +465,7 @@ export default function DaoPhimPlayer({ src, m3u8, title, className = '', onEnde
 
           {loading && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/40 pointer-events-none">
-              <Loader2 size={36} className="text-green-400 animate-spin" />
+              <Loader2 size={36} className="text-yellow-400 animate-spin" />
             </div>
           )}
 
@@ -539,9 +539,9 @@ export default function DaoPhimPlayer({ src, m3u8, title, className = '', onEnde
               >
                 <div className="relative w-full h-1 group-hover/seek:h-1.5 bg-white/25 rounded-full transition-all">
                   <div className="absolute inset-y-0 left-0 bg-white/35 rounded-full" style={{ width: `${bufferedPct}%` }} />
-                  <div className="absolute inset-y-0 left-0 bg-green-500 rounded-full" style={{ width: `${progressPct}%` }} />
+                  <div className="absolute inset-y-0 left-0 bg-red-500 rounded-full" style={{ width: `${progressPct}%` }} />
                   <div
-                    className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-green-400 rounded-full shadow"
+                    className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-red-500 rounded-full shadow"
                     style={{ left: `calc(${progressPct}% - 6px)` }}
                   />
                 </div>
@@ -561,7 +561,7 @@ export default function DaoPhimPlayer({ src, m3u8, title, className = '', onEnde
                       type="range" min={0} max={1} step={0.05}
                       value={muted ? 0 : volume}
                       onChange={(e) => changeVolume(parseFloat(e.target.value))}
-                      className="w-0 group-hover/vol:w-16 sm:w-16 transition-all duration-200 accent-green-500 h-1 cursor-pointer"
+                      className="w-0 group-hover/vol:w-16 sm:w-16 transition-all duration-200 accent-yellow-500 h-1 cursor-pointer"
                     />
                   </div>
 
@@ -594,7 +594,7 @@ export default function DaoPhimPlayer({ src, m3u8, title, className = '', onEnde
                               <div className="px-3 pt-2 pb-1 text-[11px] font-black text-slate-500 uppercase tracking-wide">Cài đặt</div>
                               <button onClick={() => setSettingsPane('quality')} className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-slate-800 transition-colors text-left">
                                 <span className="text-slate-200">Chất lượng</span>
-                                <span className="flex items-center gap-1 text-green-400 font-semibold">{currentQualityLabel} <ChevronRight size={14} /></span>
+                                <span className="flex items-center gap-1 text-yellow-400 font-semibold">{currentQualityLabel} <ChevronRight size={14} /></span>
                               </button>
                               <button
                                 onClick={() => subtitles.length > 0 && setSettingsPane('subtitle')}
@@ -616,13 +616,13 @@ export default function DaoPhimPlayer({ src, m3u8, title, className = '', onEnde
                                 <ChevronLeft size={15} /> Chất lượng
                               </button>
                               <button onClick={() => selectQuality(-1)} className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-slate-800 transition-colors text-left">
-                                <span className={manualLevel === -1 ? 'text-green-400 font-semibold' : 'text-slate-200'}>Auto</span>
-                                {manualLevel === -1 && <Check size={15} className="text-green-400" />}
+                                <span className={manualLevel === -1 ? 'text-yellow-400 font-semibold' : 'text-slate-200'}>Auto</span>
+                                {manualLevel === -1 && <Check size={15} className="text-yellow-400" />}
                               </button>
                               {qualities.map(q => (
                                 <button key={q.index} onClick={() => selectQuality(q.index)} className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-slate-800 transition-colors text-left">
-                                  <span className={manualLevel === q.index ? 'text-green-400 font-semibold' : 'text-slate-200'}>{q.label} <span className="text-slate-500 text-xs">({q.height}p)</span></span>
-                                  {manualLevel === q.index && <Check size={15} className="text-green-400" />}
+                                  <span className={manualLevel === q.index ? 'text-yellow-400 font-semibold' : 'text-slate-200'}>{q.label} <span className="text-slate-500 text-xs">({q.height}p)</span></span>
+                                  {manualLevel === q.index && <Check size={15} className="text-yellow-400" />}
                                 </button>
                               ))}
                             </div>
@@ -634,13 +634,13 @@ export default function DaoPhimPlayer({ src, m3u8, title, className = '', onEnde
                                 <ChevronLeft size={15} /> Phụ đề
                               </button>
                               <button onClick={() => selectSubtitle(-1)} className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-slate-800 transition-colors text-left">
-                                <span className={currentSubtitle === -1 ? 'text-green-400 font-semibold' : 'text-slate-200'}>Tắt</span>
-                                {currentSubtitle === -1 && <Check size={15} className="text-green-400" />}
+                                <span className={currentSubtitle === -1 ? 'text-yellow-400 font-semibold' : 'text-slate-200'}>Tắt</span>
+                                {currentSubtitle === -1 && <Check size={15} className="text-yellow-400" />}
                               </button>
                               {subtitles.map(s => (
                                 <button key={s.index} onClick={() => selectSubtitle(s.index)} className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-slate-800 transition-colors text-left">
-                                  <span className={currentSubtitle === s.index ? 'text-green-400 font-semibold' : 'text-slate-200'}>{s.label}</span>
-                                  {currentSubtitle === s.index && <Check size={15} className="text-green-400" />}
+                                  <span className={currentSubtitle === s.index ? 'text-yellow-400 font-semibold' : 'text-slate-200'}>{s.label}</span>
+                                  {currentSubtitle === s.index && <Check size={15} className="text-yellow-400" />}
                                 </button>
                               ))}
                             </div>

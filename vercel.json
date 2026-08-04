@@ -15,22 +15,22 @@
 
     {
       "source": "/phim/:slug",
-      "has": [{ "type": "header", "key": "user-agent", "value": "(?i).*(googlebot|bingbot|yandexbot|duckduckbot|slurp|facebookexternalhit|twitterbot|linkedinbot|whatsapp|telegrambot|applebot|sogou|exabot|ia_archiver|msnbot|ahrefsbot|semrushbot|dotbot|seznambot).*" }],
+      "has": [{ "type": "header", "key": "user-agent", "value": "(?i).*(googlebot|bingbot|yandexbot|duckduckbot|slurp|facebookexternalhit|twitterbot|linkedinbot|whatsapp|telegrambot|discordbot|zalo|applebot|sogou|exabot|ia_archiver|msnbot|ahrefsbot|semrushbot|dotbot|seznambot).*" }],
       "destination": "/api/seo-prerender"
     },
     {
       "source": "/watch/:slug",
-      "has": [{ "type": "header", "key": "user-agent", "value": "(?i).*(googlebot|bingbot|yandexbot|duckduckbot|slurp|facebookexternalhit|twitterbot|linkedinbot|whatsapp|telegrambot|applebot|sogou|exabot|ia_archiver|msnbot|ahrefsbot|semrushbot|dotbot|seznambot).*" }],
+      "has": [{ "type": "header", "key": "user-agent", "value": "(?i).*(googlebot|bingbot|yandexbot|duckduckbot|slurp|facebookexternalhit|twitterbot|linkedinbot|whatsapp|telegrambot|discordbot|zalo|applebot|sogou|exabot|ia_archiver|msnbot|ahrefsbot|semrushbot|dotbot|seznambot).*" }],
       "destination": "/api/seo-prerender"
     },
     {
       "source": "/watch/:slug/:ep",
-      "has": [{ "type": "header", "key": "user-agent", "value": "(?i).*(googlebot|bingbot|yandexbot|duckduckbot|slurp|facebookexternalhit|twitterbot|linkedinbot|whatsapp|telegrambot|applebot|sogou|exabot|ia_archiver|msnbot|ahrefsbot|semrushbot|dotbot|seznambot).*" }],
+      "has": [{ "type": "header", "key": "user-agent", "value": "(?i).*(googlebot|bingbot|yandexbot|duckduckbot|slurp|facebookexternalhit|twitterbot|linkedinbot|whatsapp|telegrambot|discordbot|zalo|applebot|sogou|exabot|ia_archiver|msnbot|ahrefsbot|semrushbot|dotbot|seznambot).*" }],
       "destination": "/api/seo-prerender"
     },
     {
       "source": "/type/:type",
-      "has": [{ "type": "header", "key": "user-agent", "value": "(?i).*(googlebot|bingbot|yandexbot|duckduckbot|slurp|facebookexternalhit|twitterbot|linkedinbot|whatsapp|telegrambot|applebot|sogou|exabot|ia_archiver|msnbot|ahrefsbot|semrushbot|dotbot|seznambot).*" }],
+      "has": [{ "type": "header", "key": "user-agent", "value": "(?i).*(googlebot|bingbot|yandexbot|duckduckbot|slurp|facebookexternalhit|twitterbot|linkedinbot|whatsapp|telegrambot|discordbot|zalo|applebot|sogou|exabot|ia_archiver|msnbot|ahrefsbot|semrushbot|dotbot|seznambot).*" }],
       "destination": "/api/seo-prerender"
     },
 

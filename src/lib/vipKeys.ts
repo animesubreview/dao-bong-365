@@ -44,11 +44,11 @@ export function formatDuration(minutes: number): string {
   return h > 0 ? `${d} ngày ${h} giờ` : `${d} ngày`;
 }
 
-/** Sinh mã key ngẫu nhiên dạng DAOPHIM-XXXX-XXXX */
+/** Sinh mã key ngẫu nhiên dạng PHIMTUOITHO-XXXX-XXXX */
 export function generateKeyCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // bỏ ký tự dễ nhầm (0,O,1,I)
   const seg = () => Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
-  return `DAOPHIM-${seg()}-${seg()}`;
+  return `PHIMTUOITHO-${seg()}-${seg()}`;
 }
 
 function normalizeCode(raw: string): string {

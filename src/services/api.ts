@@ -21,30 +21,6 @@ if (typeof window !== 'undefined') {
   window.addEventListener('storage', refresh);
 }
 
-/**
- * Fetch có fallback: thử BASE_URL hiện tại (mặc định hoặc domain custom trong Admin) trước,
- * nếu lỗi mạng / CORS / status xấu / JSON hỏng thì tự động thử lại bằng domain gốc
- * (DEFAULT_API_BASE). Giúp trang không bị "trắng phim" khi domain custom trong
- * Admin → Cài đặt Website bị sập hoặc gõ sai, mà không cần người dùng tự sửa lại.
- * path phải bắt đầu bằng "/" và không chứa domain.
- */
-async function fetchApiJson(path: string): Promise<any> {
-  const tryFetch = async (base: string) => {
-    const res = await fetch(`${base}${path}`);
-    if (!res.ok) throw new Error(`HTTP ${res.status} từ ${base}`);
-    return res.json();
-  };
-  try {
-    return await tryFetch(BASE_URL);
-  } catch (err) {
-    if (BASE_URL !== DEFAULT_API_BASE) {
-      console.warn(`[api] BASE_URL "${BASE_URL}" lỗi (${(err as Error).message}), thử lại bằng domain mặc định...`);
-      return await tryFetch(DEFAULT_API_BASE);
-    }
-    throw err;
-  }
-}
-
 // Cache ảnh chất lượng cao lấy được từ NguonC theo slug (nếu có), dùng trong getImageUrl.
 // Populate cache này ở nơi nào lấy được ảnh đẹp từ NguonC bằng: NguonCImageCache.set(slug, { poster, thumb });
 const NguonCImageCache = new Map<string, { poster: string; thumb?: string }>();
@@ -550,9 +526,30 @@ export function mergeOPhimEpisodes(
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const movieApi = {
+// ─── Bộ lọc: ẩn "Phim Chiếu Rạp" (mọi quốc gia) và "Phim Việt Nam" không phải
+// hoạt hình. Phim hoạt hình Việt Nam (anime/cartoon VN) vẫn được giữ lại.
+function isBlockedMovie(movie: Movie): boolean {
+  if (!movie) return false;
+  const type = (movie.type || '').toLowerCase();
+  if (type === 'phim-chieu-rap') return true; // luôn ẩn phim chiếu rạp, mọi quốc gia
+
+  const countries = (movie.country || []).map(c => (c.slug || c.name || '').toLowerCase());
+  const isVietnam = countries.some(c => c.includes('viet-nam') || c.includes('việt nam') || c === 'vn');
+  if (isVietnam && type !== 'hoat-hinh') return true; // ẩn phim Việt Nam trừ hoạt hình
+
+  return false;
+}
+
+function filterBlockedMovies(items: Movie[] | undefined | null): Movie[] {
+  if (!items) return [];
+  return items.filter(m => !isBlockedMovie(m));
+}
+
+
   getNewUpdates: async (page: number = 1): Promise<APIResponse<Movie>> => {
-    return fetchApiJson(`/danh-sach/phim-moi-cap-nhat?page=${page}`);
+    const response = await fetch(`${BASE_URL}/danh-sach/phim-moi-cap-nhat?page=${page}`);
+    const data = await response.json();
+    return { ...data, items: filterBlockedMovies(data.items) };
   },
 
   /**
@@ -565,10 +562,11 @@ export const movieApi = {
     const allMovies: Movie[] = [];
     for (let page = 1; page <= maxPages; page++) {
       try {
-        const data = await fetchApiJson(`/danh-sach/phim-moi-cap-nhat?page=${page}`);
+        const res = await fetch(`${BASE_URL}/danh-sach/phim-moi-cap-nhat?page=${page}`);
+        const data = await res.json();
         const items: Movie[] = data?.items || [];
         if (items.length === 0) break;
-        allMovies.push(...items);
+        allMovies.push(...filterBlockedMovies(items));
       } catch {
         break;
       }
@@ -589,24 +587,30 @@ export const movieApi = {
   },
 
   getMovieDetail: async (slug: string): Promise<MovieDetailResponse> => {
-    return fetchApiJson(`/phim/${slug}`);
+    const response = await fetch(`${BASE_URL}/phim/${slug}`);
+    return response.json();
   },
 
   searchMovies: async (keyword: string, page: number = 1, limit: number = 20): Promise<APIResponse<Movie>> => {
-    const data = await fetchApiJson(`/v1/api/tim-kiem?keyword=${encodeURIComponent(keyword)}&page=${page}&limit=${limit}`);
+    const response = await fetch(`${BASE_URL}/v1/api/tim-kiem?keyword=${encodeURIComponent(keyword)}&page=${page}&limit=${limit}`);
+    const data = await response.json();
     // The search API structure is slightly different in items
     return {
       status: data.status,
-      items: data.data.items,
-      pagination: data.data.params.pagination
+      items: filterBlockedMovies(data.data?.items),
+      pagination: data.data?.params?.pagination || { totalItems: 0, totalItemsPerPage: limit, currentPage: page, totalPages: 1 }
     };
   },
 
   getMoviesByType: async (type: string, page: number = 1, limit: number = 20): Promise<APIResponse<Movie>> => {
-    const data = await fetchApiJson(`/v1/api/danh-sach/${type}?page=${page}&limit=${limit}`);
+    if (type === 'phim-chieu-rap') {
+      return { status: true, items: [], pagination: { totalItems: 0, totalItemsPerPage: limit, currentPage: page, totalPages: 1 } };
+    }
+    const response = await fetch(`${BASE_URL}/v1/api/danh-sach/${type}?page=${page}&limit=${limit}`);
+    const data = await response.json();
     return {
       status: data.status,
-      items: data.data.items,
+      items: filterBlockedMovies(data.data.items),
       pagination: data.data.params.pagination
     };
   },
@@ -622,14 +626,18 @@ export const movieApi = {
     limit?: number;
   }): Promise<APIResponse<Movie>> => {
     const { type = 'phim-bo', category = '', country = '', year = '', sort = 'modified.time', page = 1, limit = 24 } = params;
-    let path = `/v1/api/danh-sach/${type}?page=${page}&limit=${limit}&sort_field=${sort}`;
-    if (category) path += `&category=${category}`;
-    if (country) path += `&country=${country}`;
-    if (year) path += `&year=${year}`;
-    const data = await fetchApiJson(path);
+    if (type === 'phim-chieu-rap') {
+      return { status: true, items: [], pagination: { totalItems: 0, totalItemsPerPage: limit, currentPage: page, totalPages: 1 } };
+    }
+    let url = `${BASE_URL}/v1/api/danh-sach/${type}?page=${page}&limit=${limit}&sort_field=${sort}`;
+    if (category) url += `&category=${category}`;
+    if (country) url += `&country=${country}`;
+    if (year) url += `&year=${year}`;
+    const response = await fetch(url);
+    const data = await response.json();
     return {
       status: data.status,
-      items: data.data?.items || [],
+      items: filterBlockedMovies(data.data?.items),
       pagination: data.data?.params?.pagination || { totalItems: 0, totalItemsPerPage: limit, currentPage: page, totalPages: 1 }
     };
   },
@@ -729,7 +737,7 @@ export const movieApi = {
       const items: any[] = data?.items || data?.movies || data?.data?.items || [];
       if (!items.length) return [];
 
-      return items.map((m: any): Movie => {
+      return filterBlockedMovies(items.map((m: any): Movie => {
         // NguonC image: nếu thumb_url có http dùng trực tiếp, không thì prepend base
         const img = (url: string) => {
           if (!url) return '';
@@ -754,7 +762,7 @@ export const movieApi = {
           category: Array.isArray(m.category) ? m.category : [],
           country: Array.isArray(m.country) ? m.country : [],
         };
-      });
+      }));
     } catch {
       return [];
     }
@@ -772,10 +780,11 @@ export const movieApi = {
   }> => {
     const [kkRes, ncItems] = await Promise.allSettled([
       (async () => {
-        const data = await fetchApiJson(`/v1/api/tim-kiem?keyword=${encodeURIComponent(keyword)}&page=${page}&limit=${limit}`);
+        const response = await fetch(`${BASE_URL}/v1/api/tim-kiem?keyword=${keyword}&page=${page}&limit=${limit}`);
+        const data = await response.json();
         return {
           status: data.status,
-          items: (data.data?.items || []) as Movie[],
+          items: filterBlockedMovies(data.data?.items) as Movie[],
           pagination: data.data?.params?.pagination as APIResponse<Movie>['pagination'],
         };
       })(),

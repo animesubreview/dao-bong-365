@@ -27,8 +27,8 @@ export function getSiteSettings() {
 export function usePageTitle(pageTitle?: string) {
   useEffect(() => {
     const settings = getSiteSettings();
-    const suffix = 'DAOPHIM';
-    const base = settings.siteName || 'Đảo Phim';
+    const suffix = 'PHIMTUOITHO';
+    const base = settings.siteName || 'Phim Tuổi Thơ';
     if (pageTitle) {
       document.title = `${pageTitle} | ${suffix}`;
     } else {

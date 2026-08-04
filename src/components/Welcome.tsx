@@ -88,7 +88,7 @@ export default function Welcome({ onEnter }: WelcomeProps) {
             <Clapperboard className="text-white" size={48} strokeWidth={1.5} />
           </div>
           <h1 className="text-7xl md:text-9xl font-black tracking-tighter italic text-white drop-shadow-[0_0_40px_rgba(99,102,241,0.4)]">
-            ĐẢO<span className="text-green-400">PHIM</span>
+            ĐẢO<span className="text-yellow-400">PHIM</span>
           </h1>
         </div>
 
