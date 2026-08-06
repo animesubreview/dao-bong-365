@@ -251,6 +251,7 @@ export default function Header() {
               { to: '/type/phim-le', label: 'Phim Lẻ' },
               { to: '/type/hoat-hinh', label: 'Hoạt Hình' },
               { to: '/type/phim-chieu-rap', label: 'Chiếu Rạp' },
+              { to: '/tv-truc-tuyen', label: 'TV Trực Tuyến' },
             ].map(l => (
               <Link key={l.to} to={l.to}
                 className={cn('px-3 py-1.5 rounded-lg text-sm font-semibold transition-all whitespace-nowrap',

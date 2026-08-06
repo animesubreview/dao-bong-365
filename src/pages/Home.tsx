@@ -461,6 +461,7 @@ function LazySection({ title, to, fetch: fetchFn, label, variant = 'row' }: {
 
 /* ─── Interest cards ──────────────────────────────────────────── */
 const INTEREST = [
+  { label:'TV Trực Tuyến', sub:'Xem Ngay', to:'/tv-truc-tuyen', g:'from-red-600/70 via-orange-500/60 to-yellow-400/50' },
   { label:'Hàn Quốc', sub:'Phim Bộ', to:'/type/phim-bo', g:'from-purple-600/70 via-blue-500/60 to-blue-400/50' },
   { label:'Trung Quốc', sub:'Hoa Ngữ', to:'/type/phim-bo', g:'from-pink-500/70 via-rose-400/60 to-pink-300/50' },
   { label:'Thái Lan', sub:'Cực Hay', to:'/type/phim-le', g:'from-blue-500/70 via-cyan-400/60 to-teal-400/50' },

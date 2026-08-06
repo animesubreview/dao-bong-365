@@ -25,6 +25,7 @@ import NapThe from './pages/NapThe';
 import MuaVip from './pages/MuaVip';
 import Notifications from './pages/Notifications';
 import LiveStreamPage from './pages/LiveStream';
+import TVTrucTuyen from './pages/TVTrucTuyen';
 import NotFound from './pages/NotFound';
 import HtmlSitemap from './pages/HtmlSitemap';
 import MaintenancePage from './components/MaintenancePage';
@@ -214,6 +215,7 @@ function AppInner({ maintenance, maintenanceLoaded }: { maintenance: Maintenance
             <Route path="/mua-vip" element={<MuaVip />} />
             <Route path="/notifications" element={<Notifications />} />
             <Route path="/truc-tiep" element={<LiveStreamPage />} />
+            <Route path="/tv-truc-tuyen" element={<TVTrucTuyen />} />
             <Route path="/site-map" element={<HtmlSitemap />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

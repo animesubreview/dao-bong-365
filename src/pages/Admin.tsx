@@ -6,10 +6,11 @@ import {
   RefreshCw, Link as LinkIcon, Info, Lock, LogOut, KeyRound,
   Bell, BellPlus, Users, Ban, UserCheck, Clock, Megaphone, MonitorPlay,
   Wallet, PlusCircle, MinusCircle, CreditCard, Wrench, Crown, Activity, Wifi,
-  History, Search, Radio, Trash, Pin, ArrowUp, ArrowDown, Copy, Shuffle, Power, Languages,
+  History, Search, Radio, Trash, Pin, ArrowUp, ArrowDown, Copy, Shuffle, Power, Languages, Tv,
 } from 'lucide-react';
 import { getAdBanners, createAdBanner, updateAdBanner, deleteAdBanner, AdBannerData } from '../components/AdBanner';
 import { createPopupAd, updatePopupAd, deletePopupAd, PopupAdData } from '../components/PopupAd';
+import { subscribeTVChannels, saveTVChannel, deleteTVChannel, TVChannel, TV_CATEGORIES } from '../lib/liveTV';
 import { getClickAdConfig, saveClickAdConfig, ClickAdConfig, DEFAULT_CLICK_AD } from '../lib/clickAd';
 import { getVipPrices, saveVipPrices, VipPrices, DEFAULT_VIP_PRICES, VIP_META, VIP_DAYS, VipTier } from '../lib/vip';
 import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
@@ -943,6 +944,143 @@ const POPUP_DEFAULTS: Omit<PopupAdData, 'id' | 'createdAt'> = {
   linkUrl: 'https://',
   active: true,
 };
+
+// ── TVChannelsAdminSection ──────────────────────────────────────────────────
+function emptyChannelForm(category: string): Omit<TVChannel, 'updatedAt'> {
+  return { id: '', name: '', logoUrl: '', category, embedUrls: [''], active: true, order: 0 };
+}
+
+function TVChannelsAdminSection({ onToast }: { onToast: (msg: string, t: 'success' | 'error') => void }) {
+  const [channels, setChannels] = useState<TVChannel[]>([]);
+  const [category, setCategory] = useState(TV_CATEGORIES[0].value);
+  const [form, setForm] = useState<Omit<TVChannel, 'updatedAt'>>(emptyChannelForm(TV_CATEGORIES[0].value));
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => { const unsub = subscribeTVChannels(setChannels); return unsub; }, []);
+
+  const resetForm = () => { setForm(emptyChannelForm(category)); setEditingId(null); };
+
+  const startEdit = (ch: TVChannel) => {
+    setEditingId(ch.id);
+    setForm({ ...ch, embedUrls: ch.embedUrls.length ? [...ch.embedUrls] : [''] });
+    setCategory(ch.category);
+  };
+
+  const save = async () => {
+    const id = form.id.trim() || form.name.trim().toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/đ/g, 'd').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    if (!id || !form.name.trim()) { onToast('Vui lòng nhập tên kênh!', 'error'); return; }
+    const embedUrls = form.embedUrls.map(u => u.trim()).filter(Boolean);
+    if (!embedUrls.length) { onToast('Vui lòng nhập ít nhất 1 link phát!', 'error'); return; }
+    setSaving(true);
+    try {
+      await saveTVChannel({ ...form, id, embedUrls, category });
+      onToast(editingId ? 'Đã cập nhật kênh!' : 'Đã thêm kênh mới!', 'success');
+      resetForm();
+    } catch { onToast('Lỗi khi lưu kênh!', 'error'); }
+    setSaving(false);
+  };
+
+  const remove = async (id: string) => {
+    if (!confirm('Xoá kênh này?')) return;
+    try { await deleteTVChannel(id); onToast('Đã xoá kênh!', 'success'); }
+    catch { onToast('Lỗi khi xoá!', 'error'); }
+  };
+
+  const channelsInCat = channels.filter(c => c.category === category).sort((a, b) => a.order - b.order);
+
+  return (
+    <SectionCard title="TV Trực Tuyến" icon={Tv} color="green">
+      <div className="flex flex-col gap-5">
+        <p className="text-sm text-slate-400">
+          Quản lý kênh truyền hình trực tuyến hiển thị ở trang <code className="text-green-400">/tv-truc-tuyen</code>. Mỗi kênh thuộc 1 danh mục, có thể thêm tối đa 3 link phát (LINK 1/2/3) để dự phòng khi link chính bị lỗi.
+        </p>
+
+        {/* Chọn danh mục đang thao tác */}
+        <div className="flex gap-1.5 overflow-x-auto pb-1">
+          {TV_CATEGORIES.map(c => (
+            <button key={c.value} onClick={() => { setCategory(c.value); resetForm(); }}
+              className={cn('shrink-0 text-xs font-bold px-3.5 py-2 rounded-full border transition-all',
+                category === c.value ? 'bg-green-500 border-green-500 text-slate-950' : 'border-slate-700 text-slate-400 hover:text-white')}>
+              {c.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Form thêm/sửa kênh */}
+        <div className="bg-slate-800/40 border border-slate-700/40 rounded-xl p-4 flex flex-col gap-3">
+          <p className="text-xs font-bold text-slate-400">{editingId ? `Đang sửa: ${editingId}` : `Thêm kênh mới vào "${TV_CATEGORIES.find(c=>c.value===category)?.label}"`}</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <input type="text" placeholder="Tên kênh (VD: Cartoon Network)" value={form.name}
+              onChange={e => setForm(f => ({ ...f, name: e.target.value }))} className="admin-input" />
+            <input type="text" placeholder="Link logo (ảnh vuông, không bắt buộc)" value={form.logoUrl}
+              onChange={e => setForm(f => ({ ...f, logoUrl: e.target.value }))} className="admin-input" />
+          </div>
+          {form.embedUrls.map((url, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <input type="text" placeholder={`Link phát ${i + 1} (m3u8 / youtube / iframe...)`} value={url}
+                onChange={e => setForm(f => ({ ...f, embedUrls: f.embedUrls.map((u, idx) => idx === i ? e.target.value : u) }))}
+                className="admin-input flex-1" />
+              {form.embedUrls.length > 1 && (
+                <button onClick={() => setForm(f => ({ ...f, embedUrls: f.embedUrls.filter((_, idx) => idx !== i) }))}
+                  className="shrink-0 w-9 h-9 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 flex items-center justify-center">
+                  <Trash2 size={14} />
+                </button>
+              )}
+            </div>
+          ))}
+          {form.embedUrls.length < 3 && (
+            <button onClick={() => setForm(f => ({ ...f, embedUrls: [...f.embedUrls, ''] }))}
+              className="self-start flex items-center gap-1.5 text-xs font-bold text-green-400 hover:text-green-300">
+              <Plus size={13} /> Thêm link dự phòng
+            </button>
+          )}
+          <div className="flex items-center gap-3">
+            <button onClick={save} disabled={saving}
+              className="flex items-center gap-2 px-5 py-2.5 bg-green-500 hover:bg-green-400 disabled:opacity-60 text-slate-950 font-bold rounded-xl transition-colors">
+              <Save size={15} /> {saving ? 'Đang lưu...' : editingId ? 'Cập nhật kênh' : 'Thêm kênh'}
+            </button>
+            {editingId && (
+              <button onClick={resetForm} className="text-xs font-bold text-slate-400 hover:text-white">Huỷ sửa</button>
+            )}
+          </div>
+        </div>
+
+        {/* Danh sách kênh trong danh mục */}
+        <div className="flex flex-col gap-2">
+          {channelsInCat.map(ch => (
+            <div key={ch.id} className="flex items-center gap-3 bg-slate-800/40 border border-slate-700/30 rounded-xl px-3 py-2.5">
+              <div className="w-10 h-10 rounded-lg bg-slate-900 overflow-hidden shrink-0 flex items-center justify-center">
+                {ch.logoUrl ? <img src={ch.logoUrl} alt="" className="w-full h-full object-contain" /> : <Tv size={16} className="text-slate-600" />}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-bold text-white truncate">{ch.name}</p>
+                <p className="text-[11px] text-slate-500">{ch.embedUrls.length} link · {ch.active ? 'Đang bật' : 'Đang tắt'}</p>
+              </div>
+              <button onClick={() => saveTVChannel({ ...ch, active: !ch.active })}
+                className={cn('shrink-0 w-8 h-8 rounded-lg flex items-center justify-center', ch.active ? 'bg-green-500/15 text-green-400' : 'bg-slate-700/40 text-slate-500')}
+                title={ch.active ? 'Đang bật - bấm để tắt' : 'Đang tắt - bấm để bật'}>
+                <Power size={14} />
+              </button>
+              <button onClick={() => startEdit(ch)} className="shrink-0 w-8 h-8 rounded-lg bg-blue-500/15 text-blue-400 flex items-center justify-center">
+                <Edit3 size={14} />
+              </button>
+              <button onClick={() => remove(ch.id)} className="shrink-0 w-8 h-8 rounded-lg bg-red-500/15 text-red-400 flex items-center justify-center">
+                <Trash2 size={14} />
+              </button>
+            </div>
+          ))}
+          {!channelsInCat.length && (
+            <p className="text-sm text-slate-500 text-center py-6">Chưa có kênh nào trong danh mục này.</p>
+          )}
+        </div>
+      </div>
+    </SectionCard>
+  );
+}
+
 
 function AdsSection({ onToast }: { onToast: (msg: string, t: 'success' | 'error') => void }) {
   const [banners, setBanners] = useState<AdBannerData[]>([]);
@@ -2220,6 +2358,7 @@ const NAV_SECTIONS = [
   { id: 'section-override',     label: 'Sửa phim API',      icon: Edit3 },
   { id: 'section-pinned',       label: 'Ghim phim KKPhim',  icon: Pin },
   { id: 'section-bilingual',    label: 'Phim Song Ngữ',     icon: Languages },
+  { id: 'section-tv',           label: 'TV Trực Tuyến',     icon: Tv },
   { id: 'section-ads',          label: 'Quảng cáo',         icon: Megaphone },
   { id: 'section-members',      label: 'Thành viên',        icon: Users },
   { id: 'section-notifications',label: 'Thông báo',         icon: Bell },
@@ -4361,6 +4500,13 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
                 )}
               </div>
             </SectionCard>
+          </div>
+          )}
+
+          {/* TV TRỰC TUYẾN */}
+          {activeSection === 'section-tv' && (
+          <div id="section-tv">
+            <TVChannelsAdminSection onToast={(msg, t) => setToast({ message: msg, type: t })} />
           </div>
           )}
 
