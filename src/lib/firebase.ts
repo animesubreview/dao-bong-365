@@ -3,23 +3,15 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
-// Config được lấy từ file .env (KHÔNG hardcode key trong code nữa).
-// Xem hướng dẫn lấy giá trị trong .env.example
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
+  apiKey: "AIzaSyCBzrm9kD7N6ohmWvXxyZNVTDFDBWuj98c",
+  authDomain: "web-phim-20213.firebaseapp.com",
+  projectId: "web-phim-20213",
+  storageBucket: "web-phim-20213.firebasestorage.app",
+  messagingSenderId: "768028032897",
+  appId: "1:768028032897:web:7ffc40e1ff491248f3b280",
+  measurementId: "G-TYHHM1DKZ9"
 };
-
-if (!firebaseConfig.apiKey) {
-  console.error(
-    '[Firebase] Thiếu config! Hãy điền các biến VITE_FIREBASE_* vào file .env ở thư mục gốc (xem .env.example).'
-  );
-}
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);

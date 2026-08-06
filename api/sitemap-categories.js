@@ -5,9 +5,9 @@
  * (kết hợp với từng loại phim: phim-bo, phim-le, hoat-hinh, phim-chieu-rap)
  */
 
-const BASE_SITE = 'https://phimtuoitho.co';
+const BASE_SITE = 'https://daophim.online';
 
-const TYPES = ['phim-bo', 'phim-le', 'hoat-hinh', 'tv-shows'];
+const TYPES = ['phim-bo', 'phim-le', 'hoat-hinh', 'phim-chieu-rap', 'tv-shows'];
 
 const CATEGORIES = [
   'hanh-dong', 'tinh-cam', 'hai-huoc', 'co-trang', 'tam-ly', 'hinh-su',
@@ -16,7 +16,7 @@ const CATEGORIES = [
 ];
 
 const COUNTRIES = [
-  'han-quoc', 'trung-quoc', 'au-my', 'nhat-ban', 'thai-lan',
+  'han-quoc', 'trung-quoc', 'au-my', 'nhat-ban', 'thai-lan', 'viet-nam',
   'dai-loan', 'hong-kong', 'an-do', 'anh', 'phap', 'duc',
 ];
 

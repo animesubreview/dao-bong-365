@@ -16,13 +16,13 @@ const TYPE_CONFIG = {
     dot: 'bg-blue-400',
   },
   warning: {
-    bg: 'bg-yellow-950/90',
-    border: 'border-yellow-600/40',
-    text: 'text-yellow-200',
+    bg: 'bg-green-950/90',
+    border: 'border-green-600/40',
+    text: 'text-green-200',
     icon: AlertTriangle,
-    iconColor: 'text-yellow-400',
-    bannerBg: 'bg-yellow-700/15',
-    dot: 'bg-yellow-500',
+    iconColor: 'text-green-400',
+    bannerBg: 'bg-green-700/15',
+    dot: 'bg-green-500',
   },
   success: {
     bg: 'bg-emerald-950/90',
@@ -110,7 +110,7 @@ function ImageLinkPopup({ notif, onDismiss }: { notif: SiteNotification; onDismi
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={onDismiss}
-                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-black bg-yellow-500 hover:bg-yellow-400 text-slate-950 transition-colors"
+                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-black bg-green-500 hover:bg-green-400 text-slate-950 transition-colors"
               >
                 <ExternalLink size={14} /> Xem ngay
               </a>
@@ -164,7 +164,7 @@ function NotificationPopup({ notif, onDismiss }: { notif: SiteNotification; onDi
             </a>
           )}
           <button onClick={onDismiss}
-            className="flex-1 py-2.5 rounded-xl text-sm font-black bg-yellow-500 hover:bg-yellow-400 text-slate-950 transition-colors">
+            className="flex-1 py-2.5 rounded-xl text-sm font-black bg-green-500 hover:bg-green-400 text-slate-950 transition-colors">
             Đã hiểu
           </button>
         </div>

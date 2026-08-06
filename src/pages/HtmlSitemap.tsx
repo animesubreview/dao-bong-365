@@ -5,6 +5,7 @@ const TYPES = [
   { label: 'Phim Bộ', value: 'phim-bo' },
   { label: 'Phim Lẻ', value: 'phim-le' },
   { label: 'Hoạt Hình / Anime', value: 'hoat-hinh' },
+  { label: 'Phim Chiếu Rạp', value: 'phim-chieu-rap' },
   { label: 'TV Shows', value: 'tv-shows' },
 ];
 
@@ -22,7 +23,7 @@ const CATEGORIES = [
 const COUNTRIES = [
   { label: 'Hàn Quốc', value: 'han-quoc' }, { label: 'Trung Quốc', value: 'trung-quoc' },
   { label: 'Âu Mỹ', value: 'au-my' }, { label: 'Nhật Bản', value: 'nhat-ban' },
-  { label: 'Thái Lan', value: 'thai-lan' },
+  { label: 'Thái Lan', value: 'thai-lan' }, { label: 'Việt Nam', value: 'viet-nam' },
   { label: 'Đài Loan', value: 'dai-loan' }, { label: 'Hồng Kông', value: 'hong-kong' },
   { label: 'Ấn Độ', value: 'an-do' }, { label: 'Anh', value: 'anh' },
   { label: 'Pháp', value: 'phap' }, { label: 'Đức', value: 'duc' },
@@ -41,7 +42,7 @@ function Pill({ to, label }: { to: string; label: string }) {
   return (
     <Link
       to={to}
-      className="px-3 py-1.5 rounded-full bg-slate-800 hover:bg-yellow-500 text-slate-200 hover:text-white text-sm transition-colors"
+      className="px-3 py-1.5 rounded-full bg-slate-800 hover:bg-green-600 text-slate-200 hover:text-white text-sm transition-colors"
     >
       {label}
     </Link>
@@ -51,7 +52,7 @@ function Pill({ to, label }: { to: string; label: string }) {
 export default function HtmlSitemap() {
   useSEO({
     title: 'Sơ Đồ Trang Web (Sitemap)',
-    description: 'Toàn bộ chuyên mục phim bộ, phim lẻ, hoạt hình, thể loại và quốc gia tại Phim Tuổi Thơ.',
+    description: 'Toàn bộ chuyên mục phim bộ, phim lẻ, hoạt hình, thể loại và quốc gia tại Đảo Phim.',
     url: '/site-map',
   });
 

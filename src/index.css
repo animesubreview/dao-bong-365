@@ -6,16 +6,7 @@
   --color-slate-900: #141416;
   --color-slate-800: #1c1c20;
   --color-slate-700: #26262c;
-  /* ── Accent chính của "Phim Tuổi Thơ": VÀNG thay cho xanh lá cũ ──
-     Toàn bộ class green-* trong code (nút, viền, chữ hover, spinner…)
-     tự động chuyển sang vàng nhờ override theo đúng shade bên dưới. */
-  --color-green-200: #fef08a;
-  --color-green-300: #fde047;
-  --color-green-400: #facc15;
-  --color-green-500: #eab308;
-  --color-green-600: #ca8a04;
-  --color-green-700: #a16207;
-  --color-green-950: #422006;
+  --color-green-500: #22c55e;
 }
 
 @layer base {

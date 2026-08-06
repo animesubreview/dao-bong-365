@@ -5,7 +5,7 @@
  * phát hiện nội dung mới nhanh hơn.
  */
 
-const BASE_SITE = 'https://phimtuoitho.co';
+const BASE_SITE = 'https://daophim.online';
 const API_BASE  = 'https://phimapi.com';
 const SITE_NAME = 'Đảo Phim';
 

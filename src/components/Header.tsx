@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import {
   Search, History, Heart, X, Loader2, LogIn, LogOut,
   ChevronDown, UserCog,
-  Bell, Users, Check, Copy, Menu, Film, Tv, Mic2, Captions,
+  Bell, Users, Check, Copy,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { movieApi } from '../services/api';
@@ -14,7 +14,7 @@ import { subscribeNotifications, countUnread, SiteNotification } from '../lib/no
 import { subscribeSiteSettings } from '../lib/siteSettings';
 
 function useSiteSettings() {
-  const [settings, setSettings] = useState<Record<string, any>>({ logoType: 'text', siteName: 'PHIM TUỔI THƠ' });
+  const [settings, setSettings] = useState<Record<string, any>>({ logoType: 'text', siteName: 'ĐẢO PHIM' });
   useEffect(() => {
     const unsub = subscribeSiteSettings((data) => {
       setSettings((prev) => ({ ...prev, ...data }));
@@ -24,11 +24,11 @@ function useSiteSettings() {
   return settings;
 }
 
-// ── Logo Phim Tuổi Thơ — ảnh local duy nhất, nền trong suốt (icon + chữ + tagline) ──
-const SITE_LOGO_URL = '/assets/logo-phimtuoitho.png';
+// ── Logo Đảo Phim — ảnh local duy nhất, nền trong suốt (icon + chữ + tagline) ──
+const SITE_LOGO_URL = '/assets/logo-daophim.png';
 
 function Logo({ settings }: { settings: any }) {
-  const name: string = settings.siteName || 'PHIM TUỔI THƠ';
+  const name: string = settings.siteName || 'ĐẢO PHIM';
 
   return (
     <div className="flex items-center">
@@ -48,6 +48,7 @@ export const COUNTRIES = [
   { name: 'Âu Mỹ', slug: 'au-my' },
   { name: 'Nhật Bản', slug: 'nhat-ban' },
   { name: 'Thái Lan', slug: 'thai-lan' },
+  { name: 'Việt Nam', slug: 'viet-nam' },
   { name: 'Đài Loan', slug: 'dai-loan' },
   { name: 'Hồng Kông', slug: 'hong-kong' },
 ];
@@ -55,9 +56,6 @@ export const COUNTRIES = [
 export default function Header() {
   const [session, setSession] = useState<UserProfile | null>(null);
   const [showUserMenu, setShowUserMenu] = useState(false);
-  // ── Menu hamburger toàn màn hình (giống mẫu Phim Tuổi Thơ) ──
-  const [showHamburgerMenu, setShowHamburgerMenu] = useState(false);
-  const [hamburgerQuery, setHamburgerQuery] = useState('');
   // Watch Room quick-create modal
   const [showWatchRoomModal, setShowWatchRoomModal] = useState(false);
   const [watchRoomMax, setWatchRoomMax] = useState<number>(2);
@@ -123,9 +121,9 @@ export default function Header() {
         header.style.backdropFilter = 'blur(20px)';
         header.style.borderBottomColor = 'rgba(255,255,255,0.06)';
       } else {
-        header.style.background = 'linear-gradient(to bottom, rgba(0,0,0,0.65) 0%, transparent 100%)';
-        header.style.backdropFilter = 'blur(0px)';
-        header.style.borderBottomColor = 'transparent';
+        header.style.background = 'rgba(8,8,10,0.97)';
+        header.style.backdropFilter = 'blur(20px)';
+        header.style.borderBottomColor = 'rgba(255,255,255,0.06)';
       }
     };
     window.addEventListener('scroll', onScroll, { passive: true });
@@ -189,6 +187,34 @@ export default function Header() {
     navigate(`/phim/${movie.slug}`);
   };
 
+  const handleNapThe = async () => {
+    if (!session) { setNapMsg({ text: 'Bạn cần đăng nhập!', ok: false }); return; }
+    if (!napSerial.trim() || !napCode.trim()) { setNapMsg({ text: 'Nhập đầy đủ serial và mã thẻ!', ok: false }); return; }
+    setNapLoading(true); setNapMsg(null);
+    const result = await submitManualTopup(session.uid, session.username, napTelco, napSerial, napCode, napAmount);
+    setNapLoading(false);
+    if (result.ok) {
+      setNapMsg({ text: '✅ Gửi thành công! Admin sẽ duyệt sớm.', ok: true });
+      setNapSerial(''); setNapCode('');
+    } else {
+      setNapMsg({ text: result.error || 'Gửi thất bại!', ok: false });
+    }
+  };
+
+  const handleBuyVip = async (tier: VipTier) => {
+    if (!session) return;
+    setVipLoading(true); setVipMsg(null);
+    const result = await purchaseVip(session.uid, tier);
+    setVipLoading(false);
+    if (result.ok) {
+      setVipMsg({ text: '🎉 Mua VIP thành công!', ok: true });
+      const fresh = await getUserProfile(session.uid);
+      if (fresh) setSession(fresh);
+    } else {
+      setVipMsg({ text: result.error || 'Mua thất bại!', ok: false });
+    }
+  };
+
   const openWatchRoomModal = () => {
     setShowWatchRoomModal(true);
     setCreatedRoomId(null);
@@ -211,7 +237,7 @@ export default function Header() {
   return (
     <>
       {/* ── HEADER BAR ── */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-transparent backdrop-blur-0 border-b border-transparent transition-all duration-300" id="main-header" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, transparent 100%)' }}>
+      <header className="fixed top-0 left-0 right-0 z-50 bg-transparent backdrop-blur-0 border-b border-transparent transition-all duration-300" id="main-header" style={{ background: 'rgba(8,8,10,0.97)', backdropFilter: 'blur(20px)' }}>
         <div className="max-w-7xl mx-auto px-3 md:px-6 h-16 flex items-center gap-2 md:gap-3">
 
           {/* Logo — 1 lần duy nhất */}
@@ -224,10 +250,11 @@ export default function Header() {
               { to: '/type/phim-bo', label: 'Phim Bộ' },
               { to: '/type/phim-le', label: 'Phim Lẻ' },
               { to: '/type/hoat-hinh', label: 'Hoạt Hình' },
+              { to: '/type/phim-chieu-rap', label: 'Chiếu Rạp' },
             ].map(l => (
               <Link key={l.to} to={l.to}
                 className={cn('px-3 py-1.5 rounded-lg text-sm font-semibold transition-all whitespace-nowrap',
-                  location.pathname === l.to ? 'text-yellow-400' : 'text-slate-400 hover:text-white')}>
+                  location.pathname === l.to ? 'text-green-400' : 'text-slate-400 hover:text-white')}>
                 {l.label}
               </Link>
             ))}
@@ -307,7 +334,7 @@ export default function Header() {
                     </div>
                     <button
                       onClick={goToDesktopSearchResults}
-                      className="w-full text-center py-2.5 text-xs font-bold text-yellow-400 hover:bg-slate-800/80 border-t border-slate-800 transition-colors"
+                      className="w-full text-center py-2.5 text-xs font-bold text-green-400 hover:bg-slate-800/80 border-t border-slate-800 transition-colors"
                     >
                       Xem tất cả kết quả cho "{desktopQuery.trim()}"
                     </button>
@@ -316,15 +343,6 @@ export default function Header() {
               </div>
             )}
           </div>
-
-          {/* Hamburger menu — danh mục nhanh, giống mẫu Phim Tuổi Thơ */}
-          <button
-            onClick={() => setShowHamburgerMenu(true)}
-            className="p-1.5 text-slate-300 hover:text-white transition-colors shrink-0"
-            aria-label="Menu"
-          >
-            <Menu size={20} />
-          </button>
 
           {/* Chuông thông báo — thay cho icon tài khoản cũ trên mobile */}
           <Link
@@ -344,7 +362,7 @@ export default function Header() {
           {session ? (
             <div ref={userMenuRef} className="relative shrink-0 hidden md:block">
               <button onClick={() => setShowUserMenu(v => !v)}
-                className="flex items-center gap-1.5 pl-1 pr-2 py-1 rounded-full bg-slate-800/80 border border-slate-700/50 hover:border-yellow-500/40 transition-all">
+                className="flex items-center gap-1.5 pl-1 pr-2 py-1 rounded-full bg-slate-800/80 border border-slate-700/50 hover:border-green-500/40 transition-all">
                 <img src={session.avatar} alt={session.username} className="w-7 h-7 rounded-full bg-slate-700" />
                 <ChevronDown size={12} className="text-slate-500" />
               </button>
@@ -382,70 +400,6 @@ export default function Header() {
         </div>
       </header>
 
-      {/* ── HAMBURGER MENU — toàn màn hình, theo mẫu Phim Tuổi Thơ ── */}
-      {showHamburgerMenu && (
-        <div className="fixed inset-0 z-[250] bg-slate-950 flex flex-col">
-          {/* Top bar của menu: logo + nút đóng hồng */}
-          <div className="flex items-center justify-between px-4 h-16 border-b border-slate-800 shrink-0">
-            <Link to="/" onClick={() => setShowHamburgerMenu(false)}><Logo settings={settings} /></Link>
-            <button
-              onClick={() => setShowHamburgerMenu(false)}
-              className="w-10 h-10 rounded-lg bg-pink-600 hover:bg-pink-500 text-white flex items-center justify-center transition-colors"
-              aria-label="Đóng menu"
-            >
-              <X size={20} />
-            </button>
-          </div>
-
-          <div className="flex-1 overflow-y-auto px-5 py-6">
-            <nav className="flex flex-col divide-y divide-slate-800/80">
-              {[
-                { to: '/search?q=lồng tiếng', label: 'Phim Lồng Tiếng', icon: Mic2 },
-                { to: '/search?q=thuyết minh', label: 'Phim Thuyết Minh', icon: Captions },
-                { to: '/type/phim-le', label: 'Phim', icon: Film },
-                { to: '/type/phim-bo', label: 'Loạt', icon: Tv },
-                { to: '/type/phim-bo?country=au-my', label: 'Tiếng Anh', icon: null },
-                { to: '/chinh-sach-bao-mat', label: 'Chính Sách Bảo Mật', icon: null },
-                { to: '/dmca', label: 'DMCA', icon: null },
-              ].map(item => (
-                <Link
-                  key={item.label}
-                  to={item.to}
-                  onClick={() => setShowHamburgerMenu(false)}
-                  className="flex items-center gap-3 py-4 text-lg font-bold text-slate-200 hover:text-yellow-400 transition-colors"
-                >
-                  {item.icon && <item.icon size={18} className="text-yellow-400 shrink-0" />}
-                  {item.label}
-                </Link>
-              ))}
-            </nav>
-
-            {/* Ô tìm kiếm trong menu */}
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (!hamburgerQuery.trim()) return;
-                setShowHamburgerMenu(false);
-                navigate(`/search?q=${encodeURIComponent(hamburgerQuery.trim())}`);
-              }}
-              className="mt-8 flex items-center gap-2 bg-slate-900 border border-slate-700/70 rounded-full px-4 py-3"
-            >
-              <Search size={16} className="text-slate-500 shrink-0" />
-              <input
-                type="text"
-                value={hamburgerQuery}
-                onChange={e => setHamburgerQuery(e.target.value)}
-                placeholder="Tìm kiếm.."
-                className="flex-1 bg-transparent text-sm text-white placeholder:text-slate-500 focus:outline-none min-w-0"
-              />
-              <button type="submit" className="text-[11px] font-black text-slate-950 bg-yellow-400 hover:bg-yellow-300 px-3.5 py-1.5 rounded-full transition-colors shrink-0">
-                Tìm
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-
       {/* ── WATCH ROOM MODAL ── */}
       {showWatchRoomModal && (
         <div className="fixed inset-0 z-[300] flex items-center justify-center px-4" onClick={() => setShowWatchRoomModal(false)}>
@@ -457,8 +411,8 @@ export default function Header() {
           >
             {/* Header modal */}
             <div className="flex items-center gap-3 px-5 pt-5 pb-4 border-b border-slate-800/60 shrink-0">
-              <div className="w-9 h-9 rounded-xl bg-yellow-500/15 border border-yellow-500/30 flex items-center justify-center shrink-0">
-                <Users size={18} className="text-yellow-400" />
+              <div className="w-9 h-9 rounded-xl bg-green-500/15 border border-green-500/30 flex items-center justify-center shrink-0">
+                <Users size={18} className="text-green-400" />
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="text-white font-black text-base leading-tight">Tạo phòng Xem Chung</h3>
@@ -485,7 +439,7 @@ export default function Header() {
                       placeholder="Nhập tên phim muốn xem chung..."
                       value={modalSearch}
                       onChange={e => setModalSearch(e.target.value)}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-xl py-2.5 pl-9 pr-4 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-yellow-500/60"
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl py-2.5 pl-9 pr-4 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-green-500/60"
                     />
                     <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none">
                       {modalSearching ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} />}
@@ -510,7 +464,7 @@ export default function Header() {
                         <button
                           key={movie._id}
                           onClick={() => { setSelectedMovie(movie); setModalStep('confirm'); }}
-                          className="group flex flex-col rounded-xl overflow-hidden bg-slate-900 border border-slate-800 hover:border-yellow-500/50 transition-all text-left"
+                          className="group flex flex-col rounded-xl overflow-hidden bg-slate-900 border border-slate-800 hover:border-green-500/50 transition-all text-left"
                         >
                           <div className="relative w-full bg-slate-800" style={{ aspectRatio: '2/3' }}>
                             <img
@@ -520,7 +474,7 @@ export default function Header() {
                               referrerPolicy="no-referrer"
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center pb-2">
-                              <span className="text-[10px] font-bold text-yellow-400">Chọn</span>
+                              <span className="text-[10px] font-bold text-green-400">Chọn</span>
                             </div>
                           </div>
                           <div className="p-1.5">
@@ -553,7 +507,7 @@ export default function Header() {
                     <p className="text-slate-500 text-xs mt-1">{selectedMovie.origin_name} · {selectedMovie.year}</p>
                     <button
                       onClick={() => { setModalStep('search'); setSelectedMovie(null); }}
-                      className="mt-2 text-[10px] text-yellow-400 hover:text-yellow-300 font-semibold text-left"
+                      className="mt-2 text-[10px] text-green-400 hover:text-green-300 font-semibold text-left"
                     >
                       ← Đổi phim khác
                     </button>
@@ -584,7 +538,7 @@ export default function Header() {
                         setWatchRoomMax(clamped);
                         setWatchRoomMaxInput(String(clamped));
                       }}
-                      className="flex-1 text-center bg-slate-900 border border-slate-700 rounded-xl py-2 text-white font-black text-lg focus:outline-none focus:border-yellow-500/60"
+                      className="flex-1 text-center bg-slate-900 border border-slate-700 rounded-xl py-2 text-white font-black text-lg focus:outline-none focus:border-green-500/60"
                     />
                     <button
                       onClick={() => { const v = Math.min(20, watchRoomMax + 1); setWatchRoomMax(v); setWatchRoomMaxInput(String(v)); }}
@@ -626,7 +580,7 @@ export default function Header() {
                       setModalStep('done');
                     } finally { setCreatingRoom(false); }
                   }}
-                  className="w-full py-3 rounded-xl bg-yellow-500 text-white font-bold text-sm hover:bg-yellow-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                  className="w-full py-3 rounded-xl bg-green-500 text-white font-bold text-sm hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
                 >
                   {creatingRoom ? <Loader2 size={16} className="animate-spin" /> : <Users size={16} />}
                   {creatingRoom ? 'Đang tạo phòng...' : `Tạo phòng · ${watchRoomMax} người`}
@@ -638,8 +592,8 @@ export default function Header() {
             {modalStep === 'done' && createdRoomId && (
               <div className="px-5 py-5 flex flex-col gap-4">
                 <div className="text-center">
-                  <div className="w-14 h-14 rounded-full bg-yellow-500/15 flex items-center justify-center mx-auto mb-3">
-                    <Check size={26} className="text-yellow-400" />
+                  <div className="w-14 h-14 rounded-full bg-green-500/15 flex items-center justify-center mx-auto mb-3">
+                    <Check size={26} className="text-green-400" />
                   </div>
                   <h3 className="text-white font-bold text-base">Phòng đã được tạo!</h3>
                   <p className="text-slate-400 text-xs mt-1">Chia sẻ link cho bạn bè · Tối đa {watchRoomMax} người</p>
@@ -656,8 +610,8 @@ export default function Header() {
                 )}
 
                 {/* Link box */}
-                <div className="bg-slate-900 rounded-xl p-3 flex items-center gap-2 border border-yellow-500/20">
-                  <p className="flex-1 text-yellow-300 text-xs font-mono truncate">
+                <div className="bg-slate-900 rounded-xl p-3 flex items-center gap-2 border border-green-500/20">
+                  <p className="flex-1 text-green-300 text-xs font-mono truncate">
                     {window.location.origin}/watch-room/{createdRoomId}
                   </p>
                   <button onClick={() => {
@@ -667,7 +621,7 @@ export default function Header() {
                   }}
                     className={cn(
                       'shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-all',
-                      roomLinkCopied ? 'bg-yellow-500 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                      roomLinkCopied ? 'bg-green-500 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
                     )}>
                     {roomLinkCopied ? <Check size={12} /> : <Copy size={12} />}
                     {roomLinkCopied ? 'Đã copy!' : 'Copy'}
@@ -680,7 +634,7 @@ export default function Header() {
                     Đóng
                   </button>
                   <button onClick={() => { navigate(`/watch-room/${createdRoomId}`); setShowWatchRoomModal(false); }}
-                    className="flex-1 py-2.5 rounded-xl bg-yellow-500 text-white font-bold text-sm hover:bg-yellow-500 transition-colors flex items-center justify-center gap-1.5">
+                    className="flex-1 py-2.5 rounded-xl bg-green-500 text-white font-bold text-sm hover:bg-green-600 transition-colors flex items-center justify-center gap-1.5">
                     <Users size={14} /> Vào phòng
                   </button>
                 </div>
