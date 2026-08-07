@@ -83,13 +83,13 @@ service cloud.firestore {
     }
 
     // Ad Banners — mọi người đọc, chỉ admin ghi
-    match /ad_banners/{id} {
+    match /ptt_ad_banners/{id} {
       allow read: if true;
       allow write: if true;
     }
 
     // Popup Ads — mọi người đọc, chỉ admin ghi
-    match /popup_ads/{id} {
+    match /ptt_popup_ads/{id} {
       allow read: if true;
       allow write: if true;
     }

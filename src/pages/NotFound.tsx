@@ -5,7 +5,7 @@ import { useSEO } from '../hooks/useSEO';
 export default function NotFound() {
   useSEO({
     title: 'Không Tìm Thấy Trang (404)',
-    description: 'Trang bạn tìm không tồn tại hoặc đã bị xoá. Quay lại trang chủ Đảo Phim để tiếp tục xem phim online miễn phí HD.',
+    description: 'Trang bạn tìm không tồn tại hoặc đã bị xoá. Quay lại trang chủ Phim Tuổi Thơ để tiếp tục xem phim online miễn phí HD.',
     noIndex: true,
   });
 

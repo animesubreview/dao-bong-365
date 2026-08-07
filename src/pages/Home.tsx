@@ -329,7 +329,7 @@ function ContinueWatchingSection() {
                 if (item.poster_url && !t.src.includes(item.poster_url)) {
                   t.src = movieApi.getImageUrl(item.poster_url);
                 } else {
-                  t.src = '/assets/logo-daophim.png';
+                  t.src = '/assets/logo-phimtuoitho.png';
                 }
               }}
               className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
@@ -857,8 +857,8 @@ export default function Home() {
   }, []);
 
   useSEO({
-    title: 'Xem Phim Miễn Phí - Phim Hay Cả Đảo',
-    description: 'Đảo Phim - Xem phim online miễn phí chất lượng HD. Phim bộ, phim lẻ, hoạt hình, anime, phim chiếu rạp Vietsub, thuyết minh, lồng tiếng. Cập nhật liên tục mỗi ngày.',
+    title: 'Xem Phim Miễn Phí - Ký Ức Tuổi Thơ',
+    description: 'Phim Tuổi Thơ - Xem phim online miễn phí chất lượng HD. Phim bộ, phim lẻ, hoạt hình, anime, phim chiếu rạp Vietsub, thuyết minh, lồng tiếng. Cập nhật liên tục mỗi ngày.',
     url: '/',
     type: 'website',
   });
@@ -911,7 +911,7 @@ export default function Home() {
   return (
     <div className="pb-20 bg-slate-950 min-h-screen">
       <h1 className="sr-only">
-        Đảo Phim - Xem Phim Online Miễn Phí HD Vietsub, Thuyết Minh, Lồng Tiếng
+        Phim Tuổi Thơ - Xem Phim Online Miễn Phí HD Vietsub, Thuyết Minh, Lồng Tiếng
       </h1>
       <Banner movies={bannerMovies} />
       <ContinueWatchingSection />

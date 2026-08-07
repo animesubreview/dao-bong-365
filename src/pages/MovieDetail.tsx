@@ -30,7 +30,7 @@ export default function MovieDetail() {
   const isTV = episodes.length > 0 && (episodes[0]?.server_data?.length ?? 0) > 1;
   const seoImage = movieApi.getImageUrl(movie?.poster_url || movie?.thumb_url || '');
   const seoDesc = movie
-    ? `Xem ${movie.name}${movie.origin_name ? ` (${movie.origin_name})` : ''} ${movie.year || ''} Vietsub HD miễn phí tại Đảo Phim. ${movie.content?.replace(/<[^>]*>/g, '').slice(0, 120) || ''}`
+    ? `Xem ${movie.name}${movie.origin_name ? ` (${movie.origin_name})` : ''} ${movie.year || ''} Vietsub HD miễn phí tại Phim Tuổi Thơ. ${movie.content?.replace(/<[^>]*>/g, '').slice(0, 120) || ''}`
     : '';
 
   useSEO({
@@ -118,8 +118,8 @@ export default function MovieDetail() {
     );
   }
 
-  const posterUrl = tmdbImages.posters[0] || movieApi.getImageUrl(movie.poster_url || movie.thumb_url) || '/assets/logo-daophim.png';
-  const thumbUrl = tmdbImages.backdrops[0] || movieApi.getImageUrl(movie.thumb_url || movie.poster_url) || '/assets/logo-daophim.png';
+  const posterUrl = tmdbImages.posters[0] || movieApi.getImageUrl(movie.poster_url || movie.thumb_url) || '/assets/logo-phimtuoitho.png';
+  const thumbUrl = tmdbImages.backdrops[0] || movieApi.getImageUrl(movie.thumb_url || movie.poster_url) || '/assets/logo-phimtuoitho.png';
   const firstEpisode = episodes[0]?.server_data[0];
   const currentServer = episodes[selectedServer];
 
@@ -143,7 +143,7 @@ export default function MovieDetail() {
           onError={(e) => {
             const fallback = movieApi.getImageUrl(movie.thumb_url || movie.poster_url);
             if (fallback && e.currentTarget.src !== fallback) e.currentTarget.src = fallback;
-            else e.currentTarget.src = '/assets/logo-daophim.png';
+            else e.currentTarget.src = '/assets/logo-phimtuoitho.png';
           }}
           className="w-full h-full object-cover object-top" />
         <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-slate-950/60 to-transparent" />
@@ -170,7 +170,7 @@ export default function MovieDetail() {
                 onError={(e) => {
                   const fallback = movieApi.getImageUrl(movie.poster_url || movie.thumb_url);
                   if (fallback && e.currentTarget.src !== fallback) e.currentTarget.src = fallback;
-                  else e.currentTarget.src = '/assets/logo-daophim.png';
+                  else e.currentTarget.src = '/assets/logo-phimtuoitho.png';
                 }} />
             </div>
           </div>
@@ -185,7 +185,7 @@ export default function MovieDetail() {
                 onError={(e) => {
                   const fallback = movieApi.getImageUrl(movie.poster_url || movie.thumb_url);
                   if (fallback && e.currentTarget.src !== fallback) e.currentTarget.src = fallback;
-                  else e.currentTarget.src = '/assets/logo-daophim.png';
+                  else e.currentTarget.src = '/assets/logo-phimtuoitho.png';
                 }} />
               </div>
               <div className="pb-1">

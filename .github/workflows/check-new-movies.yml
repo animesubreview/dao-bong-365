@@ -11,5 +11,5 @@ jobs:
     steps:
       - name: Gọi API check-new-movies trên Vercel
         run: |
-          curl -sS -X GET "https://daophim.online/api/check-new-movies" \
+          curl -sS -X GET "https://phimtuoitho.co/api/check-new-movies" \
             -H "x-cron-secret: ${{ secrets.CRON_SECRET }}"

@@ -5,9 +5,9 @@
  * phát hiện nội dung mới nhanh hơn.
  */
 
-const BASE_SITE = 'https://daophim.online';
+const BASE_SITE = 'https://phimtuoitho.co';
 const API_BASE  = 'https://phimapi.com';
-const SITE_NAME = 'Đảo Phim';
+const SITE_NAME = 'Phim Tuổi Thơ';
 
 function escapeXml(str) {
   if (!str) return '';

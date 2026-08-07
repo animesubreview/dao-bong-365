@@ -28,7 +28,7 @@ export default function MovieCard({ movie, className }: any) {
         {/* Poster - tỷ lệ 2:3 cố định */}
         <div className="relative rounded-xl overflow-hidden bg-slate-800" style={{ aspectRatio: '2/3' }}>
           <img
-            src={movieApi.getImageUrl(movie.poster_url || movie.thumb_url) || '/assets/logo-daophim.png'}
+            src={movieApi.getImageUrl(movie.poster_url || movie.thumb_url) || '/assets/logo-phimtuoitho.png'}
             alt={movie.name}
             loading="lazy"
             referrerPolicy="no-referrer"
@@ -39,7 +39,7 @@ export default function MovieCard({ movie, className }: any) {
               if (original && img.src !== original) {
                 img.src = original;
               } else {
-                img.src = '/assets/logo-daophim.png';
+                img.src = '/assets/logo-phimtuoitho.png';
               }
             }}
             className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"

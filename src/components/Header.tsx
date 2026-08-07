@@ -14,7 +14,7 @@ import { subscribeNotifications, countUnread, SiteNotification } from '../lib/no
 import { subscribeSiteSettings } from '../lib/siteSettings';
 
 function useSiteSettings() {
-  const [settings, setSettings] = useState<Record<string, any>>({ logoType: 'text', siteName: 'ĐẢO PHIM' });
+  const [settings, setSettings] = useState<Record<string, any>>({ logoType: 'text', siteName: 'PHIM TUỔI THƠ' });
   useEffect(() => {
     const unsub = subscribeSiteSettings((data) => {
       setSettings((prev) => ({ ...prev, ...data }));
@@ -24,11 +24,11 @@ function useSiteSettings() {
   return settings;
 }
 
-// ── Logo Đảo Phim — ảnh local duy nhất, nền trong suốt (icon + chữ + tagline) ──
-const SITE_LOGO_URL = '/assets/logo-daophim.png';
+// ── Logo Phim Tuổi Thơ — ảnh local duy nhất, nền trong suốt (icon + chữ + tagline) ──
+const SITE_LOGO_URL = '/assets/logo-phimtuoitho.png';
 
 function Logo({ settings }: { settings: any }) {
-  const name: string = settings.siteName || 'ĐẢO PHIM';
+  const name: string = settings.siteName || 'PHIM TUỔI THƠ';
 
   return (
     <div className="flex items-center">
