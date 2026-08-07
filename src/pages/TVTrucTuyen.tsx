@@ -1,42 +1,93 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Hls from 'hls.js';
-import { Tv, Loader2, RadioTower } from 'lucide-react';
+import { Tv, Loader2, RadioTower, Volume2, VolumeX, Settings, Maximize, Minimize, Check, Play } from 'lucide-react';
 import { subscribeTVChannels, TVChannel, TV_CATEGORIES } from '../lib/liveTV';
 import { buildLiveEmbed } from '../lib/livestream';
 import { usePageTitle } from '../lib/utils';
 
-/* ─── Player — tự nhận diện m3u8 (hls.js) hoặc iframe (youtube/facebook/nhúng khác) ── */
+/* ─── Player — tự nhận diện m3u8 (hls.js, custom control) hoặc iframe (youtube/facebook/nhúng khác) ── */
 function TVPlayer({ url }: { url: string }) {
   const { url: embedUrl, kind } = buildLiveEmbed(url);
   const isHls = kind === 'mux' || /\.m3u8($|\?)/i.test(embedUrl);
+  const wrapRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
   const [loading, setLoading] = useState(true);
   const [offline, setOffline] = useState(false);
 
+  // Điều khiển tuỳ chỉnh: âm lượng, chất lượng, toàn màn hình — KHÔNG có nút tạm dừng / thanh thời gian (kênh trực tiếp)
+  const [muted, setMuted] = useState(true);
+  const [playing, setPlaying] = useState(true);
+  const [qualityLevels, setQualityLevels] = useState<{ index: number; height: number }[]>([]);
+  const [currentLevel, setCurrentLevel] = useState(-1);
+  const [activeLevel, setActiveLevel] = useState(-1);
+  const [showQualityMenu, setShowQualityMenu] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
   useEffect(() => {
     setLoading(true);
     setOffline(false);
+    setQualityLevels([]);
+    setCurrentLevel(-1);
+    setActiveLevel(-1);
+    setShowQualityMenu(false);
     if (!isHls) return;
     const video = videoRef.current;
     if (!video) return;
     if (hlsRef.current) { hlsRef.current.destroy(); hlsRef.current = null; }
 
     if (Hls.isSupported()) {
-      const hls = new Hls({ maxBufferLength: 20 });
+      const hls = new Hls({ maxBufferLength: 20, lowLatencyMode: true, liveDurationInfinity: true });
       hlsRef.current = hls;
       hls.loadSource(embedUrl);
       hls.attachMedia(video);
-      hls.on(Hls.Events.MANIFEST_PARSED, () => { setLoading(false); video.play().catch(() => {}); });
+      hls.on(Hls.Events.MANIFEST_PARSED, (_e, data) => {
+        setLoading(false);
+        video.play().then(() => setPlaying(true)).catch(() => setPlaying(false));
+        if (data.levels && data.levels.length > 1) {
+          setQualityLevels(data.levels.map((lvl, index) => ({ index, height: lvl.height })));
+        }
+      });
+      hls.on(Hls.Events.LEVEL_SWITCHED, (_e, data) => setActiveLevel(data.level));
       hls.on(Hls.Events.ERROR, (_e, data) => { if (data.fatal) { setOffline(true); setLoading(false); } });
     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
       video.src = embedUrl;
-      video.addEventListener('loadedmetadata', () => { setLoading(false); video.play().catch(() => {}); });
+      video.addEventListener('loadedmetadata', () => { setLoading(false); video.play().then(() => setPlaying(true)).catch(() => setPlaying(false)); });
       video.addEventListener('error', () => { setOffline(true); setLoading(false); });
     }
     return () => { if (hlsRef.current) { hlsRef.current.destroy(); hlsRef.current = null; } };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [embedUrl, isHls]);
+
+  useEffect(() => {
+    const onFsChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', onFsChange);
+    return () => document.removeEventListener('fullscreenchange', onFsChange);
+  }, []);
+
+  const toggleMute = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    video.muted = !video.muted;
+    setMuted(video.muted);
+  };
+  const startPlaying = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    video.play().then(() => setPlaying(true)).catch(() => {});
+  };
+  const changeQuality = (index: number) => {
+    if (hlsRef.current) hlsRef.current.currentLevel = index; // -1 = Tự động
+    setCurrentLevel(index);
+    setShowQualityMenu(false);
+  };
+  const toggleFullscreen = () => {
+    if (document.fullscreenElement) document.exitFullscreen();
+    else wrapRef.current?.requestFullscreen().catch(() => {});
+  };
+  const qualityLabel = currentLevel === -1
+    ? `Tự động${activeLevel >= 0 && qualityLevels[activeLevel] ? ` (${qualityLevels[activeLevel].height}p)` : ''}`
+    : `${qualityLevels.find(l => l.index === currentLevel)?.height ?? ''}p`;
 
   if (!embedUrl) {
     return (
@@ -49,17 +100,72 @@ function TVPlayer({ url }: { url: string }) {
 
   if (isHls) {
     return (
-      <div className="relative w-full h-full bg-black">
-        <video ref={videoRef} className="w-full h-full object-contain" playsInline autoPlay controls />
+      <div ref={wrapRef} className="relative w-full h-full bg-black group">
+        {/* Không dùng "controls" mặc định của trình duyệt (có nút tạm dừng + thanh tua) — thay bằng thanh điều khiển riêng bên dưới */}
+        <video ref={videoRef} className="w-full h-full object-contain" playsInline autoPlay muted={muted}
+          onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} />
+
         {loading && !offline && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/60">
+          <div className="absolute inset-0 flex items-center justify-center bg-black/60 z-10">
             <Loader2 size={28} className="animate-spin text-green-400" />
           </div>
         )}
+
         {offline && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/80 text-slate-400">
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/80 z-10 text-slate-400">
             <RadioTower size={26} />
             <p className="text-sm font-semibold">Kênh tạm ngưng phát, vui lòng thử Link khác</p>
+          </div>
+        )}
+
+        {!offline && (
+          <div className="absolute inset-0 z-10">
+            {/* Bấm để bắt đầu xem nếu trình duyệt chặn autoplay */}
+            {!playing && !loading && (
+              <button onClick={startPlaying} className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/50" aria-label="Xem trực tiếp">
+                <span className="w-16 h-16 rounded-full bg-green-500 flex items-center justify-center shadow-xl">
+                  <Play size={26} className="text-slate-950 ml-1" />
+                </span>
+                <span className="text-white text-xs font-bold bg-black/50 px-3 py-1 rounded-full">Bấm để xem</span>
+              </button>
+            )}
+
+            {/* Nút âm lượng — luôn hiện rõ, góc dưới trái */}
+            <button onClick={toggleMute} aria-label={muted ? 'Bật tiếng' : 'Tắt tiếng'}
+              className="absolute bottom-3 left-3 flex items-center justify-center w-11 h-11 bg-black/60 hover:bg-black/80 active:scale-95 backdrop-blur border border-white/20 text-white rounded-2xl shadow-xl transition-all">
+              {muted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+            </button>
+
+            {/* Nhóm nút góc phải dưới: chất lượng video + toàn màn hình */}
+            <div className="absolute bottom-3 right-3 flex items-center gap-2">
+              {qualityLevels.length > 1 && (
+                <div className="relative">
+                  {showQualityMenu && (
+                    <div className="absolute bottom-full mb-2 right-0 min-w-[130px] bg-black/90 backdrop-blur border border-white/15 rounded-xl shadow-xl overflow-hidden z-30">
+                      <button onClick={() => changeQuality(-1)} className="w-full flex items-center justify-between gap-2 px-3.5 py-2.5 text-xs font-semibold text-white hover:bg-white/10 transition-colors">
+                        Tự động
+                        {currentLevel === -1 && <Check size={13} className="text-green-400" />}
+                      </button>
+                      {[...qualityLevels].sort((a, b) => b.height - a.height).map(lvl => (
+                        <button key={lvl.index} onClick={() => changeQuality(lvl.index)} className="w-full flex items-center justify-between gap-2 px-3.5 py-2.5 text-xs font-semibold text-white hover:bg-white/10 transition-colors">
+                          {lvl.height}p
+                          {currentLevel === lvl.index && <Check size={13} className="text-green-400" />}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  <button onClick={() => setShowQualityMenu(v => !v)} aria-label="Chỉnh chất lượng video"
+                    className="flex items-center gap-1.5 bg-black/60 hover:bg-black/80 active:scale-95 backdrop-blur border border-white/20 text-white font-bold rounded-2xl px-3 py-2.5 shadow-xl transition-all">
+                    <Settings size={16} />
+                    <span className="hidden sm:inline text-xs">{qualityLabel}</span>
+                  </button>
+                </div>
+              )}
+              <button onClick={toggleFullscreen} aria-label="Toàn màn hình"
+                className="flex items-center justify-center w-11 h-11 bg-black/60 hover:bg-black/80 active:scale-95 backdrop-blur border border-white/20 text-white rounded-2xl shadow-xl transition-all">
+                {isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
+              </button>
+            </div>
           </div>
         )}
       </div>
