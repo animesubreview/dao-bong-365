@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import PopupAd from '../components/PopupAd';
 import CommentSection from '../components/CommentSection';
 import AdBanner from '../components/AdBanner';
+import DiscordBanner from '../components/DiscordBanner';
 import { getMovieOverride, mergeOverride, mergeCustomServers } from '../lib/movieOverrides';
 import { useSEO } from '../hooks/useSEO';
 
@@ -239,6 +240,9 @@ export default function MovieDetail() {
 
             {/* Ad Banner */}
             <AdBanner position="top" className="rounded-xl overflow-hidden" />
+
+            {/* Mời vào nhóm Discord */}
+            <DiscordBanner className="mt-3" />
           </div>
         </div>
 

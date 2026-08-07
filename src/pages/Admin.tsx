@@ -3590,6 +3590,18 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
                 <input type="text" value={settings.adsTelegram || ''} onChange={e => setSettings(s => ({ ...s, adsTelegram: e.target.value.replace(/^@/, '') }))} className="input-field" placeholder="daophim_ads" />
               </InputRow>
 
+              <InputRow label="Link nhóm Discord" hint="Hiển thị banner mời vào nhóm Discord ở trang Chi tiết phim & trang Xem phim. Để trống thì ẨN banner này.">
+                <input type="text" value={settings.discordUrl || ''} onChange={e => setSettings(s => ({ ...s, discordUrl: e.target.value }))} className="input-field" placeholder="https://discord.gg/xxxxxxx" />
+              </InputRow>
+
+              <InputRow label="Chữ trên banner Discord" hint="Để trống dùng chữ mặc định.">
+                <input type="text" value={settings.discordBannerText || ''} onChange={e => setSettings(s => ({ ...s, discordBannerText: e.target.value }))} className="input-field" placeholder="THAM GIA NHÓM DISCORD - CẬP NHẬT PHIM MỚI MỖI NGÀY" />
+              </InputRow>
+
+              <InputRow label="Ảnh banner Discord (tuỳ chọn)" hint="Dán link ảnh nếu muốn dùng banner tự thiết kế thay vì banner mặc định.">
+                <input type="text" value={settings.discordBannerImage || ''} onChange={e => setSettings(s => ({ ...s, discordBannerImage: e.target.value }))} className="input-field" placeholder="https://..." />
+              </InputRow>
+
               <InputRow label="Cảnh báo copy (trang Up phim thủ công)" hint="Hiển thị dưới video ở trang xem phim up thủ công.">
                 <div className="flex items-center gap-3 mb-2">
                   <button

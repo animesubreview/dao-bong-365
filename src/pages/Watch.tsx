@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import CommentSection from '../components/CommentSection';
 import MovieCard from '../components/MovieCard';
 import DaoPhimPlayer from '../components/DaoPhimPlayer';
+import DiscordBanner from '../components/DiscordBanner';
 import { getMovieOverride, mergeOverride, mergeCustomServers } from '../lib/movieOverrides';
 import { createWatchRoom } from '../lib/watchRoom';
 import { getCurrentUser, getUserProfile, onAuthChange } from '../lib/auth';
@@ -296,6 +297,11 @@ export default function Watch() {
         }}
         onNext={nextEpisode ? () => navigate(`/watch/${movie.slug}/${nextEpisode.slug}?server=${encodeURIComponent(nextEpisode.server_name)}`) : undefined}
       />
+      </div>
+
+      {/* Mời vào nhóm Discord */}
+      <div className="max-w-2xl xl:max-w-none mx-auto xl:mx-0 px-3 xl:px-0 pt-3">
+        <DiscordBanner />
       </div>
 
       {/* ── Content area ── */}
