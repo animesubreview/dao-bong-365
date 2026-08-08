@@ -6,7 +6,7 @@ const DEFAULT_API_BASE = 'https://phimapi.com';
 
 function readApiBaseFromSettings(): string {
   try {
-    const raw = localStorage.getItem('site_settings');
+    const raw = localStorage.getItem('ptt_site_settings');
     if (!raw) return DEFAULT_API_BASE;
     const settings = JSON.parse(raw);
     const custom = (settings.apiBaseUrl || '').trim().replace(/\/+$/, '');
@@ -572,7 +572,7 @@ export const movieApi = {
   },
 
   searchMovies: async (keyword: string, page: number = 1, limit: number = 20): Promise<APIResponse<Movie>> => {
-    const response = await fetch(`${BASE_URL}/v1/api/tim-kiem?keyword=${keyword}&page=${page}&limit=${limit}`);
+    const response = await fetch(`${BASE_URL}/v1/api/tim-kiem?keyword=${encodeURIComponent(keyword)}&page=${page}&limit=${limit}`);
     const data = await response.json();
     // The search API structure is slightly different in items
     return {

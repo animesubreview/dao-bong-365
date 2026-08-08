@@ -160,7 +160,7 @@ export default function MuaVip() {
                 value={keyInput}
                 onChange={e => setKeyInput(e.target.value.toUpperCase())}
                 onKeyDown={e => e.key === 'Enter' && handleRedeemKey()}
-                placeholder="Nhập mã key, VD: DAOPHIM-XXXX-XXXX"
+                placeholder="Nhập mã key, VD: PHIMTUOITHO-XXXX-XXXX"
                 className="flex-1 bg-slate-900/60 border border-slate-700/50 rounded-xl px-3 py-2.5 text-sm text-white font-mono placeholder:text-slate-600 focus:outline-none focus:border-violet-500/60"
               />
               <button

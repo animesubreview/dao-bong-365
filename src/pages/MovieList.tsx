@@ -157,7 +157,7 @@ export default function MovieList() {
   const currentLabel = typeLabels[filterFormat] || 'Phim';
   useSEO({
     title: `${currentLabel} Vietsub HD Mới Nhất`,
-    description: `Xem ${currentLabel} Vietsub HD miễn phí tại Đảo Phim. Danh sách ${currentLabel} mới nhất, cập nhật liên tục hàng ngày.`,
+    description: `Xem ${currentLabel} Vietsub HD miễn phí tại Phim Tuổi Thơ. Danh sách ${currentLabel} mới nhất, cập nhật liên tục hàng ngày.`,
     url: type ? `/type/${type}` : '/type/phim-bo',
     type: 'website',
   });

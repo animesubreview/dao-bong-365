@@ -82,7 +82,7 @@ function MCard({ movie, pinned }: { movie: Movie; pinned?: boolean }) {
       <div className="relative rounded-lg overflow-hidden bg-slate-800" style={{ aspectRatio:'2/3' }}>
         <div className="absolute inset-0 bg-slate-800" />
         <img src={movieApi.getImageUrl(movie.poster_url||movie.thumb_url)} alt={dec(movie.name)}
-          loading="lazy" referrerPolicy="no-referrer" onLoad={() => setOk(true)}
+          loading="lazy" decoding="async" referrerPolicy="no-referrer" onLoad={() => setOk(true)}
           className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           style={{ opacity: ok ? 1 : 0, transition: 'opacity 500ms ease' }} />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/40 to-transparent" />
@@ -110,7 +110,7 @@ function ManualMCard({ movie }: { movie: ManualMovie }) {
     <Link to={`/manual/${movie.id}`} className="group shrink-0 block" style={{ width: CW, scrollSnapAlign:'start' }}>
       <div className="relative rounded-lg overflow-hidden bg-slate-800" style={{ aspectRatio:'2/3' }}>
         {movie.posterUrl
-          ? <img src={movie.posterUrl} alt={movie.name} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+          ? <img src={movie.posterUrl} alt={movie.name} loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
           : <div className="w-full h-full flex items-center justify-center text-3xl">🎬</div>}
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/40 to-transparent" />
       </div>
@@ -131,7 +131,7 @@ function UpcomingCard({ movie }: { movie: ManualMovie }) {
       <div className="relative rounded-lg overflow-hidden bg-slate-800" style={{ aspectRatio:'2/3' }}>
         <div className="absolute inset-0 bg-slate-800" />
         {movie.posterUrl && (
-          <img src={movie.posterUrl} alt={movie.name} loading="lazy" referrerPolicy="no-referrer"
+          <img src={movie.posterUrl} alt={movie.name} loading="lazy" decoding="async" referrerPolicy="no-referrer"
             onLoad={() => setOk(true)}
             className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             style={{ opacity: ok ? 1 : 0, transition: 'opacity 500ms ease' }} />
@@ -186,7 +186,7 @@ function UpcomingNewCard({ movie }: { movie: UpcomingMovie }) {
       <div className="relative rounded-lg overflow-hidden bg-slate-800" style={{ aspectRatio:'2/3' }}>
         <div className="absolute inset-0 bg-slate-800" />
         {movie.posterUrl && (
-          <img src={movie.posterUrl} alt={movie.name} loading="lazy" referrerPolicy="no-referrer"
+          <img src={movie.posterUrl} alt={movie.name} loading="lazy" decoding="async" referrerPolicy="no-referrer"
             onLoad={() => setOk(true)}
             className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             style={{ opacity: ok ? 1 : 0, transition: 'opacity 500ms ease' }} />
@@ -219,7 +219,7 @@ function Top10Card({ movie, rank }: { movie: Movie; rank: number }) {
       <div className="relative rounded-2xl overflow-hidden bg-slate-800 shadow-lg" style={{ aspectRatio:'2/3' }}>
         <div className="absolute inset-0 bg-slate-800" />
         <img src={movieApi.getImageUrl(movie.poster_url||movie.thumb_url)} alt={dec(movie.name)}
-          loading="lazy" referrerPolicy="no-referrer" onLoad={() => setOk(true)}
+          loading="lazy" decoding="async" referrerPolicy="no-referrer" onLoad={() => setOk(true)}
           className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           style={{ opacity: ok ? 1 : 0, transition: 'opacity 500ms ease' }} />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent" />
@@ -322,14 +322,14 @@ function ContinueWatchingSection() {
             <img
               src={movieApi.getImageUrl(item.thumb_url || item.poster_url || '')}
               alt={item.name}
-              loading="lazy"
+              loading="lazy" decoding="async"
               referrerPolicy="no-referrer"
               onError={(e) => {
                 const t = e.currentTarget;
                 if (item.poster_url && !t.src.includes(item.poster_url)) {
                   t.src = movieApi.getImageUrl(item.poster_url);
                 } else {
-                  t.src = '/assets/logo-daophim.png';
+                  t.src = '/assets/logo-phimtuoitho.png';
                 }
               }}
               className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
@@ -388,7 +388,7 @@ function GridLandscapeCard({ movie }: { movie: Movie }) {
       <div className="relative rounded-xl overflow-hidden bg-slate-800" style={{ aspectRatio: '16/10' }}>
         <div className="absolute inset-0 bg-slate-800" />
         <img src={movieApi.getImageUrl(movie.thumb_url || movie.poster_url)} alt={dec(movie.name)}
-          loading="lazy" referrerPolicy="no-referrer" onLoad={() => setOk(true)}
+          loading="lazy" decoding="async" referrerPolicy="no-referrer" onLoad={() => setOk(true)}
           className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           style={{ opacity: ok ? 1 : 0, transition: 'opacity 500ms ease' }} />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-transparent to-transparent" />
@@ -461,45 +461,62 @@ function LazySection({ title, to, fetch: fetchFn, label, variant = 'row' }: {
 
 /* ─── Interest cards ──────────────────────────────────────────── */
 const INTEREST = [
-  { label:'TV Trực Tuyến', sub:'Xem Ngay', to:'/tv-truc-tuyen', g:'from-red-600/70 via-orange-500/60 to-yellow-400/50' },
-  { label:'Hàn Quốc', sub:'Phim Bộ', to:'/type/phim-bo', g:'from-purple-600/70 via-blue-500/60 to-blue-400/50' },
-  { label:'Trung Quốc', sub:'Hoa Ngữ', to:'/type/phim-bo', g:'from-pink-500/70 via-rose-400/60 to-pink-300/50' },
-  { label:'Thái Lan', sub:'Cực Hay', to:'/type/phim-le', g:'from-blue-500/70 via-cyan-400/60 to-teal-400/50' },
-  { label:'Sitcom', sub:'TV Shows', to:'/type/tv-shows', g:'from-emerald-500/70 via-teal-400/60 to-cyan-400/50' },
-  { label:'Âu Mỹ', sub:'Hollywood', to:'/type/phim-le', g:'from-green-600/70 via-orange-400/60 to-yellow-400/50' },
-  { label:'Hoạt Hình', sub:'Anime', to:'/type/hoat-hinh', g:'from-indigo-500/70 via-purple-400/60 to-violet-400/50' },
+  { label:'Ben 10', sub:'Hoạt Hình', to:'/search?q=Ben+10', g:'from-emerald-600/70 via-lime-500/60 to-green-400/50' },
+  { label:'Hoạt Hình', sub:'Xem Ngay', to:'/type/hoat-hinh', g:'from-indigo-500/70 via-purple-400/60 to-violet-400/50' },
+  { label:'Doraemon', sub:'Chú Mèo Máy', to:'/search?q=Doraemon', g:'from-sky-500/70 via-blue-400/60 to-cyan-300/50' },
+  { label:'Conan', sub:'Thám Tử', to:'/search?q=Conan', g:'from-red-600/70 via-rose-500/60 to-orange-400/50' },
+  { label:'Larva', sub:'Hài Hước', to:'/search?q=Larva', g:'from-yellow-500/70 via-amber-400/60 to-orange-300/50' },
+  { label:'Kimetsu no Yaiba', sub:'Thanh Gươm Diệt Quỷ', to:'/search?q=Kimetsu+no+Yaiba', g:'from-slate-700/70 via-rose-600/60 to-pink-500/50' },
+  { label:'Pokémon', sub:'Đi Bắt Chúng Nào', to:'/search?q=Pokemon', g:'from-yellow-400/70 via-amber-500/60 to-blue-500/50' },
 ];
 
 /* ─── Top tabs config ─────────────────────────────────────────── */
-const TOP_TABS = ['Top ngày','Top tuần','Top tháng','Top bộ','Top lẻ'];
-const TOP_TITLES = ['Top 10 Hôm Nay','Top 10 Tuần Này','Top 10 Tháng Này','Top 10 Phim Bộ','Top 10 Phim Lẻ'];
-const TOP_SRCS = [null,'phim-moi','phim-chieu-rap','phim-bo','phim-le'] as const;
+const TOP_TABS = ['Top ngày','Top tuần','Top tháng','Top mới','Top hot'];
+const TOP_TITLES = ['Top 10 Hôm Nay','Top 10 Tuần Này','Top 10 Tháng Này','Top 10 Mới Nhất','Top 10 Nổi Bật'];
 
-/* ─── All lazy sections từ KKPhim API ────────────────────────── */
+/* ─── Năm phát hành các bộ hoạt hình gắn liền tuổi thơ (90s → đầu 2010s) ── */
+const NOSTALGIC_ANIME_YEARS = [1995, 1997, 1999, 2001, 2003, 2005, 2007, 2009, 2011];
+
+/** Gom phim hoạt hình theo nhiều năm xưa lại thành 1 danh sách duy nhất, không trùng phim (theo slug) */
+async function fetchNostalgicAnime(): Promise<Movie[]> {
+  const results = await Promise.all(
+    NOSTALGIC_ANIME_YEARS.map(y =>
+      movieApi.filterMovies({ type: 'hoat-hinh', year: String(y), page: 1, limit: 6 }).catch(() => ({ items: [] } as any))
+    )
+  );
+  const seen = new Set<string>();
+  const merged: Movie[] = [];
+  for (const r of results) {
+    for (const m of (r.items || [])) {
+      if (seen.has(m.slug)) continue;
+      seen.add(m.slug);
+      merged.push(m);
+    }
+  }
+  return merged;
+}
+
+/* ─── All lazy sections — ưu tiên Phim Hoạt Hình theo yêu cầu ──── */
 const LAZY_SECTIONS = [
-  { title:'Phim Hàn Quốc',    to:'/type/phim-bo?country=han-quoc',   fetch: () => movieApi.filterMovies({ type:'phim-bo', country:'han-quoc', page:1, limit:24 }).then(r=>r.items) },
-  { title:'Phim Trung Quốc',  to:'/type/phim-bo?country=trung-quoc', fetch: () => movieApi.filterMovies({ type:'phim-bo', country:'trung-quoc', page:1, limit:24 }).then(r=>r.items), variant:'grid' as const },
-  { title:'Phim Hành Động',   to:'/type/phim-le?category=hanh-dong', fetch: () => movieApi.filterMovies({ type:'phim-le', category:'hanh-dong', page:1, limit:24 }).then(r=>r.items) },
-  { title:'Phim Bộ Đang Chiếu',to:'/type/phim-bo',      fetch: () => movieApi.getMoviesByType('phim-bo',1,24).then(r=>r.items) },
-  { title:'Phim Lẻ Mới',      to:'/type/phim-le',       fetch: () => movieApi.getMoviesByType('phim-le',1,24).then(r=>r.items) },
-  { title:'Phim Hoạt Hình',   to:'/type/hoat-hinh',     fetch: () => movieApi.getMoviesByType('hoat-hinh',1,24).then(r=>r.items) },
-  { title:'Tâm Lý - Tình Cảm',to:'/type/phim-bo?category=tinh-cam',  fetch: () => movieApi.filterMovies({ type:'phim-bo', category:'tinh-cam', page:1, limit:24 }).then(r=>r.items) },
-  { title:'Phim Kinh Dị',     to:'/type/phim-le?category=kinh-di',   fetch: () => movieApi.filterMovies({ type:'phim-le', category:'kinh-di', page:1, limit:24 }).then(r=>r.items) },
-  { title:'Phim Âu Mỹ',       to:'/type/phim-le?country=au-my',      fetch: () => movieApi.filterMovies({ type:'phim-le', country:'au-my', page:1, limit:24 }).then(r=>r.items) },
-  { title:'Phim Nhật Bản',    to:'/type/phim-bo?country=nhat-ban',   fetch: () => movieApi.filterMovies({ type:'phim-bo', country:'nhat-ban', page:1, limit:24 }).then(r=>r.items) },
-  { title:'Phim Thái Lan',    to:'/type/phim-bo?country=thai-lan',   fetch: () => movieApi.filterMovies({ type:'phim-bo', country:'thai-lan', page:1, limit:24 }).then(r=>r.items) },
-  { title:'Phim Viễn Tưởng',  to:'/type/phim-le?category=vien-tuong',fetch: () => movieApi.filterMovies({ type:'phim-le', category:'vien-tuong', page:1, limit:24 }).then(r=>r.items) },
-  { title:'Phim Hài Hước',    to:'/type/phim-le?category=hai-huoc',  fetch: () => movieApi.filterMovies({ type:'phim-le', category:'hai-huoc', page:1, limit:24 }).then(r=>r.items) },
-  { title:'TV Shows',          to:'/type/tv-shows',      fetch: () => movieApi.getMoviesByType('tv-shows',1,24).then(r=>r.items) },
-  { title:'Phim Hoạt Hình Nhiều Người Xem',to:'/type/hoat-hinh',fetch: () => movieApi.getMoviesByType('hoat-hinh',2,24).then(r=>r.items) },
-  { title:'Phim Cổ Trang',    to:'/type/phim-bo?category=co-trang',  fetch: () => movieApi.filterMovies({ type:'phim-bo', category:'co-trang', page:1, limit:24 }).then(r=>r.items) },
-  { title:'Phim Hình Sự',     to:'/type/phim-le?category=hinh-su',   fetch: () => movieApi.filterMovies({ type:'phim-le', category:'hinh-su', page:1, limit:24 }).then(r=>r.items) },
+  { title:'Ben 10',                         to:'/search?q=Ben+10',            fetch: () => movieApi.searchMovies('Ben 10', 1, 24).then(r=>r.items) },
+  { title:'Phim Hoạt Hình',                 to:'/type/hoat-hinh',             fetch: () => movieApi.getMoviesByType('hoat-hinh', 1, 24).then(r=>r.items) },
+  { title:'Phim Hoạt Hình Tuổi Thơ',        to:'/type/hoat-hinh',             fetch: fetchNostalgicAnime, variant:'grid' as const },
+  { title:'Doraemon',                       to:'/search?q=Doraemon',          fetch: () => movieApi.searchMovies('Doraemon', 1, 24).then(r=>r.items) },
+  { title:'Thám Tử Lừng Danh Conan',        to:'/search?q=Conan',             fetch: () => movieApi.searchMovies('Conan', 1, 24).then(r=>r.items) },
+  { title:'Larva',                          to:'/search?q=Larva',             fetch: () => movieApi.searchMovies('Larva', 1, 24).then(r=>r.items) },
+  { title:'Kimetsu no Yaiba - Thanh Gươm Diệt Quỷ', to:'/search?q=Kimetsu+no+Yaiba', fetch: () => movieApi.searchMovies('Kimetsu no Yaiba', 1, 24).then(r=>r.items) },
+  { title:'Pokémon',                        to:'/search?q=Pokemon',           fetch: () => movieApi.searchMovies('Pokemon', 1, 24).then(r=>r.items) },
+  { title:'Phim Hoạt Hình Nhiều Người Xem', to:'/type/hoat-hinh',             fetch: () => movieApi.getMoviesByType('hoat-hinh', 2, 24).then(r=>r.items) },
+  { title:'Hoạt Hình Nhật Bản',             to:'/type/hoat-hinh?country=nhat-ban', fetch: () => movieApi.filterMovies({ type:'hoat-hinh', country:'nhat-ban', page:1, limit:24 }).then(r=>r.items) },
+  { title:'Hoạt Hình Trung Quốc',           to:'/type/hoat-hinh?country=trung-quoc', fetch: () => movieApi.filterMovies({ type:'hoat-hinh', country:'trung-quoc', page:1, limit:24 }).then(r=>r.items) },
+  { title:'Hoạt Hình Âu Mỹ',                to:'/type/hoat-hinh?country=au-my', fetch: () => movieApi.filterMovies({ type:'hoat-hinh', country:'au-my', page:1, limit:24 }).then(r=>r.items) },
+  { title:'Hoạt Hình Mới Cập Nhật',         to:'/type/hoat-hinh',             fetch: () => movieApi.getMoviesByType('hoat-hinh', 3, 24).then(r=>r.items) },
 ];
 
-/* ─── Nguồn dữ liệu cho 2 mục "thẻ lớn" mới: Hoạt Hình Trung Quốc & Hàn Đỉnh Cao ─── */
+/* ─── Nguồn dữ liệu cho 2 mục "thẻ lớn" ưu tiên nhất: Ben 10 & Phim Hoạt Hình ─── */
 const FEATURED_GRID_SECTIONS = [
-  { title:'Hoạt Hình Trung Quốc', to:'/type/hoat-hinh?country=trung-quoc', fetch: () => movieApi.filterMovies({ type:'hoat-hinh', country:'trung-quoc', page:1, limit:8 }).then(r=>r.items) },
-  { title:'Phim Hàn Đỉnh Cao',    to:'/type/phim-bo?country=han-quoc',     fetch: () => movieApi.filterMovies({ type:'phim-bo', country:'han-quoc', sort:'view', page:1, limit:8 }).then(r=>r.items) },
+  { title:'Ben 10',         to:'/search?q=Ben+10',  fetch: () => movieApi.searchMovies('Ben 10', 1, 8).then(r=>r.items) },
+  { title:'Phim Hoạt Hình', to:'/type/hoat-hinh',    fetch: () => movieApi.getMoviesByType('hoat-hinh', 1, 8).then(r=>r.items) },
 ];
 
 /* ─── "Phim Mới" — carousel nổi bật dạng thẻ bo góc + chấm phân trang ─── */
@@ -573,7 +590,7 @@ function NewMovieSpotlight({ movies }: { movies: Movie[] }) {
       >
         <Link to={`/phim/${movie.slug}`} onClick={guardClick} onClickCapture={guardClick} className="block relative" style={{ aspectRatio: '16/9' }} draggable={false}>
           <img src={movieApi.getImageUrl(movie.thumb_url || movie.poster_url)} alt={dec(movie.name)}
-            referrerPolicy="no-referrer" loading="lazy" draggable={false}
+            referrerPolicy="no-referrer" loading="lazy" decoding="async" draggable={false}
             className="absolute inset-0 w-full h-full object-cover pointer-events-none" />
           <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/10 to-transparent" />
           <EpBadge ep={movie.episode_current} />
@@ -621,7 +638,7 @@ function BilingualCard({ movie }: { movie: Movie }) {
       <div className="relative rounded-lg overflow-hidden bg-slate-800 transition-transform duration-300 group-hover:-translate-y-1" style={{ aspectRatio: '2/3' }}>
         <div className="absolute inset-0 bg-slate-800" />
         <img src={movieApi.getImageUrl(movie.poster_url || movie.thumb_url)} alt={dec(movie.name)}
-          loading="lazy" referrerPolicy="no-referrer" onLoad={() => setOk(true)}
+          loading="lazy" decoding="async" referrerPolicy="no-referrer" onLoad={() => setOk(true)}
           className="absolute inset-0 w-full h-full object-cover"
           style={{ opacity: ok ? 1 : 0, transition: 'opacity 500ms ease' }} />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent" />
@@ -668,13 +685,13 @@ function VietBannerCard({ movie }: { movie: Movie }) {
       <div className="relative rounded-xl overflow-hidden bg-slate-800" style={{ aspectRatio: '16/9' }}>
         <div className="absolute inset-0 bg-slate-800" />
         <img src={movieApi.getImageUrl(movie.thumb_url || movie.poster_url)} alt={dec(movie.name)}
-          loading="lazy" referrerPolicy="no-referrer" onLoad={() => setOk(true)}
+          loading="lazy" decoding="async" referrerPolicy="no-referrer" onLoad={() => setOk(true)}
           className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           style={{ opacity: ok ? 1 : 0, transition: 'opacity 500ms ease' }} />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/30 via-transparent to-transparent" />
         <EpBadge ep={movie.episode_current} />
         {/* Poster nhỏ chồng lên góc dưới-trái, xoay nhẹ — hiệu ứng "xếp chồng ảnh" */}
-        <img src={movieApi.getImageUrl(movie.poster_url)} alt="" referrerPolicy="no-referrer"
+        <img src={movieApi.getImageUrl(movie.poster_url)} alt="" loading="lazy" decoding="async" referrerPolicy="no-referrer"
           className="absolute -bottom-3 left-2.5 w-11 h-16 rounded-md object-cover border-2 border-slate-950 shadow-lg -rotate-6 group-hover:rotate-0 transition-transform duration-300 z-10" />
       </div>
       <div className="mt-3.5 pl-1">
@@ -685,20 +702,6 @@ function VietBannerCard({ movie }: { movie: Movie }) {
         </div>
       </div>
     </Link>
-  );
-}
-
-function VietFeaturedSection({ movies }: { movies: Movie[] }) {
-  if (!movies.length) return null;
-  return (
-    <section>
-      <SecHeader title="Phim Việt Mới Nhất" to="/type/phim-bo?country=viet-nam" label="Xem tất cả" />
-      {/* Mobile: cuộn ngang. Desktop: lưới 2 cột thẳng hàng, thẻ to hơn rõ rệt */}
-      <div className="flex gap-4 overflow-x-auto -mx-4 md:mx-0 md:overflow-visible px-4 md:px-0 pb-1 md:grid md:grid-cols-2 md:gap-5"
-        style={{ scrollSnapType: 'x mandatory', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-        {movies.slice(0, 10).map(m => <VietBannerCard key={m._id} movie={m} />)}
-      </div>
-    </section>
   );
 }
 
@@ -836,7 +839,6 @@ export default function Home() {
   const [topTab, setTopTab] = useState(0);
   const [cinema, setCinema] = useState<Movie[]>([]);
   const [newUpdates, setNewUpdates] = useState<Movie[]>([]);
-  const [vietMovies, setVietMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(true);
   const manualMovies = useManualMovies();
   const upcomingMovies = useUpcomingMoviesHook();
@@ -857,8 +859,8 @@ export default function Home() {
   }, []);
 
   useSEO({
-    title: 'Xem Phim Miễn Phí - Phim Hay Cả Đảo',
-    description: 'Đảo Phim - Xem phim online miễn phí chất lượng HD. Phim bộ, phim lẻ, hoạt hình, anime, phim chiếu rạp Vietsub, thuyết minh, lồng tiếng. Cập nhật liên tục mỗi ngày.',
+    title: 'Xem Phim Miễn Phí - Ký Ức Tuổi Thơ',
+    description: 'Phim Tuổi Thơ - Xem phim online miễn phí chất lượng HD. Phim bộ, phim lẻ, hoạt hình, anime, phim chiếu rạp Vietsub, thuyết minh, lồng tiếng. Cập nhật liên tục mỗi ngày.',
     url: '/',
     type: 'website',
   });
@@ -867,10 +869,9 @@ export default function Home() {
     let cancelled = false;
     (async () => {
       try {
-        const [r1, r2, r3] = await Promise.all([
-          movieApi.getNewUpdates(1),
-          movieApi.getMoviesByType('phim-chieu-rap', 1, 20),
-          movieApi.filterMovies({ type: 'phim-bo', country: 'viet-nam', page: 1, limit: 12 }),
+        const [r1, r2] = await Promise.all([
+          movieApi.getMoviesByType('hoat-hinh', 1, 30),
+          movieApi.filterMovies({ type: 'phim-chieu-rap', category: 'hoat-hinh', page: 1, limit: 20 }),
         ]);
         if (cancelled) return;
         const t10 = r1.items.slice(0, 10);
@@ -879,7 +880,6 @@ export default function Home() {
         setTopTabMovies(t10);
         setCinema(r2.items);
         setNewUpdates(r1.items.slice(0, 30));
-        setVietMovies(r3.items);
       } catch (e) { console.error(e); }
       finally { if (!cancelled) setLoading(false); }
     })();
@@ -891,10 +891,7 @@ export default function Home() {
     if (i === 0) { setTopTabMovies(top10); return; }
     setTopTabLoading(true);
     try {
-      const src = TOP_SRCS[i];
-      const res = src === 'phim-moi'
-        ? await movieApi.getNewUpdates(2)
-        : await movieApi.getMoviesByType(src!, 1, 10);
+      const res = await movieApi.getMoviesByType('hoat-hinh', i + 1, 10);
       setTopTabMovies(res.items.slice(0, 10));
     } catch { setTopTabMovies(top10); }
     finally { setTopTabLoading(false); }
@@ -911,7 +908,7 @@ export default function Home() {
   return (
     <div className="pb-20 bg-slate-950 min-h-screen">
       <h1 className="sr-only">
-        Đảo Phim - Xem Phim Online Miễn Phí HD Vietsub, Thuyết Minh, Lồng Tiếng
+        Phim Tuổi Thơ - Xem Phim Online Miễn Phí HD Vietsub, Thuyết Minh, Lồng Tiếng
       </h1>
       <Banner movies={bannerMovies} />
       <ContinueWatchingSection />
@@ -962,18 +959,15 @@ export default function Home() {
         {/* Phim Mới — carousel nổi bật, chấm phân trang */}
         <NewMovieSpotlight movies={top10} />
 
-        {/* Phim Chiếu Rạp — load ngay */}
+        {/* Phim Hoạt Hình Chiếu Rạp — load ngay */}
         {cinema.length > 0 && (
           <section>
-            <SecHeader title="Phim Chiếu Rạp Mới" to="/type/phim-chieu-rap" label="Tất cả" />
+            <SecHeader title="Phim Hoạt Hình Chiếu Rạp" to="/type/hoat-hinh" label="Tất cả" />
             <HRow>{cinema.map(m => <MCard key={m._id} movie={m}/>)}</HRow>
           </section>
         )}
 
-        {/* Phim Việt Mới Nhất — thẻ lớn nổi bật */}
-        <VietFeaturedSection movies={vietMovies} />
-
-        {/* Hoạt Hình Trung Quốc & Phim Hàn Đỉnh Cao — thẻ lớn nổi bật theo quốc gia */}
+        {/* Ben 10 & Phim Hoạt Hình — thẻ lớn nổi bật, ưu tiên hàng đầu */}
         {FEATURED_GRID_SECTIONS.map(s => (
           <FeaturedGridSection key={s.title} title={s.title} to={s.to} fetch={s.fetch} />
         ))}
@@ -1006,19 +1000,7 @@ export default function Home() {
         {/* Phim Song Ngữ — banner gradient, danh sách do admin tự thêm */}
         <BilingualSection movies={bilingualMovies.map(bilingualToMovie)} />
 
-        {/* Phim Sắp Chiếu Rạp — từ collection riêng */}
-        {upcomingMovies.filter(m => m.upcomingType === 'movie').length > 0 && (
-          <section>
-            <SecHeader title="Phim Sắp Chiếu Rạp" to="/type/phim-chieu-rap" label="Tất cả" />
-            <HRow>
-              {upcomingMovies
-                .filter(m => m.upcomingType === 'movie')
-                .map(m => <UpcomingNewCard key={m.id} movie={m} />)}
-            </HRow>
-          </section>
-        )}
-
-        {/* Anime Sắp Chiếu — từ collection riêng */}
+        {/* Anime Sắp Chiếu — từ collection riêng (chỉ giữ hoạt hình) */}
         {upcomingMovies.filter(m => m.upcomingType === 'anime').length > 0 && (
           <section>
             <SecHeader title="Anime Sắp Chiếu" to="/type/hoat-hinh" label="Tất cả" />
@@ -1030,35 +1012,13 @@ export default function Home() {
           </section>
         )}
 
-        {/* Phim Bộ Sắp Chiếu — từ collection riêng */}
-        {upcomingMovies.filter(m => m.upcomingType === 'series').length > 0 && (
-          <section>
-            <SecHeader title="Phim Bộ Sắp Chiếu" to="/type/phim-bo" label="Tất cả" />
-            <HRow>
-              {upcomingMovies
-                .filter(m => m.upcomingType === 'series')
-                .map(m => <UpcomingNewCard key={m.id} movie={m} />)}
-            </HRow>
-          </section>
-        )}
-
-        {/* Fallback: sắp chiếu cũ từ manualMovies (isUpcoming=true) nếu chưa migrate */}
+        {/* Fallback: sắp chiếu cũ từ manualMovies (isUpcoming=true) — chỉ giữ hoạt hình */}
         {oldUpcoming.filter(m => m.upcomingType === 'anime' || !m.upcomingType).length > 0 && (
           <section>
             <SecHeader title="Anime Sắp Chiếu" to="/type/hoat-hinh" label="Tất cả" />
             <HRow>
               {oldUpcoming
                 .filter(m => m.upcomingType === 'anime' || !m.upcomingType)
-                .map(m => <UpcomingCard key={m.id} movie={m} />)}
-            </HRow>
-          </section>
-        )}
-        {oldUpcoming.filter(m => m.upcomingType === 'movie').length > 0 && (
-          <section>
-            <SecHeader title="Phim Sắp Chiếu Rạp" to="/type/phim-chieu-rap" label="Tất cả" />
-            <HRow>
-              {oldUpcoming
-                .filter(m => m.upcomingType === 'movie')
                 .map(m => <UpcomingCard key={m.id} movie={m} />)}
             </HRow>
           </section>

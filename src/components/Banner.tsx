@@ -118,6 +118,8 @@ export default function Banner({ movies }: BannerProps) {
             referrerPolicy="no-referrer"
             className="w-full h-full object-cover object-top"
             loading={i === 0 ? 'eager' : 'lazy'}
+            decoding="async"
+            {...(i === 0 ? { fetchPriority: 'high' as any } : {})}
           />
           <div className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-slate-950/70 to-transparent" />
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
