@@ -40,7 +40,7 @@ export const DEFAULT_CONFIG: PlayerConfig = {
   updatedAt: Date.now(),
 };
 
-const STORAGE_KEY = 'daophim_player_config';
+const STORAGE_KEY = 'phimtuoitho_player_config';
 const FIRESTORE_DOC = 'settings/player_config';
 
 // ── localStorage cache (fallback khi offline) ─────────────────

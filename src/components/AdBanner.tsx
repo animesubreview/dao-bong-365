@@ -1,49 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { X, AlertCircle } from 'lucide-react';
-import {
-  collection, doc, addDoc, updateDoc, deleteDoc,
-  query, orderBy, onSnapshot,
-} from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { AdBannerData, subscribeAdBanners } from '../lib/ads';
 
-export interface AdBannerData {
-  id: string;
-  title: string;
-  mediaUrl: string;
-  mediaType: 'gif' | 'mp4' | 'image';
-  linkUrl: string;
-  // 'sticky' = banner cố định (fixed) ở cuối màn hình, hiển thị trên mọi trang, cả PC lẫn Mobile
-  position: 'top' | 'bottom' | 'middle' | 'sticky';
-  active: boolean;
-  createdAt: number;
-}
-
-const COL = 'ad_banners';
-
-// ── Firestore CRUD ────────────────────────────────────────────────────────────
-export async function getAdBanners(): Promise<AdBannerData[]> {
-  try {
-    const { getDocs } = await import('firebase/firestore');
-    const snap = await getDocs(query(collection(db, COL), orderBy('createdAt', 'desc')));
-    return snap.docs.map(d => ({ id: d.id, ...d.data() } as AdBannerData));
-  } catch (e) {
-    console.error('[AdBanner] getAdBanners error:', e);
-    return [];
-  }
-}
-
-export async function createAdBanner(data: Omit<AdBannerData, 'id'>): Promise<string> {
-  const ref = await addDoc(collection(db, COL), { ...data, createdAt: Date.now() });
-  return ref.id;
-}
-
-export async function updateAdBanner(id: string, data: Partial<AdBannerData>) {
-  await updateDoc(doc(db, COL, id), data);
-}
-
-export async function deleteAdBanner(id: string) {
-  await deleteDoc(doc(db, COL, id));
-}
+// ── Re-export types/CRUD từ lib/ads.ts để code cũ import từ đây vẫn chạy được ──
+export type { AdBannerData };
+export { getAdBanners, createAdBanner, updateAdBanner, deleteAdBanner } from '../lib/ads';
 
 // ── Component ─────────────────────────────────────────────────────────────────
 interface AdBannerProps {
@@ -59,26 +20,11 @@ export default function AdBanner({ position, className = '' }: AdBannerProps) {
 
   useEffect(() => {
     setError(false);
-    let unsub: (() => void) | undefined;
-    try {
-      const q = query(collection(db, COL), orderBy('createdAt', 'desc'));
-      unsub = onSnapshot(
-        q,
-        snap => {
-          const all = snap.docs.map(d => ({ id: d.id, ...d.data() } as AdBannerData));
-          setBanners(all.filter(b => b.active && b.position === position));
-          setError(false);
-        },
-        err => {
-          console.error('[AdBanner] onSnapshot error:', err);
-          setError(true);
-        }
-      );
-    } catch (e) {
-      console.error('[AdBanner] setup error:', e);
-      setError(true);
-    }
-    return () => unsub?.();
+    const unsub = subscribeAdBanners(
+      all => { setBanners(all.filter(b => b.active && b.position === position)); setError(false); },
+      () => setError(true)
+    );
+    return unsub;
   }, [position]);
 
   const visible = banners.filter(b => !dismissed.has(b.id));

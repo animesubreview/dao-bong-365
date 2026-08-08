@@ -122,7 +122,7 @@ export default function Account() {
   const [authChecked, setAuthChecked] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
 
-  useSEO({ title: 'Tài khoản', description: 'Quản lý tài khoản Đảo Phim của bạn.', url: '/profile', noIndex: true });
+  useSEO({ title: 'Tài khoản', description: 'Quản lý tài khoản Phim Tuổi Thơ của bạn.', url: '/profile', noIndex: true });
 
   useEffect(() => {
     const u = onAuthChange(async (user) => {

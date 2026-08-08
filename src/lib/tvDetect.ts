@@ -55,10 +55,10 @@ export function detectTV(): TVInfo {
  * - Tăng kích thước touch target
  */
 export function injectTVStyles(): void {
-  if (document.getElementById('daophim-tv-styles')) return;
+  if (document.getElementById('phimtuoitho-tv-styles')) return;
 
   const style = document.createElement('style');
-  style.id = 'daophim-tv-styles';
+  style.id = 'phimtuoitho-tv-styles';
   style.textContent = `
     /* ═══════════════════════════════════════════
        ĐẢOPHIM — Samsung Smart TV Optimizations
@@ -97,7 +97,7 @@ export function injectTVStyles(): void {
     }
 
     /* Player fullscreen tối ưu */
-    .daophim-tv-player {
+    .phimtuoitho-tv-player {
       position: fixed !important;
       inset: 0 !important;
       z-index: 9999 !important;
@@ -105,7 +105,7 @@ export function injectTVStyles(): void {
       height: 100vh !important;
       background: #000 !important;
     }
-    .daophim-tv-player iframe {
+    .phimtuoitho-tv-player iframe {
       width: 100% !important;
       height: 100% !important;
       border: none !important;

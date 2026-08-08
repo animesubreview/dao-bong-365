@@ -8,14 +8,12 @@ import {
   Wallet, PlusCircle, MinusCircle, CreditCard, Wrench, Crown, Activity, Wifi,
   History, Search, Radio, Trash, Pin, ArrowUp, ArrowDown, Copy, Shuffle, Power, Languages, Tv,
 } from 'lucide-react';
-import { getAdBanners, createAdBanner, updateAdBanner, deleteAdBanner, AdBannerData } from '../components/AdBanner';
-import { createPopupAd, updatePopupAd, deletePopupAd, PopupAdData } from '../components/PopupAd';
+import { getAdBanners, createAdBanner, updateAdBanner, deleteAdBanner, subscribeAdBanners, AdBannerData } from '../lib/ads';
+import { createPopupAd, updatePopupAd, deletePopupAd, subscribePopupAds, PopupAdData } from '../lib/ads';
 import { subscribeTVChannels, saveTVChannel, deleteTVChannel, TVChannel, TV_CATEGORIES } from '../lib/liveTV';
-import { getClickAdConfig, saveClickAdConfig, ClickAdConfig, DEFAULT_CLICK_AD } from '../lib/clickAd';
+import { getClickAdConfig, saveClickAdConfig, ClickAdConfig, DEFAULT_CLICK_AD } from '../lib/ads';
 import { getVipPrices, saveVipPrices, VipPrices, DEFAULT_VIP_PRICES, VIP_META, VIP_DAYS, VipTier } from '../lib/vip';
-import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
 import { fetchSiteSettings, saveSiteSettings as saveSiteSettingsFirestore } from '../lib/siteSettings';
-import { db } from '../lib/firebase';
 import { getAllUsers, banUser as apiBanUser, unbanUser as apiUnbanUser, deleteUserProfile, setUserRole, addUserBalance, UserProfile } from '../lib/auth';
 import {
   subscribeNotifications, createNotification, deleteNotification, updateNotification,
@@ -70,22 +68,22 @@ import {
 } from '../lib/geoblock';
 import { subscribeOnlineUsers, PresenceStats } from '../lib/presence';
 
-const ADMIN_USERNAME = 'daophim';
+const ADMIN_USERNAME = 'phimtuoitho';
 const ADMIN_PASSWORD = '0708';
 
 const DEFAULT_SETTINGS = {
-  siteName: 'ĐẢO PHIM',
+  siteName: 'PHIM TUỔI THƠ',
   siteDescription: 'Website xem phim miễn phí với kho phim khổng lồ, cập nhật liên tục mỗi ngày.',
   logoType: 'icon' as 'icon' | 'image' | 'text',
-  logoText: 'ĐẢO PHIM',
+  logoText: 'PHIM TUỔI THƠ',
   logoImage: '',
   facebookUrl: 'https://web.facebook.com/tai.uc.251170',
   youtubeUrl: '',
   phone: '09 4601 7826',
   email: '',
-  adsEmail: 'adsdaophim@gmail.com',
+  adsEmail: 'adsphimtuoitho@gmail.com',
   adsTelegram: '',
-  manualCopyWarning: 'Video thuộc bản quyền độc quyền của Đảo Phim. Nghiêm cấm sao chép, re-upload dưới mọi hình thức khi chưa được cho phép.',
+  manualCopyWarning: 'Video thuộc bản quyền độc quyền của Phim Tuổi Thơ. Nghiêm cấm sao chép, re-upload dưới mọi hình thức khi chưa được cho phép.',
   manualCopyWarningEnabled: true,
   apiBaseUrl: '',
   authorName: 'Đức Tài',
@@ -208,7 +206,7 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
             <Shield size={28} className="text-slate-950" />
           </div>
           <h1 className="text-3xl font-black text-white tracking-wider" style={{ fontFamily: 'Bebas Neue, sans-serif', letterSpacing: '0.08em' }}>
-            ĐẢO PHIM <span className="text-green-400">ADMIN</span>
+            PHIM TUỔI THƠ <span className="text-green-400">ADMIN</span>
           </h1>
           <p className="text-slate-500 text-sm mt-1">Đăng nhập để quản lý website</p>
         </div>
@@ -822,7 +820,7 @@ function NotificationsSection({ onToast }: { onToast: (msg: string, t: 'success'
                     value={form.targetUrl}
                     onChange={e => setForm(f => ({ ...f, targetUrl: e.target.value }))}
                     className="input-field text-sm"
-                    placeholder="https://daophim.online/phim/ten-phim"
+                    placeholder="https://phimtuoitho.co/phim/ten-phim"
                   />
                 </div>
               </div>
@@ -1114,16 +1112,10 @@ function AdsSection({ onToast }: { onToast: (msg: string, t: 'success' | 'error'
   const [popupForm, setPopupForm] = useState({ ...POPUP_DEFAULTS });
   const [editPopupId, setEditPopupId] = useState<string | null>(null);
 
-  // Realtime listeners từ Firestore
+  // Realtime listeners — dùng chung với lib/ads.ts, không tự viết lại query Firestore ở đây
   useEffect(() => {
-    const qB = query(collection(db, 'ad_banners'), orderBy('createdAt', 'desc'));
-    const unsubB = onSnapshot(qB, snap => {
-      setBanners(snap.docs.map(d => ({ id: d.id, ...d.data() } as AdBannerData)));
-    });
-    const qP = query(collection(db, 'popup_ads'), orderBy('createdAt', 'desc'));
-    const unsubP = onSnapshot(qP, snap => {
-      setPopups(snap.docs.map(d => ({ id: d.id, ...d.data() } as PopupAdData)));
-    });
+    const unsubB = subscribeAdBanners(setBanners);
+    const unsubP = subscribePopupAds(setPopups);
     return () => { unsubB(); unsubP(); };
   }, []);
 
@@ -2804,7 +2796,7 @@ function AdminSidebar({ activeSection, onNavigate, onLogout, onSave, onReset, dr
             <Shield size={17} className="text-slate-950" />
           </div>
           <div>
-            <p className="text-white font-black text-sm leading-tight" style={{ fontFamily: 'Bebas Neue, sans-serif', letterSpacing: '0.06em' }}>ĐẢO PHIM</p>
+            <p className="text-white font-black text-sm leading-tight" style={{ fontFamily: 'Bebas Neue, sans-serif', letterSpacing: '0.06em' }}>PHIM TUỔI THƠ</p>
             <p className="text-slate-500 text-[10px] font-semibold">ADMIN PANEL</p>
           </div>
         </div>
@@ -2883,7 +2875,7 @@ export default function Admin() {
 
 function AdminPanel({ onLogout }: { onLogout: () => void }) {
   const [settings, setSettings] = useState<typeof DEFAULT_SETTINGS>(() => {
-    try { const v = localStorage.getItem('site_settings'); return v ? { ...DEFAULT_SETTINGS, ...JSON.parse(v) } : DEFAULT_SETTINGS; } catch { return DEFAULT_SETTINGS; }
+    try { const v = localStorage.getItem('ptt_site_settings'); return v ? { ...DEFAULT_SETTINGS, ...JSON.parse(v) } : DEFAULT_SETTINGS; } catch { return DEFAULT_SETTINGS; }
   });
 
   // Lấy cấu hình thật từ Firestore khi vào trang Admin (localStorage chỉ là cache hiển thị tạm)
@@ -3432,7 +3424,7 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
   const resetSettings = async () => {
     if (!confirm('Khôi phục cài đặt mặc định?')) return;
     setSettings(DEFAULT_SETTINGS);
-    localStorage.removeItem('site_settings');
+    localStorage.removeItem('ptt_site_settings');
     try { await saveSiteSettingsFirestore(DEFAULT_SETTINGS); } catch (e) { console.error(e); }
     window.dispatchEvent(new Event('site_settings_updated'));
     showToast('Đã khôi phục cài đặt mặc định!');
@@ -3570,12 +3562,12 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
 
               {settings.logoType === 'text' && (
                 <InputRow label="Chữ Logo">
-                  <input type="text" value={settings.logoText} onChange={e => setSettings(s => ({ ...s, logoText: e.target.value }))} className="input-field" placeholder="ĐẢO PHIM" />
+                  <input type="text" value={settings.logoText} onChange={e => setSettings(s => ({ ...s, logoText: e.target.value }))} className="input-field" placeholder="PHIM TUỔI THƠ" />
                 </InputRow>
               )}
 
               <InputRow label="Tên Website">
-                <input type="text" value={settings.siteName} onChange={e => setSettings(s => ({ ...s, siteName: e.target.value }))} className="input-field" placeholder="ĐẢO PHIM" />
+                <input type="text" value={settings.siteName} onChange={e => setSettings(s => ({ ...s, siteName: e.target.value }))} className="input-field" placeholder="PHIM TUỔI THƠ" />
               </InputRow>
 
               <InputRow label="Mô tả Website" hint="Hiển thị ở footer">
@@ -3583,11 +3575,11 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
               </InputRow>
 
               <InputRow label="Email đặt quảng cáo" hint="Hiển thị ở phần liên hệ đặt ads cuối trang">
-                <input type="email" value={settings.adsEmail} onChange={e => setSettings(s => ({ ...s, adsEmail: e.target.value }))} className="input-field" placeholder="adsdaophim@gmail.com" />
+                <input type="email" value={settings.adsEmail} onChange={e => setSettings(s => ({ ...s, adsEmail: e.target.value }))} className="input-field" placeholder="adsphimtuoitho@gmail.com" />
               </InputRow>
 
               <InputRow label="Telegram đặt quảng cáo" hint="Username Telegram (không cần @), hiển thị thêm nút Telegram cạnh email ở footer. Để trống nếu không muốn hiện.">
-                <input type="text" value={settings.adsTelegram || ''} onChange={e => setSettings(s => ({ ...s, adsTelegram: e.target.value.replace(/^@/, '') }))} className="input-field" placeholder="daophim_ads" />
+                <input type="text" value={settings.adsTelegram || ''} onChange={e => setSettings(s => ({ ...s, adsTelegram: e.target.value.replace(/^@/, '') }))} className="input-field" placeholder="phimtuoitho_ads" />
               </InputRow>
 
               <InputRow label="Link nhóm Discord" hint="Hiển thị banner mời vào nhóm Discord ở trang Chi tiết phim & trang Xem phim. Để trống thì ẨN banner này.">
@@ -4320,7 +4312,7 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
           {/* Player Studio link — shown within override section */}
           {activeSection === 'section-override' && (
           <div className="flex justify-center">
-            <a href="/daophim/player-studio" target="_blank"
+            <a href="/phimtuoitho/player-studio" target="_blank"
               className="flex items-center gap-2 px-6 py-3 bg-green-500/10 border border-green-500/30 rounded-xl text-green-400 font-bold text-sm hover:bg-green-500/20 transition-all">
               🎬 Mở Player Studio — Chỉnh logo & giao diện player
             </a>

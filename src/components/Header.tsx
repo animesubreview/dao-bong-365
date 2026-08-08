@@ -14,7 +14,7 @@ import { subscribeNotifications, countUnread, SiteNotification } from '../lib/no
 import { subscribeSiteSettings } from '../lib/siteSettings';
 
 function useSiteSettings() {
-  const [settings, setSettings] = useState<Record<string, any>>({ logoType: 'text', siteName: 'ĐẢO PHIM' });
+  const [settings, setSettings] = useState<Record<string, any>>({ logoType: 'text', siteName: 'PHIM TUỔI THƠ' });
   useEffect(() => {
     const unsub = subscribeSiteSettings((data) => {
       setSettings((prev) => ({ ...prev, ...data }));
@@ -24,11 +24,11 @@ function useSiteSettings() {
   return settings;
 }
 
-// ── Logo Đảo Phim — ảnh local duy nhất, nền trong suốt (icon + chữ + tagline) ──
-const SITE_LOGO_URL = '/assets/logo-daophim.png';
+// ── Logo Phim Tuổi Thơ — ảnh local duy nhất, nền trong suốt (icon + chữ + tagline) ──
+const SITE_LOGO_URL = '/assets/logo-phimtuoitho.png';
 
 function Logo({ settings }: { settings: any }) {
-  const name: string = settings.siteName || 'ĐẢO PHIM';
+  const name: string = settings.siteName || 'PHIM TUỔI THƠ';
 
   return (
     <div className="flex items-center">
@@ -111,19 +111,19 @@ export default function Header() {
     return () => document.removeEventListener('mousedown', h);
   }, []);
 
-  // Header scroll effect
+  // Header scroll effect — trong suốt khi ở đầu trang, chỉ tối dần khi cuộn xuống
   useEffect(() => {
     const header = document.getElementById('main-header');
     if (!header) return;
     const onScroll = () => {
       if (window.scrollY > 60) {
-        header.style.background = 'rgba(10,10,10,0.97)';
-        header.style.backdropFilter = 'blur(20px)';
+        header.style.background = 'rgba(10,10,10,0.85)';
+        header.style.backdropFilter = 'blur(16px)';
         header.style.borderBottomColor = 'rgba(255,255,255,0.06)';
       } else {
-        header.style.background = 'rgba(8,8,10,0.97)';
-        header.style.backdropFilter = 'blur(20px)';
-        header.style.borderBottomColor = 'rgba(255,255,255,0.06)';
+        header.style.background = 'transparent';
+        header.style.backdropFilter = 'none';
+        header.style.borderBottomColor = 'transparent';
       }
     };
     window.addEventListener('scroll', onScroll, { passive: true });
@@ -237,7 +237,7 @@ export default function Header() {
   return (
     <>
       {/* ── HEADER BAR ── */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-transparent backdrop-blur-0 border-b border-transparent transition-all duration-300" id="main-header" style={{ background: 'rgba(8,8,10,0.97)', backdropFilter: 'blur(20px)' }}>
+      <header className="fixed top-0 left-0 right-0 z-50 bg-transparent backdrop-blur-0 border-b border-transparent transition-all duration-300" id="main-header" style={{ background: 'transparent', backdropFilter: 'none' }}>
         <div className="max-w-7xl mx-auto px-3 md:px-6 h-16 flex items-center gap-2 md:gap-3">
 
           {/* Logo — 1 lần duy nhất */}

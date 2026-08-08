@@ -3,10 +3,9 @@
 ## 1. Đăng ký TrumThe API
 1. Vào **https://trumthe.vn** → Đăng ký tài khoản đối tác
 2. Lấy **Partner ID** và **Partner Key** từ trang quản trị
-3. Điền **Callback URL** vào cài đặt TrumThe:
-   ```
-   https://YOUR-SITE.netlify.app/.netlify/functions/card-callback
-   ```
+3. Điền **Callback URL** vào cài đặt TrumThe/GachThe:
+   - Nếu deploy trên **Vercel**: `https://YOUR-SITE.vercel.app/api/card-callback`
+   - Nếu deploy trên **Netlify**: `https://YOUR-SITE.netlify.app/.netlify/functions/card-callback`
 
 ## 2. Cài đặt Firebase Admin SDK
 1. Vào **Firebase Console** → Project Settings → Service Accounts
@@ -16,17 +15,21 @@
    - `client_email`
    - `private_key`
 
-## 3. Thêm Environment Variables trên Netlify
-Vào **Netlify Dashboard** → Site Settings → Environment Variables, thêm:
+## 3. Thêm Environment Variables
+
+**Trên Vercel:** Project → Settings → Environment Variables
+**Trên Netlify:** Site Settings → Environment Variables
+
+Thêm các biến sau (xem đầy đủ trong `.env.example` ở gốc repo):
 
 | Tên biến | Giá trị |
 |----------|---------|
-| `TRUMTHE_PARTNER_ID` | Partner ID từ trumthe.vn |
-| `TRUMTHE_PARTNER_KEY` | Partner Key từ trumthe.vn |
+| `GACHTHEFAST_PARTNER_ID` | Partner ID từ gachthefast.com |
+| `GACHTHEFAST_PARTNER_KEY` | Partner Key từ gachthefast.com |
 | `FIREBASE_PROJECT_ID` | project_id từ service account |
 | `FIREBASE_CLIENT_EMAIL` | client_email từ service account |
 | `FIREBASE_PRIVATE_KEY` | private_key (giữ nguyên dấu `\n`) |
-| `SITE_URL` | https://YOUR-SITE.netlify.app |
+| `SITE_URL` | https://YOUR-SITE.vercel.app (hoặc domain riêng) |
 
 ## 4. Cập nhật Firestore Rules
 Thêm vào **Firebase Console** → Firestore → Rules:
