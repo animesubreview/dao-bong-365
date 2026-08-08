@@ -7,7 +7,7 @@ Allow: /truyen-tranh
 Allow: /cinema
 
 # Không index trang không cần SEO
-Disallow: /daophim/admin
+Disallow: /phimtuoitho/admin
 Disallow: /admin
 Disallow: /movie/
 Disallow: /watch/
@@ -22,8 +22,8 @@ Disallow: /watch-room/
 Crawl-delay: 1
 
 # Sitemaps
-Sitemap: https://daophim.online/sitemap-index.xml
-Sitemap: https://daophim.online/sitemap.xml
-Sitemap: https://daophim.online/sitemap-movies.xml
-Sitemap: https://daophim.online/sitemap-categories.xml
-Sitemap: https://daophim.online/sitemap-images.xml
+Sitemap: https://phimtuoitho.co/sitemap-index.xml
+Sitemap: https://phimtuoitho.co/sitemap.xml
+Sitemap: https://phimtuoitho.co/sitemap-movies.xml
+Sitemap: https://phimtuoitho.co/sitemap-categories.xml
+Sitemap: https://phimtuoitho.co/sitemap-images.xml

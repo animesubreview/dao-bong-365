@@ -6,7 +6,7 @@
  * theo đúng yêu cầu chuẩn SEO, một số công cụ audit tìm sitemap ảnh riêng biệt.)
  */
 
-const BASE_SITE = 'https://daophim.online';
+const BASE_SITE = 'https://phimtuoitho.co';
 const API_BASE  = 'https://phimapi.com';
 
 async function fetchPage(type, page) {

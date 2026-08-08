@@ -111,7 +111,7 @@ export default function GeoBlockPage() {
         <div className="gb-body" style={{
           fontSize: 15, color: 'rgba(255,255,255,0.55)', lineHeight: 1.7, marginBottom: 28,
         }}>
-          Xin chào! Đảo Phim chỉ phục vụ người dùng tại{' '}
+          Xin chào! Phim Tuổi Thơ chỉ phục vụ người dùng tại{' '}
           <strong style={{ color: 'rgba(255,255,255,0.8)' }}>Việt Nam</strong>.
           <br />
           IP hiện tại của bạn không thuộc Việt Nam, vui lòng sử dụng{' '}
@@ -151,7 +151,7 @@ export default function GeoBlockPage() {
         {/* Retry button */}
         <button
           onClick={() => {
-            try { sessionStorage.removeItem('daophim_geo'); } catch { /* ignore */ }
+            try { sessionStorage.removeItem('phimtuoitho_geo'); } catch { /* ignore */ }
             window.location.reload();
           }}
           style={{
@@ -173,7 +173,7 @@ export default function GeoBlockPage() {
         marginTop: 28, fontSize: 13, color: 'rgba(255,255,255,0.22)',
         fontWeight: 700, letterSpacing: '0.04em',
       }}>
-        © Đảo Phim · Chỉ dành cho người dùng Việt Nam
+        © Phim Tuổi Thơ · Chỉ dành cho người dùng Việt Nam
       </div>
     </div>
   );

@@ -3,7 +3,10 @@
  * Gọi Netlify Function /.netlify/functions/telegram-notify
  */
 
-const NOTIFY_SECRET = 'daophim_secret_2024';
+// Lấy từ biến môi trường VITE_NOTIFY_SECRET (khai báo trên Vercel).
+// Lưu ý: giá trị này sẽ nằm trong bundle JS gửi cho trình duyệt (mọi biến VITE_* đều public),
+// nên nó chỉ có tác dụng chống gọi nhầm/spam vãng lai, KHÔNG phải bảo mật thực sự.
+const NOTIFY_SECRET = import.meta.env.VITE_NOTIFY_SECRET || '';
 
 async function callNotify(payload: object) {
   try {
