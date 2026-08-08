@@ -5,7 +5,7 @@
  * (kết hợp với từng loại phim: phim-bo, phim-le, hoat-hinh, phim-chieu-rap)
  */
 
-const BASE_SITE = 'https://phimtuoitho.co';
+const BASE_SITE = 'https://daophim.online';
 
 const TYPES = ['phim-bo', 'phim-le', 'hoat-hinh', 'phim-chieu-rap', 'tv-shows'];
 

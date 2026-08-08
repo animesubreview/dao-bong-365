@@ -37,13 +37,25 @@ export default defineConfig(({ mode }) => {
       // Plugin đảm bảo _redirects luôn được copy vào dist
       {
         name: 'copy-redirects',
-        closeBundle() {
-          const src = path.resolve(__dirname, 'public/_redirects');
-          const dest = path.resolve(__dirname, 'dist/_redirects');
-          if (fs.existsSync(src)) {
-            fs.copyFileSync(src, dest);
-          } else {
-            fs.writeFileSync(dest, '/* /index.html 200\n');
+        writeBundle() {
+          try {
+            const src = path.resolve(__dirname, 'public/_redirects');
+            const outDir = path.resolve(__dirname, 'dist');
+            const dest = path.resolve(outDir, '_redirects');
+
+            // Đảm bảo thư mục dist đã tồn tại trước khi ghi file
+            if (!fs.existsSync(outDir)) {
+              fs.mkdirSync(outDir, { recursive: true });
+            }
+
+            if (fs.existsSync(src)) {
+              fs.copyFileSync(src, dest);
+            } else {
+              fs.writeFileSync(dest, '/* /index.html 200\n');
+            }
+          } catch (err) {
+            // Không để lỗi copy _redirects làm sập toàn bộ build
+            console.warn('[copy-redirects] Bỏ qua lỗi:', (err as Error).message);
           }
         },
       },

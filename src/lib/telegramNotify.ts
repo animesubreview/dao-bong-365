@@ -3,7 +3,7 @@
  * Gọi Netlify Function /.netlify/functions/telegram-notify
  */
 
-const NOTIFY_SECRET = 'phimtuoitho_secret_2024';
+const NOTIFY_SECRET = 'daophim_secret_2024';
 
 async function callNotify(payload: object) {
   try {

@@ -87,8 +87,8 @@ function LoadingScreen({ fadeOut }: { fadeOut: boolean }) {
           }}
         >
           <img
-            src="/assets/logo-phimtuoitho.png"
-            alt="Phim Tuổi Thơ"
+            src="/assets/logo-daophim.png"
+            alt="Đảo Phim"
             style={{ height: 64, width: 'auto', display: 'block', position: 'relative', zIndex: 1 }}
           />
         </div>
@@ -176,7 +176,7 @@ export default function App() {
 
 function AppInner({ maintenance, maintenanceLoaded }: { maintenance: MaintenanceConfig; maintenanceLoaded: boolean }) {
   const location = useLocation();
-  const isAdminPage = location.pathname === '/phimtuoitho/admin';
+  const isAdminPage = location.pathname === '/daophim/admin';
 
   // Hiển thị trang bảo trì nếu đang bật và không phải trang admin
   if (maintenanceLoaded && maintenance.enabled && !isAdminPage) {
@@ -199,8 +199,8 @@ function AppInner({ maintenance, maintenanceLoaded }: { maintenance: Maintenance
             <Route path="/history" element={<History />} />
             <Route path="/favorites" element={<Favorites />} />
             <Route path="/type/:type" element={<MovieList />} />
-            <Route path="/phimtuoitho/admin" element={<Admin />} />
-            <Route path="/phimtuoitho/player-studio" element={<PlayerStudio />} />
+            <Route path="/daophim/admin" element={<Admin />} />
+            <Route path="/daophim/player-studio" element={<PlayerStudio />} />
             <Route path="/watch-manual/:id" element={<WatchManual />} />
             <Route path="/watch-manual/:id/:ep" element={<WatchManual />} />
             <Route path="/manual/:id" element={<ManualMovieDetail />} />

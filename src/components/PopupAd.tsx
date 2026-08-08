@@ -16,7 +16,7 @@ export interface PopupAdData {
   createdAt: number;
 }
 
-const COL = 'ptt_popup_ads';
+const COL = 'popup_ads';
 
 // ── Firestore CRUD ────────────────────────────────────────────────────────────
 export async function createPopupAd(data: Omit<PopupAdData, 'id'>): Promise<string> {

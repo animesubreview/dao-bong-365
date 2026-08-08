@@ -39,7 +39,7 @@ export default function Notifications() {
 
   useSEO({
     title: 'Thông báo',
-    description: 'Xem tất cả thông báo mới nhất từ Phim Tuổi Thơ.',
+    description: 'Xem tất cả thông báo mới nhất từ Đảo Phim.',
     url: '/notifications',
     noIndex: true,
   });

@@ -2,7 +2,7 @@
 // GachTheFast gọi về URL này sau khi xử lý thẻ xong (GET hoặc POST tuỳ cấu hình)
 //
 // Đây là Callback URL điền vào GachTheFast Dashboard (mục "Thông tin kết nối"):
-//   https://phimtuoitho.co/api/card-callback
+//   https://daophim.online/api/card-callback
 //
 // Env vars cần thiết:
 //   FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY

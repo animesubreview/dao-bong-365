@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { subscribePlayerConfig, PlayerConfig, DEFAULT_CONFIG } from '../lib/playerConfig';
 
-interface PhimTuoiThoPlayerProps {
+interface DaoPhimPlayerProps {
   src: string;        // link_embed (iframe) - dùng làm fallback
   m3u8?: string;       // link_m3u8 - ưu tiên dùng nếu có
   title?: string;
@@ -74,7 +74,7 @@ function clearProgress(key: string) {
 
 type SettingsPane = 'main' | 'quality' | 'subtitle';
 
-export default function PhimTuoiThoPlayer({ src, m3u8, title, className = '', onEnded, onNext, resumeKey }: PhimTuoiThoPlayerProps) {
+export default function DaoPhimPlayer({ src, m3u8, title, className = '', onEnded, onNext, resumeKey }: DaoPhimPlayerProps) {
   const [config, setConfig] = useState<PlayerConfig>(DEFAULT_CONFIG);
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -219,10 +219,10 @@ export default function PhimTuoiThoPlayer({ src, m3u8, title, className = '', on
       hls.on(Hls.Events.ERROR, (_, data) => {
         if (data.fatal) {
           if (mode === 'direct') {
-            console.warn('PhimTuoiThoPlayer: gọi trực tiếp m3u8 lỗi (có thể do Referer/CORS), chuyển sang proxy', data);
+            console.warn('DaoPhimPlayer: gọi trực tiếp m3u8 lỗi (có thể do Referer/CORS), chuyển sang proxy', data);
             setMode('proxy');
           } else {
-            console.warn('PhimTuoiThoPlayer: proxy cũng lỗi, chuyển sang iframe dự phòng', data);
+            console.warn('DaoPhimPlayer: proxy cũng lỗi, chuyển sang iframe dự phòng', data);
             setM3u8Failed(true);
           }
         }

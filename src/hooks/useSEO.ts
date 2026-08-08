@@ -3,7 +3,7 @@
  * Twitter Card và JSON-LD Schema cho từng trang.
  *
  * ── Tối ưu SEO cho Google tìm kiếm tên phim ──
- *   - Title format: "Tên Phim Vietsub HD (2026) | Tên Gốc - Phim Tuổi Thơ"
+ *   - Title format: "Tên Phim Vietsub HD (2026) | Tên Gốc - Đảo Phim"
  *   - Description có keyword tên phim, năm, vietsub
  *   - JSON-LD schema Movie/TVSeries đầy đủ (tên, diễn viên, đạo diễn, thể loại)
  *   - BreadcrumbList cho rich snippet
@@ -11,8 +11,8 @@
 
 import { useEffect } from 'react';
 
-const SITE_NAME  = 'Phim Tuổi Thơ';
-const SITE_URL   = 'https://phimtuoitho.co';
+const SITE_NAME  = 'Đảo Phim';
+const SITE_URL   = 'https://daophim.online';
 const DEFAULT_IMG = 'https://sf-static.upanhlaylink.com/img/image_2026051206bab16347f075d07864efb55a5224ea.jpg';
 
 interface SEOMovie {
@@ -91,8 +91,8 @@ function stripHtml(html: string): string {
 export function useSEO({ title, description, image, url, type = 'website', movie, noIndex }: SEOProps) {
   useEffect(() => {
     // ── Xây dựng title tối ưu cho keyword tên phim ─────────────────
-    // Format: "Tên Phim | PHIMTUOITHO"
-    const TITLE_SUFFIX = 'PHIMTUOITHO';
+    // Format: "Tên Phim | DAOPHIM"
+    const TITLE_SUFFIX = 'DAOPHIM';
     let pageTitle: string;
     if (movie) {
       pageTitle = `${movie.name} | ${TITLE_SUFFIX}`;
@@ -114,7 +114,7 @@ export function useSEO({ title, description, image, url, type = 'website', movie
       pageDesc = `Xem ${movie.name}${originStr}${yearStr} Vietsub HD miễn phí tại ${SITE_NAME}${genreStr}. ${rawContent}`.slice(0, 320);
     } else {
       pageDesc = description ||
-        'Phim Tuổi Thơ - Xem phim online miễn phí chất lượng HD. Phim bộ, phim lẻ, anime, phim chiếu rạp Vietsub, thuyết minh cập nhật hàng ngày.';
+        'Đảo Phim - Xem phim online miễn phí chất lượng HD. Phim bộ, phim lẻ, anime, phim chiếu rạp Vietsub, thuyết minh cập nhật hàng ngày.';
     }
 
     const pageImg  = image || DEFAULT_IMG;
@@ -209,7 +209,7 @@ export function useSEO({ title, description, image, url, type = 'website', movie
 
     // ── Cleanup khi unmount ────────────────────────────────────────
     return () => {
-      document.title = `${SITE_NAME} - Xem Phim Miễn Phí | PHIMTUOITHO`;
+      document.title = `${SITE_NAME} - Xem Phim Miễn Phí | DAOPHIM`;
       setCanonical(`${SITE_URL}/`);
     };
   }, [title, description, image, url, type, movie, noIndex]);

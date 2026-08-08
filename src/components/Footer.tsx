@@ -37,8 +37,8 @@ const FOOTER_COUNTRIES = [
 
 export default function Footer() {
   const settings = useSiteSettings();
-  const siteName = settings.siteName || 'PHIM TUỔI THƠ';
-  const adsEmail  = settings.adsEmail  || 'adsphimtuoitho@gmail.com';
+  const siteName = settings.siteName || 'ĐẢO PHIM';
+  const adsEmail  = settings.adsEmail  || 'adsdaophim@gmail.com';
   const adsTelegram = settings.adsTelegram || '';
 
   return (
@@ -46,7 +46,7 @@ export default function Footer() {
       <div className="max-w-5xl mx-auto px-4 py-10 flex flex-col items-center gap-6 text-center">
         {/* Logo */}
         <div className="flex items-center">
-          <img src="/assets/logo-phimtuoitho.png" alt={siteName} className="h-10 w-auto object-contain" />
+          <img src="/assets/logo-daophim.png" alt={siteName} className="h-10 w-auto object-contain" />
         </div>
         <p className="text-slate-500 text-xs max-w-sm leading-relaxed">
           Trang xem phim online chất lượng cao miễn phí Vietsub, thuyết minh, lồng tiếng full HD.

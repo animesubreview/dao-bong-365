@@ -5,7 +5,7 @@
 
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '8182223004:AAEKg4Gf869fv0Io72AQNeWvrii6D3_utIk';
 const TELEGRAM_CHAT_ID   = process.env.TELEGRAM_CHAT_ID   || '6949171104';
-const SITE_URL           = process.env.SITE_URL            || 'https://phimtuoitho.co';
+const SITE_URL           = process.env.SITE_URL            || 'https://daophim.online';
 
 async function sendTelegram(text, photoUrl) {
   const base = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}`;
@@ -63,7 +63,7 @@ export const handler = async (event) => {
     return { statusCode: 405, body: 'Method Not Allowed' };
   }
 
-  const secret = process.env.NOTIFY_SECRET || 'phimtuoitho_secret_2024';
+  const secret = process.env.NOTIFY_SECRET || 'daophim_secret_2024';
   if (event.headers['x-notify-secret'] !== secret) {
     return { statusCode: 401, body: 'Unauthorized' };
   }

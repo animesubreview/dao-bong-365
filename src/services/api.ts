@@ -6,7 +6,7 @@ const DEFAULT_API_BASE = 'https://phimapi.com';
 
 function readApiBaseFromSettings(): string {
   try {
-    const raw = localStorage.getItem('ptt_site_settings');
+    const raw = localStorage.getItem('site_settings');
     if (!raw) return DEFAULT_API_BASE;
     const settings = JSON.parse(raw);
     const custom = (settings.apiBaseUrl || '').trim().replace(/\/+$/, '');

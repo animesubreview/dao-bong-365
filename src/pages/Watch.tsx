@@ -8,7 +8,7 @@ import { cn, usePageTitle } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import CommentSection from '../components/CommentSection';
 import MovieCard from '../components/MovieCard';
-import PhimTuoiThoPlayer from '../components/PhimTuoiThoPlayer';
+import DaoPhimPlayer from '../components/DaoPhimPlayer';
 import DiscordBanner from '../components/DiscordBanner';
 import { getMovieOverride, mergeOverride, mergeCustomServers } from '../lib/movieOverrides';
 import { createWatchRoom } from '../lib/watchRoom';
@@ -36,7 +36,7 @@ export default function Watch() {
       ? `${movie.name}${epName && epName !== 'Full' ? ` - ${epName}` : ''} Vietsub HD`
       : undefined,
     description: movie
-      ? `Xem ${movie.name}${epName && epName !== 'Full' ? ` ${epName}` : ''} Vietsub HD miễn phí tại Phim Tuổi Thơ.`
+      ? `Xem ${movie.name}${epName && epName !== 'Full' ? ` ${epName}` : ''} Vietsub HD miễn phí tại Đảo Phim.`
       : undefined,
     image: movieApi.getImageUrl(movie?.thumb_url || movie?.poster_url || '') || undefined,
     url: slug && episodeSlug ? `/watch/${slug}/${episodeSlug}` : undefined,
@@ -284,7 +284,7 @@ export default function Watch() {
 
       {/* ── Video Player ── iframe + logo overlay ── */}
       <div className="xl:col-start-1">
-      <PhimTuoiThoPlayer
+      <DaoPhimPlayer
         src={currentEpisode.link_embed}
         m3u8={currentEpisode.link_m3u8}
         title={`${movie.name} - Tập ${currentEpisode.name}`}

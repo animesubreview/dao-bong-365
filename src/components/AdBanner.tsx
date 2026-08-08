@@ -18,7 +18,7 @@ export interface AdBannerData {
   createdAt: number;
 }
 
-const COL = 'ptt_ad_banners';
+const COL = 'ad_banners';
 
 // ── Firestore CRUD ────────────────────────────────────────────────────────────
 export async function getAdBanners(): Promise<AdBannerData[]> {
