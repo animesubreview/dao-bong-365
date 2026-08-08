@@ -128,7 +128,7 @@ export default function AuthPage() {
             <div className="w-14 h-14 bg-green-500 rounded-2xl flex items-center justify-center mb-3 shadow-lg shadow-green-500/20">
               <Clapperboard size={26} className="text-slate-950" strokeWidth={2.5} />
             </div>
-            <h1 className="text-2xl font-black text-white tracking-tight">PHIM TUỔI THƠ</h1>
+            <h1 className="text-2xl font-black text-white tracking-tight">ĐẢO PHIM</h1>
             <p className="text-slate-500 text-sm mt-1">Xem phim không giới hạn</p>
           </div>
 
@@ -260,7 +260,7 @@ export default function AuthPage() {
         </div>
 
         <p className="text-center text-slate-600 text-xs mt-4">
-          © PHIM TUỔI THƠ · Xem phim miễn phí
+          © ĐẢO PHIM · Xem phim miễn phí
         </p>
       </div>
     </div>

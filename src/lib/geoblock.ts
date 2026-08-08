@@ -120,7 +120,7 @@ export async function detectCountry(): Promise<'vn' | 'foreign' | 'error'> {
   return 'error';
 }
 
-const CACHE_KEY = 'phimtuoitho_geo';
+const CACHE_KEY = 'daophim_geo';
 
 export async function getGeoResult(): Promise<GeoResult> {
   try {

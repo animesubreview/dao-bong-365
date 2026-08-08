@@ -7,7 +7,7 @@
  * - Cache 12h phía CDN
  */
 
-const BASE_SITE = 'https://phimtuoitho.co';
+const BASE_SITE = 'https://daophim.online';
 const API_BASE  = 'https://phimapi.com';
 
 async function fetchPage(type, page) {
