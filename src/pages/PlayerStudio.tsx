@@ -166,7 +166,7 @@ export default function PlayerStudio() {
               {config.logoType === 'text' && (<>
                 <div>
                   <label className={labelCls}>Nội dung chữ</label>
-                  <input type="text" value={config.logoText} onChange={e => update('logoText', e.target.value)} className={inputCls} placeholder="PhimTuoiTho" />
+                  <input type="text" value={config.logoText} onChange={e => update('logoText', e.target.value)} className={inputCls} placeholder="DaoPhim" />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
@@ -191,7 +191,7 @@ export default function PlayerStudio() {
               {config.logoType === 'image' && (
                 <div>
                   <label className={labelCls}>URL Ảnh Logo</label>
-                  <input type="url" value={config.logoImageUrl} onChange={e => update('logoImageUrl', e.target.value)} className={inputCls} placeholder="https://phimtuoitho.co/logo.png" />
+                  <input type="url" value={config.logoImageUrl} onChange={e => update('logoImageUrl', e.target.value)} className={inputCls} placeholder="https://daophim.online/logo.png" />
                 </div>
               )}
 

@@ -90,14 +90,6 @@ export default function SyncPlayer({
         enableWorker: true,
         lowLatencyMode: false,
         backBufferLength: 30,
-        capLevelToPlayerSize: true,
-        maxBufferLength: 20,
-        maxMaxBufferLength: 60,
-        maxBufferSize: 30 * 1000 * 1000,
-        startLevel: -1,
-        fragLoadingMaxRetry: 6,
-        levelLoadingMaxRetry: 6,
-        manifestLoadingMaxRetry: 4,
       });
       hlsRef.current = hls;
       hls.loadSource(src);

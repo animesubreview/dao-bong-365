@@ -1,10 +1,36 @@
 import React, { useEffect, useState } from 'react';
 import { X, ExternalLink } from 'lucide-react';
-import { PopupAdData, subscribePopupAds } from '../lib/ads';
+import {
+  collection, doc, addDoc, updateDoc, deleteDoc,
+  query, orderBy, onSnapshot,
+} from 'firebase/firestore';
+import { db } from '../lib/firebase';
 
-// ── Re-export types/CRUD từ lib/ads.ts để code cũ import từ đây vẫn chạy được ──
-export type { PopupAdData };
-export { createPopupAd, updatePopupAd, deletePopupAd } from '../lib/ads';
+export interface PopupAdData {
+  id: string;
+  title: string;
+  mediaUrl: string;
+  mediaType: 'gif' | 'mp4' | 'image';
+  linkUrl: string;
+  active: boolean;
+  createdAt: number;
+}
+
+const COL = 'popup_ads';
+
+// ── Firestore CRUD ────────────────────────────────────────────────────────────
+export async function createPopupAd(data: Omit<PopupAdData, 'id'>): Promise<string> {
+  const ref = await addDoc(collection(db, COL), { ...data, createdAt: Date.now() });
+  return ref.id;
+}
+
+export async function updatePopupAd(id: string, data: Partial<PopupAdData>) {
+  await updateDoc(doc(db, COL, id), data);
+}
+
+export async function deletePopupAd(id: string) {
+  await deleteDoc(doc(db, COL, id));
+}
 
 // ── Session tracking ──────────────────────────────────────────────────────────
 const SESSION_KEY = 'popup_ad_shown_movies';
@@ -28,11 +54,21 @@ export function usePopupAd(movieKey: string) {
   const [ad, setAd] = useState<PopupAdData | null>(null);
 
   useEffect(() => {
-    const unsub = subscribePopupAds(all => {
-      const ads = all.filter(a => a.active);
-      setAd(ads[0] ?? null);
-    });
-    return unsub;
+    let unsub: (() => void) | undefined;
+    try {
+      const q = query(collection(db, COL), orderBy('createdAt', 'desc'));
+      unsub = onSnapshot(
+        q,
+        snap => {
+          const ads = snap.docs
+            .map(d => ({ id: d.id, ...d.data() } as PopupAdData))
+            .filter(a => a.active);
+          setAd(ads[0] ?? null);
+        },
+        err => { console.error('[PopupAd] onSnapshot error:', err); }
+      );
+    } catch (e) { console.error('[PopupAd] setup error:', e); }
+    return () => unsub?.();
   }, []);
 
   useEffect(() => {

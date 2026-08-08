@@ -5,11 +5,11 @@
 import { schedule } from '@netlify/functions';
 import { getStore } from '@netlify/blobs';
 
-const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
-const TELEGRAM_CHAT_ID   = process.env.TELEGRAM_CHAT_ID   || '';
-const SITE_URL           = process.env.SITE_URL            || 'https://phimtuoitho.co';
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '8182223004:AAEKg4Gf869fv0Io72AQNeWvrii6D3_utIk';
+const TELEGRAM_CHAT_ID   = process.env.TELEGRAM_CHAT_ID   || '-1003945410277';
+const SITE_URL           = process.env.SITE_URL            || 'https://daophim.online';
 const KKPHIM_API         = 'https://phimapi.com';
-const INDEXNOW_KEY       = process.env.INDEXNOW_KEY        || '';
+const INDEXNOW_KEY       = process.env.INDEXNOW_KEY        || 'daophim2026indexnowkey9f8a7b6c';
 
 // IndexNow: báo cho Bing/Yandex (và các search engine hỗ trợ IndexNow) biết ngay khi có URL mới
 // Google chưa hỗ trợ IndexNow, nhưng ta vẫn ping thêm sitemap cho Google ở dưới.
@@ -20,7 +20,7 @@ async function submitIndexNow(urls) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json; charset=utf-8' },
       body: JSON.stringify({
-        host: 'phimtuoitho.co',
+        host: 'daophim.online',
         key: INDEXNOW_KEY,
         keyLocation: `${SITE_URL}/${INDEXNOW_KEY}.txt`,
         urlList: urls,
@@ -108,7 +108,7 @@ async function sendDiscordBot({ title, url, description, thumb, isNewMovie }) {
       description: description.slice(0, 4096),
       color: isNewMovie ? 0x22c55e : 0x3b82f6, // xanh lá = phim mới, xanh dương = tập mới
       image: thumb ? { url: thumb } : undefined,
-      footer: { text: 'Phim Tuổi Thơ Bot' },
+      footer: { text: 'Đảo Phim Bot' },
       timestamp: new Date().toISOString(),
     };
     const res = await fetch(`${DISCORD_API}/channels/${DISCORD_CHANNEL_ID}/messages`, {
@@ -147,7 +147,7 @@ function formatNewMovie(movie) {
     `📌 <b>${movie.name}</b>\n` +
     `${movie.origin_name ? `🔤 <i>${movie.origin_name}</i>\n` : ''}` +
     `${year}${quality}${lang}${totalEp}\n\n` +
-    `🔗 <a href="${url}">▶️ Xem ngay tại PhimTuoiTho.lol</a>`;
+    `🔗 <a href="${url}">▶️ Xem ngay tại DaoPhim.lol</a>`;
 }
 
 // Format tập mới
@@ -162,7 +162,7 @@ function formatNewEpisode(movie, epCurrent) {
     `${movie.origin_name ? `🔤 <i>${movie.origin_name}</i>\n` : ''}` +
     `🎬 Tập mới nhất: <b>${epCurrent}</b>\n` +
     `${quality}${lang}\n\n` +
-    `🔗 <a href="${url}">▶️ Xem ngay tại PhimTuoiTho.lol</a>`;
+    `🔗 <a href="${url}">▶️ Xem ngay tại DaoPhim.lol</a>`;
 }
 
 const myHandler = async () => {
@@ -184,7 +184,7 @@ const myHandler = async () => {
     let movies = [];
     for (let page = 1; page <= 3; page++) {
       const res = await fetch(`${KKPHIM_API}/danh-sach/phim-moi-cap-nhat?page=${page}`, {
-        headers: { 'User-Agent': 'PhimTuoiTho-Bot/1.0' },
+        headers: { 'User-Agent': 'DaoPhim-Bot/1.0' },
       });
       if (!res.ok) {
         if (page === 1) throw new Error(`API error: ${res.status}`);

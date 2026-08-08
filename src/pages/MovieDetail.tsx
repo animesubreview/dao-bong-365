@@ -30,7 +30,7 @@ export default function MovieDetail() {
   const isTV = episodes.length > 0 && (episodes[0]?.server_data?.length ?? 0) > 1;
   const seoImage = movieApi.getImageUrl(movie?.poster_url || movie?.thumb_url || '');
   const seoDesc = movie
-    ? `Xem ${movie.name}${movie.origin_name ? ` (${movie.origin_name})` : ''} ${movie.year || ''} Vietsub HD miễn phí tại Phim Tuổi Thơ. ${movie.content?.replace(/<[^>]*>/g, '').slice(0, 120) || ''}`
+    ? `Xem ${movie.name}${movie.origin_name ? ` (${movie.origin_name})` : ''} ${movie.year || ''} Vietsub HD miễn phí tại Đảo Phim. ${movie.content?.replace(/<[^>]*>/g, '').slice(0, 120) || ''}`
     : '';
 
   useSEO({
@@ -118,8 +118,8 @@ export default function MovieDetail() {
     );
   }
 
-  const posterUrl = tmdbImages.posters[0] || movieApi.getImageUrl(movie.poster_url || movie.thumb_url) || '/assets/logo-phimtuoitho.png';
-  const thumbUrl = tmdbImages.backdrops[0] || movieApi.getImageUrl(movie.thumb_url || movie.poster_url) || '/assets/logo-phimtuoitho.png';
+  const posterUrl = tmdbImages.posters[0] || movieApi.getImageUrl(movie.poster_url || movie.thumb_url) || '/assets/logo-daophim.png';
+  const thumbUrl = tmdbImages.backdrops[0] || movieApi.getImageUrl(movie.thumb_url || movie.poster_url) || '/assets/logo-daophim.png';
   const firstEpisode = episodes[0]?.server_data[0];
   const currentServer = episodes[selectedServer];
 
@@ -140,11 +140,10 @@ export default function MovieDetail() {
         style={{ height: 'clamp(300px, 48vw, 580px)', marginTop: '-56px', paddingTop: '56px' }}
       >
         <img src={thumbUrl} alt={movie.name} referrerPolicy="no-referrer"
-          decoding="async" fetchPriority="high"
           onError={(e) => {
             const fallback = movieApi.getImageUrl(movie.thumb_url || movie.poster_url);
             if (fallback && e.currentTarget.src !== fallback) e.currentTarget.src = fallback;
-            else e.currentTarget.src = '/assets/logo-phimtuoitho.png';
+            else e.currentTarget.src = '/assets/logo-daophim.png';
           }}
           className="w-full h-full object-cover object-top" />
         <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-slate-950/60 to-transparent" />
@@ -168,11 +167,10 @@ export default function MovieDetail() {
           <div className="hidden md:block shrink-0 w-44 lg:w-52">
             <div className="rounded-xl overflow-hidden shadow-2xl shadow-black/80 border border-slate-800/60" style={{ aspectRatio: '2/3' }}>
               <img src={posterUrl} alt={movie.name} className="w-full h-full object-cover" referrerPolicy="no-referrer"
-                decoding="async" fetchPriority="high"
                 onError={(e) => {
                   const fallback = movieApi.getImageUrl(movie.poster_url || movie.thumb_url);
                   if (fallback && e.currentTarget.src !== fallback) e.currentTarget.src = fallback;
-                  else e.currentTarget.src = '/assets/logo-phimtuoitho.png';
+                  else e.currentTarget.src = '/assets/logo-daophim.png';
                 }} />
             </div>
           </div>
@@ -184,11 +182,10 @@ export default function MovieDetail() {
             <div className="flex md:hidden items-end gap-4 mb-4">
               <div className="w-24 shrink-0 rounded-xl overflow-hidden shadow-xl border border-slate-800/60" style={{ aspectRatio: '2/3' }}>
                 <img src={posterUrl} alt={movie.name} className="w-full h-full object-cover" referrerPolicy="no-referrer"
-                decoding="async" fetchPriority="high"
                 onError={(e) => {
                   const fallback = movieApi.getImageUrl(movie.poster_url || movie.thumb_url);
                   if (fallback && e.currentTarget.src !== fallback) e.currentTarget.src = fallback;
-                  else e.currentTarget.src = '/assets/logo-phimtuoitho.png';
+                  else e.currentTarget.src = '/assets/logo-daophim.png';
                 }} />
               </div>
               <div className="pb-1">
