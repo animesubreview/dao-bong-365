@@ -52,7 +52,7 @@ function Pill({ to, label }: { to: string; label: string }) {
 export default function HtmlSitemap() {
   useSEO({
     title: 'Sơ Đồ Trang Web (Sitemap)',
-    description: 'Toàn bộ chuyên mục phim bộ, phim lẻ, hoạt hình, thể loại và quốc gia tại Đảo Phim.',
+    description: 'Toàn bộ chuyên mục phim bộ, phim lẻ, hoạt hình, thể loại và quốc gia tại Phim Tuổi Thơ.',
     url: '/site-map',
   });
 

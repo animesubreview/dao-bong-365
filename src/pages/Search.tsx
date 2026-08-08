@@ -32,8 +32,8 @@ export default function Search() {
   useSEO({
     title: query ? `Tìm kiếm: ${query}` : 'Tìm kiếm phim',
     description: query
-      ? `Kết quả tìm kiếm phim "${query}" tại Đảo Phim. Xem phim online miễn phí HD Vietsub.`
-      : 'Tìm kiếm phim online tại Đảo Phim. Hơn 50,000 bộ phim Vietsub HD miễn phí.',
+      ? `Kết quả tìm kiếm phim "${query}" tại Phim Tuổi Thơ. Xem phim online miễn phí HD Vietsub.`
+      : 'Tìm kiếm phim online tại Phim Tuổi Thơ. Hơn 50,000 bộ phim Vietsub HD miễn phí.',
     url: query ? `/search?q=${encodeURIComponent(query)}` : '/search',
     noIndex: true,
   });

@@ -82,16 +82,19 @@ service cloud.firestore {
       }
     }
 
-    // Ad Banners — mọi người đọc, chỉ admin ghi
-    match /ad_banners/{id} {
-      allow read: if true;
-      allow write: if true;
+    // Ad Banners — tách riêng theo từng domain, ví dụ:
+    //   ptt_ad_banners__phimtuoitho_co, ptt_ad_banners__daophim_online
+    // (xem getSiteSuffix() trong src/lib/ads.ts) — mọi người đọc, chỉ admin ghi
+    match /{col}/{id} {
+      allow read: if col.matches('ptt_ad_banners__.*');
+      allow write: if col.matches('ptt_ad_banners__.*');
     }
 
-    // Popup Ads — mọi người đọc, chỉ admin ghi
-    match /popup_ads/{id} {
-      allow read: if true;
-      allow write: if true;
+    // Popup Ads — tách riêng theo từng domain, ví dụ:
+    //   ptt_popup_ads__phimtuoitho_co, ptt_popup_ads__daophim_online
+    match /{col2}/{id2} {
+      allow read: if col2.matches('ptt_popup_ads__.*');
+      allow write: if col2.matches('ptt_popup_ads__.*');
     }
 
     // Presence — realtime online tracking
