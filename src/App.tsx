@@ -45,68 +45,60 @@ function LoadingScreen({ fadeOut }: { fadeOut: boolean }) {
         position: 'fixed',
         top: 0, right: 0, bottom: 0, left: 0,
         zIndex: 9999,
-        backgroundColor: '#07070a',
+        backgroundColor: '#0a0a0f',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
         opacity: fadeOut ? 0 : 1,
-        transition: 'opacity 0.45s cubic-bezier(.4,0,.2,1)',
+        transition: 'opacity 0.7s ease',
         pointerEvents: fadeOut ? 'none' : 'all',
       }}
     >
       <style>{`
-        @keyframes ptt-fade-up {
-          0%   { opacity: 0; transform: translateY(8px) scale(0.96); }
-          100% { opacity: 1; transform: translateY(0) scale(1); }
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&display=swap');
+
+        @keyframes kk-pop {
+          0%   { opacity: 0; transform: scale(0.85); }
+          100% { opacity: 1; transform: scale(1); }
         }
-        @keyframes ptt-bar-slide {
-          0%   { transform: translateX(-100%); }
-          100% { transform: translateX(220%); }
+        @keyframes kk-glow-soft {
+          0%, 100% { box-shadow: 0 0 36px rgba(34,197,94,0.35), 0 0 70px rgba(34,197,94,0.15); }
+          50%       { box-shadow: 0 0 52px rgba(34,197,94,0.55), 0 0 100px rgba(34,197,94,0.25); }
         }
-        .ptt-splash-logo {
-          animation: ptt-fade-up 0.5s cubic-bezier(.22,1,.36,1) both;
+        .kk-logo-wrap {
+          animation: kk-pop 0.45s cubic-bezier(.22,1,.36,1) both;
         }
-        .ptt-splash-track {
-          position: relative;
-          overflow: hidden;
-          width: 84px;
-          height: 3px;
-          border-radius: 999px;
-          background: rgba(255,255,255,0.08);
-          margin-top: 22px;
-          animation: ptt-fade-up 0.5s cubic-bezier(.22,1,.36,1) 0.1s both;
-        }
-        .ptt-splash-bar {
-          position: absolute;
-          top: 0; left: 0;
-          width: 40%;
-          height: 100%;
-          border-radius: 999px;
-          background: linear-gradient(90deg, transparent, #22c55e, transparent);
-          animation: ptt-bar-slide 1s ease-in-out infinite;
+        .kk-glow-box {
+          animation: kk-glow-soft 2.5s ease-in-out 0.45s infinite;
         }
       `}</style>
 
-      <img
-        src="/assets/logo-phimtuoitho.png"
-        alt="Phim Tuổi Thơ"
-        className="ptt-splash-logo"
-        style={{ height: 52, width: 'auto', display: 'block' }}
-      />
-      <div className="ptt-splash-track">
-        <div className="ptt-splash-bar" />
+      {/* Logo image — thẻ pill nền đen bo góc + viền glow xanh */}
+      <div className="kk-logo-wrap" style={{ position: 'relative' }}>
+        <div
+          className="kk-glow-box"
+          style={{
+            position: 'relative',
+            padding: '18px 28px',
+            borderRadius: 24,
+            backgroundColor: '#111318',
+            border: '1px solid rgba(34,197,94,0.25)',
+          }}
+        >
+          <img
+            src="/assets/logo-daophim.png"
+            alt="Đảo Phim"
+            style={{ height: 64, width: 'auto', display: 'block', position: 'relative', zIndex: 1 }}
+          />
+        </div>
       </div>
     </div>
   );
 }
 
-const SPLASH_SEEN_KEY = 'ptt_splash_seen';
-
 export default function App() {
-  const [isLoading, setIsLoading] = useState(() => {
-    try { return !sessionStorage.getItem(SPLASH_SEEN_KEY); } catch { return true; }
-  });
+  const [isLoading, setIsLoading] = useState(true);
   const [fadeOut, setFadeOut] = useState(false);
   const [maintenance, setMaintenance] = useState<MaintenanceConfig>(DEFAULT_MAINTENANCE);
   const [maintenanceLoaded, setMaintenanceLoaded] = useState(false);
@@ -115,14 +107,10 @@ export default function App() {
   const [geoblockEnabled, setGeoblockEnabled] = useState<boolean | null>(null);
 
   useEffect(() => {
-    if (!isLoading) return;
-    const fadeTimer = setTimeout(() => setFadeOut(true), 900);
-    const hideTimer = setTimeout(() => {
-      setIsLoading(false);
-      try { sessionStorage.setItem(SPLASH_SEEN_KEY, '1'); } catch {}
-    }, 1350);
+    const fadeTimer = setTimeout(() => setFadeOut(true), 2200);
+    const hideTimer = setTimeout(() => setIsLoading(false), 2950);
     return () => { clearTimeout(fadeTimer); clearTimeout(hideTimer); };
-  }, [isLoading]);
+  }, []);
 
   useEffect(() => {
     const unsub = subscribeMaintenanceConfig(cfg => {
@@ -188,7 +176,7 @@ export default function App() {
 
 function AppInner({ maintenance, maintenanceLoaded }: { maintenance: MaintenanceConfig; maintenanceLoaded: boolean }) {
   const location = useLocation();
-  const isAdminPage = location.pathname === '/phimtuoitho/admin';
+  const isAdminPage = location.pathname === '/daophim/admin';
 
   // Hiển thị trang bảo trì nếu đang bật và không phải trang admin
   if (maintenanceLoaded && maintenance.enabled && !isAdminPage) {
@@ -211,8 +199,8 @@ function AppInner({ maintenance, maintenanceLoaded }: { maintenance: Maintenance
             <Route path="/history" element={<History />} />
             <Route path="/favorites" element={<Favorites />} />
             <Route path="/type/:type" element={<MovieList />} />
-            <Route path="/phimtuoitho/admin" element={<Admin />} />
-            <Route path="/phimtuoitho/player-studio" element={<PlayerStudio />} />
+            <Route path="/daophim/admin" element={<Admin />} />
+            <Route path="/daophim/player-studio" element={<PlayerStudio />} />
             <Route path="/watch-manual/:id" element={<WatchManual />} />
             <Route path="/watch-manual/:id/:ep" element={<WatchManual />} />
             <Route path="/manual/:id" element={<ManualMovieDetail />} />

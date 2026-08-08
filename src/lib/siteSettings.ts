@@ -2,13 +2,10 @@ import { db } from './firebase';
 import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 
 // Toàn bộ cấu hình website (tên site, email/telegram quảng cáo, cảnh báo copy...)
-// được lưu tại 1 document duy nhất trên Firestore: config/ptt_site_settings
+// được lưu tại 1 document duy nhất trên Firestore: config/site_settings
 // -> Admin sửa 1 lần, TẤT CẢ người dùng đều thấy (khác với localStorage chỉ lưu theo từng máy).
-// Lưu ý: dùng doc riêng "ptt_site_settings" (thay vì "site_settings" của code cũ) để
-// site Phim Tuổi Thơ không đọc/ghi đè cấu hình (tên site, logo, quảng cáo...) của site cũ
-// khi cả hai cùng chạy chung 1 project Firebase.
-const SETTINGS_DOC = () => doc(db, 'config', 'ptt_site_settings');
-const LOCAL_KEY = 'ptt_site_settings';
+const SETTINGS_DOC = () => doc(db, 'config', 'site_settings');
+const LOCAL_KEY = 'site_settings';
 
 export type SiteSettings = Record<string, any>;
 
