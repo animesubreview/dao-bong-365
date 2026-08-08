@@ -5,8 +5,10 @@ import {
   Maximize, Minimize, Settings, ChevronRight, ChevronLeft, Check, SkipForward,
 } from 'lucide-react';
 import { subscribePlayerConfig, PlayerConfig, DEFAULT_CONFIG } from '../lib/playerConfig';
+import { subscribeSiteSettings } from '../lib/siteSettings';
+import VideoAdOverlay from './VideoAdOverlay';
 
-interface PhimTuoiThoPlayerProps {
+interface DaoPhimPlayerProps {
   src: string;        // link_embed (iframe) - dùng làm fallback
   m3u8?: string;       // link_m3u8 - ưu tiên dùng nếu có
   title?: string;
@@ -74,7 +76,7 @@ function clearProgress(key: string) {
 
 type SettingsPane = 'main' | 'quality' | 'subtitle';
 
-export default function PhimTuoiThoPlayer({ src, m3u8, title, className = '', onEnded, onNext, resumeKey }: PhimTuoiThoPlayerProps) {
+export default function DaoPhimPlayer({ src, m3u8, title, className = '', onEnded, onNext, resumeKey }: DaoPhimPlayerProps) {
   const [config, setConfig] = useState<PlayerConfig>(DEFAULT_CONFIG);
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -83,6 +85,33 @@ export default function PhimTuoiThoPlayer({ src, m3u8, title, className = '', on
 
   const [m3u8Failed, setM3u8Failed] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  // ── Quảng cáo video trong player (pre-roll) — link do Admin tự cấu hình ─────
+  const [adSettings, setAdSettings] = useState<{ url: string; skip: number; enabled: boolean }>({ url: '', skip: 5, enabled: false });
+  const [adShownFor, setAdShownFor] = useState<string | null>(null); // resumeKey đã hiện ad rồi, tránh hiện lại khi re-render
+  useEffect(() => {
+    const unsub = subscribeSiteSettings(s => {
+      setAdSettings({
+        url: s.videoAdUrl || '',
+        skip: typeof s.videoAdSkipSeconds === 'number' ? s.videoAdSkipSeconds : parseInt(s.videoAdSkipSeconds) || 5,
+        enabled: !!s.videoAdEnabled && !!s.videoAdUrl,
+      });
+    });
+    return unsub;
+  }, []);
+  const adKey = resumeKey || title || 'default';
+  const showAd = adSettings.enabled && adShownFor !== adKey;
+
+  useEffect(() => {
+    if (showAd && videoRef.current) {
+      videoRef.current.pause();
+    }
+  }, [showAd]);
+
+  const handleAdDone = useCallback(() => {
+    setAdShownFor(adKey);
+    videoRef.current?.play().catch(() => {});
+  }, [adKey]);
 
   // ── Tiếp tục xem: nhắc lại vị trí đã dừng ────────────────────────────────
   const [resumePrompt, setResumePrompt] = useState<{ time: number } | null>(null);
@@ -200,21 +229,7 @@ export default function PhimTuoiThoPlayer({ src, m3u8, title, className = '', on
 
     if (Hls.isSupported()) {
       setUsingHlsJs(true);
-      hls = new Hls({
-        enableWorker: true,
-        lowLatencyMode: false,
-        backBufferLength: 30,
-        // ── Tối ưu tốc độ tải: giới hạn chất lượng khởi động theo kích thước khung phát,
-        // tránh tải video độ phân giải cao hơn mức cần thiết → vào phim nhanh hơn, ít giật.
-        capLevelToPlayerSize: true,
-        maxBufferLength: 20,
-        maxMaxBufferLength: 60,
-        maxBufferSize: 30 * 1000 * 1000, // 30MB — đủ mượt, không tải dư gây chậm mạng yếu
-        startLevel: -1, // auto, hls.js tự chọn theo băng thông đo được
-        fragLoadingMaxRetry: 6,
-        levelLoadingMaxRetry: 6,
-        manifestLoadingMaxRetry: 4,
-      });
+      hls = new Hls({ enableWorker: true, lowLatencyMode: false, backBufferLength: 30 });
       hlsRef.current = hls;
       hls.loadSource(playUrl);
       hls.attachMedia(video);
@@ -233,10 +248,10 @@ export default function PhimTuoiThoPlayer({ src, m3u8, title, className = '', on
       hls.on(Hls.Events.ERROR, (_, data) => {
         if (data.fatal) {
           if (mode === 'direct') {
-            console.warn('PhimTuoiThoPlayer: gọi trực tiếp m3u8 lỗi (có thể do Referer/CORS), chuyển sang proxy', data);
+            console.warn('DaoPhimPlayer: gọi trực tiếp m3u8 lỗi (có thể do Referer/CORS), chuyển sang proxy', data);
             setMode('proxy');
           } else {
-            console.warn('PhimTuoiThoPlayer: proxy cũng lỗi, chuyển sang iframe dự phòng', data);
+            console.warn('DaoPhimPlayer: proxy cũng lỗi, chuyển sang iframe dự phòng', data);
             setM3u8Failed(true);
           }
         }
@@ -437,6 +452,11 @@ export default function PhimTuoiThoPlayer({ src, m3u8, title, className = '', on
       onMouseMove={useM3u8 ? wake : undefined}
       onTouchStart={useM3u8 ? wake : undefined}
     >
+      {/* Quảng cáo video (pre-roll) — che toàn bộ player, tự ẩn khi hết giờ chờ hoặc bấm Bỏ qua */}
+      {showAd && (
+        <VideoAdOverlay adUrl={adSettings.url} skipAfterSeconds={adSettings.skip} onDone={handleAdDone} />
+      )}
+
       {useM3u8 ? (
         <>
           <video
@@ -445,7 +465,6 @@ export default function PhimTuoiThoPlayer({ src, m3u8, title, className = '', on
             style={{ display: 'block' }}
             playsInline
             autoPlay
-            preload="auto"
             onEnded={() => { if (resumeKey) clearProgress(resumeKey); onEnded?.(); }}
             onClick={togglePlay}
             title={title || 'Video'}

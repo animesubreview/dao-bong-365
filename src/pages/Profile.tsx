@@ -469,7 +469,7 @@ export default function ProfilePage() {
         </div>
 
         <p className="text-center text-slate-600 text-xs mt-4">
-          © PHIM TUỔI THƠ · Xem phim miễn phí
+          © ĐẢO PHIM · Xem phim miễn phí
         </p>
 
         {/* ─── Nạp tiền ─────────────────────────────────────────────── */}

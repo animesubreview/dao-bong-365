@@ -280,7 +280,7 @@ export default function CinemaPage() {
         </div>
         <div>
           <h2 className="text-2xl font-black text-white mb-2">Chỉ dành cho thành viên</h2>
-          <p className="text-slate-400 text-sm max-w-xs">Bạn cần đăng nhập để vào xem phim tại Rạp Chiếu của Phim Tuổi Thơ.</p>
+          <p className="text-slate-400 text-sm max-w-xs">Bạn cần đăng nhập để vào xem phim tại Rạp Chiếu của Đảo Phim.</p>
         </div>
         <Link to="/auth"
           className="flex items-center gap-2 bg-green-500 hover:bg-green-400 text-slate-950 font-black px-6 py-3 rounded-2xl transition-all shadow-lg shadow-green-500/25">

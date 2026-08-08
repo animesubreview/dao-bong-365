@@ -4,10 +4,10 @@ import { Clapperboard, Mail } from 'lucide-react';
 
 function useSiteSettings() {
   const [s, setS] = useState(() => {
-    try { const v = localStorage.getItem('ptt_site_settings'); return v ? JSON.parse(v) : {}; } catch { return {}; }
+    try { const v = localStorage.getItem('site_settings'); return v ? JSON.parse(v) : {}; } catch { return {}; }
   });
   useEffect(() => {
-    const cb = () => { try { const v = localStorage.getItem('ptt_site_settings'); if (v) setS(JSON.parse(v)); } catch {} };
+    const cb = () => { try { const v = localStorage.getItem('site_settings'); if (v) setS(JSON.parse(v)); } catch {} };
     window.addEventListener('storage', cb);
     window.addEventListener('site_settings_updated', cb);
     return () => { window.removeEventListener('storage', cb); window.removeEventListener('site_settings_updated', cb); };
@@ -17,8 +17,8 @@ function useSiteSettings() {
 
 export default function Footer() {
   const settings = useSiteSettings();
-  const siteName = settings.siteName || 'PHIM TUỔI THƠ';
-  const adsEmail  = settings.adsEmail  || 'adsphimtuoitho@gmail.com';
+  const siteName = settings.siteName || 'ĐẢO PHIM';
+  const adsEmail  = settings.adsEmail  || 'adsdaophim@gmail.com';
 
   return (
     <footer className="border-t border-slate-800/60 bg-slate-950 mt-10">

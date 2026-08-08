@@ -1,7 +1,7 @@
 // ─── ClickAd ──────────────────────────────────────────────────────────────────
 // Bỏ qua: admin + user đang có VIP còn hạn
 import { useEffect, useRef, useState } from 'react';
-import { useClickAdConfig } from '../lib/ads';
+import { useClickAdConfig } from '../lib/clickAd';
 import { onAuthChange, getUserProfile, UserProfile } from '../lib/auth';
 import { isVipActive } from '../lib/vip';
 

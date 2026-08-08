@@ -19,7 +19,7 @@ export function formatTime(seconds: number): string {
 
 export function getSiteSettings() {
   try {
-    const s = localStorage.getItem('ptt_site_settings');
+    const s = localStorage.getItem('site_settings');
     return s ? JSON.parse(s) : {};
   } catch { return {}; }
 }
@@ -27,8 +27,8 @@ export function getSiteSettings() {
 export function usePageTitle(pageTitle?: string) {
   useEffect(() => {
     const settings = getSiteSettings();
-    const suffix = 'PHIMTUOITHO';
-    const base = settings.siteName || 'Phim Tuổi Thơ';
+    const suffix = 'DAOPHIM';
+    const base = settings.siteName || 'Đảo Phim';
     if (pageTitle) {
       document.title = `${pageTitle} | ${suffix}`;
     } else {
