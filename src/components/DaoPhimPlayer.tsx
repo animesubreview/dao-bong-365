@@ -217,6 +217,7 @@ export default function DaoPhimPlayer({ src, m3u8, title, className = '', onEnde
   useEffect(() => {
     const video = videoRef.current;
     if (!video || !m3u8 || m3u8Failed) return;
+    if (showAd) return; // Chưa tải/phát phim khi quảng cáo còn đang hiện — tránh trùng lặp âm thanh
 
     let hls: Hls | null = null;
     const playUrl = mode === 'proxy'
@@ -275,7 +276,7 @@ export default function DaoPhimPlayer({ src, m3u8, title, className = '', onEnde
       hlsRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [m3u8, m3u8Failed, mode]);
+  }, [m3u8, m3u8Failed, mode, showAd]);
 
   // ── Đồng bộ sự kiện thẻ <video> với state UI ─────────────────────────────
   useEffect(() => {
