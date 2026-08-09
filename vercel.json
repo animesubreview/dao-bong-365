@@ -34,7 +34,7 @@
       "destination": "/api/seo-prerender"
     },
 
-    { "source": "/((?!api/|assets/|.*\\.(?:xml|txt|ico|png|jpg|webp|svg|json)$).*)", "destination": "/index.html" }
+    { "source": "/((?!api/|assets/|.*\\.(?:xml|txt|ico|png|jpg|webp|svg|json|html)$).*)", "destination": "/index.html" }
   ],
 
   "headers": [
