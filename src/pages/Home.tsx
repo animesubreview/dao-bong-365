@@ -14,6 +14,7 @@ import { onAuthChange } from '../lib/auth';
 import Banner from '../components/Banner';
 import AdBanner from '../components/AdBanner';
 import LiveBanner from '../components/LiveBanner';
+import PosterImg from '../components/PosterImg';
 import { RecentCommentsSection, TrendingMoviesSection, FavoriteMoviesSection, HotGenresSection } from '../components/CommunityWidgets';
 
 /* ─── helpers ─────────────────────────────────────────────────── */
@@ -81,8 +82,8 @@ function MCard({ movie, pinned }: { movie: Movie; pinned?: boolean }) {
     <Link to={`/phim/${movie.slug}`} className="group shrink-0 block" style={{ width: CW, scrollSnapAlign:'start' }}>
       <div className="relative rounded-lg overflow-hidden bg-slate-800" style={{ aspectRatio:'2/3' }}>
         <div className="absolute inset-0 bg-slate-800" />
-        <img src={movieApi.getImageUrl(movie.poster_url||movie.thumb_url)} alt={dec(movie.name)}
-          loading="lazy" referrerPolicy="no-referrer" onLoad={() => setOk(true)}
+        <PosterImg src={movieApi.getImageUrl(movie.poster_url||movie.thumb_url)} fallbackSrc={movie.poster_url||movie.thumb_url} alt={dec(movie.name)}
+          loading="lazy" onLoad={() => setOk(true)}
           className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           style={{ opacity: ok ? 1 : 0, transition: 'opacity 500ms ease' }} />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/40 to-transparent" />
@@ -110,7 +111,7 @@ function ManualMCard({ movie }: { movie: ManualMovie }) {
     <Link to={`/manual/${movie.id}`} className="group shrink-0 block" style={{ width: CW, scrollSnapAlign:'start' }}>
       <div className="relative rounded-lg overflow-hidden bg-slate-800" style={{ aspectRatio:'2/3' }}>
         {movie.posterUrl
-          ? <img src={movie.posterUrl} alt={movie.name} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+          ? <PosterImg src={movie.posterUrl} alt={movie.name} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
           : <div className="w-full h-full flex items-center justify-center text-3xl">🎬</div>}
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/40 to-transparent" />
       </div>
@@ -131,7 +132,7 @@ function UpcomingCard({ movie }: { movie: ManualMovie }) {
       <div className="relative rounded-lg overflow-hidden bg-slate-800" style={{ aspectRatio:'2/3' }}>
         <div className="absolute inset-0 bg-slate-800" />
         {movie.posterUrl && (
-          <img src={movie.posterUrl} alt={movie.name} loading="lazy" referrerPolicy="no-referrer"
+          <PosterImg src={movie.posterUrl} alt={movie.name} loading="lazy"
             onLoad={() => setOk(true)}
             className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             style={{ opacity: ok ? 1 : 0, transition: 'opacity 500ms ease' }} />
@@ -186,7 +187,7 @@ function UpcomingNewCard({ movie }: { movie: UpcomingMovie }) {
       <div className="relative rounded-lg overflow-hidden bg-slate-800" style={{ aspectRatio:'2/3' }}>
         <div className="absolute inset-0 bg-slate-800" />
         {movie.posterUrl && (
-          <img src={movie.posterUrl} alt={movie.name} loading="lazy" referrerPolicy="no-referrer"
+          <PosterImg src={movie.posterUrl} alt={movie.name} loading="lazy"
             onLoad={() => setOk(true)}
             className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             style={{ opacity: ok ? 1 : 0, transition: 'opacity 500ms ease' }} />
@@ -218,8 +219,8 @@ function Top10Card({ movie, rank }: { movie: Movie; rank: number }) {
     <Link to={`/phim/${movie.slug}`} className="group shrink-0 block" style={{ width: CW, scrollSnapAlign:'start' }}>
       <div className="relative rounded-2xl overflow-hidden bg-slate-800 shadow-lg" style={{ aspectRatio:'2/3' }}>
         <div className="absolute inset-0 bg-slate-800" />
-        <img src={movieApi.getImageUrl(movie.poster_url||movie.thumb_url)} alt={dec(movie.name)}
-          loading="lazy" referrerPolicy="no-referrer" onLoad={() => setOk(true)}
+        <PosterImg src={movieApi.getImageUrl(movie.poster_url||movie.thumb_url)} fallbackSrc={movie.poster_url||movie.thumb_url} alt={dec(movie.name)}
+          loading="lazy" onLoad={() => setOk(true)}
           className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           style={{ opacity: ok ? 1 : 0, transition: 'opacity 500ms ease' }} />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent" />
@@ -387,8 +388,8 @@ function GridLandscapeCard({ movie }: { movie: Movie }) {
     <Link to={`/phim/${movie.slug}`} className="group block min-w-0">
       <div className="relative rounded-xl overflow-hidden bg-slate-800" style={{ aspectRatio: '16/10' }}>
         <div className="absolute inset-0 bg-slate-800" />
-        <img src={movieApi.getImageUrl(movie.thumb_url || movie.poster_url)} alt={dec(movie.name)}
-          loading="lazy" referrerPolicy="no-referrer" onLoad={() => setOk(true)}
+        <PosterImg src={movieApi.getImageUrl(movie.thumb_url || movie.poster_url)} fallbackSrc={movie.thumb_url || movie.poster_url} alt={dec(movie.name)}
+          loading="lazy" onLoad={() => setOk(true)}
           className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           style={{ opacity: ok ? 1 : 0, transition: 'opacity 500ms ease' }} />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-transparent to-transparent" />
@@ -572,8 +573,8 @@ function NewMovieSpotlight({ movies }: { movies: Movie[] }) {
         onMouseLeave={() => { if (dragStartX.current != null) dragEnd(); }}
       >
         <Link to={`/phim/${movie.slug}`} onClick={guardClick} onClickCapture={guardClick} className="block relative" style={{ aspectRatio: '16/9' }} draggable={false}>
-          <img src={movieApi.getImageUrl(movie.thumb_url || movie.poster_url)} alt={dec(movie.name)}
-            referrerPolicy="no-referrer" loading="lazy" draggable={false}
+          <PosterImg src={movieApi.getImageUrl(movie.thumb_url || movie.poster_url)} fallbackSrc={movie.thumb_url || movie.poster_url} alt={dec(movie.name)}
+            loading="lazy"
             className="absolute inset-0 w-full h-full object-cover pointer-events-none" />
           <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/10 to-transparent" />
           <EpBadge ep={movie.episode_current} />
@@ -620,7 +621,7 @@ function BilingualCard({ movie }: { movie: Movie }) {
     <Link to={`/phim/${movie.slug}`} className="group shrink-0 block" style={{ width: CW, scrollSnapAlign: 'start' }}>
       <div className="relative rounded-lg overflow-hidden bg-slate-800 transition-transform duration-300 group-hover:-translate-y-1" style={{ aspectRatio: '2/3' }}>
         <div className="absolute inset-0 bg-slate-800" />
-        <img src={movieApi.getImageUrl(movie.poster_url || movie.thumb_url)} alt={dec(movie.name)}
+        <PosterImg src={movieApi.getImageUrl(movie.poster_url || movie.thumb_url)} fallbackSrc={movie.poster_url || movie.thumb_url} alt={dec(movie.name)}
           loading="lazy" referrerPolicy="no-referrer" onLoad={() => setOk(true)}
           className="absolute inset-0 w-full h-full object-cover"
           style={{ opacity: ok ? 1 : 0, transition: 'opacity 500ms ease' }} />
@@ -667,14 +668,14 @@ function VietBannerCard({ movie }: { movie: Movie }) {
     <Link to={`/phim/${movie.slug}`} className="group shrink-0 md:shrink-0 block w-[min(78vw,360px)] md:w-full" style={{ scrollSnapAlign: 'start' }}>
       <div className="relative rounded-xl overflow-hidden bg-slate-800" style={{ aspectRatio: '16/9' }}>
         <div className="absolute inset-0 bg-slate-800" />
-        <img src={movieApi.getImageUrl(movie.thumb_url || movie.poster_url)} alt={dec(movie.name)}
-          loading="lazy" referrerPolicy="no-referrer" onLoad={() => setOk(true)}
+        <PosterImg src={movieApi.getImageUrl(movie.thumb_url || movie.poster_url)} fallbackSrc={movie.thumb_url || movie.poster_url} alt={dec(movie.name)}
+          loading="lazy" onLoad={() => setOk(true)}
           className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           style={{ opacity: ok ? 1 : 0, transition: 'opacity 500ms ease' }} />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/30 via-transparent to-transparent" />
         <EpBadge ep={movie.episode_current} />
         {/* Poster nhỏ chồng lên góc dưới-trái, xoay nhẹ — hiệu ứng "xếp chồng ảnh" */}
-        <img src={movieApi.getImageUrl(movie.poster_url)} alt="" referrerPolicy="no-referrer"
+        <PosterImg src={movieApi.getImageUrl(movie.poster_url)} fallbackSrc={movie.poster_url} alt=""
           className="absolute -bottom-3 left-2.5 w-11 h-16 rounded-md object-cover border-2 border-slate-950 shadow-lg -rotate-6 group-hover:rotate-0 transition-transform duration-300 z-10" />
       </div>
       <div className="mt-3.5 pl-1">

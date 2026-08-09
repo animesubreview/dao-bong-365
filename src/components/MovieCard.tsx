@@ -35,9 +35,15 @@ export default function MovieCard({ movie, className }: any) {
             onError={(e) => {
               const img = e.currentTarget;
               const original = movie.poster_url || movie.thumb_url;
-              // Nếu proxy phimapi.com lỗi/bị chặn, thử lại bằng link ảnh gốc
-              if (original && img.src !== original) {
+              const step = img.dataset.fallbackStep || '0';
+              if (step === '0' && original && img.src !== original) {
+                // Bước 1: thử lại bằng link ảnh gốc (bỏ qua proxy phimapi.com nếu nó đang lỗi)
+                img.dataset.fallbackStep = '1';
                 img.src = original;
+              } else if (step !== '2' && original) {
+                // Bước 2: mạng người xem có thể đang chặn domain ảnh gốc — thử qua proxy ảnh dự phòng (wsrv.nl)
+                img.dataset.fallbackStep = '2';
+                img.src = `https://wsrv.nl/?url=${encodeURIComponent(original.replace(/^https?:\/\//, ''))}&default=1`;
               } else {
                 img.src = '/assets/logo-daophim.png';
               }

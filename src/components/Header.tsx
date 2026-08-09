@@ -121,9 +121,9 @@ export default function Header() {
         header.style.backdropFilter = 'blur(20px)';
         header.style.borderBottomColor = 'rgba(255,255,255,0.06)';
       } else {
-        header.style.background = 'rgba(8,8,10,0.97)';
-        header.style.backdropFilter = 'blur(20px)';
-        header.style.borderBottomColor = 'rgba(255,255,255,0.06)';
+        header.style.background = 'transparent';
+        header.style.backdropFilter = 'none';
+        header.style.borderBottomColor = 'transparent';
       }
     };
     window.addEventListener('scroll', onScroll, { passive: true });
@@ -237,7 +237,7 @@ export default function Header() {
   return (
     <>
       {/* ── HEADER BAR ── */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-transparent backdrop-blur-0 border-b border-transparent transition-all duration-300" id="main-header" style={{ background: 'rgba(8,8,10,0.97)', backdropFilter: 'blur(20px)' }}>
+      <header className="fixed top-0 left-0 right-0 z-50 bg-transparent backdrop-blur-0 border-b border-transparent transition-all duration-300" id="main-header" style={{ background: 'transparent', backdropFilter: 'none' }}>
         <div className="max-w-7xl mx-auto px-3 md:px-6 h-16 flex items-center gap-2 md:gap-3">
 
           {/* Logo — 1 lần duy nhất */}
