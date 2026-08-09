@@ -911,7 +911,7 @@ export default function Home() {
   return (
     <div className="pb-20 bg-slate-950 min-h-screen">
       <h1 className="sr-only">
-        Đảo Phim - Xem Phim Online Miễn Phí HD Vietsub, Thuyết Minh, Lồng Tiếng
+        Đảo Phim - Xem Phim Online Miễn Phí Full HD Vietsub, Thuyết Minh, Lồng Tiếng, Không Quảng Cáo
       </h1>
       <Banner movies={bannerMovies} />
       <ContinueWatchingSection />
