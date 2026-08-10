@@ -420,28 +420,40 @@ function LazySection({ title, to, fetch: fetchFn, label, variant = 'row' }: {
   fetch: () => Promise<Movie[]>;
   variant?: 'row' | 'grid';
 }) {
-  const [movies, setMovies] = useState<Movie[] | null>(null); // null = chưa fetch
-  const [fetching, setFetching] = useState(false);
+  const [movies, setMovies] = useState<Movie[] | null>(null); // null = chưa fetch xong
+  const [retried, setRetried] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const done = useRef(false);
+
+  const runFetch = React.useCallback(() => {
+    fetchFn()
+      .then(data => setMovies(data))
+      .catch(() => setMovies([]));
+  }, [fetchFn]);
 
   useEffect(() => {
     const obs = new IntersectionObserver(([entry]) => {
       if (!entry.isIntersecting || done.current) return;
       done.current = true;
       obs.disconnect();
-      setFetching(true);
       // Delay 500ms trước khi fetch để tránh quá nhiều request đồng thời
-      setTimeout(() => {
-        fetchFn()
-          .then(data => setMovies(data))
-          .catch(() => setMovies([]))
-          .finally(() => setFetching(false));
-      }, 500);
+      setTimeout(runFetch, 500);
     }, { rootMargin: '400px' }); // Trigger sớm khi còn cách 400px
     if (ref.current) obs.observe(ref.current);
     return () => obs.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Nếu tải xong mà rỗng (0 phim) — có thể do lỗi mạng thoáng qua, tự thử lại 1 lần sau 2s
+  useEffect(() => {
+    if (movies !== null && movies.length === 0 && !retried) {
+      const t = setTimeout(() => { setRetried(true); runFetch(); }, 2000);
+      return () => clearTimeout(t);
+    }
+  }, [movies, retried, runFetch]);
+
+  // Đã tải xong, thử lại rồi mà vẫn rỗng thật → ẩn hẳn mục này, không hiện skeleton giả mãi mãi
+  if (movies !== null && movies.length === 0 && retried) return null;
 
   return (
     // min-height cố định → layout KHÔNG bao giờ collapse → không bị đen
