@@ -1,16 +1,20 @@
 import React from 'react';
+import { movieApi } from '../services/api';
 
 /**
- * Ảnh poster/thumbnail dùng chung toàn site — tự động thử lần lượt 3 nguồn trước khi
+ * Ảnh poster/thumbnail dùng chung toàn site — tự động thử lần lượt 4 nguồn trước khi
  * chịu thua, để 1 lần trục trặc mạng/CDN không làm ảnh hỏng vĩnh viễn:
  *   1) Link đã build (thường qua proxy phimapi.com)
  *   2) Link ảnh gốc (nếu khác link ở bước 1)
  *   3) Proxy ảnh dự phòng wsrv.nl (khi domain CDN gốc bị chặn/nghẽn ở mạng người xem)
- *   4) Cuối cùng mới hiện logo mặc định thay thế.
+ *   4) Ảnh từ TMDB (domain khác hẳn — nếu mạng người xem chặn domain KKPhim/wsrv.nl
+ *      thì TMDB vẫn có khả năng truy cập được, giống cách trang Chi tiết phim đang làm)
+ *   5) Cuối cùng mới hiện logo mặc định thay thế.
  */
 export default function PosterImg({
   src,
   fallbackSrc,
+  movieSlug,
   alt = '',
   className = '',
   loading = 'lazy',
@@ -19,6 +23,7 @@ export default function PosterImg({
 }: {
   src: string;
   fallbackSrc?: string;
+  movieSlug?: string;
   alt?: string;
   className?: string;
   loading?: 'lazy' | 'eager';
@@ -40,9 +45,19 @@ export default function PosterImg({
         if (step === '0' && original && img.src !== original) {
           img.dataset.fallbackStep = '1';
           img.src = original;
-        } else if (step !== '2' && original) {
+        } else if (step !== '2' && step !== '3' && original) {
           img.dataset.fallbackStep = '2';
           img.src = `https://wsrv.nl/?url=${encodeURIComponent(original.replace(/^https?:\/\//, ''))}&default=1`;
+        } else if (step !== '3' && movieSlug) {
+          // Domain ảnh KKPhim/wsrv.nl có thể đang bị chặn ở mạng người xem — thử ảnh TMDB (domain hoàn toàn khác)
+          img.dataset.fallbackStep = '3';
+          movieApi.getMovieImagesV1(movieSlug)
+            .then(({ posters, backdrops }) => {
+              const tmdbUrl = posters[0] || backdrops[0];
+              if (tmdbUrl) img.src = tmdbUrl;
+              else img.src = '/assets/logo-daophim.png';
+            })
+            .catch(() => { img.src = '/assets/logo-daophim.png'; });
         } else {
           img.src = '/assets/logo-daophim.png';
         }

@@ -26,7 +26,7 @@ export default function DiscordBanner({ className = '' }: { className?: string }
       href={discordUrl}
       target="_blank"
       rel="noopener noreferrer"
-      className={`block w-full rounded-xl overflow-hidden group md:max-w-md md:mx-auto ${className}`}
+      className={`block w-full rounded-xl overflow-hidden group ${className}`}
     >
       {bannerImage ? (
         <img src={bannerImage} alt="Tham gia Discord" className="w-full h-auto object-cover" referrerPolicy="no-referrer" />
