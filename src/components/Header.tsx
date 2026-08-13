@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import {
   Search, History, Heart, X, Loader2, LogIn, LogOut,
-  ChevronDown, UserCog,
+  ChevronDown, UserCog, Smartphone, Sparkles,
   Bell, Users, Check, Copy,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
@@ -53,6 +53,39 @@ export const COUNTRIES = [
   { name: 'Hồng Kông', slug: 'hong-kong' },
 ];
 
+// Danh sách thể loại kèm slug (đồng bộ với bộ lọc ở trang MovieList)
+const GENRE_LINKS = [
+  { name: 'Hành Động', slug: 'hanh-dong' },
+  { name: 'Tình Cảm', slug: 'tinh-cam' },
+  { name: 'Hài Hước', slug: 'hai-huoc' },
+  { name: 'Cổ Trang', slug: 'co-trang' },
+  { name: 'Tâm Lý', slug: 'tam-ly' },
+  { name: 'Hình Sự', slug: 'hinh-su' },
+  { name: 'Kinh Dị', slug: 'kinh-di' },
+  { name: 'Viễn Tưởng', slug: 'vien-tuong' },
+  { name: 'Phiêu Lưu', slug: 'phieu-luu' },
+  { name: 'Hoạt Hình', slug: 'hoat-hinh' },
+  { name: 'Thần Thoại', slug: 'than-thoai' },
+  { name: 'Chiến Tranh', slug: 'chien-tranh' },
+  { name: 'Thể Thao', slug: 'the-thao' },
+  { name: 'Khoa Học', slug: 'khoa-hoc' },
+  { name: 'Âm Nhạc', slug: 'am-nhac' },
+  { name: 'Kinh Điển', slug: 'kinh-dien' },
+  { name: 'Gia Đình', slug: 'gia-dinh' },
+];
+
+// Menu "Thêm" — các mục phụ gom lại cho gọn thanh ngang
+const MORE_LINKS = [
+  { to: '/type/hoat-hinh', label: 'Hoạt Hình' },
+  { to: '/type/phim-chieu-rap', label: 'Chiếu Rạp' },
+  { to: '/tv-truc-tuyen', label: 'TV Trực Tuyến' },
+  { to: '/truc-tiep', label: 'Trực Tiếp' },
+  { to: '/lich-chieu', label: 'Lịch Chiếu' },
+  { to: '/truyen-tranh', label: 'Truyện Tranh' },
+  { to: '/nap-tien', label: 'Nạp Thẻ' },
+  { to: '/mua-vip', label: 'Mua VIP' },
+];
+
 export default function Header() {
   const [session, setSession] = useState<UserProfile | null>(null);
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -78,6 +111,13 @@ export default function Header() {
   const desktopSearchRef = useRef<HTMLDivElement>(null);
   const desktopInputRef = useRef<HTMLInputElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
+  // ── Dropdown menu ngang: Thể Loại / Quốc Gia / Thêm ──
+  const [showGenreMenu, setShowGenreMenu] = useState(false);
+  const [showCountryMenu, setShowCountryMenu] = useState(false);
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const genreMenuRef = useRef<HTMLDivElement>(null);
+  const countryMenuRef = useRef<HTMLDivElement>(null);
+  const moreMenuRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const location = useLocation();
   const settings = useSiteSettings();
@@ -106,6 +146,9 @@ export default function Header() {
     const h = (e: MouseEvent) => {
       if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) setShowUserMenu(false);
       if (desktopSearchRef.current && !desktopSearchRef.current.contains(e.target as Node)) setShowDesktopSearch(false);
+      if (genreMenuRef.current && !genreMenuRef.current.contains(e.target as Node)) setShowGenreMenu(false);
+      if (countryMenuRef.current && !countryMenuRef.current.contains(e.target as Node)) setShowCountryMenu(false);
+      if (moreMenuRef.current && !moreMenuRef.current.contains(e.target as Node)) setShowMoreMenu(false);
     };
     document.addEventListener('mousedown', h);
     return () => document.removeEventListener('mousedown', h);
@@ -238,69 +281,45 @@ export default function Header() {
     <>
       {/* ── HEADER BAR ── */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-transparent backdrop-blur-0 border-b border-transparent transition-all duration-300" id="main-header" style={{ background: 'transparent', backdropFilter: 'none' }}>
-        <div className="max-w-7xl mx-auto px-3 md:px-6 h-16 flex items-center gap-2 md:gap-3">
+        <div className="max-w-7xl mx-auto px-3 md:px-6 h-16 flex items-center gap-3 md:gap-5">
 
           {/* Logo — 1 lần duy nhất */}
           <Link to="/" className="shrink-0"><Logo settings={settings} /></Link>
 
-          {/* Desktop nav links */}
-          <nav className="hidden lg:flex items-center gap-0.5 ml-2 shrink-0">
-            {[
-              { to: '/', label: 'Trang chủ' },
-              { to: '/type/phim-bo', label: 'Phim Bộ' },
-              { to: '/type/phim-le', label: 'Phim Lẻ' },
-              { to: '/type/hoat-hinh', label: 'Hoạt Hình' },
-              { to: '/type/phim-chieu-rap', label: 'Chiếu Rạp' },
-              { to: '/tv-truc-tuyen', label: 'TV Trực Tuyến' },
-            ].map(l => (
-              <Link key={l.to} to={l.to}
-                className={cn('px-3 py-1.5 rounded-lg text-sm font-semibold transition-all whitespace-nowrap',
-                  location.pathname === l.to ? 'text-green-400' : 'text-slate-400 hover:text-white')}>
-                {l.label}
-              </Link>
-            ))}
-          </nav>
-
-          <div className="flex-1" />
-
-          {/* ── Tìm kiếm nhanh (chỉ desktop) ── */}
+          {/* ── Ô tìm kiếm (luôn hiển thị dạng pill trên desktop) ── */}
           <div ref={desktopSearchRef} className="relative hidden md:block shrink-0">
-            <div className={cn(
-              'flex items-center transition-all duration-200 overflow-hidden rounded-full border',
-              showDesktopSearch
-                ? 'w-72 bg-slate-900/90 border-slate-700/70 px-3'
-                : 'w-9 bg-transparent border-transparent'
-            )}>
-              <button
-                onClick={() => setShowDesktopSearch(v => !v)}
-                className="p-1.5 text-slate-300 hover:text-white transition-colors shrink-0"
-                aria-label="Tìm kiếm phim"
-              >
-                {desktopSearching ? <Loader2 size={17} className="animate-spin" /> : <Search size={17} />}
-              </button>
-              {showDesktopSearch && (
-                <>
-                  <input
-                    ref={desktopInputRef}
-                    type="text"
-                    value={desktopQuery}
-                    onChange={e => setDesktopQuery(e.target.value)}
-                    onKeyDown={e => { if (e.key === 'Enter') goToDesktopSearchResults(); }}
-                    placeholder="Tìm phim, diễn viên..."
-                    className="flex-1 bg-transparent text-sm text-white placeholder:text-slate-500 py-2 px-1.5 focus:outline-none min-w-0"
-                  />
-                  {desktopQuery && (
-                    <button onClick={() => setDesktopQuery('')} className="p-1 text-slate-500 hover:text-white shrink-0">
-                      <X size={14} />
-                    </button>
-                  )}
-                </>
+            <div
+              onClick={() => { setShowDesktopSearch(true); desktopInputRef.current?.focus(); }}
+              className={cn(
+                'flex items-center h-9 w-52 lg:w-64 rounded-full border transition-colors cursor-text px-3',
+                showDesktopSearch ? 'bg-slate-900 border-slate-600' : 'bg-white/5 border-white/10 hover:border-white/25'
+              )}
+            >
+              {desktopSearching ? (
+                <Loader2 size={15} className="text-slate-400 animate-spin shrink-0" />
+              ) : (
+                <Search size={15} className="text-slate-400 shrink-0" />
+              )}
+              <input
+                ref={desktopInputRef}
+                type="text"
+                value={desktopQuery}
+                onFocus={() => setShowDesktopSearch(true)}
+                onChange={e => setDesktopQuery(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') goToDesktopSearchResults(); }}
+                placeholder="Tìm kiếm phim"
+                className="flex-1 bg-transparent text-sm text-white placeholder:text-slate-500 py-1.5 px-2 focus:outline-none min-w-0"
+              />
+              {desktopQuery && (
+                <button onClick={() => setDesktopQuery('')} className="p-0.5 text-slate-500 hover:text-white shrink-0">
+                  <X size={13} />
+                </button>
               )}
             </div>
 
             {/* Dropdown kết quả */}
             {showDesktopSearch && desktopQuery.trim().length >= 2 && (
-              <div className="absolute top-full right-0 mt-2 w-96 max-h-[28rem] overflow-y-auto bg-slate-900 border border-slate-700/60 rounded-2xl shadow-2xl z-50">
+              <div className="absolute top-full left-0 mt-2 w-96 max-h-[28rem] overflow-y-auto bg-slate-900 border border-slate-700/60 rounded-2xl shadow-2xl z-50">
                 {desktopSearching && desktopResults.length === 0 ? (
                   <div className="flex items-center justify-center py-8">
                     <Loader2 size={20} className="animate-spin text-slate-500" />
@@ -343,6 +362,111 @@ export default function Header() {
                 )}
               </div>
             )}
+          </div>
+
+          {/* ── Thanh menu ngang chính (chỉ hiển thị PC / lg trở lên) ── */}
+          <nav className="hidden lg:flex items-center gap-0.5 shrink-0">
+            <Link to="/type/phim-le"
+              className={cn('px-3 py-1.5 rounded-lg text-sm font-semibold transition-all whitespace-nowrap',
+                location.pathname === '/type/phim-le' ? 'text-green-400' : 'text-slate-300 hover:text-white')}>
+              Phim Lẻ
+            </Link>
+            <Link to="/type/phim-bo"
+              className={cn('px-3 py-1.5 rounded-lg text-sm font-semibold transition-all whitespace-nowrap',
+                location.pathname === '/type/phim-bo' ? 'text-green-400' : 'text-slate-300 hover:text-white')}>
+              Phim Bộ
+            </Link>
+            <a href="/#song-ngu"
+              className="px-3 py-1.5 rounded-lg text-sm font-semibold whitespace-nowrap text-slate-300 hover:text-white transition-all">
+              Song Ngữ
+            </a>
+
+            {/* Xem Chung — mở modal tạo phòng, có badge MỚI */}
+            <button
+              onClick={openWatchRoomModal}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold whitespace-nowrap text-slate-300 hover:text-white transition-all"
+            >
+              <span className="flex items-center gap-1 bg-red-600 text-white text-[9px] font-black px-1.5 py-[1px] rounded">
+                <Sparkles size={9} /> MỚI
+              </span>
+              Xem Chung
+            </button>
+
+            {/* Thể Loại ▾ */}
+            <div ref={genreMenuRef} className="relative">
+              <button
+                onClick={() => { setShowGenreMenu(v => !v); setShowCountryMenu(false); setShowMoreMenu(false); }}
+                className={cn('flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-semibold whitespace-nowrap transition-all',
+                  showGenreMenu ? 'text-white' : 'text-slate-300 hover:text-white')}
+              >
+                Thể Loại <ChevronDown size={13} className={cn('transition-transform', showGenreMenu && 'rotate-180')} />
+              </button>
+              {showGenreMenu && (
+                <div className="absolute top-full left-0 mt-2 w-[420px] max-h-96 overflow-y-auto grid grid-cols-3 gap-1 p-3 bg-slate-900 border border-slate-700/60 rounded-2xl shadow-2xl z-50">
+                  {GENRE_LINKS.map(g => (
+                    <Link key={g.slug} to={`/type/phim-bo?category=${g.slug}`} onClick={() => setShowGenreMenu(false)}
+                      className="px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">
+                      {g.name}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Quốc Gia ▾ */}
+            <div ref={countryMenuRef} className="relative">
+              <button
+                onClick={() => { setShowCountryMenu(v => !v); setShowGenreMenu(false); setShowMoreMenu(false); }}
+                className={cn('flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-semibold whitespace-nowrap transition-all',
+                  showCountryMenu ? 'text-white' : 'text-slate-300 hover:text-white')}
+              >
+                Quốc Gia <ChevronDown size={13} className={cn('transition-transform', showCountryMenu && 'rotate-180')} />
+              </button>
+              {showCountryMenu && (
+                <div className="absolute top-full left-0 mt-2 w-56 max-h-96 overflow-y-auto grid grid-cols-2 gap-1 p-3 bg-slate-900 border border-slate-700/60 rounded-2xl shadow-2xl z-50">
+                  {COUNTRIES.map(c => (
+                    <Link key={c.slug} to={`/type/phim-bo?country=${c.slug}`} onClick={() => setShowCountryMenu(false)}
+                      className="px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">
+                      {c.name}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Thêm ▾ */}
+            <div ref={moreMenuRef} className="relative">
+              <button
+                onClick={() => { setShowMoreMenu(v => !v); setShowGenreMenu(false); setShowCountryMenu(false); }}
+                className={cn('flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-semibold whitespace-nowrap transition-all',
+                  showMoreMenu ? 'text-white' : 'text-slate-300 hover:text-white')}
+              >
+                Thêm <ChevronDown size={13} className={cn('transition-transform', showMoreMenu && 'rotate-180')} />
+              </button>
+              {showMoreMenu && (
+                <div className="absolute top-full left-0 mt-2 w-48 py-1.5 bg-slate-900 border border-slate-700/60 rounded-2xl shadow-2xl z-50">
+                  {MORE_LINKS.map(l => (
+                    <Link key={l.to} to={l.to} onClick={() => setShowMoreMenu(false)}
+                      className="block px-3.5 py-2 text-xs font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">
+                      {l.label}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+          </nav>
+
+          <div className="flex-1" />
+
+          {/* Tải ứng dụng DaoPhim — huy hiệu trang trí */}
+          <div className="hidden xl:flex items-center gap-2 pr-1 shrink-0 cursor-default select-none" title="Sắp ra mắt">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shrink-0">
+              <Smartphone size={16} className="text-white" />
+            </div>
+            <div className="leading-tight">
+              <p className="text-[10px] text-slate-400">Tải ứng dụng</p>
+              <p className="text-xs font-bold text-white -mt-0.5">DaoPhim</p>
+            </div>
           </div>
 
           {/* Chuông thông báo — thay cho icon tài khoản cũ trên mobile */}
@@ -394,8 +518,8 @@ export default function Header() {
             </div>
           ) : (
             <Link to="/auth"
-              className="shrink-0 hidden md:flex items-center gap-1.5 border border-white/60 hover:bg-white hover:text-slate-950 text-white text-xs font-bold px-3 py-2 rounded-full transition-all">
-              <LogIn size={13} /> <span className="hidden sm:inline">Đăng nhập</span>
+              className="shrink-0 hidden md:flex items-center gap-1.5 border border-white/60 hover:bg-white hover:text-slate-950 text-white text-xs font-bold px-4 py-2 rounded-full transition-all">
+              <LogIn size={13} /> <span className="hidden sm:inline">Thành viên</span>
             </Link>
           )}
         </div>
