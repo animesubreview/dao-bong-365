@@ -70,6 +70,16 @@ export default function Header() {
   const [modalSearching, setModalSearching] = useState(false);
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
   const [modalStep, setModalStep] = useState<'search' | 'confirm' | 'done'>('search');
+  // ── Dropdown "Thể Loại / Quốc Gia / Thêm" trên nav desktop ──
+  const [openNavMenu, setOpenNavMenu] = useState<'genre' | 'country' | 'more' | null>(null);
+  const navMenuRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const h = (e: MouseEvent) => {
+      if (navMenuRef.current && !navMenuRef.current.contains(e.target as Node)) setOpenNavMenu(null);
+    };
+    document.addEventListener('mousedown', h);
+    return () => document.removeEventListener('mousedown', h);
+  }, []);
   // ── Tìm kiếm nhanh trên desktop (dropdown ngay trong header) ──
   const [showDesktopSearch, setShowDesktopSearch] = useState(false);
   const [desktopQuery, setDesktopQuery] = useState('');
@@ -244,14 +254,11 @@ export default function Header() {
           <Link to="/" className="shrink-0"><Logo settings={settings} /></Link>
 
           {/* Desktop nav links */}
-          <nav className="hidden lg:flex items-center gap-0.5 ml-2 shrink-0">
+          <nav ref={navMenuRef} className="hidden lg:flex items-center gap-0.5 ml-2 shrink-0">
             {[
-              { to: '/', label: 'Trang chủ' },
-              { to: '/type/phim-bo', label: 'Phim Bộ' },
               { to: '/type/phim-le', label: 'Phim Lẻ' },
-              { to: '/type/hoat-hinh', label: 'Hoạt Hình' },
-              { to: '/type/phim-chieu-rap', label: 'Chiếu Rạp' },
-              { to: '/tv-truc-tuyen', label: 'TV Trực Tuyến' },
+              { to: '/type/phim-bo', label: 'Phim Bộ' },
+              { to: '/type/song-ngu', label: 'Song Ngữ' },
             ].map(l => (
               <Link key={l.to} to={l.to}
                 className={cn('px-3 py-1.5 rounded-lg text-sm font-semibold transition-all whitespace-nowrap',
@@ -259,9 +266,91 @@ export default function Header() {
                 {l.label}
               </Link>
             ))}
+
+            {/* Mới — Xem Chung */}
+            <button onClick={openWatchRoomModal}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold text-slate-400 hover:text-white transition-all whitespace-nowrap">
+              <span className="text-[9px] font-black bg-red-500 text-white px-1.5 py-0.5 rounded">Mới</span>
+              Xem Chung
+            </button>
+
+            {/* Thể Loại */}
+            <div className="relative">
+              <button onClick={() => setOpenNavMenu(v => v === 'genre' ? null : 'genre')}
+                className={cn('flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-semibold transition-all whitespace-nowrap',
+                  openNavMenu === 'genre' ? 'text-white' : 'text-slate-400 hover:text-white')}>
+                Thể Loại <ChevronDown size={13} className={cn('transition-transform', openNavMenu === 'genre' && 'rotate-180')} />
+              </button>
+              {openNavMenu === 'genre' && (
+                <div className="absolute top-full left-0 mt-2 w-[420px] bg-slate-900 border border-slate-700/60 rounded-2xl shadow-2xl z-50 p-3 grid grid-cols-3 gap-1">
+                  {GENRES.map(g => (
+                    <Link key={g} to={`/type/${g}`} onClick={() => setOpenNavMenu(null)}
+                      className="px-2.5 py-1.5 rounded-lg text-xs text-slate-300 hover:bg-slate-800 hover:text-white transition-colors truncate">
+                      {g}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Quốc Gia */}
+            <div className="relative">
+              <button onClick={() => setOpenNavMenu(v => v === 'country' ? null : 'country')}
+                className={cn('flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-semibold transition-all whitespace-nowrap',
+                  openNavMenu === 'country' ? 'text-white' : 'text-slate-400 hover:text-white')}>
+                Quốc Gia <ChevronDown size={13} className={cn('transition-transform', openNavMenu === 'country' && 'rotate-180')} />
+              </button>
+              {openNavMenu === 'country' && (
+                <div className="absolute top-full left-0 mt-2 w-56 bg-slate-900 border border-slate-700/60 rounded-2xl shadow-2xl z-50 p-3 grid grid-cols-2 gap-1">
+                  {COUNTRIES.map(c => (
+                    <Link key={c.slug} to={`/quoc-gia/${c.slug}`} onClick={() => setOpenNavMenu(null)}
+                      className="px-2.5 py-1.5 rounded-lg text-xs text-slate-300 hover:bg-slate-800 hover:text-white transition-colors truncate">
+                      {c.name}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Thêm */}
+            <div className="relative">
+              <button onClick={() => setOpenNavMenu(v => v === 'more' ? null : 'more')}
+                className={cn('flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-semibold transition-all whitespace-nowrap',
+                  openNavMenu === 'more' ? 'text-white' : 'text-slate-400 hover:text-white')}>
+                Thêm <ChevronDown size={13} className={cn('transition-transform', openNavMenu === 'more' && 'rotate-180')} />
+              </button>
+              {openNavMenu === 'more' && (
+                <div className="absolute top-full left-0 mt-2 w-48 bg-slate-900 border border-slate-700/60 rounded-2xl shadow-2xl z-50 p-1.5">
+                  {[
+                    { to: '/type/hoat-hinh', label: 'Hoạt Hình' },
+                    { to: '/type/phim-chieu-rap', label: 'Chiếu Rạp' },
+                    { to: '/tv-truc-tuyen', label: 'TV Trực Tuyến' },
+                    { to: '/lich-chieu', label: 'Lịch Chiếu' },
+                    { to: '/truyen-tranh', label: 'Truyện Tranh' },
+                  ].map(l => (
+                    <Link key={l.to} to={l.to} onClick={() => setOpenNavMenu(null)}
+                      className="block px-3 py-2 rounded-lg text-xs text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">
+                      {l.label}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
           </nav>
 
           <div className="flex-1" />
+
+          {/* Tải ứng dụng — desktop only */}
+          <a href="/" onClick={e => e.preventDefault()}
+            className="hidden xl:flex items-center gap-2 pr-3 mr-1 border-r border-white/10 shrink-0 cursor-pointer group">
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-slate-950 font-black text-[11px] shrink-0">
+              DP
+            </div>
+            <div className="leading-tight">
+              <p className="text-[10px] text-slate-400 group-hover:text-slate-300">Tải ứng dụng</p>
+              <p className="text-xs font-bold text-white -mt-0.5">DaoPhim</p>
+            </div>
+          </a>
 
           {/* ── Tìm kiếm nhanh (chỉ desktop) ── */}
           <div ref={desktopSearchRef} className="relative hidden md:block shrink-0">
@@ -394,8 +483,8 @@ export default function Header() {
             </div>
           ) : (
             <Link to="/auth"
-              className="shrink-0 hidden md:flex items-center gap-1.5 border border-white/60 hover:bg-white hover:text-slate-950 text-white text-xs font-bold px-3 py-2 rounded-full transition-all">
-              <LogIn size={13} /> <span className="hidden sm:inline">Đăng nhập</span>
+              className="shrink-0 hidden md:flex items-center gap-1.5 bg-white hover:bg-slate-100 text-slate-950 text-xs font-black px-4 py-2 rounded-full transition-all">
+              <LogIn size={13} /> <span className="hidden sm:inline">Thành viên</span>
             </Link>
           )}
         </div>

@@ -1,7 +1,9 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Nunito:wght@400;600;700;800;900&display=swap');
 
 @theme {
   --font-sans: "Nunito", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Permanent Marker", "Nunito", cursive;
   --color-slate-950: #0d0d0f;
   --color-slate-900: #141416;
   --color-slate-800: #1c1c20;

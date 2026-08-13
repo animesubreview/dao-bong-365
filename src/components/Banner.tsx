@@ -132,11 +132,14 @@ export default function Banner({ movies }: BannerProps) {
 
           {/* Movie info block (IMDb-style: title, genres, badges, synopsis) */}
           <div className="max-w-xl lg:max-w-2xl min-w-0 max-h-[calc(100vh-140px)] overflow-hidden w-full text-center md:text-left">
-            <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-5xl font-black text-white leading-tight mb-1.5 drop-shadow-lg line-clamp-2">
+            <h1
+              className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-white leading-[0.95] mb-2 drop-shadow-lg line-clamp-2 -rotate-1"
+              style={{ fontFamily: 'var(--font-display)' }}
+            >
               {decodeHtml(movie.name)}
             </h1>
             {movie.origin_name && (
-              <p className="text-green-400 text-sm md:text-base lg:text-lg font-bold mb-3 line-clamp-1">
+              <p className="text-teal-400 text-sm md:text-base lg:text-lg font-bold mb-3 line-clamp-1">
                 {decodeHtml(movie.origin_name)}
               </p>
             )}
@@ -205,41 +208,33 @@ export default function Banner({ movies }: BannerProps) {
             {/* Action buttons — desktop/tablet only, matching reference mobile UI which has none here */}
             <div className="hidden md:flex items-center gap-3">
               <Link to={`/phim/${movie.slug}`} aria-label="Xem ngay"
-                className="flex items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-full bg-green-500 hover:bg-green-400 text-slate-950 shadow-lg shadow-green-500/30 transition-all active:scale-95 shrink-0">
+                className="flex items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-full bg-teal-400 hover:bg-teal-300 text-slate-950 shadow-lg shadow-teal-400/30 transition-all active:scale-95 shrink-0">
                 <Play size={20} className="fill-current ml-0.5" />
               </Link>
               <button type="button" aria-label="Yêu thích" onClick={() => toggleFavorite(movie)}
-                className="flex items-center justify-center w-10 h-10 md:w-11 md:h-11 rounded-full border border-white/30 bg-white/10 backdrop-blur hover:bg-white/20 transition-all text-white shrink-0">
+                className="flex items-center justify-center w-10 h-10 md:w-11 md:h-11 rounded-full bg-slate-900/70 border border-white/10 backdrop-blur hover:bg-slate-800 transition-all text-white shrink-0">
                 <Heart size={17} className={cn(isFav && 'fill-red-500 text-red-500')} />
               </button>
               <Link to={`/phim/${movie.slug}`} aria-label="Chi tiết"
-                className="flex items-center justify-center w-10 h-10 md:w-11 md:h-11 rounded-full border border-white/30 bg-white/10 backdrop-blur hover:bg-white/20 transition-all text-white shrink-0">
+                className="flex items-center justify-center w-10 h-10 md:w-11 md:h-11 rounded-full bg-slate-900/70 border border-white/10 backdrop-blur hover:bg-slate-800 transition-all text-white shrink-0">
                 <Info size={17} />
               </Link>
             </div>
           </div>
 
-          {/* Top 10 thumbnail strip — visible from md (laptop) up, aligned to the same container */}
-          <div className="hidden md:flex flex-col items-end gap-1.5 shrink-0">
-            <span className="text-[10px] lg:text-xs font-black text-slate-300 tracking-wide uppercase">Top 10 hôm nay</span>
-            <div className="flex items-end gap-2 lg:gap-2.5 max-w-[320px] lg:max-w-[440px] xl:max-w-[540px] overflow-hidden">
+          {/* Thumbnail strip — visible from md (laptop) up, aligned to the same container */}
+          <div className="hidden md:flex items-end gap-2 lg:gap-2.5 shrink-0 max-w-[360px] lg:max-w-[480px] xl:max-w-[600px] overflow-hidden pb-1">
             {items.map((m, i) => (
               <button key={m._id} onClick={() => { setIdx(i); resetTimer(); }}
-                aria-label={`Top ${i + 1}: ${decodeHtml(m.name)}`}
+                aria-label={`${decodeHtml(m.name)}`}
                 className={cn(
-                  'relative w-12 h-8 md:w-14 md:h-9 lg:w-16 lg:h-10 xl:w-20 xl:h-12 rounded-lg overflow-hidden border-2 transition-all shrink-0',
-                  i === idx ? 'border-green-500 opacity-100' : 'border-transparent opacity-50 hover:opacity-80'
+                  'relative w-14 h-14 md:w-16 md:h-16 lg:w-[74px] lg:h-[74px] rounded-xl overflow-hidden border-2 transition-all shrink-0',
+                  i === idx ? 'border-red-500 opacity-100 scale-105' : 'border-transparent opacity-60 hover:opacity-90'
                 )}>
                 <img src={movieApi.getImageUrl(m.thumb_url)} alt={m.name}
                   className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                {/* Top 10 rank number */}
-                <span className="absolute -bottom-0.5 -left-0.5 text-[10px] lg:text-xs font-black text-white leading-none"
-                  style={{ WebkitTextStroke: '2px rgba(0,0,0,0.85)', paintOrder: 'stroke fill' }}>
-                  {i + 1}
-                </span>
               </button>
             ))}
-            </div>
           </div>
         </div>
       </div>
