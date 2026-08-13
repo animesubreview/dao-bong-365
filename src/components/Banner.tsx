@@ -133,8 +133,7 @@ export default function Banner({ movies }: BannerProps) {
           {/* Movie info block (IMDb-style: title, genres, badges, synopsis) */}
           <div className="max-w-xl lg:max-w-2xl min-w-0 max-h-[calc(100vh-140px)] overflow-hidden w-full text-center md:text-left">
             <h1
-              className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-white leading-[0.95] mb-2 drop-shadow-lg line-clamp-2 -rotate-1"
-              style={{ fontFamily: 'var(--font-display)' }}
+              className="banner-title text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-white leading-[1.05] mb-2 line-clamp-2"
             >
               {decodeHtml(movie.name)}
             </h1>
