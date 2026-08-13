@@ -221,14 +221,18 @@ export default function Banner({ movies }: BannerProps) {
             </div>
           </div>
 
-          {/* Thumbnail strip — visible from md (laptop) up, aligned to the same container */}
-          <div className="hidden md:flex items-end gap-2 lg:gap-2.5 shrink-0 max-w-[360px] lg:max-w-[480px] xl:max-w-[600px] overflow-hidden pb-1">
+          {/* Thumbnail strip — visible from md (laptop) up, aligned to the same container.
+              Landscape rounded-pill thumbnails; the active one is larger with a white border,
+              matching the reference "Top picks" carousel look. */}
+          <div className="hidden md:flex items-center gap-1.5 lg:gap-2 shrink-0 max-w-[380px] lg:max-w-[500px] xl:max-w-[620px] overflow-hidden">
             {items.map((m, i) => (
               <button key={m._id} onClick={() => { setIdx(i); resetTimer(); }}
                 aria-label={`${decodeHtml(m.name)}`}
                 className={cn(
-                  'relative w-14 h-14 md:w-16 md:h-16 lg:w-[74px] lg:h-[74px] rounded-xl overflow-hidden border-2 transition-all shrink-0',
-                  i === idx ? 'border-red-500 opacity-100 scale-105' : 'border-transparent opacity-60 hover:opacity-90'
+                  'relative overflow-hidden shrink-0 transition-all duration-300',
+                  i === idx
+                    ? 'w-[92px] h-[62px] md:w-[104px] md:h-[70px] lg:w-[118px] lg:h-[78px] rounded-2xl border-2 border-white opacity-100 shadow-lg shadow-black/40'
+                    : 'w-11 h-11 md:w-12 md:h-12 lg:w-14 lg:h-14 rounded-xl border-2 border-transparent opacity-55 hover:opacity-85'
                 )}>
                 <img src={movieApi.getImageUrl(m.thumb_url)} alt={m.name}
                   className="w-full h-full object-cover" referrerPolicy="no-referrer" />
