@@ -13,7 +13,6 @@ import { cn } from '../lib/utils';
 import { onAuthChange } from '../lib/auth';
 import Banner from '../components/Banner';
 import AdBanner from '../components/AdBanner';
-import PopupAd from '../components/PopupAd';
 import LiveBanner from '../components/LiveBanner';
 import PosterImg from '../components/PosterImg';
 import { RecentCommentsSection, TrendingMoviesSection, FavoriteMoviesSection, HotGenresSection } from '../components/CommunityWidgets';
@@ -927,8 +926,6 @@ export default function Home() {
       <h1 className="sr-only">
         Đảo Phim - Xem Phim Online Miễn Phí Full HD Vietsub, Thuyết Minh, Lồng Tiếng, Không Quảng Cáo
       </h1>
-      {/* Popup QC giữa màn hình — hiện 1 lần mỗi phiên khi vào trang chủ. Admin bật/tắt & đổi ảnh/link trong Admin → Popup QC */}
-      <PopupAd movieKey="home" />
       <Banner movies={bannerMovies} />
       <ContinueWatchingSection />
       <LiveBanner />
