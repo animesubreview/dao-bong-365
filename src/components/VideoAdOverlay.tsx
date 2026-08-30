@@ -9,9 +9,11 @@ interface VideoAdOverlayProps {
   skipAfterSeconds: number;
   /** Gọi khi quảng cáo kết thúc hoặc người dùng bấm "Bỏ qua" */
   onDone: () => void;
+  /** (Tuỳ chọn) Link đích khi người xem bấm vào video quảng cáo — mở tab mới, không ảnh hưởng nút play/mute/bỏ qua */
+  clickUrl?: string;
 }
 
-export default function VideoAdOverlay({ adUrl, skipAfterSeconds, onDone }: VideoAdOverlayProps) {
+export default function VideoAdOverlay({ adUrl, skipAfterSeconds, onDone, clickUrl }: VideoAdOverlayProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
   const [playing, setPlaying] = useState(true);
@@ -69,31 +71,42 @@ export default function VideoAdOverlay({ adUrl, skipAfterSeconds, onDone }: Vide
         onError={onDone}
       />
 
+      {/* Vùng bấm mở link quảng cáo (nếu Admin có cấu hình) — nằm dưới thanh điều khiển nên không chặn play/mute/bỏ qua */}
+      {clickUrl && (
+        <button
+          type="button"
+          onClick={() => window.open(clickUrl, '_blank', 'noopener,noreferrer')}
+          aria-label="Xem chi tiết quảng cáo"
+          className="absolute inset-0 z-0 cursor-pointer"
+          title={clickUrl}
+        />
+      )}
+
       {/* Nhãn QUẢNG CÁO — góc trên trái */}
-      <span className="absolute top-3 left-3 flex items-center gap-1.5 bg-black/70 backdrop-blur text-amber-400 text-[11px] font-black px-3 py-1.5 rounded-full border border-amber-400/30">
+      <span className="absolute top-3 left-3 z-10 flex items-center gap-1.5 bg-black/70 backdrop-blur text-amber-400 text-[11px] font-black px-3 py-1.5 rounded-full border border-amber-400/30">
         <span className="w-1.5 h-1.5 rounded-full bg-amber-400" /> QUẢNG CÁO
       </span>
 
       {/* Điều khiển — góc dưới trái: play/pause + âm lượng */}
-      <div className="absolute bottom-3 left-3 flex items-center gap-2">
-        <button onClick={togglePlay} aria-label={playing ? 'Tạm dừng' : 'Phát'}
+      <div className="absolute bottom-3 left-3 z-10 flex items-center gap-2">
+        <button onClick={e => { e.stopPropagation(); togglePlay(); }} aria-label={playing ? 'Tạm dừng' : 'Phát'}
           className="w-10 h-10 flex items-center justify-center bg-black/60 hover:bg-black/80 backdrop-blur border border-white/15 text-white rounded-full transition-all">
           {playing ? <Pause size={16} /> : <Play size={16} className="ml-0.5" />}
         </button>
-        <button onClick={toggleMute} aria-label={muted ? 'Bật tiếng' : 'Tắt tiếng'}
+        <button onClick={e => { e.stopPropagation(); toggleMute(); }} aria-label={muted ? 'Bật tiếng' : 'Tắt tiếng'}
           className="w-10 h-10 flex items-center justify-center bg-black/60 hover:bg-black/80 backdrop-blur border border-white/15 text-white rounded-full transition-all">
           {muted ? <VolumeX size={16} /> : <Volume2 size={16} />}
         </button>
       </div>
 
       {/* Bỏ qua — góc dưới phải */}
-      <div className="absolute bottom-3 right-3">
+      <div className="absolute bottom-3 right-3 z-10">
         {countdown > 0 ? (
           <span className="flex items-center gap-1.5 bg-black/60 backdrop-blur border border-white/15 text-slate-300 text-xs font-bold px-3.5 py-2 rounded-full">
             Trả qua sau {countdown} giây
           </span>
         ) : (
-          <button onClick={onDone}
+          <button onClick={e => { e.stopPropagation(); onDone(); }}
             className="flex items-center gap-1.5 bg-white hover:bg-slate-200 active:scale-95 text-slate-950 text-xs font-black px-3.5 py-2 rounded-full transition-all">
             Bỏ qua quảng cáo <SkipForward size={13} />
           </button>

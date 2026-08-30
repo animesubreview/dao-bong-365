@@ -1383,9 +1383,9 @@ function AdsSection({ onToast }: { onToast: (msg: string, t: 'success' | 'error'
                     onChange={e => setBannerForm(f => ({ ...f, position: e.target.value as AdBannerData['position'] }))}
                     className="input-field text-sm"
                   >
-                    <option value="top">⬆️ Trên trang (trước banner phim)</option>
+                    <option value="top">⬆️ Trên trang (Trang chủ: trước banner phim · Chi tiết phim & Xem phim: ngay dưới banner/player)</option>
                     <option value="middle">↕️ Giữa trang (giữa các section)</option>
-                    <option value="bottom">⬇️ Dưới trang (sau danh sách phim)</option>
+                    <option value="bottom">⬇️ Dưới trang (Trang chủ: sau danh sách phim · Chi tiết phim & Xem phim: cuối trang)</option>
                     <option value="sticky">📌 Cố định cuối màn hình (PC &amp; Mobile)</option>
                   </select>
                 </div>
@@ -3618,6 +3618,10 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
 
               <InputRow label="Số giây trước khi cho Bỏ qua" hint="Người xem phải xem tối thiểu bấy nhiêu giây mới hiện nút 'Bỏ qua quảng cáo'. Để 0 = cho bỏ qua ngay.">
                 <input type="number" min={0} max={60} value={settings.videoAdSkipSeconds ?? 5} onChange={e => setSettings(s => ({ ...s, videoAdSkipSeconds: Math.max(0, parseInt(e.target.value) || 0) }))} className="input-field" placeholder="5" />
+              </InputRow>
+
+              <InputRow label="Link đích khi bấm vào quảng cáo (tuỳ chọn)" hint="Người xem bấm vào video quảng cáo sẽ mở link này ở tab mới. Để trống nếu chỉ muốn phát video, không cần link đích.">
+                <input type="text" value={settings.videoAdLink || ''} onChange={e => setSettings(s => ({ ...s, videoAdLink: e.target.value }))} className="input-field" placeholder="https://doi-tac-quang-cao.com" />
               </InputRow>
 
               <InputRow label="Cảnh báo copy (trang Up phim thủ công)" hint="Hiển thị dưới video ở trang xem phim up thủ công.">

@@ -10,6 +10,7 @@ import CommentSection from '../components/CommentSection';
 import MovieCard from '../components/MovieCard';
 import DaoPhimPlayer from '../components/DaoPhimPlayer';
 import DiscordBanner from '../components/DiscordBanner';
+import AdBanner from '../components/AdBanner';
 import { getMovieOverride, mergeOverride, mergeCustomServers } from '../lib/movieOverrides';
 import { createWatchRoom } from '../lib/watchRoom';
 import { getCurrentUser, getUserProfile, onAuthChange } from '../lib/auth';
@@ -297,6 +298,11 @@ export default function Watch() {
         }}
         onNext={nextEpisode ? () => navigate(`/watch/${movie.slug}/${nextEpisode.slug}?server=${encodeURIComponent(nextEpisode.server_name)}`) : undefined}
       />
+      </div>
+
+      {/* Banner QC ngay dưới player — ảnh/gif/mp4, admin tự cấu hình trong Admin → Banner QC (vị trí "top") */}
+      <div className="max-w-2xl xl:max-w-none mx-auto xl:mx-0 px-3 xl:px-0 pt-3 xl:col-start-1">
+        <AdBanner position="top" className="rounded-xl overflow-hidden" />
       </div>
 
       {/* Mời vào nhóm Discord */}
@@ -596,6 +602,9 @@ export default function Watch() {
             </div>
           </motion.div>
         )}
+
+        {/* Banner QC cuối trang — admin cấu hình vị trí "bottom" */}
+        <AdBanner position="bottom" />
 
       </div>
       </div>

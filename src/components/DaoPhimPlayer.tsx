@@ -87,7 +87,7 @@ export default function DaoPhimPlayer({ src, m3u8, title, className = '', onEnde
   const [loading, setLoading] = useState(true);
 
   // ── Quảng cáo video trong player (pre-roll) — link do Admin tự cấu hình ─────
-  const [adSettings, setAdSettings] = useState<{ url: string; skip: number; enabled: boolean }>({ url: '', skip: 5, enabled: false });
+  const [adSettings, setAdSettings] = useState<{ url: string; skip: number; enabled: boolean; clickUrl: string }>({ url: '', skip: 5, enabled: false, clickUrl: '' });
   const [adShownFor, setAdShownFor] = useState<string | null>(null); // resumeKey đã hiện ad rồi, tránh hiện lại khi re-render
   useEffect(() => {
     const unsub = subscribeSiteSettings(s => {
@@ -95,6 +95,7 @@ export default function DaoPhimPlayer({ src, m3u8, title, className = '', onEnde
         url: s.videoAdUrl || '',
         skip: typeof s.videoAdSkipSeconds === 'number' ? s.videoAdSkipSeconds : parseInt(s.videoAdSkipSeconds) || 5,
         enabled: !!s.videoAdEnabled && !!s.videoAdUrl,
+        clickUrl: s.videoAdLink || '',
       });
     });
     return unsub;
@@ -455,7 +456,7 @@ export default function DaoPhimPlayer({ src, m3u8, title, className = '', onEnde
     >
       {/* Quảng cáo video (pre-roll) — che toàn bộ player, tự ẩn khi hết giờ chờ hoặc bấm Bỏ qua */}
       {showAd && (
-        <VideoAdOverlay adUrl={adSettings.url} skipAfterSeconds={adSettings.skip} onDone={handleAdDone} />
+        <VideoAdOverlay adUrl={adSettings.url} skipAfterSeconds={adSettings.skip} onDone={handleAdDone} clickUrl={adSettings.clickUrl} />
       )}
 
       {useM3u8 ? (
