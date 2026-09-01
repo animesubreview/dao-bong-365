@@ -930,7 +930,12 @@ export default function Home() {
           Không cần bù thêm chiều cao header ở đây vì layout chung (App.tsx) đã
           paddingTop = var(--app-header-h) cho toàn bộ nội dung trang rồi — banner
           này đã tự nằm ngay dưới header, chỉ cần chút margin nhỏ cho thoáng. */}
-      <AdBanner position="top" className="max-w-2xl md:max-w-5xl lg:max-w-[1400px] mx-auto px-4 md:px-6 lg:px-8 pt-3" />
+      <div className="max-w-2xl md:max-w-5xl lg:max-w-[1400px] mx-auto px-4 md:px-6 lg:px-8">
+        {/* lg:max-w-2xl giới hạn bề ngang banner trên PC để không bị quá to/tràn hết màn hình */}
+        <div className="lg:max-w-2xl lg:mx-auto">
+          <AdBanner position="top" className="pt-3" />
+        </div>
+      </div>
 
       <Banner movies={bannerMovies} />
       <ContinueWatchingSection />

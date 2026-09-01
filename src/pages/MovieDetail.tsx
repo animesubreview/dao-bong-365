@@ -137,14 +137,17 @@ export default function MovieDetail() {
       {/* Banner QC ngay dưới logo/header, trên cùng trang — trước cả banner hero.
           Layout chung (App.tsx) đã paddingTop = header height cho toàn trang rồi,
           nên banner này tự nằm ngay dưới header, không cần bù thêm. */}
-      <div className="max-w-[1400px] mx-auto px-4 md:px-8 pt-3">
-        <AdBanner position="top" className="rounded-xl overflow-hidden" />
+      <div className="max-w-[1400px] mx-auto px-4 md:px-8">
+        {/* lg:max-w-2xl giới hạn bề ngang banner trên PC để không bị quá to/tràn hết màn hình */}
+        <div className="lg:max-w-2xl lg:mx-auto">
+          <AdBanner position="top" className="rounded-xl overflow-hidden pt-3" />
+        </div>
       </div>
 
       {/* ══ HERO BANNER – full width giống RoPhim ══ */}
       <div
         className="relative w-full overflow-hidden"
-        style={{ height: 'clamp(300px, 48vw, 580px)', marginTop: '-56px', paddingTop: '56px' }}
+        style={{ height: 'clamp(300px, 48vw, 580px)' }}
       >
         <img src={thumbUrl} alt={movie.name} referrerPolicy="no-referrer"
           onError={(e) => {
