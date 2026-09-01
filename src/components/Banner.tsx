@@ -100,8 +100,6 @@ export default function Banner({ movies }: BannerProps) {
       className="relative w-full overflow-hidden bg-slate-950"
       style={{
         height: 'clamp(460px, 46vw, 720px)',
-        marginTop: 'calc(var(--app-header-h, 4rem) * -1)',
-        paddingTop: 'var(--app-header-h, 4rem)',
       }}
     >
       {/* All slides — pure CSS opacity transition, no framer-motion. Tapping the image opens movie detail. */}
