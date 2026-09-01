@@ -927,10 +927,10 @@ export default function Home() {
         Đảo Phim - Xem Phim Online Miễn Phí Full HD Vietsub, Thuyết Minh, Lồng Tiếng, Không Quảng Cáo
       </h1>
       {/* Banner QC ngay dưới logo/header, trên cùng trang — trước cả banner phim.
-          pt-[var(--app-header-h)] chỉ tính vào layout khi AdBanner thực sự render
-          (component tự trả null nếu không có banner active), nên không tạo khoảng
-          trống thừa khi chưa cấu hình banner nào ở vị trí "top". */}
-      <AdBanner position="top" className="max-w-2xl md:max-w-5xl lg:max-w-[1400px] mx-auto px-4 md:px-6 lg:px-8 pt-[calc(var(--app-header-h,4rem)+0.75rem)]" />
+          Không cần bù thêm chiều cao header ở đây vì layout chung (App.tsx) đã
+          paddingTop = var(--app-header-h) cho toàn bộ nội dung trang rồi — banner
+          này đã tự nằm ngay dưới header, chỉ cần chút margin nhỏ cho thoáng. */}
+      <AdBanner position="top" className="max-w-2xl md:max-w-5xl lg:max-w-[1400px] mx-auto px-4 md:px-6 lg:px-8 pt-3" />
 
       <Banner movies={bannerMovies} />
       <ContinueWatchingSection />

@@ -1387,7 +1387,7 @@ function AdsSection({ onToast }: { onToast: (msg: string, t: 'success' | 'error'
                     className="input-field text-sm"
                   >
                     <option value="header">🔝 Trên cùng, dính phía trên Header (mọi trang, PC & Mobile)</option>
-                    <option value="top">⬆️ Trên trang (Trang chủ: trước banner phim · Chi tiết phim & Xem phim: ngay dưới banner/player)</option>
+                    <option value="top">⬆️ Trên trang (mọi trang: ngay dưới logo/header, trước cả nội dung phim)</option>
                     <option value="middle">↕️ Giữa trang (giữa các section)</option>
                     <option value="bottom">⬇️ Dưới trang (Trang chủ: sau danh sách phim · Chi tiết phim & Xem phim: cuối trang)</option>
                     <option value="sticky">📌 Cố định cuối màn hình (PC &amp; Mobile)</option>

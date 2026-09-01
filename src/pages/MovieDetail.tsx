@@ -134,6 +134,13 @@ export default function MovieDetail() {
     <div className="min-h-screen bg-slate-950 pb-20">
       <PopupAd movieKey={slug || ''} />
 
+      {/* Banner QC ngay dưới logo/header, trên cùng trang — trước cả banner hero.
+          Layout chung (App.tsx) đã paddingTop = header height cho toàn trang rồi,
+          nên banner này tự nằm ngay dưới header, không cần bù thêm. */}
+      <div className="max-w-[1400px] mx-auto px-4 md:px-8 pt-3">
+        <AdBanner position="top" className="rounded-xl overflow-hidden" />
+      </div>
+
       {/* ══ HERO BANNER – full width giống RoPhim ══ */}
       <div
         className="relative w-full overflow-hidden"
@@ -237,9 +244,6 @@ export default function MovieDetail() {
                 <span className="font-normal text-indigo-300">Đánh giá</span>
               </div>
             </div>
-
-            {/* Ad Banner */}
-            <AdBanner position="top" className="rounded-xl overflow-hidden" />
 
             {/* Mời vào nhóm Discord */}
             <DiscordBanner className="mt-3" />

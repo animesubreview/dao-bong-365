@@ -251,6 +251,13 @@ export default function Watch() {
   return (
     <div className="min-h-screen bg-[#0d0d0d] pb-24">
 
+      {/* Banner QC ngay dưới logo/header, trên cùng trang — trước cả player.
+          Layout chung (App.tsx) đã paddingTop = header height cho toàn trang rồi,
+          nên banner này tự nằm ngay dưới header, không cần bù thêm. */}
+      <div className="max-w-2xl xl:max-w-[1500px] xl:mx-auto mx-auto px-3 xl:px-8 pt-3">
+        <AdBanner position="top" className="rounded-xl overflow-hidden" />
+      </div>
+
       {/* ── Rejoin banner ── */}
       <AnimatePresence>
         {lastWatchRoom && (
@@ -298,11 +305,6 @@ export default function Watch() {
         }}
         onNext={nextEpisode ? () => navigate(`/watch/${movie.slug}/${nextEpisode.slug}?server=${encodeURIComponent(nextEpisode.server_name)}`) : undefined}
       />
-      </div>
-
-      {/* Banner QC ngay dưới player — ảnh/gif/mp4, admin tự cấu hình trong Admin → Banner QC (vị trí "top") */}
-      <div className="max-w-2xl xl:max-w-none mx-auto xl:mx-0 px-3 xl:px-0 pt-3 xl:col-start-1">
-        <AdBanner position="top" className="rounded-xl overflow-hidden" />
       </div>
 
       {/* Mời vào nhóm Discord */}
