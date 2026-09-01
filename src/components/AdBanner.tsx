@@ -100,35 +100,28 @@ export default function AdBanner({ position, className = '' }: AdBannerProps) {
     const banner = visible[0]; // chỉ hiện 1 banner đầu ở vị trí này cho gọn
     if (!banner) return null;
     return (
-      <div
-        className={`relative w-full bg-black ${className}`}
-        style={{ height: 40, minHeight: 40, maxHeight: 40, overflow: 'hidden', lineHeight: 0 }}
-      >
+      <div className={`relative w-full h-9 md:h-11 bg-black overflow-hidden ${className}`}>
         <a
           href={banner.linkUrl}
           target="_blank"
           rel="noopener noreferrer"
           title={banner.title}
-          style={{ display: 'block', width: '100%', height: '100%' }}
+          className="flex items-center justify-center w-full h-full"
         >
           {banner.mediaType === 'mp4' ? (
-            <video
-              src={banner.mediaUrl}
-              autoPlay loop muted playsInline
-              style={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover', cursor: 'pointer' }}
-            />
+            <video src={banner.mediaUrl} autoPlay loop muted playsInline className="w-full h-full object-cover cursor-pointer" />
           ) : (
             <img
               src={banner.mediaUrl}
               alt={banner.title || 'Quảng cáo'}
-              style={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover', cursor: 'pointer' }}
+              className="w-full h-full object-cover cursor-pointer"
               onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
             />
           )}
         </a>
         <button
           onClick={() => dismiss(banner.id)}
-          className="absolute top-1/2 -translate-y-1/2 right-1.5 w-5 h-5 bg-black/70 hover:bg-black rounded-full flex items-center justify-center"
+          className="absolute top-1/2 -translate-y-1/2 right-1.5 w-5 h-5 md:w-6 md:h-6 bg-black/70 hover:bg-black rounded-full flex items-center justify-center"
           title="Đóng quảng cáo"
         >
           <X size={11} className="text-white" />

@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import {
   Search, History, Heart, X, Loader2, LogIn, LogOut,
-  ChevronDown, UserCog, Menu,
+  ChevronDown, UserCog,
   Bell, Users, Check, Copy,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
@@ -93,15 +93,11 @@ export default function Header() {
   const location = useLocation();
   const settings = useSiteSettings();
 
-  // ── Menu mobile (hamburger) — danh mục đầy đủ dạng ngăn kéo, thay cho nav desktop bị ẩn trên mobile ──
-  const [showMobileMenu, setShowMobileMenu] = useState(false);
-  useEffect(() => { setShowMobileMenu(false); }, [location.pathname]);
-
   // ── Banner mỏng dính trên cùng, phía trên thanh header (mọi trang) ──
   // Đo chiều cao thực tế của cả khối [banner + header] để chừa đúng khoảng
   // trống cho nội dung trang bên dưới, không bị banner đè lên.
   const headerWrapRef = useRef<HTMLDivElement>(null);
-  useLayoutEffect(() => {
+  useEffect(() => {
     const el = headerWrapRef.current;
     if (!el) return;
     const setVar = () => {
@@ -273,15 +269,6 @@ export default function Header() {
         {/* ── HEADER BAR ── */}
         <header className="relative bg-transparent backdrop-blur-0 border-b border-transparent transition-all duration-300" id="main-header" style={{ background: 'transparent', backdropFilter: 'none' }}>
         <div className="max-w-7xl mx-auto px-3 md:px-6 h-16 flex items-center gap-2 md:gap-3">
-
-          {/* Hamburger — chỉ mobile/tablet, mở ngăn kéo danh mục đầy đủ */}
-          <button
-            onClick={() => setShowMobileMenu(true)}
-            className="lg:hidden p-1.5 -ml-1 text-slate-200 hover:text-white transition-colors shrink-0"
-            aria-label="Mở danh mục"
-          >
-            <Menu size={22} />
-          </button>
 
           {/* Logo — 1 lần duy nhất */}
           <Link to="/" className="shrink-0"><Logo settings={settings} /></Link>
@@ -467,19 +454,6 @@ export default function Header() {
             )}
           </div>
 
-          {/* Icon nhanh trên mobile: Lịch sử / Yêu thích / Tìm kiếm — giống thanh header các site đọc truyện/xem phim phổ biến */}
-          <div className="flex lg:hidden items-center gap-0.5 shrink-0">
-            <Link to="/history" className="p-1.5 text-slate-300 hover:text-white transition-colors" aria-label="Lịch sử xem">
-              <History size={19} />
-            </Link>
-            <Link to="/favorites" className="p-1.5 text-slate-300 hover:text-white transition-colors" aria-label="Phim yêu thích">
-              <Heart size={19} />
-            </Link>
-            <Link to="/search" className="p-1.5 text-slate-300 hover:text-white transition-colors" aria-label="Tìm kiếm phim">
-              <Search size={19} />
-            </Link>
-          </div>
-
           {/* Chuông thông báo — thay cho icon tài khoản cũ trên mobile */}
           <Link
             to="/notifications"
@@ -494,13 +468,13 @@ export default function Header() {
             )}
           </Link>
 
-          {/* User / Login — hiện luôn cả trên mobile (giống ảnh mẫu), avatar/nút login rút gọn ở màn hình rất hẹp */}
+          {/* User / Login — trên mobile đã có tab "Tài khoản" ở thanh dưới nên chỉ hiện từ md trở lên */}
           {session ? (
-            <div ref={userMenuRef} className="relative shrink-0">
+            <div ref={userMenuRef} className="relative shrink-0 hidden md:block">
               <button onClick={() => setShowUserMenu(v => !v)}
                 className="flex items-center gap-1.5 pl-1 pr-2 py-1 rounded-full bg-slate-800/80 border border-slate-700/50 hover:border-green-500/40 transition-all">
                 <img src={session.avatar} alt={session.username} className="w-7 h-7 rounded-full bg-slate-700" />
-                <ChevronDown size={12} className="text-slate-500 hidden sm:block" />
+                <ChevronDown size={12} className="text-slate-500" />
               </button>
               {showUserMenu && (
                 <div className="absolute top-full right-0 mt-2 w-44 bg-slate-900 border border-slate-700/60 rounded-2xl overflow-hidden shadow-2xl z-50">
@@ -529,87 +503,13 @@ export default function Header() {
             </div>
           ) : (
             <Link to="/auth"
-              className="shrink-0 flex items-center gap-1.5 bg-white hover:bg-slate-100 text-slate-950 text-xs font-black px-3 sm:px-4 py-2 rounded-full transition-all">
-              <LogIn size={13} /> <span className="hidden sm:inline">Đăng Nhập</span>
+              className="shrink-0 hidden md:flex items-center gap-1.5 bg-white hover:bg-slate-100 text-slate-950 text-xs font-black px-4 py-2 rounded-full transition-all">
+              <LogIn size={13} /> <span className="hidden sm:inline">Thành viên</span>
             </Link>
           )}
         </div>
       </header>
       </div>
-
-      {/* ── NGĂN KÉO DANH MỤC (mobile/tablet) ── */}
-      {showMobileMenu && (
-        <div className="fixed inset-0 z-[200] lg:hidden">
-          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setShowMobileMenu(false)} />
-          <div className="absolute top-0 left-0 bottom-0 w-[82%] max-w-xs bg-slate-950 border-r border-slate-800/80 overflow-y-auto">
-            <div className="flex items-center justify-between px-4 h-16 border-b border-slate-800/80 sticky top-0 bg-slate-950 z-10">
-              <Logo settings={settings} />
-              <button onClick={() => setShowMobileMenu(false)} className="p-1.5 text-slate-400 hover:text-white" aria-label="Đóng menu">
-                <X size={20} />
-              </button>
-            </div>
-
-            <div className="p-4 flex flex-col gap-1">
-              {[
-                { to: '/type/phim-le', label: 'Phim Lẻ' },
-                { to: '/type/phim-bo', label: 'Phim Bộ' },
-                { to: '/type/song-ngu', label: 'Song Ngữ' },
-              ].map(l => (
-                <Link key={l.to} to={l.to} onClick={() => setShowMobileMenu(false)}
-                  className={cn('px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors',
-                    location.pathname === l.to ? 'bg-slate-800 text-green-400' : 'text-slate-300 hover:bg-slate-900')}>
-                  {l.label}
-                </Link>
-              ))}
-
-              <button onClick={() => { setShowMobileMenu(false); openWatchRoomModal(); }}
-                className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold text-slate-300 hover:bg-slate-900 transition-colors text-left">
-                <span className="text-[9px] font-black bg-red-500 text-white px-1.5 py-0.5 rounded">Mới</span>
-                Xem Chung
-              </button>
-
-              <div className="border-t border-slate-800/80 my-2" />
-
-              <p className="px-3 text-[11px] font-black text-slate-500 uppercase tracking-wide mb-1">Thể Loại</p>
-              <div className="flex flex-wrap gap-1.5 px-2 mb-2">
-                {GENRES.map(g => (
-                  <Link key={g} to={`/type/${g}`} onClick={() => setShowMobileMenu(false)}
-                    className="text-xs font-semibold bg-slate-900 hover:bg-slate-800 text-slate-300 px-2.5 py-1.5 rounded-lg transition-colors">
-                    {g}
-                  </Link>
-                ))}
-              </div>
-
-              <div className="border-t border-slate-800/80 my-2" />
-
-              <p className="px-3 text-[11px] font-black text-slate-500 uppercase tracking-wide mb-1">Quốc Gia</p>
-              <div className="flex flex-wrap gap-1.5 px-2 mb-2">
-                {COUNTRIES.map(c => (
-                  <Link key={c.slug} to={`/quoc-gia/${c.slug}`} onClick={() => setShowMobileMenu(false)}
-                    className="text-xs font-semibold bg-slate-900 hover:bg-slate-800 text-slate-300 px-2.5 py-1.5 rounded-lg transition-colors">
-                    {c.name}
-                  </Link>
-                ))}
-              </div>
-
-              <div className="border-t border-slate-800/80 my-2" />
-
-              {[
-                { to: '/type/hoat-hinh', label: 'Hoạt Hình' },
-                { to: '/type/phim-chieu-rap', label: 'Chiếu Rạp' },
-                { to: '/tv-truc-tuyen', label: 'TV Trực Tuyến' },
-                { to: '/lich-chieu', label: 'Lịch Chiếu' },
-                { to: '/truyen-tranh', label: 'Truyện Tranh' },
-              ].map(l => (
-                <Link key={l.to} to={l.to} onClick={() => setShowMobileMenu(false)}
-                  className="px-3 py-2.5 rounded-xl text-sm font-semibold text-slate-300 hover:bg-slate-900 transition-colors">
-                  {l.label}
-                </Link>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ── WATCH ROOM MODAL ── */}
       {showWatchRoomModal && (

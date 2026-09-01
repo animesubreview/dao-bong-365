@@ -926,10 +926,15 @@ export default function Home() {
       <h1 className="sr-only">
         Đảo Phim - Xem Phim Online Miễn Phí Full HD Vietsub, Thuyết Minh, Lồng Tiếng, Không Quảng Cáo
       </h1>
+      {/* Banner QC ngay dưới logo/header, trên cùng trang — trước cả banner phim.
+          pt-[var(--app-header-h)] chỉ tính vào layout khi AdBanner thực sự render
+          (component tự trả null nếu không có banner active), nên không tạo khoảng
+          trống thừa khi chưa cấu hình banner nào ở vị trí "top". */}
+      <AdBanner position="top" className="max-w-2xl md:max-w-5xl lg:max-w-[1400px] mx-auto px-4 md:px-6 lg:px-8 pt-[calc(var(--app-header-h,4rem)+0.75rem)]" />
+
       <Banner movies={bannerMovies} />
       <ContinueWatchingSection />
       <LiveBanner />
-      <AdBanner position="top" className="max-w-2xl md:max-w-5xl lg:max-w-[1400px] mx-auto px-4 md:px-6 lg:px-8 mt-3" />
 
       <main className="max-w-2xl md:max-w-5xl lg:max-w-[1400px] mx-auto px-4 md:px-6 lg:px-8 mt-6 flex flex-col gap-8">
 
