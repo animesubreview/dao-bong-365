@@ -218,9 +218,6 @@ export default function AdBanner({ position, className = '' }: AdBannerProps) {
               />
             )}
           </a>
-          <span className="absolute top-2 left-2 text-[9px] font-black bg-black/60 text-slate-400 px-1.5 py-0.5 rounded pointer-events-none">
-            QC
-          </span>
           <button
             onClick={() => dismiss(banner.id)}
             className="absolute top-1.5 right-1.5 w-6 h-6 bg-black/60 hover:bg-black/80 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
