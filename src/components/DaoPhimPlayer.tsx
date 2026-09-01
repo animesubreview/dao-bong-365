@@ -94,7 +94,7 @@ export default function DaoPhimPlayer({ src, m3u8, title, className = '', onEnde
       setAdSettings({
         url: s.videoAdUrl || '',
         skip: typeof s.videoAdSkipSeconds === 'number' ? s.videoAdSkipSeconds : parseInt(s.videoAdSkipSeconds) || 5,
-        enabled: !!s.videoAdEnabled && !!s.videoAdUrl,
+        enabled: !!s.videoAdUrl,
         clickUrl: s.videoAdLink || '',
       });
     });

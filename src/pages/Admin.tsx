@@ -3602,17 +3602,7 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
                 <input type="text" value={settings.discordBannerImage || ''} onChange={e => setSettings(s => ({ ...s, discordBannerImage: e.target.value }))} className="input-field" placeholder="https://..." />
               </InputRow>
 
-              <InputRow label="Quảng cáo video trong Player" hint="Bật/tắt quảng cáo video (pre-roll) hiện đè lên player trước khi phim bắt đầu chạy, giống quảng cáo YouTube.">
-                <button
-                  type="button"
-                  onClick={() => setSettings(s => ({ ...s, videoAdEnabled: !s.videoAdEnabled }))}
-                  className={cn('w-14 h-8 rounded-full transition-colors relative shrink-0', settings.videoAdEnabled ? 'bg-green-500' : 'bg-slate-700')}
-                >
-                  <span className={cn('absolute top-1 w-6 h-6 rounded-full bg-white transition-transform shadow', settings.videoAdEnabled ? 'translate-x-7' : 'translate-x-1')} />
-                </button>
-              </InputRow>
-
-              <InputRow label="Link video quảng cáo" hint="Link file .mp4 hoặc .m3u8. Video này sẽ tự phát đè lên player trước khi vào phim (mỗi tập hiện 1 lần).">
+              <InputRow label="Link video quảng cáo (pre-roll)" hint="Link file .mp4 hoặc .m3u8. Video này sẽ tự phát đè lên player trước khi vào phim (mỗi tập hiện 1 lần). Để trống ô này = tắt quảng cáo, không cần công tắc riêng.">
                 <input type="text" value={settings.videoAdUrl || ''} onChange={e => setSettings(s => ({ ...s, videoAdUrl: e.target.value }))} className="input-field" placeholder="https://.../quang-cao.mp4" />
               </InputRow>
 

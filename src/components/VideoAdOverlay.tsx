@@ -83,32 +83,34 @@ export default function VideoAdOverlay({ adUrl, skipAfterSeconds, onDone, clickU
       )}
 
       {/* Nhãn QUẢNG CÁO — góc trên trái */}
-      <span className="absolute top-3 left-3 z-10 flex items-center gap-1.5 bg-black/70 backdrop-blur text-amber-400 text-[11px] font-black px-3 py-1.5 rounded-full border border-amber-400/30">
+      <span className="absolute top-2 left-2 md:top-4 md:left-4 z-10 flex items-center gap-1.5 bg-black/70 backdrop-blur text-amber-400 text-[10px] md:text-xs font-black px-2.5 py-1 md:px-3.5 md:py-2 rounded-full border border-amber-400/30">
         <span className="w-1.5 h-1.5 rounded-full bg-amber-400" /> QUẢNG CÁO
       </span>
 
       {/* Điều khiển — góc dưới trái: play/pause + âm lượng */}
-      <div className="absolute bottom-3 left-3 z-10 flex items-center gap-2">
+      <div className="absolute bottom-2 left-2 md:bottom-4 md:left-4 z-10 flex items-center gap-1.5 md:gap-2">
         <button onClick={e => { e.stopPropagation(); togglePlay(); }} aria-label={playing ? 'Tạm dừng' : 'Phát'}
-          className="w-10 h-10 flex items-center justify-center bg-black/60 hover:bg-black/80 backdrop-blur border border-white/15 text-white rounded-full transition-all">
-          {playing ? <Pause size={16} /> : <Play size={16} className="ml-0.5" />}
+          className="w-8 h-8 md:w-11 md:h-11 flex items-center justify-center bg-black/60 hover:bg-black/80 backdrop-blur border border-white/15 text-white rounded-full transition-all shrink-0">
+          {playing ? <Pause size={14} className="md:hidden" /> : <Play size={14} className="ml-0.5 md:hidden" />}
+          {playing ? <Pause size={18} className="hidden md:block" /> : <Play size={18} className="ml-0.5 hidden md:block" />}
         </button>
         <button onClick={e => { e.stopPropagation(); toggleMute(); }} aria-label={muted ? 'Bật tiếng' : 'Tắt tiếng'}
-          className="w-10 h-10 flex items-center justify-center bg-black/60 hover:bg-black/80 backdrop-blur border border-white/15 text-white rounded-full transition-all">
-          {muted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+          className="w-8 h-8 md:w-11 md:h-11 flex items-center justify-center bg-black/60 hover:bg-black/80 backdrop-blur border border-white/15 text-white rounded-full transition-all shrink-0">
+          {muted ? <VolumeX size={14} className="md:hidden" /> : <Volume2 size={14} className="md:hidden" />}
+          {muted ? <VolumeX size={18} className="hidden md:block" /> : <Volume2 size={18} className="hidden md:block" />}
         </button>
       </div>
 
       {/* Bỏ qua — góc dưới phải */}
-      <div className="absolute bottom-3 right-3 z-10">
+      <div className="absolute bottom-2 right-2 md:bottom-4 md:right-4 z-10">
         {countdown > 0 ? (
-          <span className="flex items-center gap-1.5 bg-black/60 backdrop-blur border border-white/15 text-slate-300 text-xs font-bold px-3.5 py-2 rounded-full">
+          <span className="flex items-center gap-1.5 bg-black/60 backdrop-blur border border-white/15 text-slate-300 text-[11px] md:text-sm font-bold px-3 py-1.5 md:px-4 md:py-2.5 rounded-full whitespace-nowrap">
             Trả qua sau {countdown} giây
           </span>
         ) : (
           <button onClick={e => { e.stopPropagation(); onDone(); }}
-            className="flex items-center gap-1.5 bg-white hover:bg-slate-200 active:scale-95 text-slate-950 text-xs font-black px-3.5 py-2 rounded-full transition-all">
-            Bỏ qua quảng cáo <SkipForward size={13} />
+            className="flex items-center gap-1.5 bg-white hover:bg-slate-200 active:scale-95 text-slate-950 text-[11px] md:text-sm font-black px-3 py-1.5 md:px-4 md:py-2.5 rounded-full transition-all whitespace-nowrap">
+            Bỏ qua quảng cáo <SkipForward size={13} className="md:hidden" /><SkipForward size={16} className="hidden md:block" />
           </button>
         )}
       </div>
