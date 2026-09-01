@@ -203,13 +203,13 @@ export default function AdBanner({ position, className = '' }: AdBannerProps) {
               <video
                 src={banner.mediaUrl}
                 autoPlay loop muted playsInline
-                className="w-full h-auto max-h-[220px] object-cover rounded-xl cursor-pointer"
+                className="w-full h-auto max-h-20 sm:max-h-28 md:max-h-32 lg:max-h-36 object-contain rounded-xl cursor-pointer bg-black/20"
               />
             ) : (
               <img
                 src={banner.mediaUrl}
                 alt={banner.title || 'Quảng cáo'}
-                className="w-full h-auto max-h-[220px] object-cover rounded-xl cursor-pointer"
+                className="w-full h-auto max-h-20 sm:max-h-28 md:max-h-32 lg:max-h-36 object-contain rounded-xl cursor-pointer bg-black/20"
                 onError={e => {
                   const t = e.target as HTMLImageElement;
                   t.style.display = 'none';
