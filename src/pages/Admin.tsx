@@ -1358,6 +1358,9 @@ function AdsSection({ onToast }: { onToast: (msg: string, t: 'success' | 'error'
           <div className="bg-orange-600/5 border border-orange-600/20 rounded-xl px-4 py-3 text-[12px] text-orange-300/80">
             📌 Chọn vị trí <strong>"Cố định cuối màn hình"</strong> để banner luôn hiển thị dạng thanh dính (sticky) ở cuối màn hình trên <strong>mọi trang</strong>, cả PC lẫn điện thoại — cho đến khi người dùng ấn nút đóng.
           </div>
+          <div className="bg-orange-600/5 border border-orange-600/20 rounded-xl px-4 py-3 text-[12px] text-orange-300/80">
+            🔝 Vị trí <strong>"Trên cùng, dính phía trên Header"</strong> là 1 thanh mỏng (~36–44px) nằm ngay phía trên logo/menu, hiện trên <strong>mọi trang</strong>. Chỉ hiện <strong>1 banner</strong> ở vị trí này (nếu bật nhiều cái cùng lúc, cái mới nhất được ưu tiên). Nên dùng ảnh dạng thanh ngang dài, chữ to rõ vì chiều cao rất mỏng.
+          </div>
 
           {showBannerForm && (
             <div className="bg-slate-800/40 border border-orange-500/20 rounded-2xl p-5 flex flex-col gap-4">
@@ -1383,6 +1386,7 @@ function AdsSection({ onToast }: { onToast: (msg: string, t: 'success' | 'error'
                     onChange={e => setBannerForm(f => ({ ...f, position: e.target.value as AdBannerData['position'] }))}
                     className="input-field text-sm"
                   >
+                    <option value="header">🔝 Trên cùng, dính phía trên Header (mọi trang, PC & Mobile)</option>
                     <option value="top">⬆️ Trên trang (Trang chủ: trước banner phim · Chi tiết phim & Xem phim: ngay dưới banner/player)</option>
                     <option value="middle">↕️ Giữa trang (giữa các section)</option>
                     <option value="bottom">⬇️ Dưới trang (Trang chủ: sau danh sách phim · Chi tiết phim & Xem phim: cuối trang)</option>

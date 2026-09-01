@@ -13,7 +13,8 @@ export interface AdBannerData {
   mediaType: 'gif' | 'mp4' | 'image';
   linkUrl: string;
   // 'sticky' = banner cố định (fixed) ở cuối màn hình, hiển thị trên mọi trang, cả PC lẫn Mobile
-  position: 'top' | 'bottom' | 'middle' | 'sticky';
+  // 'header' = banner mỏng dính ngay trên cùng, phía trên thanh header, hiển thị trên MỌI trang
+  position: 'top' | 'bottom' | 'middle' | 'sticky' | 'header';
   active: boolean;
   createdAt: number;
 }
@@ -47,7 +48,7 @@ export async function deleteAdBanner(id: string) {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 interface AdBannerProps {
-  position: 'top' | 'bottom' | 'middle' | 'sticky';
+  position: 'top' | 'bottom' | 'middle' | 'sticky' | 'header';
   className?: string;
 }
 
@@ -91,6 +92,44 @@ export default function AdBanner({ position, className = '' }: AdBannerProps) {
   // ── Banner cố định (sticky) ở cuối màn hình — hiển thị trên mọi trang,
   // cả PC lẫn Mobile. Hiện TẤT CẢ banner đang active, xếp chồng theo chiều dọc
   // (giống nhiều site quảng cáo: nhiều banner nhỏ xếp lên nhau ở đáy màn hình).
+  // ── Banner mỏng dính TRÊN CÙNG, phía trên thanh header — hiển thị trên MỌI trang.
+  // Được nhúng bên trong wrapper `fixed` của Header (xem Header.tsx), nên ở đây
+  // KHÔNG tự set `fixed` — chỉ là 1 thanh ngang chiều cao cố định để Header đo
+  // và chừa khoảng trống tương ứng cho nội dung trang bên dưới.
+  if (position === 'header') {
+    const banner = visible[0]; // chỉ hiện 1 banner đầu ở vị trí này cho gọn
+    if (!banner) return null;
+    return (
+      <div className={`relative w-full h-9 md:h-11 bg-black overflow-hidden ${className}`}>
+        <a
+          href={banner.linkUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          title={banner.title}
+          className="flex items-center justify-center w-full h-full"
+        >
+          {banner.mediaType === 'mp4' ? (
+            <video src={banner.mediaUrl} autoPlay loop muted playsInline className="w-full h-full object-cover cursor-pointer" />
+          ) : (
+            <img
+              src={banner.mediaUrl}
+              alt={banner.title || 'Quảng cáo'}
+              className="w-full h-full object-cover cursor-pointer"
+              onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+            />
+          )}
+        </a>
+        <button
+          onClick={() => dismiss(banner.id)}
+          className="absolute top-1/2 -translate-y-1/2 right-1.5 w-5 h-5 md:w-6 md:h-6 bg-black/70 hover:bg-black rounded-full flex items-center justify-center"
+          title="Đóng quảng cáo"
+        >
+          <X size={11} className="text-white" />
+        </button>
+      </div>
+    );
+  }
+
   if (position === 'sticky') {
     if (allClosed) return null;
 

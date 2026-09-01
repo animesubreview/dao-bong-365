@@ -12,6 +12,7 @@ import { logout, onAuthChange, getUserProfile, UserProfile } from '../lib/auth';
 import { createWatchRoom } from '../lib/watchRoom';
 import { subscribeNotifications, countUnread, SiteNotification } from '../lib/notifications';
 import { subscribeSiteSettings } from '../lib/siteSettings';
+import AdBanner from './AdBanner';
 
 function useSiteSettings() {
   const [settings, setSettings] = useState<Record<string, any>>({ logoType: 'text', siteName: 'ĐẢO PHIM' });
@@ -91,6 +92,22 @@ export default function Header() {
   const navigate = useNavigate();
   const location = useLocation();
   const settings = useSiteSettings();
+
+  // ── Banner mỏng dính trên cùng, phía trên thanh header (mọi trang) ──
+  // Đo chiều cao thực tế của cả khối [banner + header] để chừa đúng khoảng
+  // trống cho nội dung trang bên dưới, không bị banner đè lên.
+  const headerWrapRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = headerWrapRef.current;
+    if (!el) return;
+    const setVar = () => {
+      document.documentElement.style.setProperty('--app-header-h', `${el.offsetHeight}px`);
+    };
+    setVar();
+    const ro = new ResizeObserver(setVar);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   // ── Chuông thông báo: đếm số chưa đọc, cập nhật realtime + khi đổi trang ──
   const [allNotifs, setAllNotifs] = useState<SiteNotification[]>([]);
@@ -246,8 +263,11 @@ export default function Header() {
 
   return (
     <>
-      {/* ── HEADER BAR ── */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-transparent backdrop-blur-0 border-b border-transparent transition-all duration-300" id="main-header" style={{ background: 'transparent', backdropFilter: 'none' }}>
+      {/* ── Wrapper fixed chung: banner QC trên cùng (nếu có) + thanh header ── */}
+      <div ref={headerWrapRef} className="fixed top-0 left-0 right-0 z-50">
+        <AdBanner position="header" />
+        {/* ── HEADER BAR ── */}
+        <header className="relative bg-transparent backdrop-blur-0 border-b border-transparent transition-all duration-300" id="main-header" style={{ background: 'transparent', backdropFilter: 'none' }}>
         <div className="max-w-7xl mx-auto px-3 md:px-6 h-16 flex items-center gap-2 md:gap-3">
 
           {/* Logo — 1 lần duy nhất */}
@@ -489,6 +509,7 @@ export default function Header() {
           )}
         </div>
       </header>
+      </div>
 
       {/* ── WATCH ROOM MODAL ── */}
       {showWatchRoomModal && (

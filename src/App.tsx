@@ -190,7 +190,7 @@ function AppInner({ maintenance, maintenanceLoaded }: { maintenance: Maintenance
         <TVOptimizer />
         <Header />
         <NotificationDisplay />
-        <div className="flex-1 pt-16 pb-20 md:pb-0">
+        <div className="flex-1 pb-20 md:pb-0" style={{ paddingTop: 'var(--app-header-h, 4rem)' }}>
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/phim/:slug" element={<MovieDetail />} />
