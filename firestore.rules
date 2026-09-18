@@ -82,6 +82,18 @@ service cloud.firestore {
       }
     }
 
+    // Chat cộng đồng toàn site (mục Chat ở bottom nav, thay cho Manga)
+    match /community_chat/{docId} {
+      allow read: if true;
+      allow write: if true;
+
+      match /messages/{msgId} {
+        allow read: if true;
+        allow create: if request.auth != null;
+        allow delete: if true; // Admin xóa/kiểm duyệt tin nhắn
+      }
+    }
+
     // Ad Banners — mọi người đọc, chỉ admin ghi
     match /ad_banners/{id} {
       allow read: if true;

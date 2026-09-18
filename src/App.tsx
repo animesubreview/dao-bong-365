@@ -21,6 +21,7 @@ import Account from './pages/Account';
 import SchedulePage from './pages/Schedule';
 import WatchRoomPage from './pages/WatchRoom';
 import TruyenTranh from './pages/TruyenTranh';
+import ChatPage from './pages/Chat';
 import NapThe from './pages/NapThe';
 import MuaVip from './pages/MuaVip';
 import Notifications from './pages/Notifications';
@@ -211,6 +212,7 @@ function AppInner({ maintenance, maintenanceLoaded }: { maintenance: Maintenance
             <Route path="/lich-chieu" element={<SchedulePage />} />
             <Route path="/watch-room/:roomId" element={<WatchRoomPage />} />
             <Route path="/truyen-tranh" element={<TruyenTranh />} />
+            <Route path="/chat" element={<ChatPage />} />
             <Route path="/nap-tien" element={<NapThe />} />
             <Route path="/mua-vip" element={<MuaVip />} />
             <Route path="/notifications" element={<Notifications />} />

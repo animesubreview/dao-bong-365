@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { Languages } from 'lucide-react';
 import { Movie } from '../types';
 import { movieApi } from '../services/api';
 import { cn } from '../lib/utils';
@@ -8,6 +9,13 @@ import { cn } from '../lib/utils';
 function LangBadge({ lang }: { lang?: string }) {
   const cleaned = movieApi.cleanLang(lang || '');
   if (!cleaned) return null;
+  if (cleaned === 'Song Ngữ') {
+    return (
+      <span className="movie-card-badge flex items-center gap-1 bg-[var(--primary)]/85">
+        <Languages size={9} strokeWidth={2.5} /> Song Ngữ
+      </span>
+    );
+  }
   const label = cleaned === 'Vietsub' ? 'P.Đề' : cleaned === 'Lồng Tiếng' ? 'L.Tiếng' : cleaned === 'Thuyết Minh' ? 'T.Minh' : cleaned.slice(0,5);
   const color = cleaned === 'Vietsub' ? 'bg-slate-700' : cleaned === 'Lồng Tiếng' ? 'bg-blue-600' : 'bg-green-700';
   return <span className={cn('movie-card-badge', color)}>{label}</span>;

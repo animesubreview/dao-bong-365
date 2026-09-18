@@ -688,9 +688,14 @@ export const movieApi = {
   cleanLang: (lang: string): string => {
     if (!lang) return '';
     const l = lang.toLowerCase().trim();
-    if (l.includes('vietsub') || l.includes('phụ đề') || l.includes('sub')) return 'Vietsub';
-    if (l.includes('lồng tiếng') || l.includes('long tieng')) return 'Lồng Tiếng';
-    if (l.includes('thuyết minh') || l.includes('thuyet minh')) return 'Thuyết Minh';
+    const hasSub = l.includes('vietsub') || l.includes('phụ đề') || l.includes('sub');
+    const hasDub = l.includes('lồng tiếng') || l.includes('long tieng');
+    const hasNarr = l.includes('thuyết minh') || l.includes('thuyet minh');
+    // Có từ 2 loại tiếng trở lên (vd: "Vietsub + Thuyết Minh") → Song Ngữ
+    if ([hasSub, hasDub, hasNarr].filter(Boolean).length >= 2) return 'Song Ngữ';
+    if (hasSub) return 'Vietsub';
+    if (hasDub) return 'Lồng Tiếng';
+    if (hasNarr) return 'Thuyết Minh';
     // Return empty if garbage (too long or not a known lang)
     const known = ['vietsub','lồng tiếng','thuyết minh','nguyên bản','engsub','raw','full'];
     if (known.some(v => l.includes(v))) return lang;

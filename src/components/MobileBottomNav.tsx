@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Tv, Library, Home, BookOpen, User } from 'lucide-react';
+import { Tv, Library, Home, MessageCircle, User } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 // 5 mục — Trang chủ nằm giữa, nổi bật hơn các icon còn lại (giống app streaming)
@@ -9,7 +9,7 @@ const SIDE_ITEMS = [
   { to: '/favorites', label: 'Thư viện', icon: Library, match: (p: string) => p === '/favorites' || p === '/history' },
 ];
 const SIDE_ITEMS_RIGHT = [
-  { to: '/truyen-tranh', label: 'Manga', icon: BookOpen, match: (p: string) => p === '/truyen-tranh' },
+  { to: '/chat', label: 'Chat', icon: MessageCircle, match: (p: string) => p === '/chat' },
   { to: '/profile', label: 'Tài khoản', icon: User, match: (p: string) => p === '/profile' || p === '/auth' },
 ];
 

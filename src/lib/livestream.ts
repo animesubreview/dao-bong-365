@@ -85,6 +85,26 @@ export async function clearLiveChat(): Promise<void> {
   await Promise.all(snap.docs.map(d => deleteDoc(d.ref)));
 }
 
+// ── Chat cộng đồng toàn site (thay cho mục Manga ở bottom nav) ────────────────
+// Dùng path Firestore riêng để không lẫn với chat của phòng livestream.
+const COMMUNITY_COL = 'community_chat';
+const COMMUNITY_DOC_ID = 'global';
+
+export function subscribeCommunityChat(cb: (msgs: LiveChatMessage[]) => void): () => void {
+  const q = query(collection(db, COMMUNITY_COL, COMMUNITY_DOC_ID, 'messages'), orderBy('createdAt', 'asc'), limit(200));
+  return onSnapshot(q, snap => {
+    cb(snap.docs.map(d => ({ id: d.id, ...d.data() } as LiveChatMessage)));
+  });
+}
+
+export async function sendCommunityChatMessage(msg: Omit<LiveChatMessage, 'id'>): Promise<void> {
+  await addDoc(collection(db, COMMUNITY_COL, COMMUNITY_DOC_ID, 'messages'), msg);
+}
+
+export async function deleteCommunityChatMessage(id: string): Promise<void> {
+  await deleteDoc(doc(db, COMMUNITY_COL, COMMUNITY_DOC_ID, 'messages', id));
+}
+
 // ── Helper: dựng URL nhúng + phát hiện nền tảng để áp dụng chặn tua ───────────
 export type LiveEmbedKind = 'youtube' | 'facebook' | 'mux' | 'generic';
 
