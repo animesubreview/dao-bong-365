@@ -69,8 +69,8 @@ export default function MobileBottomNav() {
           style={{
             background: 'linear-gradient(135deg, var(--primary-light), var(--primary))',
             boxShadow: homeActive
-              ? '0 0 0 5px rgba(124,140,255,0.18), 0 8px 24px rgba(124,140,255,0.55)'
-              : '0 0 0 5px rgba(124,140,255,0.10), 0 6px 18px rgba(124,140,255,0.35)',
+              ? '0 0 0 5px rgba(34,197,94,0.18), 0 8px 24px rgba(34,197,94,0.55)'
+              : '0 0 0 5px rgba(34,197,94,0.10), 0 6px 18px rgba(34,197,94,0.35)',
           }}
         >
           <Home size={24} strokeWidth={2.5} className="text-slate-950" />

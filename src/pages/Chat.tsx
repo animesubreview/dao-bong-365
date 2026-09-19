@@ -75,7 +75,7 @@ export default function ChatPage() {
         <div className="min-w-0">
           <h1 className="text-lg font-black text-white leading-tight">Chat cộng đồng</h1>
           <p className="text-xs text-slate-500 flex items-center gap-1">
-            <Users size={12} /> Trò chuyện cùng mọi người trên AuraFlix — thời gian thực
+            <Users size={12} /> Trò chuyện cùng mọi người trên Đảo Phim — thời gian thực
           </p>
         </div>
       </div>

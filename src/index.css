@@ -12,9 +12,9 @@
   --color-slate-700: #232838;
   --color-green-500: #22c55e;
 
-  /* Accent — blue/indigo per design spec */
-  --color-primary: #7c8cff;
-  --color-primary-light: #a5b4ff;
+  /* Accent — xanh lá, đúng màu thương hiệu gốc của Đảo Phim */
+  --color-primary: #22c55e;
+  --color-primary-light: #4ade80;
 }
 
 :root {
@@ -23,8 +23,8 @@
   --surface-2: #171b27;
   --text: #ffffff;
   --text-muted: #9ca3af;
-  --primary: #7c8cff;
-  --primary-light: #a5b4ff;
+  --primary: #22c55e;
+  --primary-light: #4ade80;
   --border: rgba(255,255,255,.08);
 }
 
@@ -32,15 +32,15 @@
   * { box-sizing: border-box; }
   body {
     @apply bg-slate-950 text-slate-300 font-sans;
-    background: radial-gradient(1200px 600px at 50% -10%, rgba(124,140,255,0.08), transparent 60%), var(--bg);
+    background: radial-gradient(1200px 600px at 50% -10%, rgba(34,197,94,0.08), transparent 60%), var(--bg);
   }
 }
 
 @layer components {
   .btn-primary {
     @apply text-white font-bold rounded-xl px-5 py-3 transition-all shadow-lg flex items-center;
-    background: linear-gradient(135deg, var(--primary), #5b6ee8);
-    box-shadow: 0 8px 24px rgba(124,140,255,0.25);
+    background: linear-gradient(135deg, var(--primary), #16a34a);
+    box-shadow: 0 8px 24px rgba(34,197,94,0.25);
   }
   .btn-primary:hover { filter: brightness(1.08); }
   .btn-icon {
@@ -51,7 +51,7 @@
   }
   .input-field {
     @apply w-full bg-slate-800/80 border border-slate-700/50 rounded-xl py-3 px-4 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 transition-all;
-    --tw-ring-color: rgba(124,140,255,0.5);
+    --tw-ring-color: rgba(34,197,94,0.5);
   }
   .admin-card {
     @apply bg-slate-900/80 border border-slate-800/80 rounded-2xl p-6;
