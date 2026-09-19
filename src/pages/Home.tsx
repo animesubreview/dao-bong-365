@@ -945,22 +945,58 @@ export default function Home() {
 
         {/* Quan tâm gì */}
         <section>
-          <SecHeader title="Bạn đang quan tâm gì?" />
-          <div className="flex gap-2 overflow-x-auto -mx-4 md:-mx-0 px-4 md:px-0 pb-1"
+          <SecHeader title="Bạn đang quan tâm cái gì vậy?" />
+          <div className="flex gap-3 overflow-x-auto -mx-4 md:-mx-0 px-4 md:px-0 pb-1"
             style={{ scrollbarWidth:'none', msOverflowStyle:'none' }}>
             {INTEREST.map(card => (
               <Link key={card.label} to={card.to}
-                className={cn('shrink-0 relative rounded-xl overflow-hidden hover:scale-[1.02] transition-transform', `bg-gradient-to-br ${card.g}`)}
-                style={{ width:'clamp(120px,38vw,180px)', height:'clamp(65px,14vw,90px)', flexShrink:0 }}>
-                <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-black/20" />
-                <div className="absolute bottom-0 left-0 p-2.5">
-                  <p className="text-white font-black text-sm leading-tight">{card.label}</p>
-                  <p className="text-white/80 text-[10px] font-semibold flex items-center gap-0.5">{card.sub} <ChevronRight size={9}/></p>
+                className={cn('shrink-0 relative rounded-3xl overflow-hidden hover:scale-[1.02] transition-transform', `bg-gradient-to-br ${card.g}`)}
+                style={{ width:'clamp(150px,44vw,220px)', height:'clamp(100px,20vw,140px)', flexShrink:0 }}>
+                <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-black/25" />
+                <div className="absolute inset-0 p-4 flex flex-col justify-between">
+                  <p className="text-white font-black text-base leading-tight">{card.label}</p>
+                  <p className="text-white/90 text-xs font-bold flex items-center gap-1">Xem toàn bộ <ChevronRight size={12}/></p>
                 </div>
               </Link>
             ))}
           </div>
         </section>
+
+        {/* Phim quyền Đảo Phim — card ngang nổi bật (phim thêm thủ công / mới nhất) */}
+        {(manualMovies.length > 0 || newUpdates.length > 0) && (
+          <section>
+            <SecHeader title="Phim Quyền Đảo Phim" to="/type/phim-le" />
+            <div className="flex gap-3 overflow-x-auto -mx-4 md:-mx-0 px-4 md:px-0 pb-1 snap-x snap-mandatory"
+              style={{ scrollbarWidth:'none', msOverflowStyle:'none' }}>
+              {(manualMovies.length > 0 ? manualMovies.slice(0, 8) : newUpdates.slice(0, 8)).map((m: any) => {
+                const isManual = !!m.id;
+                const href = isManual ? `/manual/${m.id}` : `/phim/${m.slug}`;
+                const img = isManual ? m.posterUrl : movieApi.getImageUrl(m.thumb_url);
+                const name = m.name;
+                const sub = isManual ? m.originName : m.origin_name;
+                const langLabel = isManual ? m.lang : movieApi.cleanLang(m.lang || '');
+                return (
+                  <Link key={isManual ? m.id : m._id} to={href}
+                    className="shrink-0 snap-start group" style={{ width:'clamp(220px,68vw,300px)' }}>
+                    <div className="relative rounded-2xl overflow-hidden bg-slate-800 shadow-lg" style={{ aspectRatio:'16/9' }}>
+                      {img
+                        ? <img src={img} alt={name} loading="lazy" referrerPolicy="no-referrer"
+                            className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                        : <div className="absolute inset-0 flex items-center justify-center text-slate-600 text-3xl">🎬</div>}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+                      <span className="absolute top-2 left-2 movie-card-badge bg-slate-900/90">Đầy</span>
+                      {langLabel && <span className="absolute bottom-2 left-2 movie-card-badge bg-[var(--primary)]/90">{langLabel === 'Lồng Tiếng' ? 'L.' : langLabel === 'Vietsub' ? 'P.Đề' : langLabel}</span>}
+                    </div>
+                    <div className="mt-2 px-0.5">
+                      <p className="font-bold text-[13px] text-slate-100 group-hover:text-[var(--primary-light)] transition-colors line-clamp-1">{name}</p>
+                      {sub && <p className="text-[11px] text-slate-500 line-clamp-1">{sub}</p>}
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
         {/* Top 10 */}
         {top10.length > 0 && (
