@@ -29,6 +29,7 @@ import LiveStreamPage from './pages/LiveStream';
 import TVTrucTuyen from './pages/TVTrucTuyen';
 import NotFound from './pages/NotFound';
 import HtmlSitemap from './pages/HtmlSitemap';
+import InfoPage from './pages/InfoPage';
 import MaintenancePage from './components/MaintenancePage';
 import GeoBlockPage from './components/GeoBlockPage';
 import TVOptimizer from './components/TVOptimizer';
@@ -219,6 +220,7 @@ function AppInner({ maintenance, maintenanceLoaded }: { maintenance: Maintenance
             <Route path="/truc-tiep" element={<LiveStreamPage />} />
             <Route path="/tv-truc-tuyen" element={<TVTrucTuyen />} />
             <Route path="/site-map" element={<HtmlSitemap />} />
+            <Route path="/info/:type" element={<InfoPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </div>

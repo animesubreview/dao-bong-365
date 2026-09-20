@@ -3598,6 +3598,26 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
                 <input type="text" value={settings.discordUrl || ''} onChange={e => setSettings(s => ({ ...s, discordUrl: e.target.value }))} className="input-field" placeholder="https://discord.gg/xxxxxxx" />
               </InputRow>
 
+              <InputRow label="Hotline" hint="Hiển thị ở mục Liên hệ cuối trang. Để trống nếu không muốn hiện.">
+                <input type="text" value={settings.phone || ''} onChange={e => setSettings(s => ({ ...s, phone: e.target.value }))} className="input-field" placeholder="0909 xxx xxx" />
+              </InputRow>
+
+              <InputRow label="Email liên hệ chung" hint="Hiển thị ở mục Liên hệ cuối trang. Để trống thì dùng chung email đặt quảng cáo ở trên.">
+                <input type="email" value={settings.email || ''} onChange={e => setSettings(s => ({ ...s, email: e.target.value }))} className="input-field" placeholder="support@daophim.online" />
+              </InputRow>
+
+              <InputRow label="Link Facebook" hint="Để trống thì ẨN icon Facebook ở footer.">
+                <input type="text" value={settings.facebookUrl || ''} onChange={e => setSettings(s => ({ ...s, facebookUrl: e.target.value }))} className="input-field" placeholder="https://facebook.com/..." />
+              </InputRow>
+
+              <InputRow label="Link Instagram" hint="Để trống thì ẨN icon Instagram ở footer.">
+                <input type="text" value={settings.instagramUrl || ''} onChange={e => setSettings(s => ({ ...s, instagramUrl: e.target.value }))} className="input-field" placeholder="https://instagram.com/..." />
+              </InputRow>
+
+              <InputRow label="Link Youtube" hint="Để trống thì ẨN icon Youtube ở footer.">
+                <input type="text" value={settings.youtubeUrl || ''} onChange={e => setSettings(s => ({ ...s, youtubeUrl: e.target.value }))} className="input-field" placeholder="https://youtube.com/@..." />
+              </InputRow>
+
               <InputRow label="Chữ trên banner Discord" hint="Để trống dùng chữ mặc định.">
                 <input type="text" value={settings.discordBannerText || ''} onChange={e => setSettings(s => ({ ...s, discordBannerText: e.target.value }))} className="input-field" placeholder="THAM GIA NHÓM DISCORD - CẬP NHẬT PHIM MỚI MỖI NGÀY" />
               </InputRow>
