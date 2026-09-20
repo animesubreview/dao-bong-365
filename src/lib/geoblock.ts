@@ -1,5 +1,6 @@
 // src/lib/geoblock.ts — tương thích Samsung TV (không dùng AbortSignal.timeout)
-import { doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { saveDoc } from './firebaseUtils';
 import { db } from './firebase';
 
 export type GeoResult = 'vn' | 'foreign' | 'loading' | 'error';
@@ -17,7 +18,7 @@ export const DEFAULT_GEOBLOCK: GeoblockConfig = {
 
 export async function saveGeoblockConfig(config: GeoblockConfig): Promise<void> {
   const data = { ...config, updatedAt: Date.now() };
-  await setDoc(doc(db, 'config', 'geoblock'), data, { merge: true });
+  await saveDoc(doc(db, 'config', 'geoblock'), data, { merge: true });
   try { localStorage.setItem('geoblock_config', JSON.stringify(data)); } catch {}
 }
 

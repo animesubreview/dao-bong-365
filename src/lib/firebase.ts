@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { initializeFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
 // Cấu hình Firebase Web (công khai theo thiết kế của Firebase — bảo mật nằm ở firestore.rules).
@@ -18,5 +18,11 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-export const db = getFirestore(app);
+// experimentalAutoDetectLongPolling: tự chuyển sang long-polling khi mạng/proxy/adblock chặn WebChannel
+//   (nếu không, setDoc có thể treo vô hạn và "Lưu" không có phản hồi).
+// ignoreUndefinedProperties: bỏ qua field undefined thay vì ném lỗi "Unsupported field value: undefined".
+export const db = initializeFirestore(app, {
+  experimentalAutoDetectLongPolling: true,
+  ignoreUndefinedProperties: true,
+});
 export const storage = getStorage(app);

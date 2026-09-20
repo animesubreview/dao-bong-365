@@ -15,6 +15,7 @@ import { getClickAdConfig, saveClickAdConfig, ClickAdConfig, DEFAULT_CLICK_AD } 
 import { getVipPrices, saveVipPrices, VipPrices, DEFAULT_VIP_PRICES, VIP_META, VIP_DAYS, VipTier } from '../lib/vip';
 import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
 import { fetchSiteSettings, saveSiteSettings as saveSiteSettingsFirestore } from '../lib/siteSettings';
+import { describeFirebaseError, resizeImageToDataUrl } from '../lib/firebaseUtils';
 import { db } from '../lib/firebase';
 import { getAllUsers, banUser as apiBanUser, unbanUser as apiUnbanUser, deleteUserProfile, setUserRole, addUserBalance, UserProfile } from '../lib/auth';
 import {
@@ -99,9 +100,9 @@ const DEFAULT_MOVIES = (): ManualMovie[] => [];
 // ManualMovie type imported from '../lib/manualMovies'
 
 function Toast({ message, type, onClose }: { message: string; type: 'success' | 'error'; onClose: () => void }) {
-  useEffect(() => { const t = setTimeout(onClose, 3000); return () => clearTimeout(t); }, [onClose]);
+  useEffect(() => { const t = setTimeout(onClose, type === 'error' ? 9000 : 3000); return () => clearTimeout(t); }, [onClose, type]);
   return (
-    <div className={`fixed bottom-6 right-6 z-[999] flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-2xl border text-sm font-semibold transition-all ${type === 'success' ? 'bg-emerald-950 border-emerald-500/40 text-emerald-300' : 'bg-red-950 border-red-500/40 text-red-300'}`}>
+    <div className={`fixed bottom-6 right-6 max-w-[calc(100vw-3rem)] z-[999] flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-2xl border text-sm font-semibold transition-all ${type === 'success' ? 'bg-emerald-950 border-emerald-500/40 text-emerald-300' : 'bg-red-950 border-red-500/40 text-red-300'}`}>
       {type === 'success' ? <Check size={16} className="text-emerald-400" /> : <AlertCircle size={16} className="text-red-400" />}
       {message}
       <button onClick={onClose} className="ml-2 text-current/60 hover:text-current"><X size={14} /></button>
@@ -1651,7 +1652,7 @@ function VipSection({ onToast }: { onToast: (msg: string, t: 'success' | 'error'
     try {
       await saveVipPrices(prices);
       onToast('Đã lưu giá VIP!', 'success');
-    } catch { onToast('Lỗi khi lưu!', 'error'); }
+    } catch (e) { onToast(describeFirebaseError(e), 'error'); }
     setSaving(false);
   };
 
@@ -2172,20 +2173,28 @@ function MaintenanceSection() {
       setTimeout(() => setSaved(false), 2000);
     } catch (e: any) {
       console.error('Save maintenance error:', e);
-      // Vẫn thành công nếu localStorage đã lưu
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
+      alert(describeFirebaseError(e));
     } finally {
       setSaving(false);
     }
   };
 
-  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; if (!file) return;
-    if (file.size > 5 * 1024 * 1024) { alert('File tối đa 5MB!'); return; }
-    const reader = new FileReader();
-    reader.onload = ev => setCfg(c => ({ ...c, mediaUrl: ev.target?.result as string }));
-    reader.readAsDataURL(file);
+    try {
+      if (file.type.startsWith('image/') && file.type !== 'image/gif') {
+        // Thu nhỏ ảnh để vừa giới hạn 1MB/tài liệu của Firestore
+        const url = await resizeImageToDataUrl(file, 1280, 0.75);
+        if (url.length > 800 * 1024) { alert('Ảnh vẫn quá nặng, hãy chọn ảnh nhỏ hơn hoặc dán link ảnh.'); return; }
+        setCfg(c => ({ ...c, mediaUrl: url }));
+      } else {
+        if (file.size > 600 * 1024) { alert('Video/GIF lớn không lưu trực tiếp được (Firestore giới hạn 1MB). Hãy tải lên nơi khác và dán link vào ô đường dẫn.'); return; }
+        const reader = new FileReader();
+        reader.onload = ev => setCfg(c => ({ ...c, mediaUrl: ev.target?.result as string }));
+        reader.readAsDataURL(file);
+      }
+    } catch { alert('Không đọc được file này!'); }
+    finally { e.target.value = ''; }
   };
 
   return (
@@ -2306,8 +2315,7 @@ function GeoblockSection() {
       setTimeout(() => setSaved(false), 2000);
     } catch (e: any) {
       console.error('Save geoblock error:', e);
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
+      alert(describeFirebaseError(e));
     } finally {
       setSaving(false);
     }
@@ -2433,8 +2441,8 @@ function LivestreamAdminSection({ onToast }: { onToast: (msg: string, t: 'succes
     try {
       await updateLiveConfig(form);
       onToast('✅ Đã lưu cấu hình livestream!');
-    } catch {
-      onToast('Lỗi khi lưu!', 'error');
+    } catch (e) {
+      onToast(describeFirebaseError(e), 'error');
     }
     setSaving(false);
   };
@@ -3276,22 +3284,27 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
       showToast('Đã lưu cài đặt thành công! (áp dụng cho mọi người dùng)');
     } catch (e) {
       console.error(e);
-      showToast('Lỗi khi lưu cài đặt lên máy chủ!', 'error');
+      showToast(describeFirebaseError(e), 'error');
     }
   };
 
   // saveMovies không còn dùng localStorage — Firestore subscription tự cập nhật state
 
-  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 2 * 1024 * 1024) { showToast('File quá lớn! Tối đa 2MB', 'error'); return; }
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      setSettings(s => ({ ...s, logoImage: ev.target?.result as string, logoType: 'image' }));
-      showToast('Đã tải logo lên!');
-    };
-    reader.readAsDataURL(file);
+    if (file.size > 5 * 1024 * 1024) { showToast('File quá lớn! Tối đa 5MB', 'error'); return; }
+    try {
+      // Firestore giới hạn 1MB/tài liệu → thu nhỏ logo về tối đa 400px (thường < 100KB)
+      const dataUrl = await resizeImageToDataUrl(file, 400);
+      if (dataUrl.length > 400 * 1024) { showToast('Logo vẫn quá nặng, hãy chọn ảnh đơn giản hơn hoặc nhỏ hơn.', 'error'); return; }
+      setSettings(s => ({ ...s, logoImage: dataUrl, logoType: 'image' }));
+      showToast('Đã tải logo lên! Nhớ bấm Lưu cài đặt.');
+    } catch {
+      showToast('Không đọc được file ảnh này!', 'error');
+    } finally {
+      e.target.value = '';
+    }
   };
 
   const submitMovie = async () => {

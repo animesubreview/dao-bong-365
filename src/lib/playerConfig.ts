@@ -3,8 +3,9 @@
  * Tất cả người dùng đều thấy cùng 1 config (real-time sync)
  */
 
-import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { db } from './firebase';
+import { saveDoc } from './firebaseUtils';
 
 export interface PlayerConfig {
   logoType: 'text' | 'image' | 'none';
@@ -76,12 +77,9 @@ export async function savePlayerConfig(config: Partial<PlayerConfig>): Promise<P
   window.dispatchEvent(new CustomEvent('playerConfigChanged', { detail: updated }));
 
   // Save to Firestore (all users will see)
-  try {
-    await setDoc(doc(db, 'settings', 'player_config'), updated);
-    console.log('✅ Player config saved to Firestore');
-  } catch (e) {
-    console.warn('⚠️ Firestore save failed, using localStorage only:', e);
-  }
+  // Không nuốt lỗi nữa: nếu Firestore từ chối thì ném ra để trang Player Studio báo cho admin biết
+  await saveDoc(doc(db, 'settings', 'player_config'), updated);
+  console.log('✅ Player config saved to Firestore');
 
   return updated;
 }
@@ -129,8 +127,6 @@ export function subscribePlayerConfig(callback: (config: PlayerConfig) => void):
 export async function resetPlayerConfig(): Promise<PlayerConfig> {
   setCached(DEFAULT_CONFIG);
   window.dispatchEvent(new CustomEvent('playerConfigChanged', { detail: DEFAULT_CONFIG }));
-  try {
-    await setDoc(doc(db, 'settings', 'player_config'), DEFAULT_CONFIG);
-  } catch {}
+  await saveDoc(doc(db, 'settings', 'player_config'), DEFAULT_CONFIG);
   return DEFAULT_CONFIG;
 }

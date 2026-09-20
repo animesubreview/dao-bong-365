@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { describeFirebaseError } from '../lib/firebaseUtils';
 import { getPlayerConfig, savePlayerConfig, resetPlayerConfig, subscribePlayerConfig, PlayerConfig } from '../lib/playerConfig';
 import { Settings, Monitor, Image, Type, Sliders, RotateCcw, Check, Eye } from 'lucide-react';
 
@@ -20,16 +21,25 @@ export default function PlayerStudio() {
 
   const handleSave = async () => {
     setSaving(true);
-    await savePlayerConfig(config);
-    setSaving(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
+    try {
+      await savePlayerConfig(config);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } catch (e) {
+      alert(describeFirebaseError(e));
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleReset = async () => {
     if (!confirm('Reset về mặc định?')) return;
-    const def = await resetPlayerConfig();
-    setConfig(def);
+    try {
+      const def = await resetPlayerConfig();
+      setConfig(def);
+    } catch (e) {
+      alert(describeFirebaseError(e));
+    }
   };
 
   const logoMid = Math.ceil((config.logoText || '').length / 2);

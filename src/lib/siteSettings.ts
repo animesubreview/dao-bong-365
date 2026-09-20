@@ -1,5 +1,6 @@
 import { db } from './firebase';
-import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot } from 'firebase/firestore';
+import { saveDoc } from './firebaseUtils';
 
 // Toàn bộ cấu hình website (tên site, email/telegram quảng cáo, cảnh báo copy...)
 // được lưu tại 1 document duy nhất trên Firestore: config/site_settings
@@ -38,9 +39,10 @@ export async function fetchSiteSettings(): Promise<SiteSettings> {
 
 // ─── Lưu (Admin bấm nút Lưu) ──────────────────────────────────────────────────
 export async function saveSiteSettings(settings: SiteSettings): Promise<void> {
+  // Ghi Firestore TRƯỚC: nếu lỗi thì ném ra để Admin báo đúng, không "giả vờ đã lưu" bằng cache cục bộ
+  await saveDoc(SETTINGS_DOC(), settings, { merge: true });
   writeLocalCache(settings);
   window.dispatchEvent(new Event('site_settings_updated'));
-  await setDoc(SETTINGS_DOC(), settings, { merge: true });
 }
 
 // ─── Lắng nghe real-time (Footer, WatchManual, mọi trang hiển thị công khai) ──
