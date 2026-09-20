@@ -54,6 +54,7 @@ export default function Banner({ movies }: BannerProps) {
   }, [movies]);
 
   const next = useCallback(() => setIdx(i => (i + 1) % items.length), [items.length]);
+  const prev = useCallback(() => setIdx(i => (i - 1 + items.length) % items.length), [items.length]);
   const prevIdx = (idx - 1 + items.length) % items.length;
   const nextIdx = (idx + 1) % items.length;
 
@@ -69,6 +70,59 @@ export default function Banner({ movies }: BannerProps) {
   }, [items.length, resetTimer]);
 
   const goTo = (i: number) => { setIdx(i); resetTimer(); };
+
+  // Vuốt trái/phải để chuyển slide (mobile) — chỉ tính là vuốt khi ngang > dọc
+  // và đủ xa (>40px), tránh nhầm với thao tác cuộn trang bình thường.
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const onTouchStart = (e: React.TouchEvent) => {
+    const t = e.touches[0];
+    touchStartRef.current = { x: t.clientX, y: t.clientY };
+  };
+  const onTouchEnd = (e: React.TouchEvent) => {
+    const start = touchStartRef.current;
+    touchStartRef.current = null;
+    if (!start || items.length < 2) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - start.x;
+    const dy = t.clientY - start.y;
+    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
+      if (dx < 0) { next(); resetTimer(); } else { prev(); resetTimer(); }
+    }
+  };
+
+  // ── Vuốt trái/phải để chuyển slide (hỗ trợ cả chạm trên điện thoại và kéo chuột) ──
+  const dragRef = useRef<{ startX: number; dragging: boolean; moved: boolean } | null>(null);
+  const wasDraggedRef = useRef(false);
+
+  const onPointerDown = (e: React.PointerEvent) => {
+    dragRef.current = { startX: e.clientX, dragging: true, moved: false };
+  };
+  const onPointerMove = (e: React.PointerEvent) => {
+    const d = dragRef.current;
+    if (!d || !d.dragging) return;
+    if (Math.abs(e.clientX - d.startX) > 6) d.moved = true;
+  };
+  const endDrag = (e: React.PointerEvent) => {
+    const d = dragRef.current;
+    if (!d || !d.dragging) return;
+    const delta = e.clientX - d.startX;
+    const THRESHOLD = 40;
+    if (delta > THRESHOLD) {
+      wasDraggedRef.current = true;
+      goTo(prevIdx);
+    } else if (delta < -THRESHOLD) {
+      wasDraggedRef.current = true;
+      goTo(nextIdx);
+    } else {
+      wasDraggedRef.current = d.moved; // vuốt nhẹ không đủ ngưỡng vẫn coi là kéo, chặn click mở phim nhầm
+    }
+    dragRef.current = null;
+    // Cho phép click bình thường trở lại ngay sau đó (chỉ chặn cú click ngay lúc vừa vuốt xong)
+    setTimeout(() => { wasDraggedRef.current = false; }, 50);
+  };
+  const onPosterLinkClick = (e: React.MouseEvent) => {
+    if (wasDraggedRef.current) e.preventDefault();
+  };
 
   // Đọc danh sách yêu thích để tô đậm icon trái tim (đồng bộ với trang Favorites)
   const readFavs = useCallback(() => {
@@ -131,13 +185,25 @@ export default function Banner({ movies }: BannerProps) {
         <div className="absolute inset-0 bg-gradient-to-b from-slate-950/40 via-slate-950/80 to-slate-950" />
       </div>
 
-      {/* 3 poster: trái/phải mờ hé lộ, giữa nổi bật */}
-      <div className="relative mx-auto px-4" style={{ height: 'clamp(260px, 42vw, 420px)', maxWidth: 720 }}>
+      {/* 3 poster: trái/phải mờ hé lộ, giữa nổi bật — vuốt trái/phải để chuyển slide */}
+      <div
+        className="relative mx-auto px-4 select-none"
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
+        style={{ height: 'clamp(260px, 42vw, 420px)', maxWidth: 720, touchAction: 'pan-y' }}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={endDrag}
+        onPointerCancel={endDrag}
+        onPointerLeave={endDrag}
+      >
         {items.length > 1 && <PosterSide item={items[prevIdx]} side="left" />}
         {items.length > 1 && <PosterSide item={items[nextIdx]} side="right" />}
 
         <Link
           to={`/phim/${movie.slug}`}
+          onClick={onPosterLinkClick}
+          draggable={false}
           className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-full rounded-2xl overflow-hidden border-2 border-white/90 shadow-2xl shadow-black/50 z-10 block"
           style={{ aspectRatio: '2/3' }}
         >
@@ -145,6 +211,7 @@ export default function Banner({ movies }: BannerProps) {
             src={movieApi.getImageUrl(movie.poster_url || movie.thumb_url)}
             alt={movie.name}
             referrerPolicy="no-referrer"
+            draggable={false}
             className="w-full h-full object-cover"
             loading="eager"
           />

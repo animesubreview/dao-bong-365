@@ -966,6 +966,25 @@ export default function Home() {
           </section>
         )}
 
+        {/* Bạn đang quan tâm gì */}
+        <section>
+          <SecHeader title="Bạn đang quan tâm gì?" />
+          <div className="flex gap-3 overflow-x-auto -mx-4 md:-mx-0 px-4 md:px-0 pb-1"
+            style={{ scrollbarWidth:'none', msOverflowStyle:'none' }}>
+            {INTEREST.map(card => (
+              <Link key={card.label} to={card.to}
+                className={cn('shrink-0 relative rounded-3xl overflow-hidden hover:scale-[1.02] transition-transform', `bg-gradient-to-br ${card.g}`)}
+                style={{ width:'clamp(150px,44vw,220px)', height:'clamp(100px,20vw,140px)', flexShrink:0 }}>
+                <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-black/25" />
+                <div className="absolute inset-0 p-4 flex flex-col justify-between">
+                  <p className="text-white font-black text-base leading-tight">{card.label}</p>
+                  <p className="text-white/90 text-xs font-bold flex items-center gap-1">Xem toàn bộ <ChevronRight size={12}/></p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+
         {/* Các mục phim theo series nổi tiếng & quốc gia — tự tải khi cuộn tới, có dải phân cách giữa các mục */}
         {HOME_SECTIONS.map((s, i) => (
           <React.Fragment key={s.title}>
