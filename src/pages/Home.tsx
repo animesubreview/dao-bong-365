@@ -507,14 +507,18 @@ const HOME_SECTIONS = [
 ];
 
 /* ─── Interest cards ──────────────────────────────────────────── */
+// c1 = màu trên, c2 = màu dưới (gradient dọc nhẹ giống thiết kế mẫu)
 const INTEREST = [
-  { label:'TV Trực Tuyến', sub:'Xem Ngay', to:'/tv-truc-tuyen', g:'from-red-600/70 via-orange-500/60 to-yellow-400/50' },
-  { label:'Hàn Quốc', sub:'Phim Bộ', to:'/type/phim-bo', g:'from-purple-600/70 via-blue-500/60 to-blue-400/50' },
-  { label:'Trung Quốc', sub:'Hoa Ngữ', to:'/type/phim-bo', g:'from-pink-500/70 via-rose-400/60 to-pink-300/50' },
-  { label:'Thái Lan', sub:'Cực Hay', to:'/type/phim-le', g:'from-blue-500/70 via-cyan-400/60 to-teal-400/50' },
-  { label:'Sitcom', sub:'TV Shows', to:'/type/tv-shows', g:'from-emerald-500/70 via-teal-400/60 to-cyan-400/50' },
-  { label:'Âu Mỹ', sub:'Hollywood', to:'/type/phim-le', g:'from-green-600/70 via-orange-400/60 to-yellow-400/50' },
-  { label:'Hoạt Hình', sub:'Anime', to:'/type/hoat-hinh', g:'from-indigo-500/70 via-purple-400/60 to-violet-400/50' },
+  { label:'K-Drama\nHàn Quốc', to:'/type/phim-bo?country=han-quoc',                     c1:'#cc5a90', c2:'#b04374' },
+  { label:'Phim Hàn\nChữa Lành', to:'/type/phim-bo?country=han-quoc&category=tam-ly',     c1:'#57a482', c2:'#3d8867' },
+  { label:'Cổ Trang\nTrung Quốc', to:'/type/phim-bo?country=trung-quoc&category=co-trang', c1:'#dc8a55', c2:'#c06a3a' },
+  { label:'TV Trực Tuyến',       to:'/tv-truc-tuyen',                                     c1:'#cf5a4e', c2:'#b0413a' },
+  { label:'Hàn Quốc',            to:'/type/phim-bo?country=han-quoc',                     c1:'#8467cc', c2:'#6a4fb0' },
+  { label:'Trung Quốc',          to:'/type/phim-bo?country=trung-quoc',                   c1:'#4a94c4', c2:'#3577a5' },
+  { label:'Thái Lan',            to:'/type/phim-le?country=thai-lan',                     c1:'#3aa5b0', c2:'#2a8792' },
+  { label:'Sitcom',              to:'/type/tv-shows',                                     c1:'#b89a45', c2:'#997d2f' },
+  { label:'Âu Mỹ',               to:'/type/phim-le?country=au-my',                        c1:'#6a7fcc', c2:'#5266b0' },
+  { label:'Hoạt Hình',           to:'/type/hoat-hinh',                                    c1:'#9a63c4', c2:'#7d49a8' },
 ];
 
 /* ─── Top tabs config ─────────────────────────────────────────── */
@@ -967,18 +971,27 @@ export default function Home() {
         )}
 
         {/* Bạn đang quan tâm gì */}
-        <section>
-          <SecHeader title="Bạn đang quan tâm gì?" />
-          <div className="flex gap-3 overflow-x-auto -mx-4 md:-mx-0 px-4 md:px-0 pb-1"
+        <section className="-mx-4 px-4 py-5 md:mx-0 md:px-6 md:rounded-2xl bg-[var(--surface-2)]">
+          <h2 className="text-xl md:text-2xl font-extrabold tracking-tight text-white mb-4">Bạn đang quan tâm gì?</h2>
+          <div className="flex gap-2.5 overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 pb-1"
             style={{ scrollbarWidth:'none', msOverflowStyle:'none' }}>
             {INTEREST.map(card => (
               <Link key={card.label} to={card.to}
-                className={cn('shrink-0 relative rounded-3xl overflow-hidden hover:scale-[1.02] transition-transform', `bg-gradient-to-br ${card.g}`)}
-                style={{ width:'clamp(150px,44vw,220px)', height:'clamp(100px,20vw,140px)', flexShrink:0 }}>
-                <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-black/25" />
-                <div className="absolute inset-0 p-4 flex flex-col justify-between">
-                  <p className="text-white font-black text-base leading-tight">{card.label}</p>
-                  <p className="text-white/90 text-xs font-bold flex items-center gap-1">Xem toàn bộ <ChevronRight size={12}/></p>
+                className="shrink-0 relative overflow-hidden hover:scale-[1.03] active:scale-[0.98] transition-transform"
+                style={{
+                  ['--w' as any]: 'clamp(108px, calc((100vw - 52px) / 3), 200px)',
+                  width: 'var(--w)',
+                  height: 'calc(var(--w) / 1.5)',
+                  flexShrink: 0,
+                  borderRadius: '18px 50% 20px 18px / 18px 78% 20px 18px',
+                  background: `linear-gradient(180deg, ${card.c1} 0%, ${card.c2} 100%)`,
+                } as React.CSSProperties}>
+                {/* Vòng tròn sáng ở góc phải trên */}
+                <span className="absolute top-0 right-0 rounded-full bg-white/20 pointer-events-none"
+                  style={{ width: 'calc(var(--w) * 0.46)', height: 'calc(var(--w) * 0.46)' }} />
+                <div className="absolute inset-0 p-2.5 sm:p-3 flex flex-col justify-between">
+                  <p className="text-white font-bold text-[14px] md:text-lg leading-[1.2] whitespace-pre-line">{card.label}</p>
+                  <p className="text-white/90 text-[10.5px] md:text-xs font-semibold flex items-center gap-0.5 whitespace-nowrap">Xem toàn bộ <ChevronRight size={11}/></p>
                 </div>
               </Link>
             ))}
