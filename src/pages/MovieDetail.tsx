@@ -470,7 +470,6 @@ export default function MovieDetail() {
           <div className="mt-6">
             <AdBanner position="bottom" />
           </div>
-        </div>
       </div>
     </div>
   );
