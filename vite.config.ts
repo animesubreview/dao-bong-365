@@ -3,7 +3,6 @@ import react from '@vitejs/plugin-react';
 import legacy from '@vitejs/plugin-legacy';
 import path from 'path';
 import { defineConfig, loadEnv } from 'vite';
-import fs from 'fs';
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '');
@@ -33,20 +32,6 @@ export default defineConfig(({ mode }) => {
           'web.url',
         ],
       }),
-
-      // Plugin đảm bảo _redirects luôn được copy vào dist
-      {
-        name: 'copy-redirects',
-        closeBundle() {
-          const src = path.resolve(__dirname, 'public/_redirects');
-          const dest = path.resolve(__dirname, 'dist/_redirects');
-          if (fs.existsSync(src)) {
-            fs.copyFileSync(src, dest);
-          } else {
-            fs.writeFileSync(dest, '/* /index.html 200\n');
-          }
-        },
-      },
     ],
     define: {
       'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
