@@ -25,8 +25,24 @@ if (typeof window !== 'undefined') {
 // mirror đã cấu hình trong Admin → Cài đặt Website). NguonC được dùng làm nguồn phụ
 // (xem bên dưới) cho phần chi tiết phim/tập phim/tìm kiếm gộp — không dùng đoán mò
 // endpoint danh sách của NguonC vì chưa xác minh được nó có tồn tại hay không.
+// Nguồn dự phòng — dùng khi API chính (phimapi.com hoặc domain đã cấu hình) lỗi/timeout.
+// Giả định vsmov.com/api có cùng cấu trúc endpoint với KKPhim/phimapi.com
+// (/danh-sach/..., /phim/{slug}, /v1/api/tim-kiem, /v1/api/danh-sach/{type}).
+// ⚠️ Chưa xác minh được schema thực tế của vsmov.com/api (không truy cập được để kiểm tra
+// — thử fetch endpoint gốc trả về 404, không tìm thấy tài liệu công khai), nên đây chỉ là
+// lớp dự phòng "cố gắng thử": nếu response không đúng cấu trúc, hàm gọi sẽ tự coi như rỗng/lỗi
+// chứ không crash app. Nếu anh/chị thấy nguồn này không hoạt động đúng, gửi mẫu JSON nó trả
+// về để chỉnh lại cho khớp.
+const VSMOV_BASE = 'https://vsmov.com/api';
+
 async function apiFetch(path: string): Promise<Response> {
-  return fetch(`${BASE_URL}${path}`);
+  try {
+    const res = await fetch(`${BASE_URL}${path}`);
+    if (res.ok) return res;
+    throw new Error(`Primary API status ${res.status}`);
+  } catch {
+    return fetch(`${VSMOV_BASE}${path}`);
+  }
 }
 
 // Cache ảnh chất lượng cao lấy được từ NguonC theo slug (nếu có), dùng trong getImageUrl.
@@ -575,20 +591,27 @@ export const movieApi = {
   },
 
   getMovieDetail: async (slug: string): Promise<MovieDetailResponse> => {
+    // 1) Nguồn chính: phimapi.com (hoặc domain đã cấu hình)
     try {
-      const response = await apiFetch(`/phim/${slug}`);
+      const response = await fetch(`${BASE_URL}/phim/${slug}`);
       const data = await response.json();
       if (response.ok && data && data.status !== false && data.movie) return data;
-      throw new Error('phimapi.com không có dữ liệu phim này');
-    } catch {
-      // phimapi.com lỗi/không có phim này → thử tìm trên NguonC
-      const nguonC = await getNguonCDetail(slug);
-      if (nguonC) {
-        const episodes = (nguonC.episodes || []).flatMap((server, idx) => nguonCServerToEpisode(server, idx));
-        return { status: true, movie: nguonCToMovie(nguonC), episodes };
-      }
-      return { status: false, movie: null as any, episodes: [] };
+    } catch { /* rơi xuống nguồn phụ bên dưới */ }
+
+    // 2) Nguồn phụ: vsmov.com/api — giả định cùng schema với phimapi.com (xem ghi chú ở VSMOV_BASE)
+    try {
+      const response = await fetch(`${VSMOV_BASE}/phim/${slug}`);
+      const data = await response.json();
+      if (response.ok && data && data.status !== false && data.movie) return data;
+    } catch { /* rơi xuống NguonC */ }
+
+    // 3) Nguồn dự phòng cuối: NguonC — schema đã được xác minh hoạt động (dùng converter riêng)
+    const nguonC = await getNguonCDetail(slug);
+    if (nguonC) {
+      const episodes = (nguonC.episodes || []).flatMap((server, idx) => nguonCServerToEpisode(server, idx));
+      return { status: true, movie: nguonCToMovie(nguonC), episodes };
     }
+    return { status: false, movie: null as any, episodes: [] };
   },
 
   searchMovies: async (keyword: string, page: number = 1, limit: number = 20): Promise<APIResponse<Movie>> => {
