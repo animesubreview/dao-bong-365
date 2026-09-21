@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Mail, Send, Facebook, Instagram, Youtube, MapPin, Phone } from 'lucide-react';
+import { Mail, Send } from 'lucide-react';
 import { subscribeSiteSettings } from '../lib/siteSettings';
 
 function useSiteSettings() {
@@ -40,18 +40,6 @@ export default function Footer() {
   const siteName = settings.siteName || 'ĐẢO PHIM';
   const adsEmail  = settings.adsEmail  || 'adsdaophim@gmail.com';
   const adsTelegram = settings.adsTelegram || '';
-  const hotline = settings.phone || '';
-  const contactEmail = settings.email || adsEmail;
-  const facebookUrl = settings.facebookUrl || '';
-  const instagramUrl = settings.instagramUrl || '';
-  const youtubeUrl = settings.youtubeUrl || '';
-
-  const socials = [
-    { url: facebookUrl, icon: Facebook, label: 'Facebook' },
-    { url: instagramUrl, icon: Instagram, label: 'Instagram' },
-    { url: youtubeUrl, icon: Youtube, label: 'Youtube' },
-    { url: adsTelegram ? `https://t.me/${adsTelegram}` : '', icon: Send, label: 'Telegram' },
-  ].filter(s => s.url);
 
   return (
     <footer className="border-t border-slate-800/60 bg-slate-950 mt-10">
@@ -63,18 +51,6 @@ export default function Footer() {
         <p className="text-slate-500 text-xs max-w-sm leading-relaxed">
           Trang xem phim online chất lượng cao miễn phí Vietsub, thuyết minh, lồng tiếng full HD.
         </p>
-
-        {/* Mạng xã hội — chỉ hiện những kênh đã cấu hình trong Admin */}
-        {socials.length > 0 && (
-          <div className="flex items-center gap-3">
-            {socials.map(s => (
-              <a key={s.label} href={s.url} target="_blank" rel="noopener noreferrer" aria-label={s.label}
-                className="w-9 h-9 rounded-full bg-slate-900/70 border border-slate-800 flex items-center justify-center text-slate-400 hover:text-[var(--primary-light)] hover:border-[var(--primary)]/50 transition-colors">
-                <s.icon size={16} />
-              </a>
-            ))}
-          </div>
-        )}
 
         {/* Thể loại phim */}
         <div className="w-full text-left">
@@ -102,48 +78,27 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* Điều hướng nhanh */}
+        {/* Links */}
         <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-slate-500">
           <Link to="/" className="hover:text-white transition-colors">Trang chủ</Link>
           <Link to="/type/phim-bo" className="hover:text-white transition-colors">Phim bộ</Link>
           <Link to="/type/phim-le" className="hover:text-white transition-colors">Phim lẻ</Link>
           <Link to="/type/hoat-hinh" className="hover:text-white transition-colors">Hoạt hình</Link>
           <Link to="/type/phim-chieu-rap" className="hover:text-white transition-colors">Chiếu rạp</Link>
-        </div>
-
-        {/* Hỗ trợ */}
-        <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-md text-left">
-          <div>
-            <h3 className="text-slate-300 text-xs font-black tracking-wide mb-2.5">HỖ TRỢ</h3>
-            <div className="flex flex-col gap-1.5 text-xs text-slate-500">
-              <Link to="/info/faq" className="hover:text-green-400 transition-colors">Câu hỏi thường gặp</Link>
-              <Link to="/info/privacy" className="hover:text-green-400 transition-colors">Chính sách bảo mật</Link>
-              <Link to="/info/terms" className="hover:text-green-400 transition-colors">Điều khoản sử dụng</Link>
-              <a href={`mailto:${adsEmail}`} className="hover:text-green-400 transition-colors">Liên hệ quảng cáo</a>
-            </div>
-          </div>
-
-          {/* Liên hệ */}
-          <div>
-            <h3 className="text-slate-300 text-xs font-black tracking-wide mb-2.5">LIÊN HỆ</h3>
-            <div className="flex flex-col gap-2 text-xs text-slate-500">
-              <span className="flex items-center gap-2"><MapPin size={13} className="text-green-500 shrink-0" /> Việt Nam</span>
-              {hotline && (
-                <a href={`tel:${hotline}`} className="flex items-center gap-2 hover:text-green-400 transition-colors">
-                  <Phone size={13} className="text-green-500 shrink-0" /> {hotline}
-                </a>
-              )}
-              <a href={`mailto:${contactEmail}`} className="flex items-center gap-2 hover:text-green-400 transition-colors break-all">
-                <Mail size={13} className="text-green-500 shrink-0" /> {contactEmail}
-              </a>
-            </div>
-          </div>
+          <Link to="/site-map" className="hover:text-white transition-colors">Sơ đồ trang web</Link>
         </div>
 
         {/* Liên hệ đặt quảng cáo */}
-        {adsTelegram && (
-          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-slate-500 text-xs">
-            <span>📢 Liên hệ đặt quảng cáo:</span>
+        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-slate-500 text-xs">
+          <span>📢 Liên hệ đặt quảng cáo:</span>
+          <a
+            href={`mailto:${adsEmail}`}
+            className="flex items-center gap-1 text-green-400 hover:text-green-300 font-semibold transition-colors"
+          >
+            <Mail size={12} />
+            {adsEmail}
+          </a>
+          {adsTelegram && (
             <a
               href={`https://t.me/${adsTelegram}`}
               target="_blank"
@@ -153,22 +108,15 @@ export default function Footer() {
               <Send size={12} />
               @{adsTelegram}
             </a>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Sovereign note */}
         <div className="bg-red-600 text-white text-xs font-bold px-5 py-2 rounded-full flex items-center gap-2">
           🇻🇳 Hoàng Sa &amp; Trường Sa là của Việt Nam!
         </div>
 
-        <p className="text-slate-600 text-xs">© {new Date().getFullYear()} {siteName}. All rights reserved.</p>
-
-        {/* Dòng link pháp lý cuối trang */}
-        <div className="flex items-center justify-center gap-4 text-xs text-slate-600">
-          <Link to="/info/privacy" className="hover:text-slate-300 transition-colors">Privacy</Link>
-          <Link to="/info/terms" className="hover:text-slate-300 transition-colors">Terms</Link>
-          <Link to="/site-map" className="hover:text-slate-300 transition-colors">Sitemap</Link>
-        </div>
+        <p className="text-slate-600 text-xs">© {new Date().getFullYear()} {siteName}</p>
       </div>
     </footer>
   );

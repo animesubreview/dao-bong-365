@@ -21,7 +21,6 @@ import Account from './pages/Account';
 import SchedulePage from './pages/Schedule';
 import WatchRoomPage from './pages/WatchRoom';
 import TruyenTranh from './pages/TruyenTranh';
-import ChatPage from './pages/Chat';
 import NapThe from './pages/NapThe';
 import MuaVip from './pages/MuaVip';
 import Notifications from './pages/Notifications';
@@ -29,7 +28,6 @@ import LiveStreamPage from './pages/LiveStream';
 import TVTrucTuyen from './pages/TVTrucTuyen';
 import NotFound from './pages/NotFound';
 import HtmlSitemap from './pages/HtmlSitemap';
-import InfoPage from './pages/InfoPage';
 import MaintenancePage from './components/MaintenancePage';
 import GeoBlockPage from './components/GeoBlockPage';
 import TVOptimizer from './components/TVOptimizer';
@@ -213,14 +211,12 @@ function AppInner({ maintenance, maintenanceLoaded }: { maintenance: Maintenance
             <Route path="/lich-chieu" element={<SchedulePage />} />
             <Route path="/watch-room/:roomId" element={<WatchRoomPage />} />
             <Route path="/truyen-tranh" element={<TruyenTranh />} />
-            <Route path="/chat" element={<ChatPage />} />
             <Route path="/nap-tien" element={<NapThe />} />
             <Route path="/mua-vip" element={<MuaVip />} />
             <Route path="/notifications" element={<Notifications />} />
             <Route path="/truc-tiep" element={<LiveStreamPage />} />
             <Route path="/tv-truc-tuyen" element={<TVTrucTuyen />} />
             <Route path="/site-map" element={<HtmlSitemap />} />
-            <Route path="/info/:type" element={<InfoPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </div>

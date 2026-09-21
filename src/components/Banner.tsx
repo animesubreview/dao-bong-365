@@ -17,7 +17,7 @@ function decodeHtml(str: string): string {
     .replace(/&nbsp;/g, ' ');
 }
 
-// Strip HTML tags from movie.content to get a plain-text synopsis
+// Strip HTML tags from movie.content to get a plain-text synopsis (IMDb-style info block)
 function stripHtml(str?: string): string {
   if (!str) return '';
   return decodeHtml(str.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim());
@@ -30,11 +30,13 @@ export default function Banner({ movies }: BannerProps) {
   const [favSlugs, setFavSlugs] = useState<string[]>([]);
   const [detailMap, setDetailMap] = useState<Record<string, Movie>>({});
   const timerRef = useRef<ReturnType<typeof setInterval>>();
-  const baseItems = movies.slice(0, 8);
+  const baseItems = movies.slice(0, 10);
   // Trộn dữ liệu chi tiết (content, category) đã fetch thêm vào — danh sách
   // "phim mới cập nhật" mặc định không kèm mô tả/thể loại như trang chi tiết.
   const items = baseItems.map(m => detailMap[m.slug] || m);
 
+  // Endpoint danh sách không trả về content/category đầy đủ, nên fetch thêm
+  // chi tiết từng phim trên banner để hiển thị mô tả + thể loại (giống ảnh mẫu).
   useEffect(() => {
     const missing = baseItems.filter(m => !detailMap[m.slug]);
     if (!missing.length) return;
@@ -54,9 +56,6 @@ export default function Banner({ movies }: BannerProps) {
   }, [movies]);
 
   const next = useCallback(() => setIdx(i => (i + 1) % items.length), [items.length]);
-  const prev = useCallback(() => setIdx(i => (i - 1 + items.length) % items.length), [items.length]);
-  const prevIdx = (idx - 1 + items.length) % items.length;
-  const nextIdx = (idx + 1) % items.length;
 
   const resetTimer = useCallback(() => {
     clearInterval(timerRef.current);
@@ -68,61 +67,6 @@ export default function Banner({ movies }: BannerProps) {
     resetTimer();
     return () => clearInterval(timerRef.current);
   }, [items.length, resetTimer]);
-
-  const goTo = (i: number) => { setIdx(i); resetTimer(); };
-
-  // Vuốt trái/phải để chuyển slide (mobile) — chỉ tính là vuốt khi ngang > dọc
-  // và đủ xa (>40px), tránh nhầm với thao tác cuộn trang bình thường.
-  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
-  const onTouchStart = (e: React.TouchEvent) => {
-    const t = e.touches[0];
-    touchStartRef.current = { x: t.clientX, y: t.clientY };
-  };
-  const onTouchEnd = (e: React.TouchEvent) => {
-    const start = touchStartRef.current;
-    touchStartRef.current = null;
-    if (!start || items.length < 2) return;
-    const t = e.changedTouches[0];
-    const dx = t.clientX - start.x;
-    const dy = t.clientY - start.y;
-    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
-      if (dx < 0) { next(); resetTimer(); } else { prev(); resetTimer(); }
-    }
-  };
-
-  // ── Vuốt trái/phải để chuyển slide (hỗ trợ cả chạm trên điện thoại và kéo chuột) ──
-  const dragRef = useRef<{ startX: number; dragging: boolean; moved: boolean } | null>(null);
-  const wasDraggedRef = useRef(false);
-
-  const onPointerDown = (e: React.PointerEvent) => {
-    dragRef.current = { startX: e.clientX, dragging: true, moved: false };
-  };
-  const onPointerMove = (e: React.PointerEvent) => {
-    const d = dragRef.current;
-    if (!d || !d.dragging) return;
-    if (Math.abs(e.clientX - d.startX) > 6) d.moved = true;
-  };
-  const endDrag = (e: React.PointerEvent) => {
-    const d = dragRef.current;
-    if (!d || !d.dragging) return;
-    const delta = e.clientX - d.startX;
-    const THRESHOLD = 40;
-    if (delta > THRESHOLD) {
-      wasDraggedRef.current = true;
-      goTo(prevIdx);
-    } else if (delta < -THRESHOLD) {
-      wasDraggedRef.current = true;
-      goTo(nextIdx);
-    } else {
-      wasDraggedRef.current = d.moved; // vuốt nhẹ không đủ ngưỡng vẫn coi là kéo, chặn click mở phim nhầm
-    }
-    dragRef.current = null;
-    // Cho phép click bình thường trở lại ngay sau đó (chỉ chặn cú click ngay lúc vừa vuốt xong)
-    setTimeout(() => { wasDraggedRef.current = false; }, 50);
-  };
-  const onPosterLinkClick = (e: React.MouseEvent) => {
-    if (wasDraggedRef.current) e.preventDefault();
-  };
 
   // Đọc danh sách yêu thích để tô đậm icon trái tim (đồng bộ với trang Favorites)
   const readFavs = useCallback(() => {
@@ -147,155 +91,153 @@ export default function Banner({ movies }: BannerProps) {
   const movie = items[idx];
   const isFav = useMemo(() => !!movie && favSlugs.includes(movie.slug), [movie, favSlugs]);
   const synopsis = useMemo(() => stripHtml(movie?.content), [movie]);
+  const genres = useMemo(() => (movie?.category || []).slice(0, 3), [movie]);
 
   if (!items.length) return null;
 
-  const PosterSide = ({ item, side }: { item: Movie; side: 'left' | 'right' }) => (
-    <button
-      onClick={() => goTo(side === 'left' ? prevIdx : nextIdx)}
-      aria-label={decodeHtml(item.name)}
-      className={cn(
-        'absolute top-1/2 -translate-y-1/2 w-[30%] sm:w-[26%] rounded-2xl overflow-hidden opacity-40 hover:opacity-60 transition-opacity shadow-xl',
-        side === 'left' ? 'left-0 -translate-x-[15%]' : 'right-0 translate-x-[15%]'
-      )}
-      style={{ aspectRatio: '2/3' }}
-    >
-      <img
-        src={movieApi.getImageUrl(item.poster_url || item.thumb_url)}
-        alt={item.name}
-        referrerPolicy="no-referrer"
-        className="w-full h-full object-cover"
-      />
-      <div className="absolute inset-0 bg-slate-950/40" />
-    </button>
-  );
-
   return (
-    <div className="relative w-full overflow-hidden pt-4 pb-6">
-      {/* Backdrop mờ phía sau — lấy chính poster phim đang chọn, blur mạnh để tạo chiều sâu */}
-      <div className="absolute inset-0 -z-10">
-        <img
-          key={movie._id}
-          src={movieApi.getImageUrl(movie.thumb_url || movie.poster_url)}
-          alt=""
-          aria-hidden="true"
-          className="w-full h-full object-cover scale-110 blur-2xl opacity-30 transition-opacity duration-700"
-          referrerPolicy="no-referrer"
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-slate-950/40 via-slate-950/80 to-slate-950" />
-      </div>
-
-      {/* 3 poster: trái/phải mờ hé lộ, giữa nổi bật — vuốt trái/phải để chuyển slide */}
-      <div
-        className="relative mx-auto px-4 select-none"
-        onTouchStart={onTouchStart}
-        onTouchEnd={onTouchEnd}
-        style={{ height: 'clamp(260px, 42vw, 420px)', maxWidth: 720, touchAction: 'pan-y' }}
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={endDrag}
-        onPointerCancel={endDrag}
-        onPointerLeave={endDrag}
-      >
-        {items.length > 1 && <PosterSide item={items[prevIdx]} side="left" />}
-        {items.length > 1 && <PosterSide item={items[nextIdx]} side="right" />}
-
+    <div
+      className="relative w-full overflow-hidden bg-slate-950"
+      style={{
+        height: 'clamp(460px, 46vw, 720px)',
+      }}
+    >
+      {/* All slides — pure CSS opacity transition, no framer-motion. Tapping the image opens movie detail. */}
+      {items.map((item, i) => (
         <Link
-          to={`/phim/${movie.slug}`}
-          onClick={onPosterLinkClick}
-          draggable={false}
-          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-full rounded-2xl overflow-hidden border-2 border-white/90 shadow-2xl shadow-black/50 z-10 block"
-          style={{ aspectRatio: '2/3' }}
+          to={`/phim/${item.slug}`}
+          key={item._id}
+          className="absolute inset-0 block transition-opacity duration-700"
+          style={{ opacity: i === idx ? 1 : 0, zIndex: i === idx ? 1 : 0, pointerEvents: i === idx ? 'auto' : 'none' }}
         >
           <img
-            src={movieApi.getImageUrl(movie.poster_url || movie.thumb_url)}
-            alt={movie.name}
+            src={movieApi.getImageUrl(item.thumb_url || item.poster_url)}
+            alt={item.name}
             referrerPolicy="no-referrer"
-            draggable={false}
-            className="w-full h-full object-cover"
-            loading="eager"
+            className="w-full h-full object-cover object-top"
+            loading={i === 0 ? 'eager' : 'lazy'}
           />
+          <div className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-slate-950/70 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-slate-950/90 md:via-slate-950/30 via-slate-950/50 to-transparent" />
         </Link>
-      </div>
+      ))}
 
-      {/* Thông tin phim — căn giữa, giống ảnh mẫu */}
-      <div className="max-w-xl mx-auto px-5 text-center mt-5">
-        <h1 className="banner-title text-2xl sm:text-3xl md:text-4xl text-white leading-[1.15] mb-1 line-clamp-2">
-          {decodeHtml(movie.name)}
-        </h1>
-        {movie.origin_name && (
-          <p className="text-slate-400 text-xs sm:text-sm font-bold uppercase tracking-wide mb-4 line-clamp-1">
-            {decodeHtml(movie.origin_name)}
-          </p>
-        )}
+      {/* Content — aligned to the same container width used across the site,
+          so it lines up with the rest of the homepage on PC/laptop screens */}
+      <div className="absolute inset-x-0 bottom-0 z-10">
+        <div className="max-w-2xl md:max-w-5xl lg:max-w-[1400px] mx-auto px-4 md:px-6 lg:px-8 pb-6 md:pb-10 lg:pb-12 flex items-end justify-between gap-8">
 
-        {/* Nút hành động — 1 khối pill chia 3 phần, giống ảnh mẫu */}
-        <div className="flex items-center justify-center gap-2.5 mb-4">
-          <Link
-            to={`/phim/${movie.slug}`}
-            className="btn-primary !py-2.5 !px-6 text-sm gap-2"
-          >
-            <Play size={16} className="fill-current" /> Xem Phim
-          </Link>
-          <button
-            type="button" aria-label="Yêu thích" onClick={() => toggleFavorite(movie)}
-            className="w-11 h-11 shrink-0 rounded-full bg-slate-800/80 border border-slate-700/60 flex items-center justify-center text-white hover:bg-slate-700 transition-colors"
-          >
-            <Heart size={17} className={cn(isFav && 'fill-red-500 text-red-500')} />
-          </button>
-          <Link
-            to={`/phim/${movie.slug}`} aria-label="Chi tiết"
-            className="w-11 h-11 shrink-0 rounded-full bg-slate-800/80 border border-slate-700/60 flex items-center justify-center text-white hover:bg-slate-700 transition-colors"
-          >
-            <Info size={17} />
-          </Link>
-        </div>
+          {/* Movie info block (IMDb-style: title, genres, badges, synopsis) */}
+          <div className="max-w-xl lg:max-w-2xl min-w-0 max-h-[calc(100vh-140px)] overflow-hidden w-full text-center md:text-left">
+            <h1
+              className="banner-title text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-white leading-[1.05] mb-2 line-clamp-2"
+            >
+              {decodeHtml(movie.name)}
+            </h1>
+            {movie.origin_name && (
+              <p className="text-teal-400 text-sm md:text-base lg:text-lg font-bold mb-3 line-clamp-1">
+                {decodeHtml(movie.origin_name)}
+              </p>
+            )}
 
-        {/* Badge thông tin — dạng viền, giống ảnh mẫu */}
-        <div className="flex flex-wrap items-center justify-center gap-1.5 mb-3">
-          {movie.quality && (
-            <span className="text-[11px] font-bold border border-[var(--primary)]/60 text-[var(--primary-light)] px-2.5 py-1 rounded-lg">
-              {movie.quality}
-            </span>
-          )}
-          {movie.year && (
-            <span className="text-[11px] font-bold border border-white/20 text-slate-300 px-2.5 py-1 rounded-lg">
-              {movie.year}
-            </span>
-          )}
-          {movie.time && (
-            <span className="text-[11px] font-bold border border-white/20 text-slate-300 px-2.5 py-1 rounded-lg">
-              {decodeHtml(movie.time)}
-            </span>
-          )}
-          {movie.episode_current && (
-            <span className="text-[11px] font-bold border border-white/20 text-slate-300 px-2.5 py-1 rounded-lg">
-              {decodeHtml(movie.episode_current)}
-            </span>
-          )}
-        </div>
+            {/* Quality / year / duration — info badges */}
+            <div className="flex flex-wrap items-center justify-center md:justify-start gap-1.5 mb-3">
+              {movie.quality && (
+                <span className="text-[10px] md:text-xs font-black bg-teal-400 text-slate-950 px-2 py-0.5 rounded-md">
+                  {movie.quality}
+                </span>
+              )}
+              {movie.year && (
+                <span className="text-[10px] md:text-xs font-bold border border-white/40 text-white px-2 py-0.5 rounded-md">
+                  {movie.year}
+                </span>
+              )}
+              {movie.time && (
+                <span className="text-[10px] md:text-xs font-bold border border-white/40 text-white px-2 py-0.5 rounded-md">
+                  {decodeHtml(movie.time)}
+                </span>
+              )}
+              {movie.episode_current && (
+                <span className="text-[10px] md:text-xs font-bold border border-white/40 text-white px-2 py-0.5 rounded-md">
+                  {decodeHtml(movie.episode_current)}
+                </span>
+              )}
+            </div>
 
-        {/* Mô tả ngắn */}
-        {synopsis && (
-          <p className="text-slate-400 text-xs sm:text-sm leading-relaxed line-clamp-2 mb-4">
-            {synopsis}
-          </p>
-        )}
+            {/* Top 10 — circular avatar carousel, mobile only (matches phone UI reference) */}
+            <div className="md:hidden flex justify-center gap-2 overflow-x-auto pb-1 mb-4 -mx-4 px-4 [&::-webkit-scrollbar]:hidden"
+              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', scrollSnapType: 'x mandatory' }}>
+              {items.map((m, i) => (
+                <button key={m._id} onClick={() => { setIdx(i); resetTimer(); }}
+                  aria-label={`Top ${i + 1}: ${decodeHtml(m.name)}`}
+                  style={{ scrollSnapAlign: 'start' }}
+                  className={cn(
+                    'w-[34px] h-[34px] rounded-full overflow-hidden border shrink-0 transition-all bg-slate-800',
+                    i === idx ? 'border-white' : 'border-white/25 opacity-70'
+                  )}>
+                  {/* Dùng poster dọc (không phải ảnh banner ngang của PC) và object-contain để hiện trọn poster, không bị cắt */}
+                  <img src={movieApi.getImageUrl(m.poster_url || m.thumb_url)} alt={m.name}
+                    className="w-full h-full object-contain" referrerPolicy="no-referrer" />
+                </button>
+              ))}
+            </div>
 
-        {/* Dot indicators */}
-        {items.length > 1 && (
-          <div className="flex items-center justify-center gap-1.5">
+            {/* Genre tags */}
+            {genres.length > 0 && (
+              <div className="max-sm:hidden flex flex-wrap items-center justify-center md:justify-start gap-2 mb-3">
+                {genres.map(g => (
+                  <Link key={g.id} to={`/type/${g.slug}`}
+                    className="text-[11px] md:text-xs font-semibold bg-white/10 hover:bg-white/20 backdrop-blur text-slate-200 px-3 py-1 rounded-md transition-colors">
+                    {g.name}
+                  </Link>
+                ))}
+              </div>
+            )}
+
+            {/* Synopsis */}
+            {synopsis && (
+              <p className="max-sm:hidden text-slate-300 text-xs md:text-sm lg:text-base leading-relaxed line-clamp-2 mb-4 max-w-lg lg:max-w-xl">
+                {synopsis}
+              </p>
+            )}
+
+            {/* Action buttons — desktop/tablet only, matching reference mobile UI which has none here */}
+            <div className="hidden md:flex items-center gap-3">
+              <Link to={`/phim/${movie.slug}`} aria-label="Xem ngay"
+                className="flex items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-full bg-teal-400 hover:bg-teal-300 text-slate-950 shadow-lg shadow-teal-400/30 transition-all active:scale-95 shrink-0">
+                <Play size={20} className="fill-current ml-0.5" />
+              </Link>
+              <button type="button" aria-label="Yêu thích" onClick={() => toggleFavorite(movie)}
+                className="flex items-center justify-center w-10 h-10 md:w-11 md:h-11 rounded-full bg-slate-900/70 border border-white/10 backdrop-blur hover:bg-slate-800 transition-all text-white shrink-0">
+                <Heart size={17} className={cn(isFav && 'fill-red-500 text-red-500')} />
+              </button>
+              <Link to={`/phim/${movie.slug}`} aria-label="Chi tiết"
+                className="flex items-center justify-center w-10 h-10 md:w-11 md:h-11 rounded-full bg-slate-900/70 border border-white/10 backdrop-blur hover:bg-slate-800 transition-all text-white shrink-0">
+                <Info size={17} />
+              </Link>
+            </div>
+          </div>
+
+          {/* Thumbnail strip — visible from md (laptop) up, aligned to the same container.
+              Landscape rounded-pill thumbnails; the active one is larger with a white border,
+              matching the reference "Top picks" carousel look. */}
+          <div className="hidden md:flex items-center gap-1.5 lg:gap-2 shrink-0 max-w-[380px] lg:max-w-[500px] xl:max-w-[620px] overflow-hidden">
             {items.map((m, i) => (
-              <button
-                key={m._id} onClick={() => goTo(i)} aria-label={`Slide ${i + 1}`}
+              <button key={m._id} onClick={() => { setIdx(i); resetTimer(); }}
+                aria-label={`${decodeHtml(m.name)}`}
                 className={cn(
-                  'h-1.5 rounded-full transition-all duration-300',
-                  i === idx ? 'w-6 bg-[var(--primary)]' : 'w-1.5 bg-slate-600 hover:bg-slate-500'
-                )}
-              />
+                  'relative overflow-hidden shrink-0 transition-all duration-300',
+                  i === idx
+                    ? 'w-[92px] h-[62px] md:w-[104px] md:h-[70px] lg:w-[118px] lg:h-[78px] rounded-2xl border-2 border-white opacity-100 shadow-lg shadow-black/40'
+                    : 'w-11 h-11 md:w-12 md:h-12 lg:w-14 lg:h-14 rounded-xl border-2 border-transparent opacity-55 hover:opacity-85'
+                )}>
+                <img src={movieApi.getImageUrl(m.thumb_url)} alt={m.name}
+                  className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+              </button>
             ))}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

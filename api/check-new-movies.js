@@ -3,7 +3,7 @@
  * Chạy mỗi 10 phút - Không spam lặp nhờ Redis
  */
 
-const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '8182223004:AAEKg4Gf869fv0Io72AQNeWvrii6D3_utIk';
 const TELEGRAM_CHAT_ID   = process.env.TELEGRAM_CHAT_ID   || '-1003945410277';
 const SITE_URL           = process.env.SITE_URL            || 'https://daophim.online';
 const KKPHIM_API         = 'https://phimapi.com';
@@ -194,10 +194,6 @@ async function netlifyHandlerFn(event) {
   const secret = process.env.CRON_SECRET;
   if (secret && event.headers['x-cron-secret'] !== secret) {
     return { statusCode: 401, body: 'Unauthorized' };
-  }
-
-  if (!TELEGRAM_BOT_TOKEN) {
-    return { statusCode: 500, body: 'Thiếu biến môi trường TELEGRAM_BOT_TOKEN' };
   }
 
   console.log('🔍 Checking new movies from KKPhim...');

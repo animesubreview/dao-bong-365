@@ -7,7 +7,6 @@ import {
   doc, getDoc, setDoc, updateDoc, onSnapshot, collection,
 } from 'firebase/firestore';
 import { db } from './firebase';
-import { saveDoc } from './firebaseUtils';
 import { useEffect, useState } from 'react';
 import { onAuthChange, getUserProfile, UserProfile } from './auth';
 
@@ -67,7 +66,7 @@ export async function getVipPrices(): Promise<VipPrices> {
 }
 
 export async function saveVipPrices(prices: VipPrices): Promise<void> {
-  await saveDoc(doc(db, 'site_config', 'vip_prices'), prices);
+  await setDoc(doc(db, 'site_config', 'vip_prices'), prices);
 }
 
 // Realtime hook giá VIP
