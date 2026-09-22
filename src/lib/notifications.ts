@@ -1,12 +1,10 @@
 // ─── Notification System (Firebase) ──────────────────────────────────────────
 // Admin tạo thông báo → lưu Firebase → tất cả người dùng đều thấy
 
-import {
-  collection, doc, onSnapshot, deleteDoc,
-  updateDoc, addDoc, serverTimestamp, query, orderBy,
-  getDocs, setDoc,
-} from 'firebase/firestore';
+import { collection, doc, serverTimestamp, query, orderBy, getDocs } from 'firebase/firestore';
 import { db } from './firebase';
+import { deleteDoc, updateDoc, addDoc, setDoc } from './firestoreGuard';
+import { fetchCollectionCached, invalidateCache, onCacheInvalidated } from './publicCache';
 
 export interface SiteNotification {
   id: string;
@@ -57,6 +55,7 @@ export async function createNotification(
   notif.category = data.category || 'phim';
 
   const ref = await addDoc(collection(db, NOTIFS_COL), notif);
+  invalidateCache(NOTIFS_COL);
   return { id: ref.id, ...notif } as SiteNotification;
 }
 
@@ -67,19 +66,36 @@ export async function updateNotification(id: string, data: Partial<SiteNotificat
     if (v !== undefined) clean[k] = v;
   }
   await updateDoc(doc(db, NOTIFS_COL, id), clean);
+  invalidateCache(NOTIFS_COL);
 }
 
 export async function deleteNotification(id: string) {
   await deleteDoc(doc(db, NOTIFS_COL, id));
+  invalidateCache(NOTIFS_COL);
 }
 
 // ── Subscribe realtime (dùng trong NotificationDisplay) ───────────────────────
 
-export function subscribeNotifications(cb: (notifs: SiteNotification[]) => void) {
-  const q = query(collection(db, NOTIFS_COL), orderBy('createdAt', 'desc'));
-  return onSnapshot(q, snap => {
-    cb(snap.docs.map(d => ({ id: d.id, ...d.data() } as SiteNotification)));
-  });
+// Trước đây dùng onSnapshot (lắng nghe realtime) — Header.tsx VÀ NotificationDisplay.tsx
+// đều gọi hàm này, tức MỖI TRANG đều mở 2 kết nối realtime riêng tới cùng 1 collection.
+// Giờ đọc có cache (fetchCollectionCached tự gộp 2 lệnh gọi trùng lúc thành 1 request) +
+// polling nhẹ mỗi 60s để thông báo mới vẫn hiện ra mà không tốn 1 kết nối/khách/trang.
+export function subscribeNotifications(cb: (notifs: SiteNotification[]) => void): () => void {
+  let stopped = false;
+  const POLL_MS = 60_000;
+
+  const tick = () => {
+    fetchCollectionCached<SiteNotification>(NOTIFS_COL, NOTIFS_COL, [orderBy('createdAt', 'desc')], POLL_MS)
+      .then(list => { if (!stopped) cb(list); })
+      .catch(() => { if (!stopped) cb([]); });
+  };
+
+  tick();
+  const timer = setInterval(tick, POLL_MS);
+  // Tự đọc lại ngay khi có nơi khác (VD Admin vừa tạo/sửa/xóa thông báo) làm mất hiệu lực cache,
+  // để không phải đợi tới lượt poll kế tiếp mới thấy.
+  const unsubInvalidate = onCacheInvalidated(NOTIFS_COL, tick);
+  return () => { stopped = true; clearInterval(timer); unsubInvalidate(); };
 }
 
 // ── Dismissed (lưu local — chỉ để không show lại trong session) ───────────────

@@ -1,9 +1,7 @@
 import React from 'react';
-import {
-  collection, doc, addDoc, updateDoc, deleteDoc,
-  onSnapshot, query, orderBy, getDocs, getDoc, where,
-} from 'firebase/firestore';
+import { collection, doc, query, orderBy, getDocs, getDoc, where } from 'firebase/firestore';
 import { db } from './firebase';
+import { addDoc, updateDoc, deleteDoc, onSnapshot } from './firestoreGuard';
 
 export interface ManualEpisode {
   label: string;   // VD: "Tập 1", "Tập 2", "Full"
@@ -52,15 +50,21 @@ function stripUndefined<T extends object>(obj: T): T {
 
 export async function createManualMovie(data: Omit<ManualMovie, 'id'>): Promise<string> {
   const ref = await addDoc(collection(db, COL), stripUndefined({ ...data, createdAt: Date.now() }));
+  invalidateCache(COL);
+  invalidateCache(COL + ':upcoming');
   return ref.id;
 }
 
 export async function updateManualMovie(id: string, data: Partial<Omit<ManualMovie, 'id'>>) {
   await updateDoc(doc(db, COL, id), stripUndefined(data));
+  invalidateCache(COL);
+  invalidateCache(COL + ':upcoming');
 }
 
 export async function deleteManualMovie(id: string) {
   await deleteDoc(doc(db, COL, id));
+  invalidateCache(COL);
+  invalidateCache(COL + ':upcoming');
 }
 
 export async function getManualMovie(id: string): Promise<ManualMovie | null> {
@@ -74,7 +78,12 @@ export async function getAllManualMovies(): Promise<ManualMovie[]> {
   return snap.docs.map(d => ({ id: d.id, ...d.data() } as ManualMovie));
 }
 
-// ── Realtime listener (dùng trong React hook) ─────────────────────────────────
+/** Đọc có cache (3 phút) — dùng ở trang chủ (component công khai), đỡ tốn lượt đọc Firestore */
+export async function getManualMoviesCached(): Promise<ManualMovie[]> {
+  return fetchCollectionCached<ManualMovie>(COL, COL, [orderBy('createdAt', 'desc')], 3 * 60_000);
+}
+
+/** Subscribe realtime - CHỈ dùng trong Admin (nơi cần thấy thay đổi ngay khi đang chỉnh sửa) */
 export function subscribeManualMovies(cb: (movies: ManualMovie[]) => void): () => void {
   const q = query(collection(db, COL), orderBy('createdAt', 'desc'));
   return onSnapshot(q, snap => {
@@ -82,24 +91,34 @@ export function subscribeManualMovies(cb: (movies: ManualMovie[]) => void): () =
   });
 }
 
-// ── Upcoming movies subscription ──────────────────────────────────────────────
+// ── Upcoming movies (cũ - giữ tương thích) ──────────────────────────────────────
 
-export function subscribeUpcomingMovies(cb: (movies: ManualMovie[]) => void): () => void {
-  const q = query(
-    collection(db, COL),
-    where('isUpcoming', '==', true),
-    orderBy('createdAt', 'desc')
+/** Đọc có cache (3 phút) — dùng ở trang chủ, đỡ tốn lượt đọc Firestore */
+export async function getUpcomingMoviesOldCached(): Promise<ManualMovie[]> {
+  const list = await fetchCollectionCached<ManualMovie>(
+    COL + ':upcoming', COL, [where('isUpcoming', '==', true)], 3 * 60_000
   );
+  return [...list].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+}
+
+/** Subscribe realtime - CHỈ dùng trong Admin */
+export function subscribeUpcomingMovies(cb: (movies: ManualMovie[]) => void): () => void {
+  // where + orderBy khác field cần composite index (nếu thiếu, listener lỗi im lặng) → sắp xếp phía client
+  const q = query(collection(db, COL), where('isUpcoming', '==', true));
   return onSnapshot(q, snap => {
-    cb(snap.docs.map(d => ({ id: d.id, ...d.data() } as ManualMovie)));
+    const list = snap.docs.map(d => ({ id: d.id, ...d.data() } as ManualMovie));
+    list.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    cb(list);
   });
 }
 
+/** Hook công khai (trang chủ) — đọc có cache, KHÔNG mở kết nối realtime */
 export function useUpcomingMovies() {
   const [movies, setMovies] = React.useState<ManualMovie[]>([]);
   React.useEffect(() => {
-    const unsub = subscribeUpcomingMovies(setMovies);
-    return unsub;
+    let cancelled = false;
+    getUpcomingMoviesOldCached().then(list => { if (!cancelled) setMovies(list); });
+    return () => { cancelled = true; };
   }, []);
   return movies;
 }

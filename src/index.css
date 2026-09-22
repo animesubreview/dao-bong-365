@@ -1,35 +1,56 @@
 @import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@400;600;700;800;900&display=swap');
 
 @theme {
-  --font-sans: "Nunito", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Baloo 2", "Nunito", ui-sans-serif, system-ui, sans-serif;
-  --color-slate-950: #0d0d0f;
-  --color-slate-900: #141416;
-  --color-slate-800: #1c1c20;
-  --color-slate-700: #26262c;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Poppins", "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  /* Streaming-app dark palette — deep blue-black, not pure black */
+  --color-slate-950: #0a0c12;
+  --color-slate-900: #10131c;
+  --color-slate-800: #171b27;
+  --color-slate-700: #232838;
   --color-green-500: #22c55e;
+
+  /* Accent — xanh lá, đúng màu thương hiệu gốc của Đảo Phim */
+  --color-primary: #22c55e;
+  --color-primary-light: #4ade80;
+}
+
+:root {
+  --bg: #0a0c12;
+  --surface: #10131c;
+  --surface-2: #171b27;
+  --text: #ffffff;
+  --text-muted: #9ca3af;
+  --primary: #22c55e;
+  --primary-light: #4ade80;
+  --border: rgba(255,255,255,.08);
 }
 
 @layer base {
   * { box-sizing: border-box; }
   body {
     @apply bg-slate-950 text-slate-300 font-sans;
+    background: radial-gradient(1200px 600px at 50% -10%, rgba(34,197,94,0.08), transparent 60%), var(--bg);
   }
 }
 
 @layer components {
   .btn-primary {
-    @apply bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl px-5 py-3 transition-all shadow-lg shadow-indigo-600/20 flex items-center;
+    @apply text-white font-bold rounded-xl px-5 py-3 transition-all shadow-lg flex items-center;
+    background: linear-gradient(135deg, var(--primary), #16a34a);
+    box-shadow: 0 8px 24px rgba(34,197,94,0.25);
   }
+  .btn-primary:hover { filter: brightness(1.08); }
   .btn-icon {
     @apply rounded-full bg-slate-800/80 border border-slate-700/50 p-2.5 hover:bg-slate-700 transition-all duration-200;
   }
   .glass-card {
-    @apply bg-slate-900/80 border border-slate-800/60 rounded-xl overflow-hidden;
+    @apply bg-slate-900/80 border border-slate-800/60 rounded-2xl overflow-hidden;
   }
   .input-field {
-    @apply w-full bg-slate-800/80 border border-slate-700/50 rounded-xl py-3 px-4 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-green-500/50 transition-all;
+    @apply w-full bg-slate-800/80 border border-slate-700/50 rounded-xl py-3 px-4 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 transition-all;
+    --tw-ring-color: rgba(34,197,94,0.5);
   }
   .admin-card {
     @apply bg-slate-900/80 border border-slate-800/80 rounded-2xl p-6;
@@ -38,22 +59,22 @@
     @apply text-xl font-black text-white;
   }
   .movie-card-badge {
-    @apply text-[9px] font-black uppercase px-1.5 py-0.5 rounded text-white;
+    @apply text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md text-white;
   }
   /* Movie-poster style title: bold rounded font, white fill + black outline, drop shadow — pops like a real title card */
   .banner-title {
     font-family: var(--font-display);
     font-weight: 800;
-    -webkit-text-stroke: 2px rgba(0,0,0,0.55);
+    -webkit-text-stroke: 1.5px rgba(0,0,0,0.5);
     paint-order: stroke fill;
     text-shadow: 0 4px 14px rgba(0,0,0,0.55), 0 1px 0 rgba(0,0,0,0.4);
-    letter-spacing: 0.5px;
+    letter-spacing: 0.2px;
   }
 }
 
 ::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-track { background: #0d0d0f; }
-::-webkit-scrollbar-thumb { background: #f5a623; border-radius: 9999px; }
+::-webkit-scrollbar-track { background: #0a0c12; }
+::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 9999px; }
 
 .scrollbar-hide {
   scrollbar-width: none;

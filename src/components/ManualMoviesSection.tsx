@@ -1,19 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { cn } from '../lib/utils';
-import { subscribeManualMovies } from '../lib/manualMovies';
+import { subscribeManualMovies, getManualMoviesCached } from '../lib/manualMovies';
 
 export type { ManualMovie } from '../lib/manualMovies';
 export { subscribeManualMovies };
 
 import type { ManualMovie } from '../lib/manualMovies';
 
-// Hook realtime – mọi client đều nhận update ngay khi admin thêm/xoá/sửa
+// Đọc có cache (3 phút), KHÔNG mở kết nối realtime — trang chủ không cần thấy
+// thay đổi tức thì, tránh mỗi khách xem tốn 1 lượt đọc Firestore liên tục.
 export function useManualMovies(): ManualMovie[] {
   const [movies, setMovies] = useState<ManualMovie[]>([]);
   useEffect(() => {
-    const unsub = subscribeManualMovies(setMovies);
-    return unsub;
+    let cancelled = false;
+    getManualMoviesCached().then(list => { if (!cancelled) setMovies(list); });
+    return () => { cancelled = true; };
   }, []);
   return movies;
 }

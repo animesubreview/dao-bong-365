@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { X, ExternalLink } from 'lucide-react';
-import {
-  collection, doc, addDoc, updateDoc, deleteDoc,
-  query, orderBy, onSnapshot,
-} from 'firebase/firestore';
+import { collection, doc, query, orderBy } from 'firebase/firestore';
 import { db } from '../lib/firebase';
+import { addDoc, updateDoc, deleteDoc } from '../lib/firestoreGuard';
+import { fetchCollectionCached, invalidateCache } from '../lib/publicCache';
 
 export interface PopupAdData {
   id: string;
@@ -21,15 +20,18 @@ const COL = 'popup_ads';
 // ── Firestore CRUD ────────────────────────────────────────────────────────────
 export async function createPopupAd(data: Omit<PopupAdData, 'id'>): Promise<string> {
   const ref = await addDoc(collection(db, COL), { ...data, createdAt: Date.now() });
+  invalidateCache(COL);
   return ref.id;
 }
 
 export async function updatePopupAd(id: string, data: Partial<PopupAdData>) {
   await updateDoc(doc(db, COL, id), data);
+  invalidateCache(COL);
 }
 
 export async function deletePopupAd(id: string) {
   await deleteDoc(doc(db, COL, id));
+  invalidateCache(COL);
 }
 
 // ── Session tracking ──────────────────────────────────────────────────────────
@@ -54,21 +56,15 @@ export function usePopupAd(movieKey: string) {
   const [ad, setAd] = useState<PopupAdData | null>(null);
 
   useEffect(() => {
-    let unsub: (() => void) | undefined;
-    try {
-      const q = query(collection(db, COL), orderBy('createdAt', 'desc'));
-      unsub = onSnapshot(
-        q,
-        snap => {
-          const ads = snap.docs
-            .map(d => ({ id: d.id, ...d.data() } as PopupAdData))
-            .filter(a => a.active);
-          setAd(ads[0] ?? null);
-        },
-        err => { console.error('[PopupAd] onSnapshot error:', err); }
-      );
-    } catch (e) { console.error('[PopupAd] setup error:', e); }
-    return () => unsub?.();
+    let cancelled = false;
+    fetchCollectionCached<PopupAdData>(COL, COL, [orderBy('createdAt', 'desc')])
+      .then(all => {
+        if (cancelled) return;
+        const ads = all.filter(a => a.active);
+        setAd(ads[0] ?? null);
+      })
+      .catch(e => console.error('[PopupAd] fetch error:', e));
+    return () => { cancelled = true; };
   }, []);
 
   useEffect(() => {

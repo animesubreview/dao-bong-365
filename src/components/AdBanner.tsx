@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { X, AlertCircle } from 'lucide-react';
-import {
-  collection, doc, addDoc, updateDoc, deleteDoc,
-  query, orderBy, onSnapshot,
-} from 'firebase/firestore';
+import { collection, doc, query, orderBy } from 'firebase/firestore';
 import { db } from '../lib/firebase';
+import { addDoc, updateDoc, deleteDoc } from '../lib/firestoreGuard';
+import { fetchCollectionCached, invalidateCache } from '../lib/publicCache';
 
 export interface AdBannerData {
   id: string;
@@ -35,15 +34,18 @@ export async function getAdBanners(): Promise<AdBannerData[]> {
 
 export async function createAdBanner(data: Omit<AdBannerData, 'id'>): Promise<string> {
   const ref = await addDoc(collection(db, COL), { ...data, createdAt: Date.now() });
+  invalidateCache(COL);
   return ref.id;
 }
 
 export async function updateAdBanner(id: string, data: Partial<AdBannerData>) {
   await updateDoc(doc(db, COL, id), data);
+  invalidateCache(COL);
 }
 
 export async function deleteAdBanner(id: string) {
   await deleteDoc(doc(db, COL, id));
+  invalidateCache(COL);
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -59,27 +61,17 @@ export default function AdBanner({ position, className = '' }: AdBannerProps) {
   const [allClosed, setAllClosed] = useState(false); // dùng cho position="sticky": đóng toàn bộ khối banner
 
   useEffect(() => {
+    let cancelled = false;
     setError(false);
-    let unsub: (() => void) | undefined;
-    try {
-      const q = query(collection(db, COL), orderBy('createdAt', 'desc'));
-      unsub = onSnapshot(
-        q,
-        snap => {
-          const all = snap.docs.map(d => ({ id: d.id, ...d.data() } as AdBannerData));
-          setBanners(all.filter(b => b.active && b.position === position));
-          setError(false);
-        },
-        err => {
-          console.error('[AdBanner] onSnapshot error:', err);
-          setError(true);
-        }
-      );
-    } catch (e) {
-      console.error('[AdBanner] setup error:', e);
-      setError(true);
-    }
-    return () => unsub?.();
+    // Đọc có cache (3 phút) thay vì onSnapshot — mọi <AdBanner/> trên trang chia sẻ
+    // chung 1 lượt đọc, không phải mỗi vị trí (top/bottom/sticky...) tự đọc riêng.
+    fetchCollectionCached<AdBannerData>(COL, COL, [orderBy('createdAt', 'desc')])
+      .then(all => {
+        if (cancelled) return;
+        setBanners(all.filter(b => b.active && b.position === position));
+      })
+      .catch(e => { console.error('[AdBanner] fetch error:', e); if (!cancelled) setError(true); });
+    return () => { cancelled = true; };
   }, [position]);
 
   const visible = banners.filter(b => !dismissed.has(b.id));

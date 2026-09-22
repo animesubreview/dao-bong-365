@@ -3,11 +3,9 @@
  * Lưu override lên Firestore → web hiển thị thông tin đã chỉnh
  */
 
-import {
-  collection, doc, setDoc, getDoc, deleteDoc,
-  onSnapshot, query, orderBy, getDocs,
-} from 'firebase/firestore';
+import { collection, doc, getDoc, query, orderBy, getDocs } from 'firebase/firestore';
 import { db } from './firebase';
+import { setDoc, deleteDoc, onSnapshot } from './firestoreGuard';
 
 export interface CustomEpisode {
   name: string;         // "Tập 1", "Full"...

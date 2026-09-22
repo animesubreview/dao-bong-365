@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Hls from 'hls.js';
 import { Tv, Loader2, RadioTower, Volume2, VolumeX, Settings, Maximize, Minimize, Check, Play } from 'lucide-react';
-import { subscribeTVChannels, TVChannel, TV_CATEGORIES } from '../lib/liveTV';
+import { getTVChannelsCached, TVChannel, TV_CATEGORIES } from '../lib/liveTV';
 import { buildLiveEmbed } from '../lib/livestream';
 import { usePageTitle } from '../lib/utils';
 
@@ -193,8 +193,14 @@ export default function TVTrucTuyen() {
   const [linkIdx, setLinkIdx] = useState(0);
 
   useEffect(() => {
-    const unsub = subscribeTVChannels(list => { setChannels(list); setLoaded(true); });
-    return unsub;
+    let cancelled = false;
+    // Đọc có cache (5 phút), không mở kết nối realtime — danh sách kênh TV ít đổi
+    getTVChannelsCached().then(list => {
+      if (cancelled) return;
+      setChannels(list);
+      setLoaded(true);
+    });
+    return () => { cancelled = true; };
   }, []);
 
   // Danh mục nào có kênh mới hiện tab (tránh tab trống)

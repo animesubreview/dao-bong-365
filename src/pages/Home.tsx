@@ -5,8 +5,8 @@ import { ChevronRight, ChevronLeft, Loader2, Calendar, Play, Clock } from 'lucid
 import { movieApi } from '../services/api';
 import { Movie } from '../types';
 import { useManualMovies, ManualMovie } from '../components/ManualMoviesSection';
-import { subscribeUpcomingMovies as subscribeOldUpcoming } from '../lib/manualMovies';
-import { subscribeUpcomingMovies, UpcomingMovie } from '../lib/upcomingMovies';
+import { getUpcomingMoviesOldCached } from '../lib/manualMovies';
+import { getUpcomingMoviesCached, UpcomingMovie } from '../lib/upcomingMovies';
 import { subscribePinnedMovies, pinnedToMovie, PinnedMovie } from '../lib/pinnedMovies';
 import { subscribeBilingualMovies, bilingualToMovie, BilingualMovie } from '../lib/bilingualMovies';
 import { cn } from '../lib/utils';
@@ -159,22 +159,24 @@ function UpcomingCard({ movie }: { movie: ManualMovie }) {
   );
 }
 
-// Hook lấy phim sắp chiếu từ collection riêng (mới)
+// Hook lấy phim sắp chiếu từ collection riêng (mới) — đọc có cache, không mở kết nối realtime
 function useUpcomingMoviesHook() {
   const [movies, setMovies] = useState<UpcomingMovie[]>([]);
   useEffect(() => {
-    const unsub = subscribeUpcomingMovies(setMovies);
-    return unsub;
+    let cancelled = false;
+    getUpcomingMoviesCached().then(list => { if (!cancelled) setMovies(list); });
+    return () => { cancelled = true; };
   }, []);
   return movies;
 }
 
-// Hook lấy phim sắp chiếu từ manualMovies (cũ - giữ tương thích)
+// Hook lấy phim sắp chiếu từ manualMovies (cũ - giữ tương thích) — đọc có cache
 function useOldUpcomingHook() {
   const [movies, setMovies] = useState<ManualMovie[]>([]);
   useEffect(() => {
-    const unsub = subscribeOldUpcoming(setMovies);
-    return unsub;
+    let cancelled = false;
+    getUpcomingMoviesOldCached().then(list => { if (!cancelled) setMovies(list); });
+    return () => { cancelled = true; };
   }, []);
   return movies;
 }
@@ -472,15 +474,53 @@ function LazySection({ title, to, fetch: fetchFn, label, variant = 'row' }: {
   );
 }
 
+/* ─── Dải phân cách trang trí giữa các mục — thiết kế riêng, không sao chép
+   hoạ tiết của bất kỳ site tham khảo nào ─────────────────────────────── */
+function SectionDivider() {
+  return (
+    <div className="flex items-center gap-2 py-1" aria-hidden="true">
+      <div className="flex-1 h-px bg-gradient-to-r from-transparent via-slate-700/70 to-transparent" />
+      <span className="w-1.5 h-1.5 rotate-45 bg-[var(--primary)]/70 rounded-[2px] shrink-0" />
+      <div className="flex-1 h-px bg-gradient-to-r from-transparent via-slate-700/70 to-transparent" />
+    </div>
+  );
+}
+
+/* ─── Các mục phim theo yêu cầu: độc quyền, theo series nổi tiếng, theo quốc gia ─── */
+const HOME_SECTIONS = [
+  { title: 'Thám Tử Lừng Danh Conan', to: '/search?q=Th%C3%A1m%20T%E1%BB%AD%20L%E1%BB%ABng%20Danh%20Conan',
+    fetch: () => movieApi.searchMovies('Thám Tử Lừng Danh Conan', 1, 24).then(r => r.items) },
+  { title: 'Phim Việt Nam', to: '/type/phim-bo?country=viet-nam',
+    fetch: () => movieApi.filterMovies({ type: 'phim-bo', country: 'viet-nam', page: 1, limit: 24 }).then(r => r.items) },
+  { title: 'Phim Chiếu Rạp', to: '/type/phim-chieu-rap',
+    fetch: () => movieApi.getMoviesByType('phim-chieu-rap', 1, 24).then(r => r.items) },
+  { title: 'Naruto', to: '/search?q=Naruto',
+    fetch: () => movieApi.searchMovies('Naruto', 1, 24).then(r => r.items) },
+  { title: 'Jujutsu Kaisen', to: '/search?q=Jujutsu%20Kaisen',
+    fetch: () => movieApi.searchMovies('Jujutsu Kaisen', 1, 24).then(r => r.items) },
+  { title: 'Kimetsu no Yaiba', to: '/search?q=Kimetsu%20no%20Yaiba',
+    fetch: () => movieApi.searchMovies('Kimetsu no Yaiba', 1, 24).then(r => r.items) },
+  { title: 'Phim Hàn Quốc', to: '/type/phim-bo?country=han-quoc',
+    fetch: () => movieApi.filterMovies({ type: 'phim-bo', country: 'han-quoc', page: 1, limit: 24 }).then(r => r.items) },
+  { title: 'Phim Trung Quốc', to: '/type/phim-bo?country=trung-quoc',
+    fetch: () => movieApi.filterMovies({ type: 'phim-bo', country: 'trung-quoc', page: 1, limit: 24 }).then(r => r.items) },
+  { title: 'Phim Thái Lan', to: '/type/phim-bo?country=thai-lan',
+    fetch: () => movieApi.filterMovies({ type: 'phim-bo', country: 'thai-lan', page: 1, limit: 24 }).then(r => r.items) },
+];
+
 /* ─── Interest cards ──────────────────────────────────────────── */
+// c1 = màu trên, c2 = màu dưới (gradient dọc nhẹ giống thiết kế mẫu)
 const INTEREST = [
-  { label:'TV Trực Tuyến', sub:'Xem Ngay', to:'/tv-truc-tuyen', g:'from-red-600/70 via-orange-500/60 to-yellow-400/50' },
-  { label:'Hàn Quốc', sub:'Phim Bộ', to:'/type/phim-bo', g:'from-purple-600/70 via-blue-500/60 to-blue-400/50' },
-  { label:'Trung Quốc', sub:'Hoa Ngữ', to:'/type/phim-bo', g:'from-pink-500/70 via-rose-400/60 to-pink-300/50' },
-  { label:'Thái Lan', sub:'Cực Hay', to:'/type/phim-le', g:'from-blue-500/70 via-cyan-400/60 to-teal-400/50' },
-  { label:'Sitcom', sub:'TV Shows', to:'/type/tv-shows', g:'from-emerald-500/70 via-teal-400/60 to-cyan-400/50' },
-  { label:'Âu Mỹ', sub:'Hollywood', to:'/type/phim-le', g:'from-green-600/70 via-orange-400/60 to-yellow-400/50' },
-  { label:'Hoạt Hình', sub:'Anime', to:'/type/hoat-hinh', g:'from-indigo-500/70 via-purple-400/60 to-violet-400/50' },
+  { label:'K-Drama\nHàn Quốc', to:'/type/phim-bo?country=han-quoc',                     c1:'#cc5a90', c2:'#b04374' },
+  { label:'Phim Hàn\nChữa Lành', to:'/type/phim-bo?country=han-quoc&category=tam-ly',     c1:'#57a482', c2:'#3d8867' },
+  { label:'Cổ Trang\nTrung Quốc', to:'/type/phim-bo?country=trung-quoc&category=co-trang', c1:'#dc8a55', c2:'#c06a3a' },
+  { label:'TV Trực Tuyến',       to:'/tv-truc-tuyen',                                     c1:'#cf5a4e', c2:'#b0413a' },
+  { label:'Hàn Quốc',            to:'/type/phim-bo?country=han-quoc',                     c1:'#8467cc', c2:'#6a4fb0' },
+  { label:'Trung Quốc',          to:'/type/phim-bo?country=trung-quoc',                   c1:'#4a94c4', c2:'#3577a5' },
+  { label:'Thái Lan',            to:'/type/phim-le?country=thai-lan',                     c1:'#3aa5b0', c2:'#2a8792' },
+  { label:'Sitcom',              to:'/type/tv-shows',                                     c1:'#b89a45', c2:'#997d2f' },
+  { label:'Âu Mỹ',               to:'/type/phim-le?country=au-my',                        c1:'#6a7fcc', c2:'#5266b0' },
+  { label:'Hoạt Hình',           to:'/type/hoat-hinh',                                    c1:'#9a63c4', c2:'#7d49a8' },
 ];
 
 /* ─── Top tabs config ─────────────────────────────────────────── */
@@ -843,31 +883,9 @@ function ScheduleSection({ upcomingMovies }: { upcomingMovies: UpcomingMovie[] }
 
 export default function Home() {
   const [bannerMovies, setBannerMovies] = useState<Movie[]>([]);
-  const [top10, setTop10] = useState<Movie[]>([]);
-  const [topTabMovies, setTopTabMovies] = useState<Movie[]>([]);
-  const [topTabLoading, setTopTabLoading] = useState(false);
-  const [topTab, setTopTab] = useState(0);
-  const [cinema, setCinema] = useState<Movie[]>([]);
   const [newUpdates, setNewUpdates] = useState<Movie[]>([]);
-  const [vietMovies, setVietMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(true);
   const manualMovies = useManualMovies();
-  const upcomingMovies = useUpcomingMoviesHook();
-  const oldUpcoming = useOldUpcomingHook();
-
-  // Phim ghim từ KKPhim - admin chọn ghim lên đầu mục "Phim Mới Cập Nhật"
-  const [pinnedMovies, setPinnedMovies] = useState<PinnedMovie[]>([]);
-  useEffect(() => {
-    const unsub = subscribePinnedMovies(setPinnedMovies);
-    return unsub;
-  }, []);
-
-  // Phim Song Ngữ - admin tự tìm & thêm tay ở trang Admin
-  const [bilingualMovies, setBilingualMovies] = useState<BilingualMovie[]>([]);
-  useEffect(() => {
-    const unsub = subscribeBilingualMovies(setBilingualMovies);
-    return unsub;
-  }, []);
 
   useSEO({
     title: 'Xem Phim Miễn Phí - Phim Hay Cả Đảo',
@@ -880,38 +898,15 @@ export default function Home() {
     let cancelled = false;
     (async () => {
       try {
-        const [r1, r2, r3] = await Promise.all([
-          movieApi.getNewUpdates(1),
-          movieApi.getMoviesByType('phim-chieu-rap', 1, 20),
-          movieApi.filterMovies({ type: 'phim-bo', country: 'viet-nam', page: 1, limit: 12 }),
-        ]);
+        const r1 = await movieApi.getNewUpdates(1);
         if (cancelled) return;
-        const t10 = r1.items.slice(0, 10);
-        setBannerMovies(t10);
-        setTop10(t10);
-        setTopTabMovies(t10);
-        setCinema(r2.items);
+        setBannerMovies(r1.items.slice(0, 10));
         setNewUpdates(r1.items.slice(0, 30));
-        setVietMovies(r3.items);
       } catch (e) { console.error(e); }
       finally { if (!cancelled) setLoading(false); }
     })();
     return () => { cancelled = true; };
   }, []);
-
-  const handleTopTab = async (i: number) => {
-    setTopTab(i);
-    if (i === 0) { setTopTabMovies(top10); return; }
-    setTopTabLoading(true);
-    try {
-      const src = TOP_SRCS[i];
-      const res = src === 'phim-moi'
-        ? await movieApi.getNewUpdates(2)
-        : await movieApi.getMoviesByType(src!, 1, 10);
-      setTopTabMovies(res.items.slice(0, 10));
-    } catch { setTopTabMovies(top10); }
-    finally { setTopTabLoading(false); }
-  };
 
   if (loading) {
     return (
@@ -938,158 +933,79 @@ export default function Home() {
       </div>
 
       <Banner movies={bannerMovies} />
-      <ContinueWatchingSection />
-      <LiveBanner />
 
-      <main className="max-w-2xl md:max-w-5xl lg:max-w-[1400px] mx-auto px-4 md:px-6 lg:px-8 mt-6 flex flex-col gap-8">
+      <main className="max-w-2xl md:max-w-5xl lg:max-w-[1400px] mx-auto px-4 md:px-6 lg:px-8 mt-6 flex flex-col gap-5">
 
-        {/* Quan tâm gì */}
-        <section>
-          <SecHeader title="Bạn đang quan tâm gì?" />
-          <div className="flex gap-2 overflow-x-auto -mx-4 md:-mx-0 px-4 md:px-0 pb-1"
+        {/* Phim Độc Quyền Đảo Phim — card ngang nổi bật (phim thêm thủ công / mới nhất) */}
+        {(manualMovies.length > 0 || newUpdates.length > 0) && (
+          <section>
+            <SecHeader title="Phim Độc Quyền Đảo Phim" to="/type/phim-le" label="Xem thêm" />
+            <div className="flex gap-3 overflow-x-auto -mx-4 md:-mx-0 px-4 md:px-0 pb-1 snap-x snap-mandatory"
+              style={{ scrollbarWidth:'none', msOverflowStyle:'none' }}>
+              {(manualMovies.length > 0 ? manualMovies.slice(0, 8) : newUpdates.slice(0, 8)).map((m: any) => {
+                const isManual = !!m.id;
+                const href = isManual ? `/manual/${m.id}` : `/phim/${m.slug}`;
+                const img = isManual ? m.posterUrl : movieApi.getImageUrl(m.thumb_url);
+                const name = m.name;
+                const sub = isManual ? m.originName : m.origin_name;
+                const langLabel = isManual ? m.lang : movieApi.cleanLang(m.lang || '');
+                return (
+                  <Link key={isManual ? m.id : m._id} to={href}
+                    className="shrink-0 snap-start group" style={{ width:'clamp(220px,68vw,300px)' }}>
+                    <div className="relative rounded-2xl overflow-hidden bg-slate-800 shadow-lg" style={{ aspectRatio:'16/9' }}>
+                      {img
+                        ? <img src={img} alt={name} loading="lazy" referrerPolicy="no-referrer"
+                            className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                        : <div className="absolute inset-0 flex items-center justify-center text-slate-600 text-3xl">🎬</div>}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+                      <span className="absolute top-2 left-2 movie-card-badge bg-slate-900/90">Đầy</span>
+                      {langLabel && <span className="absolute bottom-2 left-2 movie-card-badge bg-[var(--primary)]/90">{langLabel === 'Lồng Tiếng' ? 'L.' : langLabel === 'Vietsub' ? 'P.Đề' : langLabel}</span>}
+                    </div>
+                    <div className="mt-2 px-0.5">
+                      <p className="font-bold text-[13px] text-slate-100 group-hover:text-[var(--primary-light)] transition-colors line-clamp-1">{name}</p>
+                      {sub && <p className="text-[11px] text-slate-500 line-clamp-1">{sub}</p>}
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        {/* Bạn đang quan tâm gì */}
+        <section className="-mx-4 px-4 py-5 md:mx-0 md:px-6 md:rounded-2xl bg-[var(--surface-2)]">
+          <h2 className="text-xl md:text-2xl font-extrabold tracking-tight text-white mb-4">Bạn đang quan tâm gì?</h2>
+          <div className="flex gap-2.5 overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 pb-1"
             style={{ scrollbarWidth:'none', msOverflowStyle:'none' }}>
             {INTEREST.map(card => (
               <Link key={card.label} to={card.to}
-                className={cn('shrink-0 relative rounded-xl overflow-hidden hover:scale-[1.02] transition-transform', `bg-gradient-to-br ${card.g}`)}
-                style={{ width:'clamp(120px,38vw,180px)', height:'clamp(65px,14vw,90px)', flexShrink:0 }}>
-                <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-black/20" />
-                <div className="absolute bottom-0 left-0 p-2.5">
-                  <p className="text-white font-black text-sm leading-tight">{card.label}</p>
-                  <p className="text-white/80 text-[10px] font-semibold flex items-center gap-0.5">{card.sub} <ChevronRight size={9}/></p>
+                className="shrink-0 relative overflow-hidden hover:scale-[1.03] active:scale-[0.98] transition-transform"
+                style={{
+                  ['--w' as any]: 'clamp(108px, calc((100vw - 52px) / 3), 200px)',
+                  width: 'var(--w)',
+                  height: 'calc(var(--w) / 1.5)',
+                  flexShrink: 0,
+                  borderRadius: '18px 50% 20px 18px / 18px 78% 20px 18px',
+                  background: `linear-gradient(180deg, ${card.c1} 0%, ${card.c2} 100%)`,
+                } as React.CSSProperties}>
+                {/* Vòng tròn sáng ở góc phải trên */}
+                <span className="absolute top-0 right-0 rounded-full bg-white/20 pointer-events-none"
+                  style={{ width: 'calc(var(--w) * 0.46)', height: 'calc(var(--w) * 0.46)' }} />
+                <div className="absolute inset-0 p-2.5 sm:p-3 flex flex-col justify-between">
+                  <p className="text-white font-bold text-[14px] md:text-lg leading-[1.2] whitespace-pre-line">{card.label}</p>
+                  <p className="text-white/90 text-[10.5px] md:text-xs font-semibold flex items-center gap-0.5 whitespace-nowrap">Xem toàn bộ <ChevronRight size={11}/></p>
                 </div>
               </Link>
             ))}
           </div>
         </section>
 
-        {/* Top 10 */}
-        {top10.length > 0 && (
-          <section>
-            <div className="flex items-center gap-1.5 mb-3 overflow-x-auto" style={{ scrollbarWidth:'none' }}>
-              {TOP_TABS.map((t,i) => (
-                <button key={t} onClick={() => handleTopTab(i)}
-                  className={cn('shrink-0 text-xs font-bold px-3.5 py-2 rounded-full border transition-all',
-                    topTab===i ? 'bg-slate-800 border-slate-600 text-white' : 'border-transparent text-slate-500 hover:text-slate-300')}>
-                  {t}
-                </button>
-              ))}
-            </div>
-            <SecHeader title={TOP_TITLES[topTab]} to="/type/phim-moi" label="Xem tất cả" />
-            {topTabLoading
-              ? <div className="flex items-center justify-center py-8"><Loader2 size={24} className="animate-spin text-green-400"/></div>
-              : <HRow>{topTabMovies.map((m,i) => <Top10Card key={m._id} movie={m} rank={i+1}/>)}</HRow>
-            }
-          </section>
-        )}
-
-        {/* Phim Mới — carousel nổi bật, chấm phân trang */}
-        <NewMovieSpotlight movies={top10} />
-
-        {/* Phim Chiếu Rạp — load ngay */}
-        {cinema.length > 0 && (
-          <section>
-            <SecHeader title="Phim Chiếu Rạp Mới" to="/type/phim-chieu-rap" label="Tất cả" />
-            <HRow>{cinema.map(m => <MCard key={m._id} movie={m}/>)}</HRow>
-          </section>
-        )}
-
-        {/* Phim Việt Mới Nhất — thẻ lớn nổi bật */}
-        <VietFeaturedSection movies={vietMovies} />
-
-        {/* Hoạt Hình Trung Quốc & Phim Hàn Đỉnh Cao — thẻ lớn nổi bật theo quốc gia */}
-        {FEATURED_GRID_SECTIONS.map(s => (
-          <FeaturedGridSection key={s.title} title={s.title} to={s.to} fetch={s.fetch} />
-        ))}
-
-        {/* Lịch chiếu phim theo ngày */}
-        <ScheduleSection upcomingMovies={upcomingMovies} />
-
-        {/* Cộng đồng — bình luận mới nhất & 3 cột xếp hạng (sôi nổi / yêu thích / thể loại hot) */}
-        <RecentCommentsSection />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
-          <TrendingMoviesSection />
-          <FavoriteMoviesSection />
-          <HotGenresSection />
-        </div>
-
-        {/* Phim Mới Cập Nhật — đánh số thứ hạng (phim ghim của admin luôn hiện đầu tiên) */}
-        {(newUpdates.length > 0 || manualMovies.length > 0 || pinnedMovies.length > 0) && (
-          <section>
-            <SecHeader title="Mới Cập Nhật" to="/type/phim-moi" label="Tất cả" />
-            <HRow>
-              {pinnedMovies.map((p, i) => <Top10Card key={p.slug} movie={pinnedToMovie(p)} rank={i + 1} />)}
-              {manualMovies.slice(0,4).map((m, i) => <ManualMCard key={m.id} movie={m}/>)}
-              {newUpdates
-                .filter(m => !pinnedMovies.some(p => p.slug === m.slug))
-                .map((m, i) => <Top10Card key={m._id} movie={m} rank={pinnedMovies.length + i + 1} />)}
-            </HRow>
-          </section>
-        )}
-
-        {/* Phim Song Ngữ — banner gradient, danh sách do admin tự thêm */}
-        <BilingualSection movies={bilingualMovies.map(bilingualToMovie)} />
-
-        {/* Phim Sắp Chiếu Rạp — từ collection riêng */}
-        {upcomingMovies.filter(m => m.upcomingType === 'movie').length > 0 && (
-          <section>
-            <SecHeader title="Phim Sắp Chiếu Rạp" to="/type/phim-chieu-rap" label="Tất cả" />
-            <HRow>
-              {upcomingMovies
-                .filter(m => m.upcomingType === 'movie')
-                .map(m => <UpcomingNewCard key={m.id} movie={m} />)}
-            </HRow>
-          </section>
-        )}
-
-        {/* Anime Sắp Chiếu — từ collection riêng */}
-        {upcomingMovies.filter(m => m.upcomingType === 'anime').length > 0 && (
-          <section>
-            <SecHeader title="Anime Sắp Chiếu" to="/type/hoat-hinh" label="Tất cả" />
-            <HRow>
-              {upcomingMovies
-                .filter(m => m.upcomingType === 'anime')
-                .map(m => <UpcomingNewCard key={m.id} movie={m} />)}
-            </HRow>
-          </section>
-        )}
-
-        {/* Phim Bộ Sắp Chiếu — từ collection riêng */}
-        {upcomingMovies.filter(m => m.upcomingType === 'series').length > 0 && (
-          <section>
-            <SecHeader title="Phim Bộ Sắp Chiếu" to="/type/phim-bo" label="Tất cả" />
-            <HRow>
-              {upcomingMovies
-                .filter(m => m.upcomingType === 'series')
-                .map(m => <UpcomingNewCard key={m.id} movie={m} />)}
-            </HRow>
-          </section>
-        )}
-
-        {/* Fallback: sắp chiếu cũ từ manualMovies (isUpcoming=true) nếu chưa migrate */}
-        {oldUpcoming.filter(m => m.upcomingType === 'anime' || !m.upcomingType).length > 0 && (
-          <section>
-            <SecHeader title="Anime Sắp Chiếu" to="/type/hoat-hinh" label="Tất cả" />
-            <HRow>
-              {oldUpcoming
-                .filter(m => m.upcomingType === 'anime' || !m.upcomingType)
-                .map(m => <UpcomingCard key={m.id} movie={m} />)}
-            </HRow>
-          </section>
-        )}
-        {oldUpcoming.filter(m => m.upcomingType === 'movie').length > 0 && (
-          <section>
-            <SecHeader title="Phim Sắp Chiếu Rạp" to="/type/phim-chieu-rap" label="Tất cả" />
-            <HRow>
-              {oldUpcoming
-                .filter(m => m.upcomingType === 'movie')
-                .map(m => <UpcomingCard key={m.id} movie={m} />)}
-            </HRow>
-          </section>
-        )}
-
-        {/* Tất cả lazy sections từ KKPhim API */}
-        {LAZY_SECTIONS.map(s => (
-          <LazySection key={s.title} title={s.title} to={s.to} fetch={s.fetch} variant={(s as any).variant} />
+        {/* Các mục phim theo series nổi tiếng & quốc gia — tự tải khi cuộn tới, có dải phân cách giữa các mục */}
+        {HOME_SECTIONS.map((s, i) => (
+          <React.Fragment key={s.title}>
+            {i > 0 && <SectionDivider />}
+            <LazySection title={s.title} to={s.to} fetch={s.fetch} label="Xem thêm" />
+          </React.Fragment>
         ))}
 
       </main>

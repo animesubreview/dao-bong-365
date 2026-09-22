@@ -1,12 +1,15 @@
 import { db } from './firebase';
-import {
-  doc, setDoc, deleteDoc, onSnapshot,
-  collection, serverTimestamp, Timestamp,
-} from 'firebase/firestore';
+// Presence là ping nền, không quan trọng — lỗi tự bỏ qua (xem các .catch bên dưới),
+// nên KHÔNG dùng bản setDoc/onSnapshot có báo banner lỗi (firestoreGuard), tránh làm
+// phiền admin mỗi khi 1 lượt ping của người xem nào đó bị rớt mạng tạm thời.
+import { doc, collection, serverTimestamp, Timestamp, setDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
 
-// TTL: nếu user không ping trong 2 phút → coi là offline
-const PING_INTERVAL = 30_000; // 30s
-const OFFLINE_TTL = 120_000;  // 2 phút
+// TTL: nếu user không ping trong 3 phút → coi là offline.
+// Tăng PING_INTERVAL từ 30s lên 90s để giảm 2/3 số lượt ghi Firestore từ mỗi khách xem
+// (mỗi khách = 1 lượt ghi mỗi chu kỳ, nhân với số khách đang online cùng lúc rất dễ
+// chạm giới hạn 20.000 lượt ghi/ngày của gói miễn phí).
+const PING_INTERVAL = 90_000; // 90s
+const OFFLINE_TTL = 180_000;  // 3 phút
 
 let _sessionId: string | null = null;
 let _pingTimer: ReturnType<typeof setInterval> | null = null;

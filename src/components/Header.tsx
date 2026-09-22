@@ -372,6 +372,15 @@ export default function Header() {
             </div>
           </a>
 
+          {/* Tìm kiếm — icon riêng cho mobile, mở thẳng trang /search */}
+          <Link
+            to="/search"
+            className="md:hidden p-1.5 text-slate-300 hover:text-white transition-colors shrink-0"
+            aria-label="Tìm kiếm phim"
+          >
+            <Search size={19} />
+          </Link>
+
           {/* ── Tìm kiếm nhanh (chỉ desktop) ── */}
           <div ref={desktopSearchRef} className="relative hidden md:block shrink-0">
             <div className={cn(

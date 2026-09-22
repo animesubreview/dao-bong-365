@@ -1,9 +1,7 @@
 // ─── Nạp thẻ thủ công — Admin duyệt ──────────────────────────────────────────
 import { db } from './firebase';
-import {
-  doc, setDoc, getDoc, collection, getDocs, query,
-  where, orderBy, updateDoc, onSnapshot, Unsubscribe,
-} from 'firebase/firestore';
+import { setDoc, updateDoc, onSnapshot } from './firestoreGuard';
+import { doc, getDoc, collection, getDocs, query, where, orderBy, Unsubscribe } from 'firebase/firestore';
 import { addUserBalance } from './auth';
 
 export type ManualTopupStatus = 'pending' | 'approved' | 'rejected';
@@ -169,12 +167,11 @@ export function subscribeUserManualTopup(
   uid: string,
   cb: (requests: ManualTopupRequest[]) => void
 ): Unsubscribe {
-  const q = query(
-    collection(db, 'manual_topup_requests'),
-    where('uid', '==', uid),
-    orderBy('createdAt', 'desc')
-  );
+  // where(uid) + orderBy(createdAt) cần composite index → sắp xếp phía client
+  const q = query(collection(db, 'manual_topup_requests'), where('uid', '==', uid));
   return onSnapshot(q, snap => {
-    cb(snap.docs.map(d => d.data() as ManualTopupRequest));
+    const list = snap.docs.map(d => d.data() as ManualTopupRequest);
+    list.sort((a: any, b: any) => (b.createdAt || 0) - (a.createdAt || 0));
+    cb(list);
   });
 }

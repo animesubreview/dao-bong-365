@@ -1,8 +1,7 @@
-import {
-  collection, doc, addDoc, updateDoc, deleteDoc,
-  onSnapshot, query, orderBy, getDocs, getDoc,
-} from 'firebase/firestore';
+import { collection, doc, query, orderBy, getDocs, getDoc } from 'firebase/firestore';
 import { db } from './firebase';
+import { addDoc, updateDoc, deleteDoc, onSnapshot } from './firestoreGuard';
+import { fetchCollectionCached, invalidateCache } from './publicCache';
 
 export interface UpcomingMovie {
   id: string;
@@ -22,15 +21,18 @@ const COL = 'upcoming_movies';
 
 export async function createUpcomingMovie(data: Omit<UpcomingMovie, 'id'>): Promise<string> {
   const ref = await addDoc(collection(db, COL), { ...data, createdAt: Date.now() });
+  invalidateCache(COL);
   return ref.id;
 }
 
 export async function updateUpcomingMovie(id: string, data: Partial<Omit<UpcomingMovie, 'id'>>) {
   await updateDoc(doc(db, COL, id), data);
+  invalidateCache(COL);
 }
 
 export async function deleteUpcomingMovie(id: string) {
   await deleteDoc(doc(db, COL, id));
+  invalidateCache(COL);
 }
 
 export async function getUpcomingMovie(id: string): Promise<UpcomingMovie | null> {
@@ -44,6 +46,12 @@ export async function getAllUpcomingMovies(): Promise<UpcomingMovie[]> {
   return snap.docs.map(d => ({ id: d.id, ...d.data() } as UpcomingMovie));
 }
 
+/** Đọc có cache (3 phút) — dùng ở trang chủ, đỡ tốn lượt đọc Firestore */
+export async function getUpcomingMoviesCached(): Promise<UpcomingMovie[]> {
+  return fetchCollectionCached<UpcomingMovie>(COL, COL, [orderBy('createdAt', 'desc')], 3 * 60_000);
+}
+
+/** Subscribe realtime - CHỈ dùng trong Admin */
 export function subscribeUpcomingMovies(cb: (movies: UpcomingMovie[]) => void): () => void {
   const q = query(collection(db, COL), orderBy('createdAt', 'desc'));
   return onSnapshot(q, snap => {

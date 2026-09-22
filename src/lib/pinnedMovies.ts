@@ -4,11 +4,10 @@
  * mục "Phim Mới Cập Nhật" để mọi người dễ thấy, không cần chỉnh sửa nội dung phim.
  */
 
-import {
-  collection, doc, setDoc, deleteDoc, getDocs,
-  onSnapshot, query, orderBy,
-} from 'firebase/firestore';
+import { collection, doc, getDocs, query, orderBy } from 'firebase/firestore';
 import { db } from './firebase';
+import { setDoc, deleteDoc, onSnapshot } from './firestoreGuard';
+import { fetchCollectionCached, invalidateCache } from './publicCache';
 import { Movie } from '../types';
 
 export interface PinnedMovie {
@@ -35,11 +34,13 @@ export async function savePinnedMovie(movie: Omit<PinnedMovie, 'pinnedAt'>): Pro
     ...movie,
     pinnedAt: Date.now(),
   });
+  invalidateCache(COL);
 }
 
 /** Bỏ ghim phim - phim quay lại xếp theo thứ tự mặc định từ KKPhim */
 export async function deletePinnedMovie(slug: string): Promise<void> {
   await deleteDoc(doc(db, COL, slug));
+  invalidateCache(COL);
 }
 
 /** Lấy tất cả phim đang ghim, sắp theo order tăng dần (order nhỏ = lên đầu) */
@@ -48,7 +49,12 @@ export async function getAllPinnedMovies(): Promise<PinnedMovie[]> {
   return snap.docs.map(d => d.data() as PinnedMovie);
 }
 
-/** Subscribe realtime - dùng trong Admin và trên trang chủ */
+/** Đọc có cache (5 phút) — dùng ở trang chủ, thay cho onSnapshot để đỡ tốn lượt đọc Firestore */
+export async function getPinnedMoviesCached(): Promise<PinnedMovie[]> {
+  return fetchCollectionCached<PinnedMovie>(COL, COL, [orderBy('order', 'asc')], 5 * 60_000);
+}
+
+/** Subscribe realtime - CHỈ dùng trong Admin (nơi cần thấy thay đổi ngay khi đang chỉnh sửa) */
 export function subscribePinnedMovies(cb: (items: PinnedMovie[]) => void): () => void {
   const q = query(collection(db, COL), orderBy('order', 'asc'));
   return onSnapshot(q, snap => {

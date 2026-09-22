@@ -4,11 +4,10 @@
  * đây là danh sách do admin chọn tay 100%.
  */
 
-import {
-  collection, doc, setDoc, deleteDoc, getDocs,
-  onSnapshot, query, orderBy,
-} from 'firebase/firestore';
+import { collection, doc, getDocs, query, orderBy } from 'firebase/firestore';
 import { db } from './firebase';
+import { setDoc, deleteDoc, onSnapshot } from './firestoreGuard';
+import { fetchCollectionCached, invalidateCache } from './publicCache';
 import { Movie } from '../types';
 
 export interface BilingualMovie {
@@ -35,11 +34,13 @@ export async function saveBilingualMovie(movie: Omit<BilingualMovie, 'addedAt'>)
     ...movie,
     addedAt: Date.now(),
   });
+  invalidateCache(COL);
 }
 
 /** Xoá phim khỏi danh sách song ngữ */
 export async function deleteBilingualMovie(slug: string): Promise<void> {
   await deleteDoc(doc(db, COL, slug));
+  invalidateCache(COL);
 }
 
 /** Lấy tất cả phim song ngữ, sắp theo order tăng dần (order nhỏ = lên đầu) */
@@ -48,7 +49,12 @@ export async function getAllBilingualMovies(): Promise<BilingualMovie[]> {
   return snap.docs.map(d => d.data() as BilingualMovie);
 }
 
-/** Subscribe realtime - dùng trong Admin và trên trang chủ */
+/** Đọc có cache (5 phút) — dùng ở trang chủ, thay cho onSnapshot để đỡ tốn lượt đọc Firestore */
+export async function getBilingualMoviesCached(): Promise<BilingualMovie[]> {
+  return fetchCollectionCached<BilingualMovie>(COL, COL, [orderBy('order', 'asc')], 5 * 60_000);
+}
+
+/** Subscribe realtime - CHỈ dùng trong Admin (nơi cần thấy thay đổi ngay khi đang chỉnh sửa) */
 export function subscribeBilingualMovies(cb: (items: BilingualMovie[]) => void): () => void {
   const q = query(collection(db, COL), orderBy('order', 'asc'));
   return onSnapshot(q, snap => {
