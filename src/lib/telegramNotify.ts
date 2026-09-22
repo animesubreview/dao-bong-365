@@ -3,7 +3,8 @@
  * Gọi Netlify Function /.netlify/functions/telegram-notify
  */
 
-const NOTIFY_SECRET = 'daophim_secret_2024';
+// Đặt VITE_NOTIFY_SECRET (cùng giá trị với NOTIFY_SECRET phía server) trong Environment Variables
+const NOTIFY_SECRET = import.meta.env.VITE_NOTIFY_SECRET || '';
 
 async function callNotify(payload: object) {
   try {

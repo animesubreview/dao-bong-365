@@ -1,8 +1,6 @@
 import { db } from './firebase';
-import {
-  doc, setDoc, deleteDoc, onSnapshot,
-  collection, serverTimestamp, Timestamp,
-} from 'firebase/firestore';
+import { setDoc, deleteDoc, onSnapshot } from './firestoreGuard';
+import { doc, collection, serverTimestamp, Timestamp } from 'firebase/firestore';
 
 // TTL: nếu user không ping trong 2 phút → coi là offline
 const PING_INTERVAL = 30_000; // 30s

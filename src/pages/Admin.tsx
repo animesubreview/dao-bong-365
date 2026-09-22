@@ -13,9 +13,11 @@ import { createPopupAd, updatePopupAd, deletePopupAd, PopupAdData } from '../com
 import { subscribeTVChannels, saveTVChannel, deleteTVChannel, TVChannel, TV_CATEGORIES } from '../lib/liveTV';
 import { getClickAdConfig, saveClickAdConfig, ClickAdConfig, DEFAULT_CLICK_AD } from '../lib/clickAd';
 import { getVipPrices, saveVipPrices, VipPrices, DEFAULT_VIP_PRICES, VIP_META, VIP_DAYS, VipTier } from '../lib/vip';
-import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { collection, query, orderBy, deleteField } from 'firebase/firestore';
 import { fetchSiteSettings, saveSiteSettings as saveSiteSettingsFirestore } from '../lib/siteSettings';
+import { describeFirebaseError, resizeImageToDataUrl } from '../lib/firebaseUtils';
 import { db } from '../lib/firebase';
+import { onSnapshot } from '../lib/firestoreGuard';
 import { getAllUsers, banUser as apiBanUser, unbanUser as apiUnbanUser, deleteUserProfile, setUserRole, addUserBalance, UserProfile } from '../lib/auth';
 import {
   subscribeNotifications, createNotification, deleteNotification, updateNotification,
@@ -69,6 +71,8 @@ import {
   GeoblockConfig, DEFAULT_GEOBLOCK,
 } from '../lib/geoblock';
 import { subscribeOnlineUsers, PresenceStats } from '../lib/presence';
+import { AdminShell, NAV_SECTIONS } from './admin/AdminShell';
+import { Dashboard } from './admin/Dashboard';
 
 const ADMIN_USERNAME = 'daophim';
 const ADMIN_PASSWORD = '0708';
@@ -99,9 +103,9 @@ const DEFAULT_MOVIES = (): ManualMovie[] => [];
 // ManualMovie type imported from '../lib/manualMovies'
 
 function Toast({ message, type, onClose }: { message: string; type: 'success' | 'error'; onClose: () => void }) {
-  useEffect(() => { const t = setTimeout(onClose, 3000); return () => clearTimeout(t); }, [onClose]);
+  useEffect(() => { const t = setTimeout(onClose, type === 'error' ? 9000 : 3000); return () => clearTimeout(t); }, [onClose, type]);
   return (
-    <div className={`fixed bottom-6 right-6 z-[999] flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-2xl border text-sm font-semibold transition-all ${type === 'success' ? 'bg-emerald-950 border-emerald-500/40 text-emerald-300' : 'bg-red-950 border-red-500/40 text-red-300'}`}>
+    <div className={`fixed bottom-6 right-6 max-w-[calc(100vw-3rem)] z-[999] flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-2xl border text-sm font-semibold transition-all ${type === 'success' ? 'bg-emerald-950 border-emerald-500/40 text-emerald-300' : 'bg-red-950 border-red-500/40 text-red-300'}`}>
       {type === 'success' ? <Check size={16} className="text-emerald-400" /> : <AlertCircle size={16} className="text-red-400" />}
       {message}
       <button onClick={onClose} className="ml-2 text-current/60 hover:text-current"><X size={14} /></button>
@@ -1651,7 +1655,7 @@ function VipSection({ onToast }: { onToast: (msg: string, t: 'success' | 'error'
     try {
       await saveVipPrices(prices);
       onToast('Đã lưu giá VIP!', 'success');
-    } catch { onToast('Lỗi khi lưu!', 'error'); }
+    } catch (e) { onToast(describeFirebaseError(e), 'error'); }
     setSaving(false);
   };
 
@@ -2172,20 +2176,28 @@ function MaintenanceSection() {
       setTimeout(() => setSaved(false), 2000);
     } catch (e: any) {
       console.error('Save maintenance error:', e);
-      // Vẫn thành công nếu localStorage đã lưu
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
+      alert(describeFirebaseError(e));
     } finally {
       setSaving(false);
     }
   };
 
-  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; if (!file) return;
-    if (file.size > 5 * 1024 * 1024) { alert('File tối đa 5MB!'); return; }
-    const reader = new FileReader();
-    reader.onload = ev => setCfg(c => ({ ...c, mediaUrl: ev.target?.result as string }));
-    reader.readAsDataURL(file);
+    try {
+      if (file.type.startsWith('image/') && file.type !== 'image/gif') {
+        // Thu nhỏ ảnh để vừa giới hạn 1MB/tài liệu của Firestore
+        const url = await resizeImageToDataUrl(file, 1280, 0.75);
+        if (url.length > 800 * 1024) { alert('Ảnh vẫn quá nặng, hãy chọn ảnh nhỏ hơn hoặc dán link ảnh.'); return; }
+        setCfg(c => ({ ...c, mediaUrl: url }));
+      } else {
+        if (file.size > 600 * 1024) { alert('Video/GIF lớn không lưu trực tiếp được (Firestore giới hạn 1MB). Hãy tải lên nơi khác và dán link vào ô đường dẫn.'); return; }
+        const reader = new FileReader();
+        reader.onload = ev => setCfg(c => ({ ...c, mediaUrl: ev.target?.result as string }));
+        reader.readAsDataURL(file);
+      }
+    } catch { alert('Không đọc được file này!'); }
+    finally { e.target.value = ''; }
   };
 
   return (
@@ -2306,8 +2318,7 @@ function GeoblockSection() {
       setTimeout(() => setSaved(false), 2000);
     } catch (e: any) {
       console.error('Save geoblock error:', e);
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
+      alert(describeFirebaseError(e));
     } finally {
       setSaving(false);
     }
@@ -2353,26 +2364,6 @@ function GeoblockSection() {
 
 
 // ─── Navigation sections map ─────────────────────────────────────────────────
-const NAV_SECTIONS = [
-  { id: 'section-realtime',     label: 'Tổng quan',         icon: Activity },
-  { id: 'section-brand',        label: 'Logo & Thương hiệu', icon: Palette },
-  { id: 'section-movies',       label: 'Phim thủ công',     icon: Film },
-  { id: 'section-livestream',   label: 'Livestream',        icon: Radio },
-  { id: 'section-upcoming',     label: 'Phim sắp chiếu',    icon: Clock },
-  { id: 'section-override',     label: 'Sửa phim API',      icon: Edit3 },
-  { id: 'section-pinned',       label: 'Ghim phim KKPhim',  icon: Pin },
-  { id: 'section-bilingual',    label: 'Phim Song Ngữ',     icon: Languages },
-  { id: 'section-tv',           label: 'TV Trực Tuyến',     icon: Tv },
-  { id: 'section-ads',          label: 'Quảng cáo',         icon: Megaphone },
-  { id: 'section-members',      label: 'Thành viên',        icon: Users },
-  { id: 'section-notifications',label: 'Thông báo',         icon: Bell },
-  { id: 'section-vip',          label: 'Gói VIP',           icon: Crown },
-  { id: 'section-vipkeys',      label: 'Key VIP',           icon: KeyRound },
-  { id: 'section-geoblock',     label: 'Chặn IP',           icon: Globe },
-  { id: 'section-maintenance',  label: 'Bảo trì',           icon: Wrench },
-  { id: 'section-manual-topup', label: 'Nạp thẻ TC',        icon: CreditCard },
-  { id: 'section-guide',        label: 'Hướng dẫn',         icon: Info },
-];
 
 // ─── Livestream Section (bật/tắt phát trực tiếp + chat realtime) ─────────────
 function LivestreamAdminSection({ onToast }: { onToast: (msg: string, t: 'success' | 'error') => void }) {
@@ -2433,8 +2424,8 @@ function LivestreamAdminSection({ onToast }: { onToast: (msg: string, t: 'succes
     try {
       await updateLiveConfig(form);
       onToast('✅ Đã lưu cấu hình livestream!');
-    } catch {
-      onToast('Lỗi khi lưu!', 'error');
+    } catch (e) {
+      onToast(describeFirebaseError(e), 'error');
     }
     setSaving(false);
   };
@@ -2798,82 +2789,6 @@ function ManualTopupSection({ onToast }: { onToast: (msg: string, t: 'success' |
 }
 
 // ─── Admin Sidebar ────────────────────────────────────────────────────────────
-function AdminSidebar({ activeSection, onNavigate, onLogout, onSave, onReset, drawerOpen, setDrawerOpen }: any) {
-  const NavContent = () => (
-    <>
-      {/* Logo */}
-      <div className="px-4 py-4 border-b border-slate-800/70 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-gradient-to-br from-green-500 to-yellow-400 rounded-xl flex items-center justify-center shadow-lg shadow-green-500/25 shrink-0">
-            <Shield size={17} className="text-slate-950" />
-          </div>
-          <div>
-            <p className="text-white font-black text-sm leading-tight" style={{ fontFamily: 'Bebas Neue, sans-serif', letterSpacing: '0.06em' }}>ĐẢO PHIM</p>
-            <p className="text-slate-500 text-[10px] font-semibold">ADMIN PANEL</p>
-          </div>
-        </div>
-        <button onClick={() => setDrawerOpen(false)} className="md:hidden text-slate-500 hover:text-white p-1">
-          <X size={18} />
-        </button>
-      </div>
-
-      {/* Nav */}
-      <nav className="flex-1 overflow-y-auto py-2 px-2">
-        {NAV_SECTIONS.map(item => {
-          const Icon = item.icon;
-          const isActive = activeSection === item.id;
-          return (
-            <button
-              key={item.id}
-              onClick={() => onNavigate(item.id)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all mb-0.5 text-left ${
-                isActive
-                  ? 'bg-green-500/15 text-green-400 border border-green-500/20'
-                  : 'text-slate-500 hover:text-slate-200 hover:bg-slate-800/60 border border-transparent'
-              }`}
-            >
-              <Icon size={15} className="shrink-0" />
-              <span className="truncate">{item.label}</span>
-              {isActive && <span className="ml-auto w-1.5 h-1.5 bg-green-400 rounded-full shrink-0" />}
-            </button>
-          );
-        })}
-      </nav>
-
-      {/* Bottom actions */}
-      <div className="p-3 border-t border-slate-800/70 flex flex-col gap-2">
-        <button
-          onClick={onSave}
-          className="w-full bg-green-500 hover:bg-green-400 active:scale-95 text-slate-950 font-black py-2.5 rounded-xl text-sm flex items-center justify-center gap-2 transition-all shadow-lg shadow-green-500/20"
-        >
-          <Save size={14} /> Lưu tất cả
-        </button>
-        <div className="flex gap-2">
-          <button onClick={onReset} className="flex-1 bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-slate-200 font-semibold py-2 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors border border-slate-700/50">
-            <RefreshCw size={11} /> Reset
-          </button>
-          <button onClick={onLogout} className="flex-1 bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-red-400 font-semibold py-2 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors border border-slate-700/50">
-            <LogOut size={11} /> Logout
-          </button>
-        </div>
-      </div>
-    </>
-  );
-
-  return (
-    <>
-      {/* Desktop sidebar */}
-      <aside className="hidden md:flex fixed left-0 top-0 h-screen w-60 bg-slate-900/95 border-r border-slate-800/60 flex-col z-40 backdrop-blur-xl">
-        <NavContent />
-      </aside>
-
-      {/* Mobile drawer */}
-      <aside className={`md:hidden fixed left-0 top-0 h-screen w-64 bg-slate-900 border-r border-slate-800/60 flex flex-col z-50 transition-transform duration-300 ${drawerOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-        <NavContent />
-      </aside>
-    </>
-  );
-}
 
 export default function Admin() {
   const [isAuthed, setIsAuthed] = useState(() => sessionStorage.getItem('admin_auth') === '1');
@@ -3276,22 +3191,27 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
       showToast('Đã lưu cài đặt thành công! (áp dụng cho mọi người dùng)');
     } catch (e) {
       console.error(e);
-      showToast('Lỗi khi lưu cài đặt lên máy chủ!', 'error');
+      showToast(describeFirebaseError(e), 'error');
     }
   };
 
   // saveMovies không còn dùng localStorage — Firestore subscription tự cập nhật state
 
-  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 2 * 1024 * 1024) { showToast('File quá lớn! Tối đa 2MB', 'error'); return; }
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      setSettings(s => ({ ...s, logoImage: ev.target?.result as string, logoType: 'image' }));
-      showToast('Đã tải logo lên!');
-    };
-    reader.readAsDataURL(file);
+    if (file.size > 5 * 1024 * 1024) { showToast('File quá lớn! Tối đa 5MB', 'error'); return; }
+    try {
+      // Firestore giới hạn 1MB/tài liệu → thu nhỏ logo về tối đa 400px (thường < 100KB)
+      const dataUrl = await resizeImageToDataUrl(file, 400);
+      if (dataUrl.length > 400 * 1024) { showToast('Logo vẫn quá nặng, hãy chọn ảnh đơn giản hơn hoặc nhỏ hơn.', 'error'); return; }
+      setSettings(s => ({ ...s, logoImage: dataUrl, logoType: 'image' }));
+      showToast('Đã tải logo lên! Nhớ bấm Lưu cài đặt.');
+    } catch {
+      showToast('Không đọc được file ảnh này!', 'error');
+    } finally {
+      e.target.value = '';
+    }
   };
 
   const submitMovie = async () => {
@@ -3314,7 +3234,8 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
           status: movieForm.status || 'Hoàn thành',
           posterUrl: movieForm.posterUrl || '',
           embedUrl: firstEpisodeUrl,
-          episodes: validEpisodes.length > 1 ? validEpisodes : undefined,
+          // Sửa phim từ nhiều tập về 1 tập: phải XÓA field cũ, nếu chỉ bỏ qua thì Firestore vẫn giữ danh sách tập cũ
+          episodes: (validEpisodes.length > 1 ? validEpisodes : deleteField()) as any,
           description: movieForm.description || '',
           isUpcoming: movieForm.isUpcoming || false,
           releaseDate: movieForm.releaseDate || '',
@@ -3443,84 +3364,31 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 flex">
-      {/* ── Sidebar ───────────────────────────────────────────────────────── */}
-      <AdminSidebar
-        activeSection={activeSection}
-        onNavigate={scrollToSection}
-        onLogout={onLogout}
-        onSave={saveSettings}
-        onReset={resetSettings}
-        drawerOpen={drawerOpen}
-        setDrawerOpen={setDrawerOpen}
-      />
-
-      {/* Mobile overlay */}
-      {drawerOpen && (
-        <div className="fixed inset-0 z-40 bg-black/60 md:hidden" onClick={() => setDrawerOpen(false)} />
-      )}
-
-      {/* ── Main content ──────────────────────────────────────────────────── */}
-      <main className="flex-1 md:ml-60 min-h-screen">
-        {/* Mobile top bar */}
-        <div className="fixed top-0 left-0 right-0 z-30 bg-slate-950/95 backdrop-blur-xl border-b border-slate-800/60 md:hidden">
-          {/* Top row */}
-          <div className="h-14 flex items-center justify-between px-4">
-            <button
-              onClick={() => setDrawerOpen(true)}
-              className="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-800/80 border border-slate-700/50 text-slate-300"
-            >
-              <Layout size={16} />
-            </button>
-            <span className="text-white font-black text-sm tracking-widest" style={{ fontFamily: 'Bebas Neue, sans-serif' }}>
-              {NAV_SECTIONS.find(s => s.id === activeSection)?.label?.toUpperCase() || 'ADMIN PANEL'}
-            </span>
-            <button onClick={saveSettings} className="px-3 py-1.5 bg-green-500 hover:bg-green-400 text-slate-950 font-black text-xs rounded-xl flex items-center gap-1.5 transition-colors">
-              <Save size={12} /> Lưu
-            </button>
-          </div>
-          {/* Scrollable section tabs */}
-          <div className="flex overflow-x-auto scrollbar-hide px-3 pb-2 gap-2">
-            {NAV_SECTIONS.map(item => {
-              const Icon = item.icon;
-              const isActive = activeSection === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => { setActiveSection(item.id); window.scrollTo({ top: 0 }); }}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap border transition-all shrink-0 ${
-                    isActive
-                      ? 'bg-green-500/20 border-green-500/50 text-green-400'
-                      : 'bg-slate-800/60 border-slate-700/40 text-slate-500 hover:text-slate-300'
-                  }`}
-                >
-                  <Icon size={11} />
-                  {item.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Page title — desktop */}
-        <div className="hidden md:flex items-center justify-between px-8 pt-8 pb-2">
-          <div>
-            <h1 className="text-4xl font-black text-white tracking-wider" style={{ fontFamily: 'Bebas Neue, sans-serif' }}>
-              {NAV_SECTIONS.find(s => s.id === activeSection)?.label || 'Quản lý'} <span className="animated-gradient-text">Admin</span>
-            </h1>
-            <p className="text-slate-500 text-sm mt-0.5">Cài đặt website và quản lý nội dung</p>
-          </div>
-        </div>
-
-        {/* ── Tab content ──────────────────────────────────────────────────── */}
-        <div className="pt-24 md:pt-0 pb-20 px-4 md:px-8 max-w-4xl mx-auto flex flex-col gap-4">
-
-          {/* REALTIME USERS */}
-          {activeSection === 'section-realtime' && (
-          <div id="section-realtime">
+    <AdminShell
+      active={activeSection}
+      onNavigate={scrollToSection}
+      onLogout={onLogout}
+      headerRight={
+        <button onClick={saveSettings}
+          className="h-10 px-4 rounded-xl bg-green-500 hover:bg-green-400 active:scale-95 text-slate-950 font-bold text-sm flex items-center gap-1.5 transition-all shadow-lg shadow-green-500/20">
+          <Save size={15} /> <span className="hidden sm:inline">Lưu tất cả</span>
+        </button>
+      }
+    >
+      <div className="flex flex-col gap-4">
+        {/* TỔNG QUAN */}
+        {activeSection === 'section-realtime' && (
+        <div id="section-realtime">
+          <Dashboard
+            movieCount={movies.length}
+            upcomingCount={upcomingMovies.length}
+            onNavigate={scrollToSection}
+            onQuickAddMovie={() => { scrollToSection('section-movies'); setMovieForm({}); setMovieEpisodes([{ label: 'Full', embedUrl: '' }]); setEditingId(null); setShowMovieForm(true); }}
+          >
             <RealtimeUsersSection />
-          </div>
-          )}
+          </Dashboard>
+        </div>
+        )}
 
           {/* LOGO & THƯƠNG HIỆU */}
           {activeSection === 'section-brand' && (
@@ -3596,6 +3464,26 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
 
               <InputRow label="Link nhóm Discord" hint="Hiển thị banner mời vào nhóm Discord ở trang Chi tiết phim & trang Xem phim. Để trống thì ẨN banner này.">
                 <input type="text" value={settings.discordUrl || ''} onChange={e => setSettings(s => ({ ...s, discordUrl: e.target.value }))} className="input-field" placeholder="https://discord.gg/xxxxxxx" />
+              </InputRow>
+
+              <InputRow label="Hotline" hint="Hiển thị ở mục Liên hệ cuối trang. Để trống nếu không muốn hiện.">
+                <input type="text" value={settings.phone || ''} onChange={e => setSettings(s => ({ ...s, phone: e.target.value }))} className="input-field" placeholder="0909 xxx xxx" />
+              </InputRow>
+
+              <InputRow label="Email liên hệ chung" hint="Hiển thị ở mục Liên hệ cuối trang. Để trống thì dùng chung email đặt quảng cáo ở trên.">
+                <input type="email" value={settings.email || ''} onChange={e => setSettings(s => ({ ...s, email: e.target.value }))} className="input-field" placeholder="support@daophim.online" />
+              </InputRow>
+
+              <InputRow label="Link Facebook" hint="Để trống thì ẨN icon Facebook ở footer.">
+                <input type="text" value={settings.facebookUrl || ''} onChange={e => setSettings(s => ({ ...s, facebookUrl: e.target.value }))} className="input-field" placeholder="https://facebook.com/..." />
+              </InputRow>
+
+              <InputRow label="Link Instagram" hint="Để trống thì ẨN icon Instagram ở footer.">
+                <input type="text" value={settings.instagramUrl || ''} onChange={e => setSettings(s => ({ ...s, instagramUrl: e.target.value }))} className="input-field" placeholder="https://instagram.com/..." />
+              </InputRow>
+
+              <InputRow label="Link Youtube" hint="Để trống thì ẨN icon Youtube ở footer.">
+                <input type="text" value={settings.youtubeUrl || ''} onChange={e => setSettings(s => ({ ...s, youtubeUrl: e.target.value }))} className="input-field" placeholder="https://youtube.com/@..." />
               </InputRow>
 
               <InputRow label="Chữ trên banner Discord" hint="Để trống dùng chữ mặc định.">
@@ -4615,7 +4503,7 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
               </div>
               <div className="bg-slate-800/40 border border-slate-700/30 rounded-xl p-4">
                 <h4 className="text-slate-300 font-bold mb-2">💾 Lưu ý</h4>
-                <p className="text-slate-500 text-[13px]">Tất cả cài đặt được lưu vào localStorage của trình duyệt. Xóa cache trình duyệt sẽ mất dữ liệu. Nên export backup định kỳ.</p>
+                <p className="text-slate-500 text-[13px]">Cài đặt được lưu trực tiếp lên Firebase — mọi người truy cập site đều thấy ngay, không phụ thuộc trình duyệt hay thiết bị. Nếu bấm Lưu mà báo lỗi, vào mục "Tổng quan" để kiểm tra kết nối Firebase.</p>
               </div>
             </div>
 
@@ -4634,10 +4522,9 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
             </button>
           </div>
           )}
-        </div>
-      </main>
+      </div>
 
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
-    </div>
+    </AdminShell>
   );
 }

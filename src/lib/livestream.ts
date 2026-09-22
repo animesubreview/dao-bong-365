@@ -1,10 +1,8 @@
 // ─── Livestream Service ────────────────────────────────────────────────────────
 // Quản lý cấu hình phát trực tiếp (bật/tắt, link nhúng) + chat realtime kèm theo.
-import {
-  collection, doc, addDoc, deleteDoc, getDoc, getDocs, setDoc,
-  onSnapshot, query, orderBy, limit, serverTimestamp, Timestamp,
-} from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, query, orderBy, limit, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { db } from './firebase';
+import { addDoc, deleteDoc, setDoc, onSnapshot } from './firestoreGuard';
 
 const COL = 'livestream';
 const DOC_ID = 'main';
@@ -83,6 +81,26 @@ export async function deleteLiveChatMessage(id: string): Promise<void> {
 export async function clearLiveChat(): Promise<void> {
   const snap = await getDocs(collection(db, COL, DOC_ID, 'chat'));
   await Promise.all(snap.docs.map(d => deleteDoc(d.ref)));
+}
+
+// ── Chat cộng đồng toàn site (thay cho mục Manga ở bottom nav) ────────────────
+// Dùng path Firestore riêng để không lẫn với chat của phòng livestream.
+const COMMUNITY_COL = 'community_chat';
+const COMMUNITY_DOC_ID = 'global';
+
+export function subscribeCommunityChat(cb: (msgs: LiveChatMessage[]) => void): () => void {
+  const q = query(collection(db, COMMUNITY_COL, COMMUNITY_DOC_ID, 'messages'), orderBy('createdAt', 'asc'), limit(200));
+  return onSnapshot(q, snap => {
+    cb(snap.docs.map(d => ({ id: d.id, ...d.data() } as LiveChatMessage)));
+  });
+}
+
+export async function sendCommunityChatMessage(msg: Omit<LiveChatMessage, 'id'>): Promise<void> {
+  await addDoc(collection(db, COMMUNITY_COL, COMMUNITY_DOC_ID, 'messages'), msg);
+}
+
+export async function deleteCommunityChatMessage(id: string): Promise<void> {
+  await deleteDoc(doc(db, COMMUNITY_COL, COMMUNITY_DOC_ID, 'messages', id));
 }
 
 // ── Helper: dựng URL nhúng + phát hiện nền tảng để áp dụng chặn tua ───────────

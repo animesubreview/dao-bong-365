@@ -7,6 +7,7 @@
   ],
 
   "rewrites": [
+    { "source": "/.netlify/functions/:name", "destination": "/api/:name" },
     { "source": "/sitemap-movies.xml", "destination": "/api/sitemap-dynamic" },
     { "source": "/sitemap-categories.xml", "destination": "/api/sitemap-categories" },
     { "source": "/sitemap-images.xml", "destination": "/api/sitemap-images" },

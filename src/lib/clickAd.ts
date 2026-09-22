@@ -3,8 +3,10 @@
 // Sau mỗi lần hiện, phải chờ `cooldown` giây mới hiện tiếp.
 // Tài khoản admin (role === 'admin') KHÔNG bị ảnh hưởng.
 
-import { doc, onSnapshot, setDoc, getDoc } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
+import { saveDoc } from './firebaseUtils';
 import { db } from './firebase';
+import { onSnapshot } from './firestoreGuard';
 import { useEffect, useState } from 'react';
 
 export interface ClickAdConfig {
@@ -35,7 +37,7 @@ export async function getClickAdConfig(): Promise<ClickAdConfig> {
 }
 
 export async function saveClickAdConfig(cfg: ClickAdConfig): Promise<void> {
-  await setDoc(doc(db, 'site_config', 'click_ad'), cfg);
+  await saveDoc(doc(db, 'site_config', 'click_ad'), cfg);
 }
 
 // ── Realtime hook ─────────────────────────────────────────────────────────────

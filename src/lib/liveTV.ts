@@ -3,11 +3,9 @@
  * theo từng danh mục (Thời Sự, Giải Trí, Thiếu Nhi, Thể Thao...), hiển thị ở trang /tv-truc-tuyen.
  */
 
-import {
-  collection, doc, setDoc, deleteDoc,
-  onSnapshot, query, orderBy,
-} from 'firebase/firestore';
+import { collection, doc, query, orderBy } from 'firebase/firestore';
 import { db } from './firebase';
+import { setDoc, deleteDoc, onSnapshot } from './firestoreGuard';
 
 export interface TVChannel {
   id: string;             // key - slug tự đặt, vd "vtv1", "cartoon-network"

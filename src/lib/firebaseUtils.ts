@@ -1,4 +1,5 @@
-import { setDoc, DocumentReference, SetOptions } from 'firebase/firestore';
+import { setDoc, getDoc, getDocFromServer, deleteDoc, doc, DocumentReference, SetOptions } from 'firebase/firestore';
+import { db } from './firebase';
 
 /** Lỗi lưu Firestore đã được dịch sang tiếng Việt (giữ lại .code gốc để dễ debug). */
 export class FirebaseSaveError extends Error {
@@ -21,8 +22,14 @@ export function describeFirebaseError(e: any): string {
   if (code.includes('resource-exhausted') || /quota/i.test(raw)) {
     return 'Firestore đã hết quota miễn phí trong ngày (resource-exhausted). Đợi sang ngày mới hoặc nâng gói Blaze.';
   }
-  if (code.includes('not-found') || /database.*does not exist/i.test(raw)) {
+  if (/database.*does not exist/i.test(raw)) {
     return 'Chưa có Firestore Database. Vào Firebase Console → Firestore Database → Create database.';
+  }
+  if (code.includes('not-found') || /no document to update/i.test(raw)) {
+    return 'Không tìm thấy dữ liệu cần cập nhật (có thể đã bị xóa). Hãy tải lại trang rồi thử lại.';
+  }
+  if (code.includes('failed-precondition') && /index/i.test(raw)) {
+    return 'Truy vấn cần tạo Index trong Firestore. Mở link trong Console (F12) để tạo, hoặc báo dev.';
   }
   if (code.includes('unavailable') || code.includes('deadline-exceeded') || /offline|network|blocked/i.test(raw)) {
     return 'Không kết nối được tới Firebase. Hãy tắt AdBlock/VPN, đổi mạng rồi lưu lại.';
@@ -92,4 +99,86 @@ export function resizeImageToDataUrl(file: File, maxSide = 400, quality = 0.85):
     img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Không đọc được file ảnh')); };
     img.src = url;
   });
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Báo lỗi Firestore toàn cục: Admin lắng nghe sự kiện này để hiện banner cảnh báo
+// ─────────────────────────────────────────────────────────────────────────────
+export interface FirestoreErrorEvent { message: string; code: string; context: string; at: number }
+
+export function reportFirestoreError(e: any, context = '') {
+  try {
+    const detail: FirestoreErrorEvent = {
+      message: describeFirebaseError(e),
+      code: e?.code || '',
+      context,
+      at: Date.now(),
+    };
+    window.dispatchEvent(new CustomEvent('firestore-error', { detail }));
+  } catch {}
+}
+
+/** Bọc 1 lời gọi ghi Firestore: có timeout + dịch lỗi + báo banner cho Admin. */
+export function guardWrite<T>(promise: Promise<T>, timeoutMs = 20_000): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new FirebaseSaveError(
+      'timeout',
+      'Không kết nối được tới Firebase (quá 20 giây). Hãy tắt AdBlock/VPN, đổi mạng rồi thử lại.'
+    )), timeoutMs);
+  });
+  return Promise.race([promise, timeout])
+    .catch((e: any) => {
+      const err = e instanceof FirebaseSaveError ? e : new FirebaseSaveError(e?.code || 'unknown', describeFirebaseError(e));
+      reportFirestoreError(err, 'write');
+      throw err;
+    })
+    .finally(() => { if (timer) clearTimeout(timer); }) as Promise<T>;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Kiểm tra kết nối Firebase (nút "Kiểm tra" trên trang Tổng quan)
+// ─────────────────────────────────────────────────────────────────────────────
+export interface HealthStep { label: string; ok: boolean; ms: number; detail: string }
+
+function withLimit<T>(p: Promise<T>, ms: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const t = setTimeout(() => reject(new FirebaseSaveError('timeout', `Quá ${ms / 1000} giây không phản hồi`)), ms);
+    p.then(v => { clearTimeout(t); resolve(v); }, e => { clearTimeout(t); reject(e); });
+  });
+}
+
+export async function runFirebaseHealthCheck(onStep?: (steps: HealthStep[]) => void): Promise<HealthStep[]> {
+  const steps: HealthStep[] = [];
+  const ref = doc(db, 'config', 'admin_ping');
+  const stamp = Date.now();
+
+  const run = async (label: string, fn: () => Promise<string | void>): Promise<boolean> => {
+    const t0 = performance.now();
+    try {
+      const detail = (await fn()) || 'OK';
+      steps.push({ label, ok: true, ms: Math.round(performance.now() - t0), detail });
+      onStep?.([...steps]);
+      return true;
+    } catch (e: any) {
+      steps.push({ label, ok: false, ms: Math.round(performance.now() - t0), detail: describeFirebaseError(e) });
+      onStep?.([...steps]);
+      return false;
+    }
+  };
+
+  const ok1 = await run('Đọc dữ liệu từ Firebase', async () => { await withLimit(getDoc(doc(db, 'config', 'site_settings')), 10_000); });
+  const ok2 = await run('Ghi dữ liệu lên Firebase', async () => { await withLimit(setDoc(ref, { at: stamp, from: 'admin-health-check' }), 12_000); });
+  if (ok2) {
+    await run('Đọc lại từ máy chủ (xác nhận đã lưu)', async () => {
+      const snap = await withLimit(getDocFromServer(ref), 10_000);
+      if (!snap.exists() || snap.data()?.at !== stamp) throw new FirebaseSaveError('mismatch', 'Ghi xong nhưng đọc lại không khớp');
+    });
+    await run('Xóa dữ liệu thử', async () => { await withLimit(deleteDoc(ref), 10_000); });
+  } else if (ok1) {
+    steps.push({ label: 'Đọc lại từ máy chủ (xác nhận đã lưu)', ok: false, ms: 0, detail: 'Bỏ qua vì bước ghi thất bại' });
+    onStep?.([...steps]);
+  }
+  return steps;
 }

@@ -4,11 +4,9 @@
  * mục "Phim Mới Cập Nhật" để mọi người dễ thấy, không cần chỉnh sửa nội dung phim.
  */
 
-import {
-  collection, doc, setDoc, deleteDoc, getDocs,
-  onSnapshot, query, orderBy,
-} from 'firebase/firestore';
+import { collection, doc, getDocs, query, orderBy } from 'firebase/firestore';
 import { db } from './firebase';
+import { setDoc, deleteDoc, onSnapshot } from './firestoreGuard';
 import { Movie } from '../types';
 
 export interface PinnedMovie {

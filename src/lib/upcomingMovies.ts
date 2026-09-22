@@ -1,8 +1,6 @@
-import {
-  collection, doc, addDoc, updateDoc, deleteDoc,
-  onSnapshot, query, orderBy, getDocs, getDoc,
-} from 'firebase/firestore';
+import { collection, doc, query, orderBy, getDocs, getDoc } from 'firebase/firestore';
 import { db } from './firebase';
+import { addDoc, updateDoc, deleteDoc, onSnapshot } from './firestoreGuard';
 
 export interface UpcomingMovie {
   id: string;

@@ -1,10 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { X, AlertCircle } from 'lucide-react';
-import {
-  collection, doc, addDoc, updateDoc, deleteDoc,
-  query, orderBy, onSnapshot,
-} from 'firebase/firestore';
+import { collection, doc, query, orderBy } from 'firebase/firestore';
 import { db } from '../lib/firebase';
+import { addDoc, updateDoc, deleteDoc, onSnapshot } from '../lib/firestoreGuard';
 
 export interface AdBannerData {
   id: string;

@@ -1,12 +1,9 @@
 // ─── Notification System (Firebase) ──────────────────────────────────────────
 // Admin tạo thông báo → lưu Firebase → tất cả người dùng đều thấy
 
-import {
-  collection, doc, onSnapshot, deleteDoc,
-  updateDoc, addDoc, serverTimestamp, query, orderBy,
-  getDocs, setDoc,
-} from 'firebase/firestore';
+import { collection, doc, serverTimestamp, query, orderBy, getDocs } from 'firebase/firestore';
 import { db } from './firebase';
+import { onSnapshot, deleteDoc, updateDoc, addDoc, setDoc } from './firestoreGuard';
 
 export interface SiteNotification {
   id: string;

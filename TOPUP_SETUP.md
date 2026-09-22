@@ -16,17 +16,18 @@
    - `client_email`
    - `private_key`
 
-## 3. Thêm Environment Variables trên Netlify
-Vào **Netlify Dashboard** → Site Settings → Environment Variables, thêm:
+## 3. Thêm Environment Variables
+Vercel: **Project → Settings → Environment Variables** (Netlify: Site Settings → Environment Variables). Xem đầy đủ trong `.env.example`. Thêm xong phải **Redeploy**.
 
 | Tên biến | Giá trị |
 |----------|---------|
-| `TRUMTHE_PARTNER_ID` | Partner ID từ trumthe.vn |
-| `TRUMTHE_PARTNER_KEY` | Partner Key từ trumthe.vn |
+| `GACHTHEFAST_PARTNER_ID` | Partner ID từ trang đối tác |
+| `GACHTHEFAST_PARTNER_KEY` | Partner Key từ trang đối tác |
+| `GACHTHEFAST_DOMAIN` | (tùy chọn) mặc định `gachthefast.com` |
 | `FIREBASE_PROJECT_ID` | project_id từ service account |
 | `FIREBASE_CLIENT_EMAIL` | client_email từ service account |
 | `FIREBASE_PRIVATE_KEY` | private_key (giữ nguyên dấu `\n`) |
-| `SITE_URL` | https://YOUR-SITE.netlify.app |
+| `SITE_URL` | https://daophim.online |
 
 ## 4. Cập nhật Firestore Rules
 Thêm vào **Firebase Console** → Firestore → Rules:

@@ -21,6 +21,30 @@ if (typeof window !== 'undefined') {
   window.addEventListener('storage', refresh);
 }
 
+// Nguồn API chính duy nhất cho danh sách/tìm kiếm/lọc phim: phimapi.com (hoặc domain
+// mirror đã cấu hình trong Admin → Cài đặt Website). NguonC được dùng làm nguồn phụ
+// (xem bên dưới) cho phần chi tiết phim/tập phim/tìm kiếm gộp — không dùng đoán mò
+// endpoint danh sách của NguonC vì chưa xác minh được nó có tồn tại hay không.
+// Nguồn dự phòng — dùng khi API chính (phimapi.com hoặc domain đã cấu hình) lỗi/timeout.
+// Giả định vsmov.com/api có cùng cấu trúc endpoint với KKPhim/phimapi.com
+// (/danh-sach/..., /phim/{slug}, /v1/api/tim-kiem, /v1/api/danh-sach/{type}).
+// ⚠️ Chưa xác minh được schema thực tế của vsmov.com/api (không truy cập được để kiểm tra
+// — thử fetch endpoint gốc trả về 404, không tìm thấy tài liệu công khai), nên đây chỉ là
+// lớp dự phòng "cố gắng thử": nếu response không đúng cấu trúc, hàm gọi sẽ tự coi như rỗng/lỗi
+// chứ không crash app. Nếu anh/chị thấy nguồn này không hoạt động đúng, gửi mẫu JSON nó trả
+// về để chỉnh lại cho khớp.
+const VSMOV_BASE = 'https://vsmov.com/api';
+
+async function apiFetch(path: string): Promise<Response> {
+  try {
+    const res = await fetch(`${BASE_URL}${path}`);
+    if (res.ok) return res;
+    throw new Error(`Primary API status ${res.status}`);
+  } catch {
+    return fetch(`${VSMOV_BASE}${path}`);
+  }
+}
+
 // Cache ảnh chất lượng cao lấy được từ NguonC theo slug (nếu có), dùng trong getImageUrl.
 // Populate cache này ở nơi nào lấy được ảnh đẹp từ NguonC bằng: NguonCImageCache.set(slug, { poster, thumb });
 const NguonCImageCache = new Map<string, { poster: string; thumb?: string }>();
@@ -528,7 +552,7 @@ export function mergeOPhimEpisodes(
 
 export const movieApi = {
   getNewUpdates: async (page: number = 1): Promise<APIResponse<Movie>> => {
-    const response = await fetch(`${BASE_URL}/danh-sach/phim-moi-cap-nhat?page=${page}`);
+    const response = await apiFetch(`/danh-sach/phim-moi-cap-nhat?page=${page}`);
     return response.json();
   },
 
@@ -567,12 +591,31 @@ export const movieApi = {
   },
 
   getMovieDetail: async (slug: string): Promise<MovieDetailResponse> => {
-    const response = await fetch(`${BASE_URL}/phim/${slug}`);
-    return response.json();
+    // 1) Nguồn chính: phimapi.com (hoặc domain đã cấu hình)
+    try {
+      const response = await fetch(`${BASE_URL}/phim/${slug}`);
+      const data = await response.json();
+      if (response.ok && data && data.status !== false && data.movie) return data;
+    } catch { /* rơi xuống nguồn phụ bên dưới */ }
+
+    // 2) Nguồn phụ: vsmov.com/api — giả định cùng schema với phimapi.com (xem ghi chú ở VSMOV_BASE)
+    try {
+      const response = await fetch(`${VSMOV_BASE}/phim/${slug}`);
+      const data = await response.json();
+      if (response.ok && data && data.status !== false && data.movie) return data;
+    } catch { /* rơi xuống NguonC */ }
+
+    // 3) Nguồn dự phòng cuối: NguonC — schema đã được xác minh hoạt động (dùng converter riêng)
+    const nguonC = await getNguonCDetail(slug);
+    if (nguonC) {
+      const episodes = (nguonC.episodes || []).flatMap((server, idx) => nguonCServerToEpisode(server, idx));
+      return { status: true, movie: nguonCToMovie(nguonC), episodes };
+    }
+    return { status: false, movie: null as any, episodes: [] };
   },
 
   searchMovies: async (keyword: string, page: number = 1, limit: number = 20): Promise<APIResponse<Movie>> => {
-    const response = await fetch(`${BASE_URL}/v1/api/tim-kiem?keyword=${keyword}&page=${page}&limit=${limit}`);
+    const response = await apiFetch(`/v1/api/tim-kiem?keyword=${keyword}&page=${page}&limit=${limit}`);
     const data = await response.json();
     // The search API structure is slightly different in items
     return {
@@ -583,7 +626,7 @@ export const movieApi = {
   },
 
   getMoviesByType: async (type: string, page: number = 1, limit: number = 20): Promise<APIResponse<Movie>> => {
-    const response = await fetch(`${BASE_URL}/v1/api/danh-sach/${type}?page=${page}&limit=${limit}`);
+    const response = await apiFetch(`/v1/api/danh-sach/${type}?page=${page}&limit=${limit}`);
     const data = await response.json();
     return {
       status: data.status,
@@ -603,11 +646,11 @@ export const movieApi = {
     limit?: number;
   }): Promise<APIResponse<Movie>> => {
     const { type = 'phim-bo', category = '', country = '', year = '', sort = 'modified.time', page = 1, limit = 24 } = params;
-    let url = `${BASE_URL}/v1/api/danh-sach/${type}?page=${page}&limit=${limit}&sort_field=${sort}`;
-    if (category) url += `&category=${category}`;
-    if (country) url += `&country=${country}`;
-    if (year) url += `&year=${year}`;
-    const response = await fetch(url);
+    let path = `/v1/api/danh-sach/${type}?page=${page}&limit=${limit}&sort_field=${sort}`;
+    if (category) path += `&category=${category}`;
+    if (country) path += `&country=${country}`;
+    if (year) path += `&year=${year}`;
+    const response = await apiFetch(path);
     const data = await response.json();
     return {
       status: data.status,
@@ -688,9 +731,14 @@ export const movieApi = {
   cleanLang: (lang: string): string => {
     if (!lang) return '';
     const l = lang.toLowerCase().trim();
-    if (l.includes('vietsub') || l.includes('phụ đề') || l.includes('sub')) return 'Vietsub';
-    if (l.includes('lồng tiếng') || l.includes('long tieng')) return 'Lồng Tiếng';
-    if (l.includes('thuyết minh') || l.includes('thuyet minh')) return 'Thuyết Minh';
+    const hasSub = l.includes('vietsub') || l.includes('phụ đề') || l.includes('sub');
+    const hasDub = l.includes('lồng tiếng') || l.includes('long tieng');
+    const hasNarr = l.includes('thuyết minh') || l.includes('thuyet minh');
+    // Có từ 2 loại tiếng trở lên (vd: "Vietsub + Thuyết Minh") → Song Ngữ
+    if ([hasSub, hasDub, hasNarr].filter(Boolean).length >= 2) return 'Song Ngữ';
+    if (hasSub) return 'Vietsub';
+    if (hasDub) return 'Lồng Tiếng';
+    if (hasNarr) return 'Thuyết Minh';
     // Return empty if garbage (too long or not a known lang)
     const known = ['vietsub','lồng tiếng','thuyết minh','nguyên bản','engsub','raw','full'];
     if (known.some(v => l.includes(v))) return lang;
