@@ -185,6 +185,16 @@ function AppInner({ maintenance, maintenanceLoaded }: { maintenance: Maintenance
     return <MaintenancePage config={maintenance} />;
   }
 
+  // Trang Admin có khung riêng (sidebar/topbar/bottom-nav riêng) — không hiển thị
+  // Header/Footer/MobileBottomNav/quảng cáo của website chính đè lên nữa.
+  if (isAdminPage) {
+    return (
+      <Routes>
+        <Route path="/daophim/admin" element={<Admin />} />
+      </Routes>
+    );
+  }
+
   return (
       <div className="min-h-screen bg-slate-950 flex flex-col">
         <ClickAd />
