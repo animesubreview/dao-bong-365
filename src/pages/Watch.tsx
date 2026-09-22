@@ -53,17 +53,6 @@ export default function Watch() {
   const [roomLinkCopied, setRoomLinkCopied] = useState(false);
   const [lastWatchRoom, setLastWatchRoom] = useState<{ roomId: string; movieName: string; episodeName: string } | null>(null);
   const [currentUser, setCurrentUser] = useState(getCurrentUser());
-
-  // Mở sẵn modal "Tạo phòng xem chung" nếu tới từ nút "Xem Chung" ở trang chi tiết phim
-  useEffect(() => {
-    if (searchParams.get('openRoom') === '1') {
-      setShowRoomModal(true);
-      const next = new URLSearchParams(searchParams);
-      next.delete('openRoom');
-      setSearchParams(next, { replace: true });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [recommended, setRecommended] = useState<Movie[]>([]);
 

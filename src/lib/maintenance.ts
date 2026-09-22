@@ -1,7 +1,5 @@
-import { doc } from 'firebase/firestore';
-import { saveDoc } from './firebaseUtils';
+import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { db } from './firebase';
-import { onSnapshot } from './firestoreGuard';
 
 export interface MaintenanceConfig {
   enabled: boolean;
@@ -27,7 +25,7 @@ export const DEFAULT_MAINTENANCE: MaintenanceConfig = {
 export async function saveMaintenanceConfig(config: MaintenanceConfig): Promise<void> {
   const data = { ...config, updatedAt: Date.now() };
   // Lưu Firestore (realtime — mọi user thấy ngay)
-  await saveDoc(doc(db, 'config', 'maintenance'), data, { merge: true });
+  await setDoc(doc(db, 'config', 'maintenance'), data, { merge: true });
   // Cũng lưu localStorage để load nhanh lần sau
   try { localStorage.setItem('maintenance_config', JSON.stringify(data)); } catch {}
 }

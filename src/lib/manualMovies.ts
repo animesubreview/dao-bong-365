@@ -1,7 +1,9 @@
 import React from 'react';
-import { collection, doc, query, orderBy, getDocs, getDoc, where } from 'firebase/firestore';
+import {
+  collection, doc, addDoc, updateDoc, deleteDoc,
+  onSnapshot, query, orderBy, getDocs, getDoc, where,
+} from 'firebase/firestore';
 import { db } from './firebase';
-import { addDoc, updateDoc, deleteDoc, onSnapshot } from './firestoreGuard';
 
 export interface ManualEpisode {
   label: string;   // VD: "Tập 1", "Tập 2", "Full"
@@ -83,12 +85,13 @@ export function subscribeManualMovies(cb: (movies: ManualMovie[]) => void): () =
 // ── Upcoming movies subscription ──────────────────────────────────────────────
 
 export function subscribeUpcomingMovies(cb: (movies: ManualMovie[]) => void): () => void {
-  // where + orderBy khác field cần composite index (nếu thiếu, listener lỗi im lặng) → sắp xếp phía client
-  const q = query(collection(db, COL), where('isUpcoming', '==', true));
+  const q = query(
+    collection(db, COL),
+    where('isUpcoming', '==', true),
+    orderBy('createdAt', 'desc')
+  );
   return onSnapshot(q, snap => {
-    const list = snap.docs.map(d => ({ id: d.id, ...d.data() } as ManualMovie));
-    list.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-    cb(list);
+    cb(snap.docs.map(d => ({ id: d.id, ...d.data() } as ManualMovie)));
   });
 }
 

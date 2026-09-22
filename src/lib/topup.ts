@@ -1,7 +1,6 @@
 // ─── Dịch vụ nạp thẻ cào (TrumThe v2 API) ────────────────────────────────────
 import { db } from './firebase';
-import { setDoc, updateDoc } from './firestoreGuard';
-import { doc, getDoc, collection, getDocs, query, where, orderBy } from 'firebase/firestore';
+import { doc, setDoc, getDoc, collection, getDocs, query, where, orderBy, updateDoc } from 'firebase/firestore';
 
 export type CardTelco = 'VIETTEL' | 'MOBIFONE' | 'VINAPHONE' | 'VIETNAMOBILE' | 'GMOBILE';
 
@@ -96,10 +95,14 @@ export async function submitCardTopup(
 // ─── Lấy lịch sử nạp thẻ của user ───────────────────────────────────────────
 export async function getUserTopupHistory(uid: string): Promise<TopupRequest[]> {
   try {
-    // where(uid) + orderBy(createdAt) cần composite index → sắp xếp phía client
-    const snap = await getDocs(query(collection(db, 'topup_requests'), where('uid', '==', uid)));
-    return snap.docs.map(d => d.data() as TopupRequest)
-      .sort((a: any, b: any) => (b.createdAt || 0) - (a.createdAt || 0));
+    const snap = await getDocs(
+      query(
+        collection(db, 'topup_requests'),
+        where('uid', '==', uid),
+        orderBy('createdAt', 'desc')
+      )
+    );
+    return snap.docs.map(d => d.data() as TopupRequest);
   } catch { return []; }
 }
 

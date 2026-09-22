@@ -7,9 +7,10 @@ import {
   updateProfile,
   User,
 } from 'firebase/auth';
-import { doc, getDoc, collection, getDocs } from 'firebase/firestore';
+import {
+  doc, setDoc, getDoc, updateDoc, collection, getDocs, deleteDoc,
+} from 'firebase/firestore';
 import { auth, db } from './firebase';
-import { setDoc, updateDoc, deleteDoc } from './firestoreGuard';
 
 export interface UserProfile {
   uid: string;
@@ -226,8 +227,9 @@ export async function addUserBalance(uid: string, amount: number, note: string =
 
 // ─── Lấy lịch sử giao dịch của user ─────────────────────────────────────────
 export async function getUserTransactions(uid: string) {
-  const { getDocs: _getDocs, query: _query, where } = await import('firebase/firestore');
-  // where(uid) + orderBy(createdAt) cần composite index → sắp xếp phía client
-  const snap = await _getDocs(_query(collection(db, 'transactions'), where('uid', '==', uid)));
-  return snap.docs.map(d => d.data()).sort((a: any, b: any) => (b.createdAt || 0) - (a.createdAt || 0));
+  const { getDocs: _getDocs, query: _query, where, orderBy: _orderBy } = await import('firebase/firestore');
+  const snap = await _getDocs(
+    _query(collection(db, 'transactions'), where('uid', '==', uid), _orderBy('createdAt', 'desc'))
+  );
+  return snap.docs.map(d => d.data());
 }

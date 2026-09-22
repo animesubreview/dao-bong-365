@@ -3,9 +3,11 @@
 // thời hạn tùy chỉnh theo phút/giờ/ngày + số lần sử dụng (1 lần hoặc theo số
 // lượng). User nhập key ở trang Mua VIP để cộng dồn thời hạn VIP vào tài khoản.
 
-import { doc, getDoc, collection, query, orderBy, runTransaction, arrayUnion } from 'firebase/firestore';
+import {
+  doc, getDoc, setDoc, deleteDoc, updateDoc,
+  collection, query, orderBy, onSnapshot, runTransaction, arrayUnion,
+} from 'firebase/firestore';
 import { db } from './firebase';
-import { setDoc, deleteDoc, updateDoc, onSnapshot } from './firestoreGuard';
 import { VipTier } from './vip';
 
 const COL = 'vip_keys';
