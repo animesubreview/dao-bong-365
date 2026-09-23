@@ -72,7 +72,7 @@ function LangEpBadge({ movie }: { movie: Movie }) {
 }
 
 /* ─── Card sizes ──────────────────────────────────────────────── */
-const CW = 'clamp(110px,30vw,155px)';
+const CW = 'clamp(92px,27vw,135px)'; // Kích thước poster các hàng thể loại — thu nhỏ theo yêu cầu
 const SKELETON_H = 220; // px — đủ để tránh layout shift
 
 /* ─── MCard với ảnh fade-in 500ms ────────────────────────────── */
@@ -936,42 +936,6 @@ export default function Home() {
 
       <main className="max-w-2xl md:max-w-5xl lg:max-w-[1400px] mx-auto px-4 md:px-6 lg:px-8 mt-6 flex flex-col gap-5">
 
-        {/* Phim Độc Quyền Đảo Phim — card ngang nổi bật (phim thêm thủ công / mới nhất) */}
-        {(manualMovies.length > 0 || newUpdates.length > 0) && (
-          <section>
-            <SecHeader title="Phim Độc Quyền Đảo Phim" to="/type/phim-le" label="Xem thêm" />
-            <div className="flex gap-3 overflow-x-auto -mx-4 md:-mx-0 px-4 md:px-0 pb-1 snap-x snap-mandatory"
-              style={{ scrollbarWidth:'none', msOverflowStyle:'none' }}>
-              {(manualMovies.length > 0 ? manualMovies.slice(0, 8) : newUpdates.slice(0, 8)).map((m: any) => {
-                const isManual = !!m.id;
-                const href = isManual ? `/manual/${m.id}` : `/phim/${m.slug}`;
-                const img = isManual ? m.posterUrl : movieApi.getImageUrl(m.thumb_url);
-                const name = m.name;
-                const sub = isManual ? m.originName : m.origin_name;
-                const langLabel = isManual ? m.lang : movieApi.cleanLang(m.lang || '');
-                return (
-                  <Link key={isManual ? m.id : m._id} to={href}
-                    className="shrink-0 snap-start group" style={{ width:'clamp(220px,68vw,300px)' }}>
-                    <div className="relative rounded-2xl overflow-hidden bg-slate-800 shadow-lg" style={{ aspectRatio:'16/9' }}>
-                      {img
-                        ? <img src={img} alt={name} loading="lazy" referrerPolicy="no-referrer"
-                            className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                        : <div className="absolute inset-0 flex items-center justify-center text-slate-600 text-3xl">🎬</div>}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-                      <span className="absolute top-2 left-2 movie-card-badge bg-slate-900/90">Đầy</span>
-                      {langLabel && <span className="absolute bottom-2 left-2 movie-card-badge bg-[var(--primary)]/90">{langLabel === 'Lồng Tiếng' ? 'L.' : langLabel === 'Vietsub' ? 'P.Đề' : langLabel}</span>}
-                    </div>
-                    <div className="mt-2 px-0.5">
-                      <p className="font-bold text-[13px] text-slate-100 group-hover:text-[var(--primary-light)] transition-colors line-clamp-1">{name}</p>
-                      {sub && <p className="text-[11px] text-slate-500 line-clamp-1">{sub}</p>}
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          </section>
-        )}
-
         {/* Bạn đang quan tâm gì */}
         <section className="-mx-4 px-4 py-5 md:mx-0 md:px-6 md:rounded-2xl bg-[var(--surface-2)]">
           <h2 className="text-xl md:text-2xl font-extrabold tracking-tight text-white mb-4">Bạn đang quan tâm gì?</h2>
@@ -999,6 +963,42 @@ export default function Home() {
             ))}
           </div>
         </section>
+
+        {/* Phim Độc Quyền Đảo Phim — thu nhỏ, 2 thẻ/hàng cuộn ngang (đặt sau "Bạn đang quan tâm gì") */}
+        {(manualMovies.length > 0 || newUpdates.length > 0) && (
+          <section>
+            <SecHeader title="Phim Độc Quyền Đảo Phim" to="/type/phim-le" label="Xem thêm" />
+            <div className="flex gap-3 overflow-x-auto -mx-4 md:-mx-0 px-4 md:px-0 pb-1 snap-x snap-mandatory"
+              style={{ scrollbarWidth:'none', msOverflowStyle:'none' }}>
+              {(manualMovies.length > 0 ? manualMovies.slice(0, 8) : newUpdates.slice(0, 8)).map((m: any) => {
+                const isManual = !!m.id;
+                const href = isManual ? `/manual/${m.id}` : `/phim/${m.slug}`;
+                const img = isManual ? m.posterUrl : movieApi.getImageUrl(m.thumb_url);
+                const name = m.name;
+                const sub = isManual ? m.originName : m.origin_name;
+                const langLabel = isManual ? m.lang : movieApi.cleanLang(m.lang || '');
+                return (
+                  <Link key={isManual ? m.id : m._id} to={href}
+                    className="shrink-0 snap-start group" style={{ width:'calc((100% - 12px) / 2.15)' }}>
+                    <div className="relative rounded-xl overflow-hidden bg-slate-800 shadow-lg" style={{ aspectRatio:'16/9' }}>
+                      {img
+                        ? <img src={img} alt={name} loading="lazy" referrerPolicy="no-referrer"
+                            className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                        : <div className="absolute inset-0 flex items-center justify-center text-slate-600 text-3xl">🎬</div>}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+                      <span className="absolute top-1.5 left-1.5 movie-card-badge bg-slate-900/90">Đầy</span>
+                      {langLabel && <span className="absolute bottom-1.5 left-1.5 movie-card-badge bg-[var(--primary)]/90">{langLabel === 'Lồng Tiếng' ? 'L.' : langLabel === 'Vietsub' ? 'P.Đề' : langLabel}</span>}
+                    </div>
+                    <div className="mt-1.5 px-0.5">
+                      <p className="font-bold text-[12px] text-slate-100 group-hover:text-[var(--primary-light)] transition-colors line-clamp-1">{name}</p>
+                      {sub && <p className="text-[10.5px] text-slate-500 line-clamp-1">{sub}</p>}
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
         {/* Các mục phim theo series nổi tiếng & quốc gia — tự tải khi cuộn tới, có dải phân cách giữa các mục */}
         {HOME_SECTIONS.map((s, i) => (
