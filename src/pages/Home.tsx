@@ -986,38 +986,31 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Phim Độc Quyền Đảo Phim — thu nhỏ, 2 thẻ/hàng cuộn ngang (đặt sau "Bạn đang quan tâm gì") */}
-        {(manualMovies.length > 0 || newUpdates.length > 0) && (
+        {/* Phim Độc Quyền Đảo Phim — CHỈ hiện phim thêm thủ công (admin tự up), không lấy phim từ API.
+            Ẩn hẳn mục này nếu chưa có phim thủ công nào. */}
+        {manualMovies.length > 0 && (
           <section>
             <SecHeader title="Phim Độc Quyền Đảo Phim" to="/type/phim-le" label="Xem thêm" />
             <div className="flex gap-3 overflow-x-auto -mx-4 md:-mx-0 px-4 md:px-0 pb-1 snap-x snap-mandatory"
               style={{ scrollbarWidth:'none', msOverflowStyle:'none' }}>
-              {(manualMovies.length > 0 ? manualMovies.slice(0, 8) : newUpdates.slice(0, 8)).map((m: any) => {
-                const isManual = !!m.id;
-                const href = isManual ? `/manual/${m.id}` : `/phim/${m.slug}`;
-                const img = isManual ? m.posterUrl : movieApi.getImageUrl(m.thumb_url);
-                const name = m.name;
-                const sub = isManual ? m.originName : m.origin_name;
-                const langLabel = isManual ? m.lang : movieApi.cleanLang(m.lang || '');
-                return (
-                  <Link key={isManual ? m.id : m._id} to={href}
-                    className="shrink-0 snap-start group" style={{ width:'calc((100% - 12px) / 2.15)' }}>
-                    <div className="relative rounded-xl overflow-hidden bg-slate-800 shadow-lg" style={{ aspectRatio:'16/9' }}>
-                      {img
-                        ? <img src={img} alt={name} loading="lazy" referrerPolicy="no-referrer"
-                            className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                        : <div className="absolute inset-0 flex items-center justify-center text-slate-600 text-3xl">🎬</div>}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-                      <span className="absolute top-1.5 left-1.5 movie-card-badge bg-slate-900/90">Đầy</span>
-                      {langLabel && <span className="absolute bottom-1.5 left-1.5 movie-card-badge bg-[var(--primary)]/90">{langLabel === 'Lồng Tiếng' ? 'L.' : langLabel === 'Vietsub' ? 'P.Đề' : langLabel}</span>}
-                    </div>
-                    <div className="mt-1.5 px-0.5">
-                      <p className="font-bold text-[12px] text-slate-100 group-hover:text-[var(--primary-light)] transition-colors line-clamp-1">{name}</p>
-                      {sub && <p className="text-[10.5px] text-slate-500 line-clamp-1">{sub}</p>}
-                    </div>
-                  </Link>
-                );
-              })}
+              {manualMovies.slice(0, 8).map((m: ManualMovie) => (
+                <Link key={m.id} to={`/manual/${m.id}`}
+                  className="shrink-0 snap-start group" style={{ width:'calc((100% - 12px) / 2.15)' }}>
+                  <div className="relative rounded-xl overflow-hidden bg-slate-800 shadow-lg" style={{ aspectRatio:'16/9' }}>
+                    {m.posterUrl
+                      ? <img src={m.posterUrl} alt={m.name} loading="lazy" referrerPolicy="no-referrer"
+                          className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                      : <div className="absolute inset-0 flex items-center justify-center text-slate-600 text-3xl">🎬</div>}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+                    <span className="absolute top-1.5 left-1.5 movie-card-badge bg-slate-900/90">Đầy</span>
+                    {m.lang && <span className="absolute bottom-1.5 left-1.5 movie-card-badge bg-[var(--primary)]/90">{m.lang === 'Lồng Tiếng' ? 'L.' : m.lang === 'Vietsub' ? 'P.Đề' : m.lang}</span>}
+                  </div>
+                  <div className="mt-1.5 px-0.5">
+                    <p className="font-bold text-[12px] text-slate-100 group-hover:text-[var(--primary-light)] transition-colors line-clamp-1">{m.name}</p>
+                    {m.originName && <p className="text-[10.5px] text-slate-500 line-clamp-1">{m.originName}</p>}
+                  </div>
+                </Link>
+              ))}
             </div>
           </section>
         )}
