@@ -60,20 +60,26 @@ export async function fetchCollectionCached<T = any>(
   if (pending) return pending as Promise<T[]>;
 
   const p = (async () => {
-    try {
-      const snap = await getDocs(query(collection(db, colName), ...constraints));
-      const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      const entry = { at: Date.now(), data };
-      mem.set(key, entry);
-      sessionSet(key, entry);
-      return data as T[];
-    } catch (e) {
-      console.error(`[publicCache] Lỗi đọc "${colName}":`, e);
-      // Nếu có cache cũ (dù hết hạn) thì dùng tạm còn hơn trắng trang
-      return (memHit?.data || sHit?.data || []) as T[];
-    } finally {
-      inflight.delete(key);
+    const q = query(collection(db, colName), ...constraints);
+    // Thử đọc, nếu lỗi (thường do mạng chập chờn/timeout) thì đợi 1.5s rồi thử lại
+    // đúng 1 lần trước khi bỏ cuộc — tránh mục bị "biến mất" oan chỉ vì 1 lượt rớt mạng thoáng qua.
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const snap = await getDocs(q);
+        const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        const entry = { at: Date.now(), data };
+        mem.set(key, entry);
+        sessionSet(key, entry);
+        inflight.delete(key);
+        return data as T[];
+      } catch (e) {
+        console.error(`[publicCache] Lỗi đọc "${colName}" (lần ${attempt + 1}):`, e);
+        if (attempt === 0) await new Promise(r => setTimeout(r, 1500));
+      }
     }
+    inflight.delete(key);
+    // Nếu có cache cũ (dù hết hạn) thì dùng tạm còn hơn trắng trang
+    return (memHit?.data || sHit?.data || []) as T[];
   })();
   inflight.set(key, p);
   return p;
