@@ -36,7 +36,6 @@ import TVOptimizer from './components/TVOptimizer';
 import { subscribeMaintenanceConfig, MaintenanceConfig, DEFAULT_MAINTENANCE } from './lib/maintenance';
 import { getGeoResult, getGeoblockEnabled, GeoResult } from './lib/geoblock';
 import ClickAd from './components/ClickAd';
-import AdBlockGate from './components/AdBlockGate';
 import AdBanner from './components/AdBanner';
 import { startPresence } from './lib/presence';
 
@@ -198,7 +197,6 @@ function AppInner({ maintenance, maintenanceLoaded }: { maintenance: Maintenance
   return (
       <div className="min-h-screen bg-slate-950 flex flex-col">
         <ClickAd />
-        <AdBlockGate />
         <TVOptimizer />
         <Header />
         <NotificationDisplay />
