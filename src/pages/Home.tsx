@@ -959,7 +959,7 @@ export default function Home() {
       <main className="max-w-2xl md:max-w-5xl lg:max-w-[1400px] mx-auto px-4 md:px-6 lg:px-8 mt-6 flex flex-col gap-5">
 
         {/* Bạn đang quan tâm gì */}
-        <section className="-mx-4 px-4 py-5 md:mx-0 md:px-6 md:rounded-2xl bg-[var(--surface-2)]">
+        <section className="py-5">
           <h2 className="text-xl md:text-2xl font-extrabold tracking-tight text-white mb-4">Bạn đang quan tâm gì?</h2>
           <div className="flex gap-2.5 overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 pb-1"
             style={{ scrollbarWidth:'none', msOverflowStyle:'none' }}>
