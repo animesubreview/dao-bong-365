@@ -72,4 +72,5 @@ export interface Comment {
   parentId?: string;      // id of parent comment (null = top-level)
   replyToUsername?: string; // username being replied to
   isAdminReply?: boolean;   // true nếu admin reply
+  isSpoiler?: boolean;      // true nếu người viết tự đánh dấu "tiết lộ nội dung"
 }

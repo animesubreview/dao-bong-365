@@ -4,7 +4,7 @@ import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Play, ChevronRight, ChevronLeft, Heart, SkipForward, List, Server, BookmarkPlus, Image as ImageIcon, Users, Copy, Check, X, Loader2, ArrowRightCircle } from 'lucide-react';
 import { movieApi, getNguonCDetail, mergeNguonCEpisodes, nguonCToMovie, getOPhimDetail, mergeOPhimEpisodes } from '../services/api';
 import { Movie, Episode } from '../types';
-import { cn, usePageTitle } from '../lib/utils';
+import { cn, usePageTitle, withTimeout } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import CommentSection from '../components/CommentSection';
 import MovieCard from '../components/MovieCard';
@@ -15,6 +15,7 @@ import { getMovieOverride, mergeOverride, mergeCustomServers } from '../lib/movi
 import { createWatchRoom } from '../lib/watchRoom';
 import { getCurrentUser, getUserProfile, onAuthChange } from '../lib/auth';
 import type { UserProfile } from '../lib/auth';
+import { getMovieRating, voteMovieRating, hasVoted, RATING_LABELS, RATING_EMOJIS, MovieRating } from '../lib/movieRatings';
 
 export default function Watch() {
   const { slug, episodeSlug } = useParams<{ slug: string; episodeSlug: string }>();
@@ -120,7 +121,9 @@ export default function Watch() {
           movieApi.getMovieDetail(slug).catch((err) => { console.warn('[KKPhim] lỗi lấy chi tiết phim:', err); return { status: false, movie: null, episodes: [] } as any; }),
           getMovieOverride(slug).catch((err) => { console.warn('[Override] lỗi:', err); return null; }),
           getNguonCDetail(slug).catch((err) => { console.warn('[NguonC] lỗi lấy chi tiết phim:', err); return null; }),
-          getOPhimDetail(slug).catch((err) => { console.warn('[OPhim] lỗi lấy chi tiết phim:', err); return null; }),
+          // OPhim chỉ dùng để BỔ SUNG thêm 1 server (không phải nguồn chính) → giới hạn 6s,
+          // chậm/die thì bỏ qua, không kéo chậm cả trang xem phim
+          withTimeout(getOPhimDetail(slug).catch((err) => { console.warn('[OPhim] lỗi lấy chi tiết phim:', err); return null; }), 6000, null),
         ]);
         // Nếu KKPhim không có phim này nhưng NguonC có → dùng NguonC làm nguồn chính
         let movieData = res.movie;
@@ -504,19 +507,19 @@ export default function Watch() {
                   <Server size={12} className="text-slate-500" />
                   <span className="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Máy chủ:</span>
                 </div>
-                <div className="flex flex-wrap gap-2">
+                <div className="grid grid-cols-2 gap-2.5">
                   {episodes.map((server, idx) => (
                     <button
                       key={idx}
                       onClick={() => handleServerChange(idx)}
                       className={cn(
-                        'px-3 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-wide transition-all border',
+                        'px-3 py-3 rounded-xl text-[12.5px] font-bold transition-all border text-center',
                         activeServerIdx === idx
-                          ? 'bg-green-500/20 border-green-500/50 text-green-400'
-                          : 'bg-[#2a2a2a] border-slate-700 text-slate-400 hover:text-white'
+                          ? 'bg-green-500/15 border-green-500/60 text-green-400'
+                          : 'bg-[#2a2a2a] border-slate-700/70 text-slate-300 hover:border-slate-500 hover:text-white'
                       )}
                     >
-                      {movieApi.cleanServerName(server.server_name)} | {server.server_data.length}
+                      #{movieApi.cleanServerName(server.server_name)} <span className="opacity-70">| {server.server_data.length} tập</span>
                     </button>
                   ))}
                 </div>
@@ -552,35 +555,70 @@ export default function Watch() {
               <span className="text-slate-400 text-xs">Hiện ảnh</span>
             </div>
 
-            {/* Episode grid */}
+            {/* Episode grid — bật "Hiện ảnh": thẻ ảnh (dùng poster phim, API không có ảnh riêng
+                từng tập) + icon play; tắt: lưới số tập gọn */}
             <div className="px-4 pb-4">
               <div className={cn(
-                'gap-2 max-h-56 xl:max-h-none xl:flex-1 overflow-y-auto pr-1',
-                showThumbs ? 'flex flex-col' : 'grid grid-cols-4 sm:grid-cols-6'
+                'gap-2.5 max-h-[420px] xl:max-h-none xl:flex-1 overflow-y-auto pr-1',
+                showThumbs ? 'grid grid-cols-2' : 'grid grid-cols-4 sm:grid-cols-6'
               )}>
-                {currentServer.server_data.map((ep, idx) => (
-                  <Link
-                    key={idx}
-                    to={`/watch/${movie.slug}/${ep.slug}?server=${encodeURIComponent(currentServer.server_name)}`}
-                    className={cn(
-                      'transition-all rounded-lg border text-center text-xs font-bold',
-                      showThumbs
-                        ? 'flex items-center gap-3 px-3 py-2.5 text-left'
-                        : 'py-2.5',
-                      ep.slug === episodeSlug
-                        ? 'bg-green-500/20 border-green-500/60 text-green-400'
-                        : 'bg-[#2a2a2a] border-slate-700/50 text-slate-400 hover:border-green-500/40 hover:text-green-300'
-                    )}
-                  >
-                    {showThumbs && (
-                      <div className="w-3 h-3 rounded-full border-2 shrink-0"
-                        style={{ borderColor: ep.slug === episodeSlug ? '#22c55e' : '#475569' }} />
-                    )}
-                    <span>{/^tập\s/i.test(ep.name) ? ep.name : `Tập ${ep.name}`}</span>
-                  </Link>
-                ))}
+                {currentServer.server_data.map((ep, idx) => {
+                  const label = /^tập\s/i.test(ep.name) ? ep.name : `Tập ${ep.name}`;
+                  const active = ep.slug === episodeSlug;
+                  if (showThumbs) {
+                    return (
+                      <Link
+                        key={idx}
+                        to={`/watch/${movie.slug}/${ep.slug}?server=${encodeURIComponent(currentServer.server_name)}`}
+                        className={cn(
+                          'relative rounded-lg overflow-hidden border transition-all group',
+                          active ? 'border-green-500/70 ring-1 ring-green-500/50' : 'border-slate-700/50 hover:border-green-500/40'
+                        )}
+                        style={{ aspectRatio: '16/9' }}
+                      >
+                        <img
+                          src={movieApi.getImageUrl(movie.thumb_url || movie.poster_url)}
+                          alt={label}
+                          loading="lazy"
+                          referrerPolicy="no-referrer"
+                          className="absolute inset-0 w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-black/20" />
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className={cn(
+                            'w-8 h-8 rounded-full flex items-center justify-center transition-transform group-hover:scale-110',
+                            active ? 'bg-green-500' : 'bg-black/50 backdrop-blur-sm'
+                          )}>
+                            <Play size={14} className="text-white ml-0.5" fill="currentColor" />
+                          </div>
+                        </div>
+                        <span className={cn(
+                          'absolute bottom-1.5 left-2 text-[11px] font-bold',
+                          active ? 'text-green-400' : 'text-white'
+                        )}>{label}</span>
+                      </Link>
+                    );
+                  }
+                  return (
+                    <Link
+                      key={idx}
+                      to={`/watch/${movie.slug}/${ep.slug}?server=${encodeURIComponent(currentServer.server_name)}`}
+                      className={cn(
+                        'transition-all rounded-lg border text-center text-xs font-bold py-2.5',
+                        active
+                          ? 'bg-green-500/20 border-green-500/60 text-green-400'
+                          : 'bg-[#2a2a2a] border-slate-700/50 text-slate-400 hover:border-green-500/40 hover:text-green-300'
+                      )}
+                    >
+                      <span>{label}</span>
+                    </Link>
+                  );
+                })}
               </div>
             </div>
+
+            {/* Bạn nghĩ gì về phim này — vote cảm xúc (trung bình lưu trên Firestore) */}
+            <RatingBar slug={movie.slug} />
           </motion.div>
         )}
 
@@ -775,6 +813,73 @@ export default function Watch() {
           </motion.div>
         )}
       </AnimatePresence>
+    </div>
+  );
+}
+
+/* ─── Vote cảm xúc: Tệ/Tạm/Hay/Thích/Tuyệt — trung bình lưu trên Firestore,
+   mỗi trình duyệt vote 1 lần cho mỗi phim ─────────────────────────────── */
+function RatingBar({ slug }: { slug: string }) {
+  const [rating, setRating] = useState<MovieRating>({ sum: 0, count: 0 });
+  const [voted, setVoted] = useState(false);
+  const [picked, setPicked] = useState<number | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    setVoted(hasVoted(slug));
+    getMovieRating(slug).then(setRating);
+  }, [slug]);
+
+  const avg = rating.count > 0 ? (rating.sum / rating.count) * 2 : 0; // quy về thang 10
+
+  const handleVote = async (star: 1 | 2 | 3 | 4 | 5) => {
+    if (voted || submitting) return;
+    setSubmitting(true);
+    setPicked(star);
+    try {
+      await voteMovieRating(slug, star);
+      setVoted(true);
+      setRating(r => ({ sum: r.sum + star, count: r.count + 1 }));
+    } catch {
+      setPicked(null);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="border-t border-white/5 px-4 py-4">
+      {rating.count > 0 && (
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-white font-bold text-sm flex items-center gap-1.5">
+            ⭐ {avg.toFixed(1)} <span className="text-slate-500 font-normal text-xs">({rating.count})</span>
+          </span>
+        </div>
+      )}
+      <p className="text-slate-300 text-sm font-semibold text-center mb-3">
+        {voted ? 'Cảm ơn bạn đã đánh giá!' : 'Bạn nghĩ gì về phim này?'}
+      </p>
+      <div className="flex items-center justify-between gap-1.5">
+        {RATING_EMOJIS.map((emoji, i) => {
+          const star = (i + 1) as 1 | 2 | 3 | 4 | 5;
+          const isPicked = picked === star;
+          return (
+            <button
+              key={i}
+              onClick={() => handleVote(star)}
+              disabled={voted || submitting}
+              className={cn(
+                'flex-1 flex flex-col items-center gap-1 py-2 rounded-lg transition-all',
+                voted ? 'opacity-60 cursor-default' : 'hover:bg-white/5 active:scale-95',
+                isPicked && 'bg-green-500/10'
+              )}
+            >
+              <span className="text-2xl">{emoji}</span>
+              <span className="text-[10.5px] text-slate-500 font-semibold">{RATING_LABELS[i]}</span>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }

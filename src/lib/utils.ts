@@ -6,6 +6,19 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+/**
+ * Giới hạn thời gian chờ 1 Promise: nếu quá `ms` mà chưa xong, trả về `fallback`
+ * ngay (Promise gốc vẫn chạy nền, không hủy). Dùng cho các nguồn PHỤ (NguonC,
+ * OPhim, ảnh TMDB...) để 1 nguồn chậm/die không kéo chậm cả trang — trang vẫn
+ * hiện được bằng nguồn chính (KKPhim) đúng hạn, nguồn phụ có thì bổ sung sau.
+ */
+export function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>(resolve => setTimeout(() => resolve(fallback), ms)),
+  ]);
+}
+
 export function formatTime(seconds: number): string {
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);

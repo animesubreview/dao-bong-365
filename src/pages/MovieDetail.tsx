@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Play, Heart, Share2, Plus, MessageCircle, Star, ChevronRight, Clock, Calendar, Globe, Film, ChevronDown, ChevronUp, Users, Search, ArrowUpDown } from 'lucide-react';
 import { movieApi, getNguonCDetail, mergeNguonCEpisodes, nguonCToMovie, getOPhimDetail, mergeOPhimEpisodes } from '../services/api';
 import { Movie, Episode } from '../types';
-import { cn } from '../lib/utils';
+import { cn, withTimeout } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import PopupAd from '../components/PopupAd';
 import CommentSection from '../components/CommentSection';
@@ -52,8 +52,10 @@ export default function MovieDetail() {
           movieApi.getMovieDetail(slug).catch((err) => { console.warn('[KKPhim] lỗi lấy chi tiết phim:', err); return { status: false, movie: null, episodes: [] } as any; }),
           getMovieOverride(slug).catch((err) => { console.warn('[Override] lỗi:', err); return null; }),
           getNguonCDetail(slug).catch((err) => { console.warn('[NguonC] lỗi lấy chi tiết phim:', err); return null; }),
-          getOPhimDetail(slug).catch((err) => { console.warn('[OPhim] lỗi lấy chi tiết phim:', err); return null; }),
-          movieApi.getMovieImagesV1(slug).catch(() => ({ posters: [], backdrops: [] })),
+          // OPhim (bổ sung server) và ảnh TMDB (chỉ để đẹp hơn, đã có ảnh KKPhim làm nền) đều
+          // là nguồn PHỤ → giới hạn thời gian chờ, chậm/die thì bỏ qua, không kéo chậm trang chi tiết phim
+          withTimeout(getOPhimDetail(slug).catch((err) => { console.warn('[OPhim] lỗi lấy chi tiết phim:', err); return null; }), 6000, null),
+          withTimeout(movieApi.getMovieImagesV1(slug).catch(() => ({ posters: [], backdrops: [] })), 4000, { posters: [], backdrops: [] }),
         ]);
         setTmdbImages(tmdbImgs);
         // Merge override vào movie data - override field nào thì hiện field đó

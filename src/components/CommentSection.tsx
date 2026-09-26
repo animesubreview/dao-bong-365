@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { MessageCircle, Send, Trash2, Heart, LogIn, Shield, CornerDownRight, X, Reply } from 'lucide-react';
+import { MessageCircle, Send, Trash2, Heart, LogIn, Shield, CornerDownRight, X, Reply, EyeOff, Eye } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { getComments, addComment, deleteComment, toggleLike } from '../lib/comments';
 import { getCurrentUser, getUserProfile, onAuthChange } from '../lib/auth';
@@ -48,6 +48,7 @@ export default function CommentSection({ movieSlug }: Props) {
   const [currentUser, setCurrentUser] = useState(getCurrentUser());
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [error, setError] = useState('');
+  const [isSpoiler, setIsSpoiler] = useState(false);
   const [replyTo, setReplyTo] = useState<ReplyState | null>(null);
   const [replyText, setReplyText] = useState('');
   const [replySubmitting, setReplySubmitting] = useState(false);
@@ -79,14 +80,15 @@ export default function CommentSection({ movieSlug }: Props) {
     if (!currentUser || !profile) return;
     const trimmed = text.trim();
     if (!trimmed) return;
-    if (trimmed.length > 500) { setError('Bình luận tối đa 500 ký tự'); return; }
+    if (trimmed.length > 1000) { setError('Bình luận tối đa 1000 ký tự'); return; }
     if (profile.isBanned) { setError('Tài khoản bị khóa, không thể bình luận'); return; }
     setError('');
     setSubmitting(true);
-    const newComment = await addComment(movieSlug, currentUser.uid, profile.username, profile.avatar, trimmed);
+    const newComment = await addComment(movieSlug, currentUser.uid, profile.username, profile.avatar, trimmed, { isSpoiler });
     if (newComment) {
       setComments(prev => [newComment, ...prev]);
       setText('');
+      setIsSpoiler(false);
     } else {
       setError('Gửi bình luận thất bại, thử lại');
     }
@@ -158,6 +160,7 @@ export default function CommentSection({ movieSlug }: Props) {
     const isAdminUser = profile?.role === 'admin';
     const liked = currentUser ? c.likes.includes(currentUser.uid) : false;
     const isAdminComment = !!c.isAdminReply;
+    const [revealed, setRevealed] = useState(false);
 
     return (
       <motion.div
@@ -225,12 +228,21 @@ export default function CommentSection({ movieSlug }: Props) {
               )}
             </div>
           </div>
-          <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap break-words">
-            {c.replyToUsername && (
-              <span className="text-green-400 font-bold mr-1">@{c.replyToUsername}</span>
-            )}
-            {c.content}
-          </p>
+          {c.isSpoiler && !revealed ? (
+            <button
+              onClick={() => setRevealed(true)}
+              className="w-full flex items-center justify-center gap-2 text-xs font-bold text-amber-400 bg-amber-500/10 border border-amber-500/30 rounded-lg py-2.5 hover:bg-amber-500/15 transition-all"
+            >
+              <EyeOff size={13} /> Nội dung có thể tiết lộ phim — bấm để xem
+            </button>
+          ) : (
+            <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap break-words">
+              {c.replyToUsername && (
+                <span className="text-green-400 font-bold mr-1">@{c.replyToUsername}</span>
+              )}
+              {c.content}
+            </p>
+          )}
         </div>
       </motion.div>
     );
@@ -316,47 +328,54 @@ export default function CommentSection({ movieSlug }: Props) {
   return (
     <div className="mt-8 mb-6">
       {/* Header */}
-      <div className="flex items-center gap-2 mb-5">
-        <span className="w-1 h-5 bg-green-500 rounded-full shrink-0" />
-        <MessageCircle size={18} className="text-green-400" />
-        <h3 className="text-base font-black text-white">
-          Bình luận <span className="text-slate-500 font-bold text-sm">({comments.length})</span>
-        </h3>
+      <div className="flex items-center justify-between mb-5">
+        <h3 className="text-xl font-black text-white">Bình luận</h3>
+        <span className="bg-slate-800/80 border border-slate-700/50 text-slate-300 text-xs font-bold px-3 py-1.5 rounded-full">
+          {comments.length} bình luận
+        </span>
       </div>
 
       {/* Input bình luận mới */}
       {currentUser && profile ? (
         <div className="bg-slate-900/70 border border-slate-800/60 rounded-2xl p-4 mb-5">
-          <div className="flex gap-3">
+          <div className="flex items-center gap-2.5 mb-3">
             <img src={profile.avatar} alt={profile.username} className="w-9 h-9 rounded-full shrink-0 bg-slate-700" />
-            <div className="flex-1 flex flex-col gap-2">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-white">{profile.username}</span>
-                <RoleBadge role={profile.role} />
-              </div>
-              <textarea
-                value={text}
-                onChange={e => setText(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit(); } }}
-                placeholder="Nhập bình luận... (Enter để gửi)"
-                rows={3}
-                maxLength={500}
-                className="w-full bg-slate-800/60 border border-slate-700/50 rounded-xl px-4 py-3 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-green-500/40 focus:border-green-500/30 resize-none transition-all"
-              />
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] text-slate-600">{text.length}/500</span>
-                <div className="flex items-center gap-2">
-                  {error && <span className="text-xs text-red-400">{error}</span>}
-                  <button
-                    onClick={handleSubmit}
-                    disabled={submitting || !text.trim()}
-                    className="flex items-center gap-1.5 bg-green-500 hover:bg-green-400 disabled:opacity-50 disabled:cursor-not-allowed text-slate-950 font-black text-xs px-4 py-2 rounded-full transition-all active:scale-95"
-                  >
-                    <Send size={13} />
-                    {submitting ? 'Đang gửi...' : 'Gửi'}
-                  </button>
-                </div>
-              </div>
+            <span className="text-sm text-slate-400">
+              Bình luận với tên: <span className="text-white font-bold">{profile.username}</span>
+            </span>
+            <RoleBadge role={profile.role} />
+          </div>
+          <div className="relative">
+            <textarea
+              value={text}
+              onChange={e => setText(e.target.value)}
+              placeholder="Viết bình luận"
+              rows={3}
+              maxLength={1000}
+              className="w-full bg-slate-800/60 border border-slate-700/50 rounded-xl px-4 py-3 pr-14 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-green-500/40 focus:border-green-500/30 resize-none transition-all"
+            />
+            <span className="absolute top-2.5 right-3 text-[10px] text-slate-600">{text.length}/1000</span>
+          </div>
+          <div className="flex items-center justify-between mt-2.5">
+            <button
+              onClick={() => setIsSpoiler(v => !v)}
+              className={`flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full border transition-all ${
+                isSpoiler ? 'bg-amber-500/15 border-amber-500/40 text-amber-400' : 'border-slate-700/60 text-slate-500 hover:text-slate-300'
+              }`}
+            >
+              {isSpoiler ? <EyeOff size={13} /> : <Eye size={13} />}
+              Tiết lộ?
+            </button>
+            <div className="flex items-center gap-2">
+              {error && <span className="text-xs text-red-400">{error}</span>}
+              <button
+                onClick={handleSubmit}
+                disabled={submitting || !text.trim()}
+                className="flex items-center gap-1.5 bg-green-500 hover:bg-green-400 disabled:opacity-50 disabled:cursor-not-allowed text-slate-950 font-black text-xs px-4 py-2 rounded-full transition-all active:scale-95"
+              >
+                <Send size={13} />
+                {submitting ? 'Đang gửi...' : 'Gửi'}
+              </button>
             </div>
           </div>
         </div>

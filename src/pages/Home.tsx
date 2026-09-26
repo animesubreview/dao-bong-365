@@ -474,15 +474,37 @@ function LazySection({ title, to, fetch: fetchFn, label, variant = 'row' }: {
   );
 }
 
-/* ─── Dải phân cách trang trí giữa các mục — thiết kế riêng, không sao chép
-   hoạ tiết của bất kỳ site tham khảo nào ─────────────────────────────── */
+/* ─── Dải hoa trang trí giữa các mục — SVG vẽ tay (dây leo + hoa cúc + lá),
+   lặp lại bằng CSS background-repeat nên nhẹ, không phải ảnh tải về ────── */
 function SectionDivider() {
+  // Hoạ tiết 1 đơn vị lặp lại: dây leo lượn sóng, xen kẽ 1 lá + 1 hoa cúc nhỏ.
+  // Mã hoá base64 để nhúng thẳng làm CSS background — trình duyệt tự lặp ngang.
+  const unit = encodeURIComponent(`
+    <svg xmlns="http://www.w3.org/2000/svg" width="120" height="24" viewBox="0 0 120 24">
+      <path d="M0 12 Q 15 2, 30 12 T 60 12 T 90 12 T 120 12" fill="none" stroke="#3a6b4a" stroke-width="1.4"/>
+      <g transform="translate(28,5)">
+        <path d="M2 7 Q -2 3, 2 0 Q 6 3, 2 7 Z" fill="#4d8a5f"/>
+      </g>
+      <g transform="translate(88,4)">
+        <circle cx="0" cy="0" r="1.6" fill="#e8a33d"/>
+        <circle cx="-3.2" cy="0" r="2" fill="#f6f3ea"/>
+        <circle cx="3.2" cy="0" r="2" fill="#f6f3ea"/>
+        <circle cx="0" cy="-3.2" r="2" fill="#f6f3ea"/>
+        <circle cx="0" cy="3.2" r="2" fill="#f6f3ea"/>
+        <circle cx="0" cy="0" r="1.6" fill="#e8a33d"/>
+      </g>
+    </svg>`);
   return (
-    <div className="flex items-center gap-2 py-1" aria-hidden="true">
-      <div className="flex-1 h-px bg-gradient-to-r from-transparent via-slate-700/70 to-transparent" />
-      <span className="w-1.5 h-1.5 rotate-45 bg-[var(--primary)]/70 rounded-[2px] shrink-0" />
-      <div className="flex-1 h-px bg-gradient-to-r from-transparent via-slate-700/70 to-transparent" />
-    </div>
+    <div
+      className="h-6 my-1 opacity-90"
+      style={{
+        backgroundImage: `url("data:image/svg+xml,${unit}")`,
+        backgroundRepeat: 'repeat-x',
+        backgroundPosition: 'left center',
+        backgroundSize: '120px 24px',
+      }}
+      aria-hidden="true"
+    />
   );
 }
 

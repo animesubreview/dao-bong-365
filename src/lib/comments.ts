@@ -84,7 +84,7 @@ export async function addComment(
   username: string,
   avatar: string,
   content: string,
-  options?: { parentId?: string; replyToUsername?: string; isAdminReply?: boolean }
+  options?: { parentId?: string; replyToUsername?: string; isAdminReply?: boolean; isSpoiler?: boolean }
 ): Promise<Comment | null> {
   try {
     const data: any = {
@@ -99,6 +99,7 @@ export async function addComment(
     if (options?.parentId) data.parentId = options.parentId;
     if (options?.replyToUsername) data.replyToUsername = options.replyToUsername;
     if (options?.isAdminReply) data.isAdminReply = true;
+    if (options?.isSpoiler) data.isSpoiler = true;
     const ref = await addDoc(collection(db, COL), data);
     return { id: ref.id, ...data };
   } catch {
