@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import {
-  Users, Film, Clock, Tv, PlusCircle, Bell, Wrench, CreditCard, KeyRound, Palette,
+  Film, Clock, Tv, PlusCircle, Bell, Wrench, CreditCard, KeyRound, Palette,
   CheckCircle2, XCircle, Loader2, Wifi, RefreshCw, ChevronRight,
 } from 'lucide-react';
 import { db } from '../../lib/firebase';
-import { subscribeOnlineUsers } from '../../lib/presence';
 import { subscribeTVChannels } from '../../lib/liveTV';
 import { runFirebaseHealthCheck, HealthStep } from '../../lib/firebaseUtils';
 
@@ -39,12 +38,10 @@ const QUICK = [
 ];
 
 export function Dashboard({ movieCount, upcomingCount, onNavigate, onQuickAddMovie, children }: Props) {
-  const [online, setOnline] = useState<number | null>(null);
   const [tvCount, setTvCount] = useState<number | null>(null);
   const [steps, setSteps] = useState<HealthStep[]>([]);
   const [checking, setChecking] = useState(false);
 
-  useEffect(() => subscribeOnlineUsers(s => setOnline(s.total)), []);
   useEffect(() => subscribeTVChannels(list => setTvCount(list.length)), []);
 
   const check = async () => {
@@ -60,8 +57,7 @@ export function Dashboard({ movieCount, upcomingCount, onNavigate, onQuickAddMov
   return (
     <div className="flex flex-col gap-5">
       {/* Số liệu nhanh */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <StatTile icon={Users} label="Đang online" value={online ?? '…'} tone="bg-emerald-500/15 text-emerald-400" />
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
         <StatTile icon={Film} label="Phim thủ công" value={movieCount} tone="bg-orange-500/15 text-orange-400" onClick={() => onNavigate('section-movies')} />
         <StatTile icon={Clock} label="Phim sắp chiếu" value={upcomingCount} tone="bg-sky-500/15 text-sky-400" onClick={() => onNavigate('section-upcoming')} />
         <StatTile icon={Tv} label="Kênh TV" value={tvCount ?? '…'} tone="bg-violet-500/15 text-violet-400" onClick={() => onNavigate('section-tv')} />

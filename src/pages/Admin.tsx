@@ -5,7 +5,7 @@ import {
   Facebook, Youtube, Phone, Mail, User, Palette, Layout, Shield,
   RefreshCw, Link as LinkIcon, Info, Lock, LogOut, KeyRound,
   Bell, BellPlus, Users, Ban, UserCheck, Clock, Megaphone, MonitorPlay,
-  Wallet, PlusCircle, MinusCircle, CreditCard, Wrench, Crown, Activity, Wifi,
+  Wallet, PlusCircle, MinusCircle, CreditCard, Wrench, Crown,
   History, Search, Radio, Trash, Pin, ArrowUp, ArrowDown, Copy, Shuffle, Power, Languages, Tv,
 } from 'lucide-react';
 import { getAdBanners, createAdBanner, updateAdBanner, deleteAdBanner, AdBannerData } from '../components/AdBanner';
@@ -70,7 +70,7 @@ import {
   saveGeoblockConfig, subscribeGeoblockConfig,
   GeoblockConfig, DEFAULT_GEOBLOCK,
 } from '../lib/geoblock';
-import { subscribeOnlineUsers, PresenceStats } from '../lib/presence';
+
 import { AdminShell, NAV_SECTIONS } from './admin/AdminShell';
 import { Dashboard } from './admin/Dashboard';
 
@@ -2063,101 +2063,6 @@ function VipKeysSection({ onToast }: { onToast: (msg: string, t: 'success' | 'er
 
 // ── MaintenanceSection ────────────────────────────────────────────────────────
 
-// ── RealtimeUsersSection ─────────────────────────────────────────────────────
-function RealtimeUsersSection() {
-  const [stats, setStats] = React.useState<PresenceStats>({ total: 0, byDevice: { mobile: 0, desktop: 0, tablet: 0, other: 0 } });
-  const [loading, setLoading] = React.useState(true);
-  const [blink, setBlink] = React.useState(false);
-
-  useEffect(() => {
-    const unsub = subscribeOnlineUsers(s => {
-      setStats(s);
-      setLoading(false);
-      setBlink(true);
-      setTimeout(() => setBlink(false), 600);
-    });
-    return unsub;
-  }, []);
-
-  const devices = [
-    { key: 'mobile', label: 'Mobile', color: 'text-sky-400', bg: 'bg-sky-500/20 border-sky-500/30', icon: '📱' },
-    { key: 'desktop', label: 'Desktop', color: 'text-emerald-400', bg: 'bg-emerald-500/20 border-emerald-500/30', icon: '🖥️' },
-    { key: 'tablet', label: 'Tablet', color: 'text-purple-400', bg: 'bg-purple-500/20 border-purple-500/30', icon: '📲' },
-    { key: 'other', label: 'Khác', color: 'text-slate-400', bg: 'bg-slate-700/40 border-slate-600/30', icon: '🔌' },
-  ] as const;
-
-  return (
-    <SectionCard title="Người dùng trực tuyến (Realtime)" icon={Activity} color="emerald">
-      {/* Tổng số */}
-      <div className={`flex items-center gap-4 mb-6 p-5 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 transition-all duration-300 ${blink ? 'border-emerald-400/60 bg-emerald-500/20' : ''}`}>
-        <div className="relative flex-shrink-0">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/30">
-            <Users size={26} className="text-white" />
-          </div>
-          {/* pulse dot */}
-          <span className="absolute -top-1 -right-1 flex h-4 w-4">
-            <span className={`animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 ${loading ? 'hidden' : ''}`} />
-            <span className="relative inline-flex rounded-full h-4 w-4 bg-emerald-500 border-2 border-slate-900" />
-          </span>
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-0.5">Đang truy cập (30 phút gần nhất)</p>
-          {loading ? (
-            <div className="flex gap-1 items-center mt-1">
-              <div className="w-8 h-7 bg-slate-700 rounded animate-pulse" />
-              <span className="text-slate-600 text-sm">đang tải...</span>
-            </div>
-          ) : (
-            <div className="flex items-baseline gap-2">
-              <span className="text-4xl font-black text-white tabular-nums" style={{ fontFamily: 'Bebas Neue, monospace' }}>{stats.total}</span>
-              <span className="text-slate-400 text-sm font-semibold">người dùng</span>
-            </div>
-          )}
-        </div>
-        <div className="flex items-center gap-1.5 text-xs text-emerald-400 font-semibold">
-          <Wifi size={14} />
-          <span>Live</span>
-        </div>
-      </div>
-
-      {/* Phân theo thiết bị */}
-      <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-3">Theo thiết bị</p>
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {devices.map(d => {
-          const count = stats.byDevice[d.key];
-          const pct = stats.total > 0 ? Math.round((count / stats.total) * 100) : 0;
-          return (
-            <div key={d.key} className={`flex flex-col gap-2 p-4 rounded-xl border ${d.bg}`}>
-              <div className="flex items-center justify-between">
-                <span className="text-lg">{d.icon}</span>
-                <span className={`text-xs font-bold ${d.color}`}>{pct}%</span>
-              </div>
-              <div>
-                <p className={`text-xl font-black tabular-nums ${d.color}`} style={{ fontFamily: 'Bebas Neue, monospace' }}>
-                  {loading ? <span className="w-5 h-5 inline-block bg-slate-700 rounded animate-pulse align-middle" /> : count}
-                </p>
-                <p className="text-xs text-slate-500 font-semibold mt-0.5">{d.label}</p>
-              </div>
-              {/* progress bar */}
-              <div className="w-full h-1 bg-slate-800 rounded-full overflow-hidden">
-                <div
-                  className={`h-full rounded-full transition-all duration-700 ${d.key === 'mobile' ? 'bg-sky-400' : d.key === 'desktop' ? 'bg-emerald-400' : d.key === 'tablet' ? 'bg-purple-400' : 'bg-slate-500'}`}
-                  style={{ width: `${pct}%` }}
-                />
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      <p className="text-[11px] text-slate-600 mt-4 flex items-center gap-1.5">
-        <RefreshCw size={11} className="animate-spin" style={{ animationDuration: '3s' }} />
-        Cập nhật tự động mỗi 30 giây • Dựa trên Firestore Presence
-      </p>
-    </SectionCard>
-  );
-}
-
 function MaintenanceSection() {
   const [cfg, setCfg] = useState<MaintenanceConfig>(DEFAULT_MAINTENANCE);
   const [saving, setSaving] = useState(false);
@@ -3384,9 +3289,7 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
             upcomingCount={upcomingMovies.length}
             onNavigate={scrollToSection}
             onQuickAddMovie={() => { scrollToSection('section-movies'); setMovieForm({}); setMovieEpisodes([{ label: 'Full', embedUrl: '' }]); setEditingId(null); setShowMovieForm(true); }}
-          >
-            <RealtimeUsersSection />
-          </Dashboard>
+          />
         </div>
         )}
 

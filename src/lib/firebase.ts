@@ -7,21 +7,22 @@ import { getAnalytics, isSupported as isAnalyticsSupported } from 'firebase/anal
 // Cấu hình Firebase Web (công khai theo thiết kế của Firebase — bảo mật nằm ở firestore.rules).
 // Có thể ghi đè bằng biến môi trường VITE_FIREBASE_*; nếu không đặt thì dùng giá trị mặc định bên dưới.
 //
-// LƯU Ý: project "dem-luong-truy-cap" là project MỚI, TRỐNG (đổi từ project cũ
-// "web-phim-20213" theo yêu cầu). Trước khi deploy phải tự tạo trong Firebase Console:
+// LƯU Ý: project "caphim-99ff6" là project MỚI (đổi từ project cũ "dem-luong-truy-cap"
+// theo yêu cầu). Trước khi deploy phải tự tạo trong Firebase Console:
 //   1) Firestore Database → Create database, rồi vào tab Rules dán nội dung firestore.rules → Publish
 //   2) Authentication → Sign-in method → bật "Email/Password"
 //   3) Storage → Get started, rồi vào tab Rules dán nội dung storage.rules → Publish
 // Thiếu 1 trong 3 bước trên thì đăng nhập / lưu dữ liệu / tải ảnh sẽ báo lỗi.
 const env = import.meta.env;
 const firebaseConfig = {
-  apiKey: env.VITE_FIREBASE_API_KEY || "AIzaSyCfyjBijJ2n65Ek82eLEHWN_2tndyH6Ak8",
-  authDomain: env.VITE_FIREBASE_AUTH_DOMAIN || "dem-luong-truy-cap.firebaseapp.com",
-  projectId: env.VITE_FIREBASE_PROJECT_ID || "dem-luong-truy-cap",
-  storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET || "dem-luong-truy-cap.firebasestorage.app",
-  messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID || "134357974984",
-  appId: env.VITE_FIREBASE_APP_ID || "1:134357974984:web:1c3bd20f63f5a4c812cafd",
-  measurementId: env.VITE_FIREBASE_MEASUREMENT_ID || "G-EGJYGLXZBF",
+  apiKey: env.VITE_FIREBASE_API_KEY || "AIzaSyDOYdo956812BGwf2L5tmJpgHyZbkkmKn4",
+  authDomain: env.VITE_FIREBASE_AUTH_DOMAIN || "caphim-99ff6.firebaseapp.com",
+  databaseURL: env.VITE_FIREBASE_DATABASE_URL || "https://caphim-99ff6-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: env.VITE_FIREBASE_PROJECT_ID || "caphim-99ff6",
+  storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET || "caphim-99ff6.firebasestorage.app",
+  messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID || "1054924496537",
+  appId: env.VITE_FIREBASE_APP_ID || "1:1054924496537:web:8fd91e657cdcc769212208",
+  measurementId: env.VITE_FIREBASE_MEASUREMENT_ID || "G-FMN4ZVL8CK",
 };
 
 const app = initializeApp(firebaseConfig);
