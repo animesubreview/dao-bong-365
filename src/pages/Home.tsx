@@ -363,7 +363,7 @@ function ContinueWatchingSection() {
 function SecHeader({ title, to, label='Tất cả', color }: { title:string; to?:string; label?:string; color?:string }) {
   return (
     <div className="flex items-center justify-between mb-3">
-      <h2 className={`text-base md:text-lg font-black tracking-tight ${color || 'text-white'}`}>{title}</h2>
+      <h2 className={`text-lg md:text-xl font-black tracking-tight leading-none shrink-0 mr-2 ${color || 'text-white'}`}>{title}</h2>
       {to && <Link to={to} className="flex items-center gap-1 text-xs font-semibold text-slate-400 hover:text-green-400 transition-colors bg-slate-800/60 border border-slate-700/60 px-2.5 py-1.5 rounded-full shrink-0">{label} <ChevronRight size={11}/></Link>}
     </div>
   );
@@ -1036,7 +1036,7 @@ export default function Home() {
             Ẩn hẳn mục này nếu chưa có phim thủ công nào. */}
         {manualMovies.length > 0 && (
           <section>
-            <SecHeader title="Phim Độc Quyền Đảo Phim" to="/type/phim-le" label="Xem thêm" />
+            <SecHeader title="Phim Độc Quyền Đảo Phim" to="/type/phim-le" label="Xem thêm" color="text-yellow-400" />
             <div className="flex gap-3 overflow-x-auto -mx-4 md:-mx-0 px-4 md:px-0 pb-1 snap-x snap-mandatory"
               style={{ scrollbarWidth:'none', msOverflowStyle:'none' }}>
               {manualMovies.slice(0, 8).map((m: ManualMovie) => (
