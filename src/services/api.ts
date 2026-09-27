@@ -36,12 +36,25 @@ if (typeof window !== 'undefined') {
 const VSMOV_BASE = 'https://vsmov.com/api';
 
 async function apiFetch(path: string): Promise<Response> {
+  // Đua song song phimapi.com (BASE_URL) và vsmov.com/api — cả 2 cùng chuẩn KKPhim.
+  // Ai trả về JSON hợp lệ (status ok, có "items"/"data") trước thì dùng luôn, không cần đợi cái kia.
+  // NguonC KHÔNG tham gia đua này vì cấu trúc API hoàn toàn khác (không phải danh sách theo trang
+  // cùng path), chỉ dùng riêng làm nguồn ảnh dự phòng ở nơi khác trong file này.
+  const tryOne = async (base: string): Promise<Response> => {
+    const res = await fetch(`${base}${path}`);
+    if (!res.ok) throw new Error(`${base} status ${res.status}`);
+    const clone = res.clone();
+    const json = await clone.json().catch(() => null);
+    const hasData = json && (json.status === true || json.status === 'success') &&
+      (json.items?.length > 0 || json.data?.items?.length > 0);
+    if (!hasData) throw new Error(`${base} empty`);
+    return res;
+  };
   try {
-    const res = await fetch(`${BASE_URL}${path}`);
-    if (res.ok) return res;
-    throw new Error(`Primary API status ${res.status}`);
+    return await Promise.any([tryOne(BASE_URL), tryOne(VSMOV_BASE)]);
   } catch {
-    return fetch(`${VSMOV_BASE}${path}`);
+    // Cả 2 đều lỗi/rỗng — vẫn trả về response của BASE_URL (kể cả rỗng) để hàm gọi tự xử lý
+    return fetch(`${BASE_URL}${path}`);
   }
 }
 

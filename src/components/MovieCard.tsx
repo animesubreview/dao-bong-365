@@ -4,6 +4,7 @@ import { Languages } from 'lucide-react';
 import { Movie } from '../types';
 import { movieApi } from '../services/api';
 import { cn } from '../lib/utils';
+import PosterImg from './PosterImg';
 
 // Badge helpers
 function LangBadge({ lang }: { lang?: string }) {
@@ -38,27 +39,12 @@ export default function MovieCard({ movie, className }: any) {
           className="relative rounded-2xl overflow-hidden bg-slate-800 border border-white/[0.06] shadow-md shadow-black/30 transition-transform duration-300 ease-out group-hover:scale-[1.03] group-hover:shadow-xl group-hover:shadow-[var(--primary)]/10"
           style={{ aspectRatio: '2/3' }}
         >
-          <img
-            src={movieApi.getImageUrl(movie.poster_url || movie.thumb_url) || '/assets/logo-daophim.png'}
+          <PosterImg
+            src={movieApi.getImageUrl(movie.poster_url || movie.thumb_url)}
+            fallbackSrc={movie.poster_url || movie.thumb_url}
+            movieSlug={movie.slug}
             alt={movie.name}
             loading="lazy"
-            referrerPolicy="no-referrer"
-            onError={(e) => {
-              const img = e.currentTarget;
-              const original = movie.poster_url || movie.thumb_url;
-              const step = img.dataset.fallbackStep || '0';
-              if (step === '0' && original && img.src !== original) {
-                // Bước 1: thử lại bằng link ảnh gốc (bỏ qua proxy phimapi.com nếu nó đang lỗi)
-                img.dataset.fallbackStep = '1';
-                img.src = original;
-              } else if (step !== '2' && original) {
-                // Bước 2: mạng người xem có thể đang chặn domain ảnh gốc — thử qua proxy ảnh dự phòng (wsrv.nl)
-                img.dataset.fallbackStep = '2';
-                img.src = `https://wsrv.nl/?url=${encodeURIComponent(original.replace(/^https?:\/\//, ''))}&default=1`;
-              } else {
-                img.src = '/assets/logo-daophim.png';
-              }
-            }}
             className="absolute inset-0 w-full h-full object-cover"
           />
           {/* Overlay gradient — luôn nhẹ, đậm hơn khi hover để chữ/nút nổi bật (desktop) */}
