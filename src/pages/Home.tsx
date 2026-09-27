@@ -360,12 +360,10 @@ function ContinueWatchingSection() {
 }
 
 /* ─── SecHeader ───────────────────────────────────────────────── */
-function SecHeader({ title, to, label='Tất cả' }: { title:string; to?:string; label?:string }) {
+function SecHeader({ title, to, label='Tất cả', color }: { title:string; to?:string; label?:string; color?:string }) {
   return (
     <div className="flex items-center justify-between mb-3">
-      <h2 className="text-base md:text-lg font-black flex items-center gap-2.5 tracking-tight text-white">
-        <span className="w-1 h-4 md:h-5 rounded-full inline-block shrink-0 bg-white" />{title}
-      </h2>
+      <h2 className={`text-base md:text-lg font-black tracking-tight ${color || 'text-white'}`}>{title}</h2>
       {to && <Link to={to} className="flex items-center gap-1 text-xs font-semibold text-slate-400 hover:text-green-400 transition-colors bg-slate-800/60 border border-slate-700/60 px-2.5 py-1.5 rounded-full shrink-0">{label} <ChevronRight size={11}/></Link>}
     </div>
   );
@@ -417,10 +415,11 @@ function GridSkeleton() {
 }
 
 /* ─── LazySection — scroll trigger, 500ms delay, KHÔNG bị đen ── */
-function LazySection({ title, to, fetch: fetchFn, label, variant = 'row' }: {
+function LazySection({ title, to, fetch: fetchFn, label, variant = 'row', color }: {
   title: string; to: string; label?: string;
   fetch: () => Promise<Movie[]>;
   variant?: 'row' | 'grid' | 'feature';
+  color?: string;
 }) {
   const [movies, setMovies] = useState<Movie[] | null>(null); // null = chưa fetch xong
   const [retried, setRetried] = useState(false);
@@ -460,14 +459,14 @@ function LazySection({ title, to, fetch: fetchFn, label, variant = 'row' }: {
   return (
     // min-height cố định → layout KHÔNG bao giờ collapse → không bị đen
     <section ref={ref} style={{ minHeight: SKELETON_H + 60 }}>
-      <SecHeader title={title} to={to} label={label} />
+      <SecHeader title={title} to={to} label={label} color={color} />
       {variant === 'grid' ? (
         movies && movies.length > 0
           ? <div className="grid grid-cols-2 gap-x-3 gap-y-4">{movies.slice(0, 4).map(m => <GridLandscapeCard key={m._id} movie={m} />)}</div>
           : <GridSkeleton />
       ) : variant === 'feature' ? (
         movies && movies.length > 0
-          ? <HRow>{movies.slice(0, 10).map(m => <FeatureBannerCard key={m._id} movie={m} />)}</HRow>
+          ? <HRow>{movies.slice(0, 6).map(m => <FeatureBannerCard key={m._id} movie={m} />)}</HRow>
           : <SkeletonRow />
       ) : (
         movies && movies.length > 0
@@ -512,25 +511,27 @@ function SectionDivider() {
   );
 }
 
-/* ─── Các mục phim theo yêu cầu: độc quyền, theo series nổi tiếng, theo quốc gia ─── */
+/* ─── Các mục phim theo yêu cầu: độc quyền, theo series nổi tiếng, theo quốc gia ───
+   variant: chỉ mục theo series/anime (tìm theo tên) mới dùng thẻ banner to ("feature"),
+   mục theo quốc gia dùng poster nhỏ bình thường (mặc định "row") ────────────────── */
 const HOME_SECTIONS = [
-  { title: 'Thám Tử Lừng Danh Conan', to: '/search?q=Th%C3%A1m%20T%E1%BB%AD%20L%E1%BB%ABng%20Danh%20Conan',
-    fetch: () => movieApi.searchMovies('Thám Tử Lừng Danh Conan', 1, 24).then(r => r.items) },
-  { title: 'Phim Việt Nam', to: '/type/phim-bo?country=viet-nam',
+  { title: 'Thám Tử Lừng Danh Conan', to: '/search?q=Th%C3%A1m%20T%E1%BB%AD%20L%E1%BB%ABng%20Danh%20Conan', color: 'text-emerald-400',
+    fetch: () => movieApi.searchMovies('Thám Tử Lừng Danh Conan', 1, 24).then(r => r.items), variant: 'feature' as const },
+  { title: 'Phim Việt Nam', to: '/type/phim-bo?country=viet-nam', color: 'text-emerald-300',
     fetch: () => movieApi.filterMovies({ type: 'phim-bo', country: 'viet-nam', page: 1, limit: 24 }).then(r => r.items) },
-  { title: 'Phim Chiếu Rạp', to: '/type/phim-chieu-rap',
+  { title: 'Phim Chiếu Rạp', to: '/type/phim-chieu-rap', color: 'text-orange-400',
     fetch: () => movieApi.getMoviesByType('phim-chieu-rap', 1, 24).then(r => r.items) },
-  { title: 'Naruto', to: '/search?q=Naruto',
-    fetch: () => movieApi.searchMovies('Naruto', 1, 24).then(r => r.items) },
-  { title: 'Jujutsu Kaisen', to: '/search?q=Jujutsu%20Kaisen',
-    fetch: () => movieApi.searchMovies('Jujutsu Kaisen', 1, 24).then(r => r.items) },
-  { title: 'Kimetsu no Yaiba', to: '/search?q=Kimetsu%20no%20Yaiba',
-    fetch: () => movieApi.searchMovies('Kimetsu no Yaiba', 1, 24).then(r => r.items) },
-  { title: 'Phim Hàn Quốc', to: '/type/phim-bo?country=han-quoc',
+  { title: 'Naruto', to: '/search?q=Naruto', color: 'text-yellow-400',
+    fetch: () => movieApi.searchMovies('Naruto', 1, 24).then(r => r.items), variant: 'feature' as const },
+  { title: 'Jujutsu Kaisen', to: '/search?q=Jujutsu%20Kaisen', color: 'text-purple-400',
+    fetch: () => movieApi.searchMovies('Jujutsu Kaisen', 1, 24).then(r => r.items), variant: 'feature' as const },
+  { title: 'Kimetsu no Yaiba', to: '/search?q=Kimetsu%20no%20Yaiba', color: 'text-red-400',
+    fetch: () => movieApi.searchMovies('Kimetsu no Yaiba', 1, 24).then(r => r.items), variant: 'feature' as const },
+  { title: 'Phim Hàn Quốc', to: '/type/phim-bo?country=han-quoc', color: 'text-pink-400',
     fetch: () => movieApi.filterMovies({ type: 'phim-bo', country: 'han-quoc', page: 1, limit: 24 }).then(r => r.items) },
-  { title: 'Phim Trung Quốc', to: '/type/phim-bo?country=trung-quoc',
+  { title: 'Phim Trung Quốc', to: '/type/phim-bo?country=trung-quoc', color: 'text-amber-400',
     fetch: () => movieApi.filterMovies({ type: 'phim-bo', country: 'trung-quoc', page: 1, limit: 24 }).then(r => r.items) },
-  { title: 'Phim Thái Lan', to: '/type/phim-bo?country=thai-lan',
+  { title: 'Phim Thái Lan', to: '/type/phim-bo?country=thai-lan', color: 'text-cyan-400',
     fetch: () => movieApi.filterMovies({ type: 'phim-bo', country: 'thai-lan', page: 1, limit: 24 }).then(r => r.items) },
 ];
 
@@ -772,10 +773,11 @@ function VietBannerCard({ movie }: { movie: Movie }) {
    trên trang chủ (kiểu thẻ "nổi bật" lớn thay vì poster nhỏ dạng lưới) ────────── */
 function FeatureBannerCard({ movie }: { movie: Movie }) {
   const [ok, setOk] = useState(false);
+  const [posterOk, setPosterOk] = useState(false);
   const meta = [movie.episode_current, movie.year, movie.time].filter(Boolean).map(v => dec(String(v))).join(' • ');
   return (
-    <Link to={`/phim/${movie.slug}`} className="group shrink-0 block" style={{ width: 'clamp(280px, 84vw, 380px)', scrollSnapAlign: 'start' }}>
-      <div className="relative rounded-2xl overflow-hidden bg-slate-800" style={{ aspectRatio: '16/9.2' }}>
+    <Link to={`/phim/${movie.slug}`} className="group shrink-0 block" style={{ width: 'clamp(220px, 68vw, 300px)', scrollSnapAlign: 'start' }}>
+      <div className="relative rounded-xl overflow-hidden bg-slate-800" style={{ aspectRatio: '16/10' }}>
         <div className="absolute inset-0 bg-slate-800" />
         <PosterImg src={movieApi.getImageUrl(movie.thumb_url || movie.poster_url)} fallbackSrc={movie.thumb_url || movie.poster_url} alt={dec(movie.name)} movieSlug={movie.slug}
           loading="lazy" onLoad={() => setOk(true)}
@@ -784,15 +786,17 @@ function FeatureBannerCard({ movie }: { movie: Movie }) {
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/50 via-transparent to-transparent" />
         <EpBadge ep={movie.episode_current} />
       </div>
-      {/* Poster to, đè lên góc dưới-trái ảnh nền — phần đầu nằm trong backdrop, phần đuôi thò ra ngoài */}
-      <div className="flex gap-3 px-1 -mt-12 relative z-10">
-        <div className="w-24 shrink-0 rounded-lg overflow-hidden bg-slate-800 border-2 border-slate-950 shadow-xl" style={{ aspectRatio: '2/3' }}>
-          <PosterImg src={movieApi.getImageUrl(movie.poster_url)} fallbackSrc={movie.poster_url} alt="" className="w-full h-full object-cover" />
+      {/* Poster nhỏ hơn, đè lên góc dưới-trái ảnh nền — phần đầu nằm trong backdrop, phần đuôi thò ra ngoài */}
+      <div className="flex gap-2.5 px-1 -mt-8 relative z-10">
+        <div className="w-14 shrink-0 rounded-md overflow-hidden bg-slate-800 border-2 border-slate-950 shadow-xl" style={{ aspectRatio: '2/3' }}>
+          <PosterImg src={movieApi.getImageUrl(movie.poster_url || movie.thumb_url)} fallbackSrc={movie.poster_url || movie.thumb_url} alt="" movieSlug={movie.slug}
+            loading="lazy" onLoad={() => setPosterOk(true)}
+            className="w-full h-full object-cover" style={{ opacity: posterOk ? 1 : 0, transition: 'opacity 500ms ease' }} />
         </div>
-        <div className="flex-1 min-w-0 pt-8">
-          <div className="font-black text-white text-[15px] leading-snug line-clamp-2 group-hover:text-green-400 transition-colors">{dec(movie.name)}</div>
-          {movie.origin_name && <div className="text-slate-400 text-[11px] mt-1 line-clamp-1">{dec(movie.origin_name)}</div>}
-          {meta && <div className="text-slate-500 text-[10.5px] mt-1 truncate">{meta}</div>}
+        <div className="flex-1 min-w-0 pt-5">
+          <div className="font-bold text-white text-[13px] leading-snug line-clamp-2 group-hover:text-green-400 transition-colors">{dec(movie.name)}</div>
+          {movie.origin_name && <div className="text-slate-400 text-[10.5px] mt-0.5 line-clamp-1">{dec(movie.origin_name)}</div>}
+          {meta && <div className="text-slate-500 text-[10px] mt-0.5 truncate">{meta}</div>}
         </div>
       </div>
     </Link>
@@ -1055,7 +1059,7 @@ export default function Home() {
         {HOME_SECTIONS.map((s, i) => (
           <React.Fragment key={s.title}>
             {i > 0 && <SectionDivider />}
-            <LazySection title={s.title} to={s.to} fetch={s.fetch} label="Xem thêm" variant="feature" />
+            <LazySection title={s.title} to={s.to} fetch={s.fetch} label="Xem thêm" variant={s.variant} color={s.color} />
           </React.Fragment>
         ))}
 
