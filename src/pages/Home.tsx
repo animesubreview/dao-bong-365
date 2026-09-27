@@ -1026,6 +1026,12 @@ export default function Home() {
           </div>
         </section>
 
+        {/* Phim Hot Hôm Nay — phim mới cập nhật gần nhất, đua song song phimapi.com + vsmov.com/api
+            (NguonC không có endpoint danh sách nên không tham gia được, xem ghi chú ở apiFetch). */}
+        <SectionDivider />
+        <LazySection title="🔥 Phim Hot Hôm Nay" to="/lich-chieu" label="Xem thêm" color="text-red-400"
+          fetch={() => movieApi.getNewUpdates(1).then(r => r.items)} />
+
         {/* Phim Độc Quyền Đảo Phim — CHỈ hiện phim thêm thủ công (admin tự up), không lấy phim từ API.
             Ẩn hẳn mục này nếu chưa có phim thủ công nào. */}
         {manualMovies.length > 0 && (
