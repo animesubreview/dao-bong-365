@@ -420,7 +420,7 @@ function GridSkeleton() {
 function LazySection({ title, to, fetch: fetchFn, label, variant = 'row' }: {
   title: string; to: string; label?: string;
   fetch: () => Promise<Movie[]>;
-  variant?: 'row' | 'grid';
+  variant?: 'row' | 'grid' | 'feature';
 }) {
   const [movies, setMovies] = useState<Movie[] | null>(null); // null = chưa fetch xong
   const [retried, setRetried] = useState(false);
@@ -465,6 +465,10 @@ function LazySection({ title, to, fetch: fetchFn, label, variant = 'row' }: {
         movies && movies.length > 0
           ? <div className="grid grid-cols-2 gap-x-3 gap-y-4">{movies.slice(0, 4).map(m => <GridLandscapeCard key={m._id} movie={m} />)}</div>
           : <GridSkeleton />
+      ) : variant === 'feature' ? (
+        movies && movies.length > 0
+          ? <HRow>{movies.slice(0, 10).map(m => <FeatureBannerCard key={m._id} movie={m} />)}</HRow>
+          : <SkeletonRow />
       ) : (
         movies && movies.length > 0
           ? <HRow>{movies.map(m => <MCard key={m._id} movie={m} />)}</HRow>
@@ -763,6 +767,38 @@ function VietBannerCard({ movie }: { movie: Movie }) {
   );
 }
 
+/* ─── "FeatureBannerCard" — thẻ ảnh nền lớn (16:9) + poster to đè góc dưới-trái,
+   tiêu đề/tên gốc/trạng thái nằm bên dưới. Dùng cho các mục theo series/quốc gia
+   trên trang chủ (kiểu thẻ "nổi bật" lớn thay vì poster nhỏ dạng lưới) ────────── */
+function FeatureBannerCard({ movie }: { movie: Movie }) {
+  const [ok, setOk] = useState(false);
+  const meta = [movie.episode_current, movie.year, movie.time].filter(Boolean).map(v => dec(String(v))).join(' • ');
+  return (
+    <Link to={`/phim/${movie.slug}`} className="group shrink-0 block" style={{ width: 'clamp(280px, 84vw, 380px)', scrollSnapAlign: 'start' }}>
+      <div className="relative rounded-2xl overflow-hidden bg-slate-800" style={{ aspectRatio: '16/9.2' }}>
+        <div className="absolute inset-0 bg-slate-800" />
+        <PosterImg src={movieApi.getImageUrl(movie.thumb_url || movie.poster_url)} fallbackSrc={movie.thumb_url || movie.poster_url} alt={dec(movie.name)} movieSlug={movie.slug}
+          loading="lazy" onLoad={() => setOk(true)}
+          className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          style={{ opacity: ok ? 1 : 0, transition: 'opacity 500ms ease' }} />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/50 via-transparent to-transparent" />
+        <EpBadge ep={movie.episode_current} />
+      </div>
+      {/* Poster to, đè lên góc dưới-trái ảnh nền — phần đầu nằm trong backdrop, phần đuôi thò ra ngoài */}
+      <div className="flex gap-3 px-1 -mt-12 relative z-10">
+        <div className="w-24 shrink-0 rounded-lg overflow-hidden bg-slate-800 border-2 border-slate-950 shadow-xl" style={{ aspectRatio: '2/3' }}>
+          <PosterImg src={movieApi.getImageUrl(movie.poster_url)} fallbackSrc={movie.poster_url} alt="" className="w-full h-full object-cover" />
+        </div>
+        <div className="flex-1 min-w-0 pt-8">
+          <div className="font-black text-white text-[15px] leading-snug line-clamp-2 group-hover:text-green-400 transition-colors">{dec(movie.name)}</div>
+          {movie.origin_name && <div className="text-slate-400 text-[11px] mt-1 line-clamp-1">{dec(movie.origin_name)}</div>}
+          {meta && <div className="text-slate-500 text-[10.5px] mt-1 truncate">{meta}</div>}
+        </div>
+      </div>
+    </Link>
+  );
+}
+
 function VietFeaturedSection({ movies }: { movies: Movie[] }) {
   if (!movies.length) return null;
   return (
@@ -1019,7 +1055,7 @@ export default function Home() {
         {HOME_SECTIONS.map((s, i) => (
           <React.Fragment key={s.title}>
             {i > 0 && <SectionDivider />}
-            <LazySection title={s.title} to={s.to} fetch={s.fetch} label="Xem thêm" />
+            <LazySection title={s.title} to={s.to} fetch={s.fetch} label="Xem thêm" variant="feature" />
           </React.Fragment>
         ))}
 
