@@ -12,7 +12,7 @@ import DiscordBanner from '../components/DiscordBanner';
 import { getMovieOverride, mergeOverride, mergeCustomServers } from '../lib/movieOverrides';
 import { useSEO } from '../hooks/useSEO';
 
-type Tab = 'episodes' | 'info' | 'actors' | 'suggest';
+type Tab = 'episodes' | 'comments' | 'info' | 'actors' | 'suggest';
 
 export default function MovieDetail() {
   const { slug } = useParams<{ slug: string }>();
@@ -138,10 +138,12 @@ export default function MovieDetail() {
 
   const TABS: { key: Tab; label: string }[] = [
     { key: 'episodes', label: 'Tập phim' },
-    { key: 'info', label: 'Thông tin' },
+    { key: 'comments', label: 'Bình luận' },
     { key: 'actors', label: 'Diễn viên' },
     { key: 'suggest', label: 'Đề xuất' },
   ];
+  // "info" không còn là tab hiện trên thanh tab (giống ảnh mẫu AuraFlix: Tập phim/Bình luận/
+  // Diễn viên/Đề xuất) — vẫn xem được qua link "Thông tin phim >" ngay dưới tên phim.
 
   return (
     <div className="min-h-screen bg-slate-950 pb-20">
@@ -198,29 +200,27 @@ export default function MovieDetail() {
               Thông tin phim <ChevronRight size={15} />
             </button>
 
-            {/* Xem Chung — outline pill */}
-            {firstEpisode && (
-              <Link
-                to={`/watch/${movie.slug}/${firstEpisode.slug}?server=${encodeURIComponent(episodes[0]?.server_name || '')}&openRoom=1`}
-                className="w-full sm:w-auto mt-5 flex items-center justify-center gap-2 border border-slate-600 hover:border-slate-400 text-white font-bold px-6 py-2.5 rounded-full text-sm transition-colors"
-              >
-                <Users size={16} /> Xem Chung
-              </Link>
-            )}
-
-            {/* Xem Ngay — nút chính, to, nổi bật */}
-            <div className="w-full sm:w-auto mt-3">
+            {/* Xem Ngay + Xem Chung — 1 hàng ngang, giống ảnh mẫu */}
+            <div className="w-full flex items-center gap-2.5 mt-5">
               {firstEpisode ? (
                 <Link
                   to={`/watch/${movie.slug}/${firstEpisode.slug}?server=${encodeURIComponent(episodes[0]?.server_name || '')}`}
-                  className="btn-primary w-full sm:w-auto justify-center !text-base !py-3.5 !px-10"
+                  className="btn-primary flex-1 justify-center !text-sm !py-3 !px-4"
                 >
-                  <Play className="fill-current" size={18} /> Xem Ngay
+                  <Play className="fill-current" size={17} /> Xem Ngay
                 </Link>
               ) : (
-                <div className="w-full sm:w-auto flex items-center justify-center gap-2 bg-slate-700 text-slate-400 font-black px-10 py-3.5 rounded-xl text-base cursor-not-allowed">
-                  <Play size={18} /> Chưa Có
+                <div className="flex-1 flex items-center justify-center gap-2 bg-slate-700 text-slate-400 font-black py-3 rounded-xl text-sm cursor-not-allowed">
+                  <Play size={17} /> Chưa Có
                 </div>
+              )}
+              {firstEpisode && (
+                <Link
+                  to={`/watch/${movie.slug}/${firstEpisode.slug}?server=${encodeURIComponent(episodes[0]?.server_name || '')}&openRoom=1`}
+                  className="flex-1 flex items-center justify-center gap-2 border border-slate-600 hover:border-slate-400 text-white font-bold py-3 rounded-xl text-sm transition-colors"
+                >
+                  <Users size={16} /> Xem Chung
+                </Link>
               )}
             </div>
 
@@ -273,7 +273,7 @@ export default function MovieDetail() {
                   key={tab.key}
                   onClick={() => setActiveTab(tab.key)}
                   className={cn(
-                    'px-4 py-3 text-sm font-bold border-b-2 transition-all -mb-px',
+                    'px-4 py-3 text-sm font-bold uppercase tracking-wide border-b-2 transition-all -mb-px',
                     activeTab === tab.key
                       ? 'border-green-500 text-white'
                       : 'border-transparent text-slate-500 hover:text-slate-300'
@@ -371,10 +371,12 @@ export default function MovieDetail() {
                       Chưa có tập phim nào
                     </div>
                   )}
-                  <div className="mt-6">
-                    <CommentSection movieSlug={movie.slug} />
-                  </div>
                 </div>
+              )}
+
+              {/* Bình luận */}
+              {activeTab === 'comments' && (
+                <CommentSection movieSlug={movie.slug} />
               )}
 
               {/* Thông tin */}
