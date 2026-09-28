@@ -4,6 +4,7 @@ import { Play, Info, Heart } from 'lucide-react';
 import { Movie } from '../types';
 import { movieApi } from '../services/api';
 import { cn } from '../lib/utils';
+import PosterImg from './PosterImg';
 
 // Decode HTML entities (&#039; → ', &amp; → &, etc.)
 function decodeHtml(str: string): string {
@@ -71,54 +72,46 @@ export default function Banner({ movies }: BannerProps) {
 
   const goTo = (i: number) => { setIdx(i); resetTimer(); };
 
-  // Vuốt trái/phải để chuyển slide (mobile) — chỉ tính là vuốt khi ngang > dọc
-  // và đủ xa (>40px), tránh nhầm với thao tác cuộn trang bình thường.
-  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
-  const onTouchStart = (e: React.TouchEvent) => {
-    const t = e.touches[0];
-    touchStartRef.current = { x: t.clientX, y: t.clientY };
-  };
-  const onTouchEnd = (e: React.TouchEvent) => {
-    const start = touchStartRef.current;
-    touchStartRef.current = null;
-    if (!start || items.length < 2) return;
-    const t = e.changedTouches[0];
-    const dx = t.clientX - start.x;
-    const dy = t.clientY - start.y;
-    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
-      if (dx < 0) { next(); resetTimer(); } else { prev(); resetTimer(); }
-    }
-  };
-
-  // ── Vuốt trái/phải để chuyển slide (hỗ trợ cả chạm trên điện thoại và kéo chuột) ──
-  const dragRef = useRef<{ startX: number; dragging: boolean; moved: boolean } | null>(null);
+  // ── Vuốt mượt kiểu coverflow: poster đi theo ngón tay theo thời gian thực,
+  // thả tay thì "hít" về poster gần nhất (có quán tính nếu vuốt nhanh). ──
+  const stageRef = useRef<HTMLDivElement>(null);
+  const [dragX, setDragX] = useState(0);
+  const [dragging, setDragging] = useState(false);
+  const dragRef = useRef<{ startX: number; startY: number; t: number; lock: 'x' | 'y' | null; step: number } | null>(null);
   const wasDraggedRef = useRef(false);
 
   const onPointerDown = (e: React.PointerEvent) => {
-    dragRef.current = { startX: e.clientX, dragging: true, moved: false };
+    const h = stageRef.current?.clientHeight || 360;
+    dragRef.current = { startX: e.clientX, startY: e.clientY, t: Date.now(), lock: null, step: h * (2 / 3) * 0.78 };
   };
   const onPointerMove = (e: React.PointerEvent) => {
     const d = dragRef.current;
-    if (!d || !d.dragging) return;
-    if (Math.abs(e.clientX - d.startX) > 6) d.moved = true;
+    if (!d) return;
+    const dx = e.clientX - d.startX, dy = e.clientY - d.startY;
+    if (!d.lock && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) {
+      d.lock = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
+      if (d.lock === 'x') { try { (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); } catch {} setDragging(true); clearInterval(timerRef.current); }
+    }
+    if (d.lock === 'x') setDragX(dx);
   };
   const endDrag = (e: React.PointerEvent) => {
     const d = dragRef.current;
-    if (!d || !d.dragging) return;
-    const delta = e.clientX - d.startX;
-    const THRESHOLD = 40;
-    if (delta > THRESHOLD) {
-      wasDraggedRef.current = true;
-      goTo(prevIdx);
-    } else if (delta < -THRESHOLD) {
-      wasDraggedRef.current = true;
-      goTo(nextIdx);
-    } else {
-      wasDraggedRef.current = d.moved; // vuốt nhẹ không đủ ngưỡng vẫn coi là kéo, chặn click mở phim nhầm
-    }
     dragRef.current = null;
-    // Cho phép click bình thường trở lại ngay sau đó (chỉ chặn cú click ngay lúc vừa vuốt xong)
-    setTimeout(() => { wasDraggedRef.current = false; }, 50);
+    if (!d) return;
+    if (d.lock === 'x') {
+      const dx = e.clientX - d.startX;
+      const v = dx / Math.max(1, Date.now() - d.t); // px/ms
+      // Số poster nhảy = quãng kéo + quán tính, tối đa 2
+      let moved = Math.round((dx + v * 180) / d.step);
+      moved = Math.max(-2, Math.min(2, moved));
+      if (moved === 0 && Math.abs(dx) > 40) moved = dx > 0 ? 1 : -1;
+      setDragging(false);
+      setDragX(0);
+      if (moved !== 0) setIdx(i => ((i - moved) % items.length + items.length) % items.length);
+      resetTimer();
+      wasDraggedRef.current = true;
+      setTimeout(() => { wasDraggedRef.current = false; }, 60);
+    }
   };
   const onPosterLinkClick = (e: React.MouseEvent) => {
     if (wasDraggedRef.current) e.preventDefault();
@@ -150,76 +143,88 @@ export default function Banner({ movies }: BannerProps) {
 
   if (!items.length) return null;
 
-  const PosterSide = ({ item, side }: { item: Movie; side: 'left' | 'right' }) => (
-    <button
-      onClick={() => goTo(side === 'left' ? prevIdx : nextIdx)}
-      aria-label={decodeHtml(item.name)}
-      className={cn(
-        'absolute top-1/2 -translate-y-1/2 w-[30%] sm:w-[26%] rounded-2xl overflow-hidden opacity-40 hover:opacity-60 transition-opacity shadow-xl',
-        side === 'left' ? 'left-0 -translate-x-[15%]' : 'right-0 translate-x-[15%]'
-      )}
-      style={{ aspectRatio: '2/3' }}
-    >
-      <img
-        src={movieApi.getImageUrl(item.poster_url || item.thumb_url)}
-        alt={item.name}
-        referrerPolicy="no-referrer"
-        className="w-full h-full object-cover"
-      />
-      <div className="absolute inset-0 bg-slate-950/40" />
-    </button>
-  );
+  const n = items.length;
+  const stageH = 'clamp(280px, 52vw, 440px)';
+  // Vị trí tương đối (có phần lẻ khi đang kéo) của từng poster so với poster giữa
+  const offsetOf = (i: number) => {
+    let o = i - idx;
+    if (o > n / 2) o -= n;
+    if (o < -n / 2) o += n;
+    return o;
+  };
+  const ease = 'transform 550ms cubic-bezier(.22,1,.36,1), opacity 550ms ease';
 
   return (
     <div className="relative w-full overflow-hidden pt-4 pb-6">
-      {/* Backdrop mờ phía sau — lấy chính poster phim đang chọn, blur mạnh để tạo chiều sâu */}
-      <div className="absolute inset-0 -z-10">
-        <img
-          key={movie._id}
-          src={movieApi.getImageUrl(movie.thumb_url || movie.poster_url)}
-          alt=""
-          aria-hidden="true"
-          className="w-full h-full object-cover scale-110 blur-2xl opacity-30 transition-opacity duration-700"
-          referrerPolicy="no-referrer"
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-slate-950/40 via-slate-950/80 to-slate-950" />
+      {/* Nền kính: backdrop poster phim đang chọn, blur rất mạnh + chuyển mờ dần khi đổi slide */}
+      <div className="absolute inset-0 -z-10 bg-slate-950">
+        {items.map((m, i) => (
+          <img
+            key={m._id}
+            src={movieApi.getImageUrl(m.thumb_url || m.poster_url)}
+            alt="" aria-hidden="true" referrerPolicy="no-referrer"
+            className="absolute inset-0 w-full h-full object-cover scale-125 blur-3xl saturate-150 transition-opacity duration-700"
+            style={{ opacity: i === idx ? 0.55 : 0 }}
+          />
+        ))}
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-950/20 via-slate-950/60 to-slate-950" />
       </div>
 
-      {/* 3 poster: trái/phải mờ hé lộ, giữa nổi bật — vuốt trái/phải để chuyển slide */}
+      {/* Coverflow: poster giữa lớn, 2 bên nghiêng + thu nhỏ + mờ — vuốt trái/phải mượt */}
       <div
-        className="relative mx-auto px-4 select-none"
-        onTouchStart={onTouchStart}
-        onTouchEnd={onTouchEnd}
-        style={{ height: 'clamp(260px, 42vw, 420px)', maxWidth: 720, touchAction: 'pan-y' }}
+        ref={stageRef}
+        className="relative mx-auto select-none"
+        style={{ height: stageH, maxWidth: 720, touchAction: 'pan-y', perspective: 1100 }}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={endDrag}
         onPointerCancel={endDrag}
-        onPointerLeave={endDrag}
       >
-        {items.length > 1 && <PosterSide item={items[prevIdx]} side="left" />}
-        {items.length > 1 && <PosterSide item={items[nextIdx]} side="right" />}
-
-        <Link
-          to={`/phim/${movie.slug}`}
-          onClick={onPosterLinkClick}
-          draggable={false}
-          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-full rounded-2xl overflow-hidden border-2 border-white/90 shadow-2xl shadow-black/50 z-10 block"
-          style={{ aspectRatio: '2/3' }}
-        >
-          <img
-            src={movieApi.getImageUrl(movie.poster_url || movie.thumb_url)}
-            alt={movie.name}
-            referrerPolicy="no-referrer"
-            draggable={false}
-            className="w-full h-full object-cover"
-            loading="eager"
-          />
-        </Link>
+        {items.map((m, i) => {
+          const base = offsetOf(i);
+          if (Math.abs(base) > 2.6) return null;
+          const stepPx = (stageRef.current?.clientHeight || 360) * (2 / 3) * 0.78;
+          const f = base + (dragging ? dragX / stepPx : 0); // vị trí thực tế theo ngón tay
+          const af = Math.min(Math.abs(f), 2);
+          const isCenter = base === 0;
+          return (
+            <Link
+              key={m._id}
+              to={`/phim/${m.slug}`}
+              draggable={false}
+              onClick={(e) => {
+                if (wasDraggedRef.current) { e.preventDefault(); return; }
+                if (!isCenter) { e.preventDefault(); goTo(i); }
+              }}
+              aria-label={decodeHtml(m.name)}
+              className="absolute left-1/2 top-1/2 block h-[92%] rounded-2xl overflow-hidden border border-white/25 shadow-2xl shadow-black/60 bg-slate-800"
+              style={{
+                aspectRatio: '2/3',
+                transform: `translate(-50%, -50%) translateX(${f * 78}%) rotateY(${-f * 28}deg) rotateZ(${f * 6}deg) scale(${1 - af * 0.16})`,
+                opacity: Math.max(0, 1 - af * 0.5),
+                zIndex: 20 - Math.round(af * 5),
+                transition: dragging ? 'none' : ease,
+                willChange: 'transform, opacity',
+                borderColor: isCenter ? 'rgba(255,255,255,0.9)' : undefined,
+                borderWidth: isCenter ? 2 : 1,
+              }}
+            >
+              <PosterImg
+                src={movieApi.getImageUrl(m.poster_url || m.thumb_url)}
+                fallbackSrc={m.poster_url || m.thumb_url}
+                movieSlug={m.slug}
+                alt={m.name}
+                loading={Math.abs(base) <= 1 ? 'eager' : 'lazy'}
+                className="w-full h-full object-cover pointer-events-none"
+              />
+              {!isCenter && <div className="absolute inset-0 bg-slate-950/35" />}
+            </Link>
+          );
+        })}
       </div>
 
       {/* Thông tin phim — căn giữa, giống ảnh mẫu */}
-      <div className="max-w-xl mx-auto px-5 text-center mt-5">
+      <div className="max-w-xl mx-4 sm:mx-auto px-5 py-5 text-center mt-5 rounded-3xl border border-white/10 bg-white/[0.06] backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.35)]">
         <h1 className="banner-title text-2xl sm:text-3xl md:text-4xl text-white leading-[1.15] mb-1 line-clamp-2">
           {decodeHtml(movie.name)}
         </h1>
