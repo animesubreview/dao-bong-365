@@ -30,7 +30,12 @@ export default function PosterImg({
   style?: React.CSSProperties;
   onLoad?: () => void;
 }) {
-  const original = fallbackSrc || src;
+  // Link gốc có thể là đường dẫn tương đối (vd "upload/vod/xxx.jpg") — nếu để nguyên, trình duyệt sẽ
+  // ghép vào domain của web (daophim.online/upload/...) và luôn 404. Chuẩn hóa về link đầy đủ trước.
+  const rawOriginal = fallbackSrc || src;
+  const original = rawOriginal && !/^(https?:)?\/\/|^data:|^blob:|^\/assets\//.test(rawOriginal)
+    ? movieApi.getImageUrl(rawOriginal)
+    : rawOriginal;
 
   return (
     <img

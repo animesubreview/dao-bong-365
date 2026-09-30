@@ -158,6 +158,10 @@
         // vì lỗi loại này KHÔNG nổi bọt lên window ở bubble phase như lỗi chạy code thường.
         window.addEventListener('error', function (e) {
           if (e.target && e.target !== window && e.target.tagName) {
+            // Chỉ báo lỗi khi file CỐT LÕI (JS/CSS) không tải được. Ảnh/video/iframe lỗi là chuyện bình thường
+            // (poster bị 404, CDN chập chờn...) và đã có cơ chế ảnh dự phòng xử lý — KHÔNG được phủ màn hình đỏ.
+            var tag = String(e.target.tagName).toUpperCase();
+            if (tag !== 'SCRIPT' && tag !== 'LINK') return;
             showErr('LỖI TẢI FILE: <' + e.target.tagName + '> ' + (e.target.src || e.target.href || '') + '\n(File này không tải được — có thể do build lỗi, đường dẫn sai, hoặc mất mạng)');
           } else {
             showErr('LỖI JS: ' + (e.message || '') + '\n' + (e.filename || '') + ':' + (e.lineno || '') + ':' + (e.colno || '') + '\n' + (e.error && e.error.stack || ''));
