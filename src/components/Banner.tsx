@@ -82,7 +82,7 @@ export default function Banner({ movies }: BannerProps) {
 
   const onPointerDown = (e: React.PointerEvent) => {
     const h = stageRef.current?.clientHeight || 360;
-    dragRef.current = { startX: e.clientX, startY: e.clientY, t: Date.now(), lock: null, step: h * (2 / 3) * 0.78 };
+    dragRef.current = { startX: e.clientX, startY: e.clientY, t: Date.now(), lock: null, step: h * (2 / 3) * 0.96 };
   };
   const onPointerMove = (e: React.PointerEvent) => {
     const d = dragRef.current;
@@ -139,12 +139,14 @@ export default function Banner({ movies }: BannerProps) {
 
   const movie = items[idx];
   const isFav = useMemo(() => !!movie && favSlugs.includes(movie.slug), [movie, favSlugs]);
-  const synopsis = useMemo(() => stripHtml(movie?.content), [movie]);
+  const rawRating = Number((movie as any)?.imdb?.vote_average ?? (movie as any)?.tmdb?.vote_average ?? 0);
+  const rating = rawRating > 0 ? rawRating.toFixed(1) : '';
+  const chip = 'text-[13px] font-bold border border-white/20 text-slate-200 px-3 py-1.5 rounded-xl';
 
   if (!items.length) return null;
 
   const n = items.length;
-  const stageH = 'clamp(280px, 52vw, 440px)';
+  const stageH = 'clamp(340px, 98vw, 560px)';
   // Vị trí tương đối (có phần lẻ khi đang kéo) của từng poster so với poster giữa
   const offsetOf = (i: number) => {
     let o = i - idx;
@@ -155,7 +157,7 @@ export default function Banner({ movies }: BannerProps) {
   const ease = 'transform 550ms cubic-bezier(.22,1,.36,1), opacity 550ms ease';
 
   return (
-    <div className="relative w-full overflow-hidden pt-4 pb-6">
+    <div className="relative w-full overflow-hidden pt-5 pb-5">
       {/* Nền kính: backdrop poster phim đang chọn, blur rất mạnh + chuyển mờ dần khi đổi slide */}
       <div className="absolute inset-0 -z-10 bg-slate-950">
         {items.map((m, i) => (
@@ -174,7 +176,7 @@ export default function Banner({ movies }: BannerProps) {
       <div
         ref={stageRef}
         className="relative mx-auto select-none"
-        style={{ height: stageH, maxWidth: 720, touchAction: 'pan-y', perspective: 1100 }}
+        style={{ height: stageH, maxWidth: 820, touchAction: 'pan-y', perspective: 1100 }}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={endDrag}
@@ -183,7 +185,7 @@ export default function Banner({ movies }: BannerProps) {
         {items.map((m, i) => {
           const base = offsetOf(i);
           if (Math.abs(base) > 2.6) return null;
-          const stepPx = (stageRef.current?.clientHeight || 360) * (2 / 3) * 0.78;
+          const stepPx = (stageRef.current?.clientHeight || 360) * (2 / 3) * 0.96;
           const f = base + (dragging ? dragX / stepPx : 0); // vị trí thực tế theo ngón tay
           const af = Math.min(Math.abs(f), 2);
           const isCenter = base === 0;
@@ -200,8 +202,8 @@ export default function Banner({ movies }: BannerProps) {
               className="absolute left-1/2 top-1/2 block h-[92%] rounded-2xl overflow-hidden border border-white/25 shadow-2xl shadow-black/60 bg-slate-800"
               style={{
                 aspectRatio: '2/3',
-                transform: `translate(-50%, -50%) translateX(${f * 78}%) rotateY(${-f * 28}deg) rotateZ(${f * 6}deg) scale(${1 - af * 0.16})`,
-                opacity: Math.max(0, 1 - af * 0.5),
+                transform: `translate(-50%, -50%) translateX(${f * 104}%) rotateY(${-f * 12}deg) rotateZ(${f * 7}deg) scale(${1 - af * 0.1})`,
+                opacity: Math.max(0, 1 - af * 0.35),
                 zIndex: 20 - Math.round(af * 5),
                 transition: dragging ? 'none' : ease,
                 willChange: 'transform, opacity',
@@ -223,69 +225,53 @@ export default function Banner({ movies }: BannerProps) {
         })}
       </div>
 
-      {/* Thông tin phim — căn giữa, giống ảnh mẫu */}
-      <div className="max-w-xl mx-4 sm:mx-auto px-5 py-5 text-center mt-5 rounded-3xl border border-white/10 bg-white/[0.06] backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.35)]">
-        <h1 className="banner-title text-2xl sm:text-3xl md:text-4xl text-white leading-[1.15] mb-1 line-clamp-2">
+      {/* Thông tin phim — chữ đặt thẳng lên nền mờ, giống ảnh mẫu */}
+      <div className="max-w-xl mx-auto px-5 pt-5 text-center">
+        <h1 className="banner-title text-[26px] sm:text-3xl md:text-4xl text-white leading-[1.2] mb-2 line-clamp-2">
           {decodeHtml(movie.name)}
         </h1>
         {movie.origin_name && (
-          <p className="text-slate-400 text-xs sm:text-sm font-bold uppercase tracking-wide mb-4 line-clamp-1">
+          <p className="text-slate-400 text-[13px] sm:text-sm font-semibold uppercase tracking-[0.18em] mb-5 line-clamp-2">
             {decodeHtml(movie.origin_name)}
           </p>
         )}
 
-        {/* Nút hành động — 1 khối pill chia 3 phần, giống ảnh mẫu */}
-        <div className="flex items-center justify-center gap-2.5 mb-4">
+        {/* Nút: "Xem Phim" dài + 1 viên liền chia đôi (yêu thích | chi tiết) */}
+        <div className="flex items-stretch gap-3 mb-5">
           <Link
             to={`/phim/${movie.slug}`}
-            className="btn-primary !py-2.5 !px-6 text-sm gap-2"
+            className="flex-1 h-12 rounded-full bg-[var(--primary)] text-slate-950 font-bold text-[15px] flex items-center justify-center gap-2 active:scale-95 transition-transform"
           >
-            <Play size={16} className="fill-current" /> Xem Phim
+            <Play size={18} className="fill-current" /> Xem Phim
           </Link>
-          <button
-            type="button" aria-label="Yêu thích" onClick={() => toggleFavorite(movie)}
-            className="w-11 h-11 shrink-0 rounded-full bg-slate-800/80 border border-slate-700/60 flex items-center justify-center text-white hover:bg-slate-700 transition-colors"
-          >
-            <Heart size={17} className={cn(isFav && 'fill-red-500 text-red-500')} />
-          </button>
-          <Link
-            to={`/phim/${movie.slug}`} aria-label="Chi tiết"
-            className="w-11 h-11 shrink-0 rounded-full bg-slate-800/80 border border-slate-700/60 flex items-center justify-center text-white hover:bg-slate-700 transition-colors"
-          >
-            <Info size={17} />
-          </Link>
+          <div className="flex-1 h-12 rounded-full border border-white/15 bg-black/30 backdrop-blur flex items-center overflow-hidden">
+            <button
+              type="button" aria-label="Yêu thích" onClick={() => toggleFavorite(movie)}
+              className="flex-1 h-full flex items-center justify-center text-white active:bg-white/10"
+            >
+              <Heart size={20} className={cn('fill-current', isFav && 'text-red-500')} />
+            </button>
+            <span className="w-px h-6 bg-white/15" />
+            <Link
+              to={`/phim/${movie.slug}`} aria-label="Chi tiết"
+              className="flex-1 h-full flex items-center justify-center text-white active:bg-white/10"
+            >
+              <Info size={20} className="fill-current text-white [&_circle]:fill-white [&_path]:stroke-slate-900" />
+            </Link>
+          </div>
         </div>
 
-        {/* Badge thông tin — dạng viền, giống ảnh mẫu */}
-        <div className="flex flex-wrap items-center justify-center gap-1.5 mb-3">
-          {movie.quality && (
-            <span className="text-[11px] font-bold border border-[var(--primary)]/60 text-[var(--primary-light)] px-2.5 py-1 rounded-lg">
-              {movie.quality}
+        {/* Badge 1 hàng: điểm · năm · chất lượng · tập */}
+        <div className="flex flex-wrap items-center justify-center gap-2 mb-5">
+          {rating && (
+            <span className="text-[13px] font-bold border border-[var(--primary)]/70 bg-[var(--primary)]/10 text-[var(--primary-light)] px-3 py-1.5 rounded-xl">
+              IMDb {rating}
             </span>
           )}
-          {movie.year && (
-            <span className="text-[11px] font-bold border border-white/20 text-slate-300 px-2.5 py-1 rounded-lg">
-              {movie.year}
-            </span>
-          )}
-          {movie.time && (
-            <span className="text-[11px] font-bold border border-white/20 text-slate-300 px-2.5 py-1 rounded-lg">
-              {decodeHtml(movie.time)}
-            </span>
-          )}
-          {movie.episode_current && (
-            <span className="text-[11px] font-bold border border-white/20 text-slate-300 px-2.5 py-1 rounded-lg">
-              {decodeHtml(movie.episode_current)}
-            </span>
-          )}
+          {movie.year ? <span className={chip}>{movie.year}</span> : null}
+          {movie.quality && <span className={chip}>{decodeHtml(movie.quality)}</span>}
+          {movie.episode_current && <span className={chip}>{decodeHtml(movie.episode_current)}</span>}
         </div>
-
-        {/* Mô tả ngắn */}
-        {synopsis && (
-          <p className="text-slate-400 text-xs sm:text-sm leading-relaxed line-clamp-2 mb-4">
-            {synopsis}
-          </p>
-        )}
 
         {/* Dot indicators */}
         {items.length > 1 && (
@@ -294,8 +280,8 @@ export default function Banner({ movies }: BannerProps) {
               <button
                 key={m._id} onClick={() => goTo(i)} aria-label={`Slide ${i + 1}`}
                 className={cn(
-                  'h-1.5 rounded-full transition-all duration-300',
-                  i === idx ? 'w-6 bg-[var(--primary)]' : 'w-1.5 bg-slate-600 hover:bg-slate-500'
+                  'h-2 rounded-full transition-all duration-300',
+                  i === idx ? 'w-8 bg-slate-100' : 'w-2 bg-slate-500 hover:bg-slate-400'
                 )}
               />
             ))}
