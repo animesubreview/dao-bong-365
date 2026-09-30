@@ -2,6 +2,7 @@ import React from 'react';
 import { collection, doc, query, orderBy, getDocs, getDoc, where } from './firestore-compat';
 import { db } from './firebase';
 import { addDoc, updateDoc, deleteDoc, onSnapshot } from './firestoreGuard';
+import { fetchCollectionCached, invalidateCache } from './publicCache';
 
 export interface ManualEpisode {
   label: string;   // VD: "Tập 1", "Tập 2", "Full"
