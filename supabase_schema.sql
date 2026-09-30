@@ -55,6 +55,27 @@ begin
 exception when duplicate_object then null;
 end $$;
 
+-- ─── Cấp quyền cho API (PostgREST) — thiếu bước này thì client vẫn báo không truy cập được bảng ──
+grant usage on schema public to anon, authenticated;
+grant select, insert, update, delete on table public.firestore_docs to anon, authenticated;
+
+-- ─── Storage: tạo bucket "media" (public) + policy cho phép xem/upload ảnh < 5MB ────────────
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('media', 'media', true, 5242880, array['image/jpeg','image/png','image/webp','image/gif'])
+on conflict (id) do update set public = true, file_size_limit = 5242880;
+
+drop policy if exists "media read" on storage.objects;
+create policy "media read" on storage.objects for select using (bucket_id = 'media');
+
+drop policy if exists "media insert" on storage.objects;
+create policy "media insert" on storage.objects for insert with check (bucket_id = 'media');
+
+drop policy if exists "media update" on storage.objects;
+create policy "media update" on storage.objects for update using (bucket_id = 'media');
+
+-- ─── BẮT BUỘC: báo PostgREST nạp lại schema để hết lỗi "Could not find the table ... in the schema cache" ──
+notify pgrst, 'reload schema';
+
 -- ═══════════════════════════════════════════════════════════════════════════
 -- LƯU Ý SAU KHI CHẠY XONG:
 --   1) Authentication → Providers → Email → tắt "Confirm email"
