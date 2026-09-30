@@ -169,6 +169,8 @@
         }, true);
         window.addEventListener('unhandledrejection', function (e) {
           var r = e.reason;
+          // Hủy chia sẻ / hủy thao tác (AbortError, NotAllowedError) là hành vi bình thường của người dùng, không phải lỗi.
+          if (r && (r.name === 'AbortError' || r.name === 'NotAllowedError' || /canceled|cancelled/i.test(String(r.message || r)))) return;
           showErr('LỖI PROMISE: ' + (r && (r.message || r.toString()) || String(r)) + '\n' + (r && r.stack || ''));
         });
         // Nếu sau 6 giây #root vẫn trống mà không có lỗi nào bắt được ở trên — báo luôn để biết

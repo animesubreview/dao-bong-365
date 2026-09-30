@@ -58,8 +58,9 @@ export default function ManualMovieDetail() {
   };
 
   const handleShare = () => {
-    if (navigator.share) navigator.share({ title: movie?.name, url: window.location.href });
-    else navigator.clipboard?.writeText(window.location.href);
+    // Người dùng bấm Hủy trong khung chia sẻ sẽ làm promise bị reject (AbortError) — phải bắt lại, đó không phải lỗi.
+    if (navigator.share) navigator.share({ title: movie?.name, url: window.location.href }).catch(() => {});
+    else navigator.clipboard?.writeText(window.location.href).catch(() => {});
   };
 
   if (!movie) return (
