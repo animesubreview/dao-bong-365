@@ -181,13 +181,23 @@ export function onSnapshot(refOrQuery: any, ...args: any[]): Unsubscribe {
   };
   fetchAndEmit();
 
-  const channel = supabase
-    .channel(`fs_${path}_${isDoc ? refOrQuery.id : Math.random().toString(36).slice(2)}`)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'firestore_docs', filter: `collection_path=eq.${path}` },
-      () => { fetchAndEmit(); })
-    .subscribe();
+  let channel: any = null;
+  try {
+    channel = supabase
+      // Tên kênh LUÔN phải là duy nhất cho mỗi lần gọi onSnapshot — nếu 2 nơi trong code
+      // cùng theo dõi 1 document/collection mà đặt tên kênh giống hệt nhau, Supabase sẽ báo lỗi
+      // "cannot add postgres_changes callbacks... after subscribe()" ở lần đăng ký thứ 2.
+      .channel(`fs_${path}_${isDoc ? refOrQuery.id : 'q'}_${Date.now()}_${Math.random().toString(36).slice(2)}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'firestore_docs', filter: `collection_path=eq.${path}` },
+        () => { fetchAndEmit(); })
+      .subscribe();
+  } catch (e) {
+    // Không để lỗi realtime làm crash cả app — chỉ báo qua onError, dữ liệu vẫn có nhờ fetchAndEmit() ở trên
+    console.error('[firestore-compat] onSnapshot channel error:', e);
+    onError?.(e);
+  }
 
-  return () => { supabase.removeChannel(channel); };
+  return () => { if (channel) supabase.removeChannel(channel); };
 }
 
 // ── Timestamp tối giản, tương thích .toDate()/.toMillis() ──
