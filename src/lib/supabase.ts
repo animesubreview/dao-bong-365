@@ -10,10 +10,10 @@ import { createClient } from '@supabase/supabase-js';
 //  3) Vào SQL Editor, dán TOÀN BỘ nội dung file `supabase_schema.sql` ở gốc dự án rồi bấm Run
 //     — file đó tạo tất cả các bảng + Row Level Security (RLS) tương đương firestore.rules.
 //  4) Vào Authentication → Providers, bật "Email" (tương đương Email/Password của Firebase).
-//  5) Vào Storage, tạo 1 bucket tên "public" (Public bucket) để thay Firebase Storage.
+//  5) Vào Storage, tạo 1 bucket tên "media" (Public bucket) để thay Firebase Storage.
 const env = import.meta.env;
-const SUPABASE_URL = env.VITE_SUPABASE_URL || 'https://YOUR-PROJECT-REF.supabase.co';
-const SUPABASE_ANON_KEY = env.VITE_SUPABASE_ANON_KEY || 'YOUR-ANON-PUBLIC-KEY';
+const SUPABASE_URL = env.VITE_SUPABASE_URL || 'https://vfhuesiqrerwqnxatmbr.supabase.co';
+const SUPABASE_ANON_KEY = env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_QNoZ2a9ll5FGBfAYyNiSUA_WCvcULhl';
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
@@ -22,8 +22,8 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   },
 });
 
-// Helper: lấy URL public của 1 file trong bucket "public" (tương đương getDownloadURL của Firebase Storage)
+// Helper: lấy URL public của 1 file trong bucket "media" (tương đương getDownloadURL của Firebase Storage)
 export function getPublicUrl(path: string): string {
-  const { data } = supabase.storage.from('public').getPublicUrl(path);
+  const { data } = supabase.storage.from('media').getPublicUrl(path);
   return data.publicUrl;
 }

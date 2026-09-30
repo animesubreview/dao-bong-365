@@ -59,7 +59,7 @@ end $$;
 -- LƯU Ý SAU KHI CHẠY XONG:
 --   1) Authentication → Providers → Email → tắt "Confirm email"
 --      (để đăng ký xong vào được luôn, giống hành vi cũ của Firebase Auth).
---   2) Storage → New bucket → đặt tên đúng chữ "public" → bật "Public bucket".
+--   2) Storage → New bucket → đặt tên "media" (không dùng "public" vì trùng tên hệ thống), bật "Public bucket".
 --   3) Copy Project URL + anon key (Project Settings → API) vào src/lib/supabase.ts
 --      (hoặc set biến môi trường VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY).
 --   4) Nếu dùng chức năng nạp thẻ cào (api/card-callback.js, api/charge-card.js):

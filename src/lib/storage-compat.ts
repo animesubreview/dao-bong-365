@@ -5,7 +5,7 @@
  */
 import { supabase } from './supabase';
 
-const BUCKET = 'public';
+const BUCKET = 'media';
 
 export function getStorage(_app?: any) { return { __type: 'storage' as const }; }
 

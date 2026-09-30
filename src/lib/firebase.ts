@@ -10,7 +10,7 @@
  *      (hoặc set biến môi trường VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY trên Vercel).
  *   2) Chạy file supabase_schema.sql trong Supabase → SQL Editor.
  *   3) Authentication → Providers → Email → tắt "Confirm email".
- *   4) Storage → tạo bucket tên "public", bật Public bucket.
+ *   4) Storage → tạo bucket tên "media" (không dùng "public" vì trùng tên hệ thống), bật Public bucket.
  */
 import { getStorage } from './storage-compat';
 
