@@ -134,6 +134,48 @@
     <div id="initial-loader"></div>
 
     <div id="root"></div>
+    <!-- ─── TẠM THỜI: hiện lỗi JS thật ra màn hình thay vì trắng/đen im lặng (để debug lỗi
+         "màn hình đen"). Sau khi hết lỗi, có thể xóa khối script này đi. ────────────────── -->
+    <script>
+      (function () {
+        function showErr(msg) {
+          var el = document.getElementById('__err_overlay__');
+          if (!el) {
+            el = document.createElement('div');
+            el.id = '__err_overlay__';
+            el.style.cssText = 'position:fixed;inset:0;z-index:2147483647;background:#1a0000;color:#ff8080;' +
+              'font:13px/1.5 monospace;padding:16px;overflow:auto;white-space:pre-wrap;';
+            document.documentElement.appendChild(el); // gắn vào <html> để không bị chặn bởi bất cứ gì trong <body>
+          }
+          var p = document.createElement('div');
+          p.style.marginBottom = '12px';
+          p.style.borderBottom = '1px solid #552222';
+          p.style.paddingBottom = '12px';
+          p.textContent = msg;
+          el.appendChild(p);
+        }
+        // useCapture=true để bắt được cả lỗi tải file (script/link 404, mất mạng...),
+        // vì lỗi loại này KHÔNG nổi bọt lên window ở bubble phase như lỗi chạy code thường.
+        window.addEventListener('error', function (e) {
+          if (e.target && e.target !== window && e.target.tagName) {
+            showErr('LỖI TẢI FILE: <' + e.target.tagName + '> ' + (e.target.src || e.target.href || '') + '\n(File này không tải được — có thể do build lỗi, đường dẫn sai, hoặc mất mạng)');
+          } else {
+            showErr('LỖI JS: ' + (e.message || '') + '\n' + (e.filename || '') + ':' + (e.lineno || '') + ':' + (e.colno || '') + '\n' + (e.error && e.error.stack || ''));
+          }
+        }, true);
+        window.addEventListener('unhandledrejection', function (e) {
+          var r = e.reason;
+          showErr('LỖI PROMISE: ' + (r && (r.message || r.toString()) || String(r)) + '\n' + (r && r.stack || ''));
+        });
+        // Nếu sau 6 giây #root vẫn trống mà không có lỗi nào bắt được ở trên — báo luôn để biết
+        setTimeout(function () {
+          var root = document.getElementById('root');
+          if (root && root.children.length === 0 && !document.getElementById('__err_overlay__')) {
+            showErr('Trang không tự crash (không bắt được lỗi JS/lỗi tải file nào), nhưng sau 6 giây #root vẫn trống.\nCó thể do: file JS bị chặn bởi Content-Security-Policy, hoặc script không được nhúng vào trang.');
+          }
+        }, 6000);
+      })();
+    </script>
 
     <script>
       (function () {
