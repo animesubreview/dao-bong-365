@@ -3,7 +3,7 @@
 // Mua bằng số dư tài khoản. Admin được miễn QC tự động.
 // Config giá được lưu trong Firestore: site_config/vip_prices
 
-import { doc, getDoc, collection } from 'firebase/firestore';
+import { doc, getDoc, collection } from './firestore-compat';
 import { db } from './firebase';
 import { setDoc, updateDoc, onSnapshot } from './firestoreGuard';
 import { saveDoc } from './firebaseUtils';

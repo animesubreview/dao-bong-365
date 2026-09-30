@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { onAuthChange, getUserProfile, updateUserProfile, UserProfile } from '../lib/auth';
 import { storage } from '../lib/firebase';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytes, getDownloadURL } from '../lib/storage-compat';
 import { formatVND } from '../lib/topup';
 import {
   purchaseVip, useVipPrices, isVipActive, vipExpiryText, VIP_META, VipTier,

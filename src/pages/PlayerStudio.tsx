@@ -145,7 +145,7 @@ export default function PlayerStudio() {
 
           {/* Info */}
           <div className="bg-[#0d140d] border border-green-500/10 rounded-xl p-4 text-xs text-slate-400 space-y-1">
-            <div>🔥 Config lưu trên <strong className="text-white">Firebase Firestore</strong> — mọi người thấy cùng logo</div>
+            <div>🔥 Config lưu trên <strong className="text-white">Supabase</strong> — mọi người thấy cùng logo</div>
             <div>⚡ Realtime — thay đổi logo ngay khi nhấn lưu, <strong className="text-white">không cần reload</strong></div>
             <div>📱 Hoạt động trên <strong className="text-white">cả mobile lẫn desktop</strong></div>
             <div>⌨️ Phím tắt: <strong className="text-green-400">Space</strong> phát/dừng, <strong className="text-green-400">← →</strong> tua ±10s, <strong className="text-green-400">F</strong> fullscreen</div>

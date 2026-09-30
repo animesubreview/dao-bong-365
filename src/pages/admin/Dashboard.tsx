@@ -90,7 +90,7 @@ export function Dashboard({ movieCount, upcomingCount, onNavigate, onQuickAddMov
             <Wifi size={19} />
           </div>
           <div className="min-w-0 flex-1">
-            <h2 className="text-[15px] font-bold text-white">Kết nối Firebase</h2>
+            <h2 className="text-[15px] font-bold text-white">Kết nối Supabase</h2>
             <p className="text-xs text-slate-500 mt-0.5 break-all">Project: {projectId}</p>
             <p className="text-[13px] text-slate-400 mt-1.5 leading-relaxed">
               Bấm kiểm tra để thử đọc – ghi – đọc lại dữ liệu thật. Nếu lưu phim / cài đặt không được, kết quả ở đây sẽ chỉ ra nguyên nhân.
@@ -120,7 +120,7 @@ export function Dashboard({ movieCount, upcomingCount, onNavigate, onQuickAddMov
           </ul>
         )}
         {allOk && !checking && (
-          <p className="mt-3 text-[13px] text-emerald-400 font-semibold">✅ Firebase hoạt động tốt — đọc và ghi dữ liệu đều thành công.</p>
+          <p className="mt-3 text-[13px] text-emerald-400 font-semibold">✅ Supabase hoạt động tốt — đọc và ghi dữ liệu đều thành công.</p>
         )}
       </section>
 

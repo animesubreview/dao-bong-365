@@ -6,8 +6,8 @@ import {
   onAuthStateChanged,
   updateProfile,
   User,
-} from 'firebase/auth';
-import { doc, getDoc, collection, getDocs } from 'firebase/firestore';
+} from './auth-compat';
+import { doc, getDoc, collection, getDocs } from './firestore-compat';
 import { auth, db } from './firebase';
 import { setDoc, updateDoc, deleteDoc } from './firestoreGuard';
 
@@ -226,7 +226,7 @@ export async function addUserBalance(uid: string, amount: number, note: string =
 
 // ─── Lấy lịch sử giao dịch của user ─────────────────────────────────────────
 export async function getUserTransactions(uid: string) {
-  const { getDocs: _getDocs, query: _query, where } = await import('firebase/firestore');
+  const { getDocs: _getDocs, query: _query, where } = await import('./firestore-compat');
   // where(uid) + orderBy(createdAt) cần composite index → sắp xếp phía client
   const snap = await _getDocs(_query(collection(db, 'transactions'), where('uid', '==', uid)));
   return snap.docs.map(d => d.data()).sort((a: any, b: any) => (b.createdAt || 0) - (a.createdAt || 0));

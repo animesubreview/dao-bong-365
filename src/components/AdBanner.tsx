@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { X, AlertCircle } from 'lucide-react';
-import { collection, doc, query, orderBy } from 'firebase/firestore';
+import { collection, doc, query, orderBy } from '../lib/firestore-compat';
 import { db } from '../lib/firebase';
 import { addDoc, updateDoc, deleteDoc } from '../lib/firestoreGuard';
 import { fetchCollectionCached, invalidateCache } from '../lib/publicCache';
@@ -23,7 +23,7 @@ const COL = 'ad_banners';
 // ── Firestore CRUD ────────────────────────────────────────────────────────────
 export async function getAdBanners(): Promise<AdBannerData[]> {
   try {
-    const { getDocs } = await import('firebase/firestore');
+    const { getDocs } = await import('../lib/firestore-compat');
     const snap = await getDocs(query(collection(db, COL), orderBy('createdAt', 'desc')));
     return snap.docs.map(d => ({ id: d.id, ...d.data() } as AdBannerData));
   } catch (e) {

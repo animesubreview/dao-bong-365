@@ -1,7 +1,7 @@
 // ─── Notification System (Firebase) ──────────────────────────────────────────
 // Admin tạo thông báo → lưu Firebase → tất cả người dùng đều thấy
 
-import { collection, doc, serverTimestamp, query, orderBy, getDocs } from 'firebase/firestore';
+import { collection, doc, serverTimestamp, query, orderBy, getDocs } from './firestore-compat';
 import { db } from './firebase';
 import { deleteDoc, updateDoc, addDoc, setDoc } from './firestoreGuard';
 import { fetchCollectionCached, invalidateCache, onCacheInvalidated } from './publicCache';

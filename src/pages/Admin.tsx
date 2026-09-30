@@ -13,7 +13,7 @@ import { createPopupAd, updatePopupAd, deletePopupAd, PopupAdData } from '../com
 import { subscribeTVChannels, saveTVChannel, deleteTVChannel, TVChannel, TV_CATEGORIES } from '../lib/liveTV';
 import { getClickAdConfig, saveClickAdConfig, ClickAdConfig, DEFAULT_CLICK_AD } from '../lib/clickAd';
 import { getVipPrices, saveVipPrices, VipPrices, DEFAULT_VIP_PRICES, VIP_META, VIP_DAYS, VipTier } from '../lib/vip';
-import { collection, query, orderBy, deleteField } from 'firebase/firestore';
+import { collection, query, orderBy, deleteField } from '../lib/firestore-compat';
 import { fetchSiteSettings, saveSiteSettings as saveSiteSettingsFirestore } from '../lib/siteSettings';
 import { describeFirebaseError, resizeImageToDataUrl } from '../lib/firebaseUtils';
 import { db } from '../lib/firebase';

@@ -1,5 +1,5 @@
 import React from 'react';
-import { collection, doc, query, orderBy, getDocs, getDoc, where } from 'firebase/firestore';
+import { collection, doc, query, orderBy, getDocs, getDoc, where } from './firestore-compat';
 import { db } from './firebase';
 import { addDoc, updateDoc, deleteDoc, onSnapshot } from './firestoreGuard';
 

@@ -1,47 +1,26 @@
-import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import { initializeFirestore } from 'firebase/firestore';
-import { getStorage } from 'firebase/storage';
-import { getAnalytics, isSupported as isAnalyticsSupported } from 'firebase/analytics';
+/**
+ * ─── ĐÃ CHUYỂN TỪ FIREBASE SANG SUPABASE ──────────────────────────────────────────────
+ * File này KHÔNG còn dùng Firebase nữa — nó export lại `db`/`auth`/`storage` từ các lớp
+ * giả lập (firestore-compat.ts, auth-compat.ts, storage-compat.ts) chạy trên Supabase,
+ * để mọi nơi khác trong code (đang import từ './firebase' hoặc '../lib/firebase')
+ * không cần sửa gì cả.
+ *
+ * CẦN LÀM TRƯỚC KHI DEPLOY — xem hướng dẫn đầy đủ trong supabase.ts và supabase_schema.sql:
+ *   1) Tạo project tại https://supabase.com, lấy Project URL + anon key → điền vào supabase.ts
+ *      (hoặc set biến môi trường VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY trên Vercel).
+ *   2) Chạy file supabase_schema.sql trong Supabase → SQL Editor.
+ *   3) Authentication → Providers → Email → tắt "Confirm email".
+ *   4) Storage → tạo bucket tên "public", bật Public bucket.
+ */
+import { getStorage } from './storage-compat';
 
-// Cấu hình Firebase Web (công khai theo thiết kế của Firebase — bảo mật nằm ở firestore.rules).
-// Có thể ghi đè bằng biến môi trường VITE_FIREBASE_*; nếu không đặt thì dùng giá trị mặc định bên dưới.
-//
-// LƯU Ý: project "caphim-99ff6" là project MỚI (đổi từ project cũ "dem-luong-truy-cap"
-// theo yêu cầu). Trước khi deploy phải tự tạo trong Firebase Console:
-//   1) Firestore Database → Create database, rồi vào tab Rules dán nội dung firestore.rules → Publish
-//   2) Authentication → Sign-in method → bật "Email/Password"
-//   3) Storage → Get started, rồi vào tab Rules dán nội dung storage.rules → Publish
-// Thiếu 1 trong 3 bước trên thì đăng nhập / lưu dữ liệu / tải ảnh sẽ báo lỗi.
-const env = import.meta.env;
-const firebaseConfig = {
-  apiKey: env.VITE_FIREBASE_API_KEY || "AIzaSyDOYdo956812BGwf2L5tmJpgHyZbkkmKn4",
-  authDomain: env.VITE_FIREBASE_AUTH_DOMAIN || "caphim-99ff6.firebaseapp.com",
-  databaseURL: env.VITE_FIREBASE_DATABASE_URL || "https://caphim-99ff6-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: env.VITE_FIREBASE_PROJECT_ID || "caphim-99ff6",
-  storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET || "caphim-99ff6.firebasestorage.app",
-  messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID || "1054924496537",
-  appId: env.VITE_FIREBASE_APP_ID || "1:1054924496537:web:8fd91e657cdcc769212208",
-  measurementId: env.VITE_FIREBASE_MEASUREMENT_ID || "G-FMN4ZVL8CK",
-};
+export { initializeFirestore } from './firestore-compat';
+export { auth, getAuth } from './auth-compat';
+export { getStorage } from './storage-compat';
 
-const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
-// experimentalAutoDetectLongPolling: tự chuyển sang long-polling khi mạng/proxy/adblock chặn WebChannel
-//   (nếu không, setDoc có thể treo vô hạn và "Lưu" không có phản hồi).
-// ignoreUndefinedProperties: bỏ qua field undefined thay vì ném lỗi "Unsupported field value: undefined".
-export const db = initializeFirestore(app, {
-  experimentalAutoDetectLongPolling: true,
-  ignoreUndefinedProperties: true,
-});
-export const storage = getStorage(app);
+// db không còn là 1 kết nối thật cần khởi tạo — chỉ là 1 marker để các hàm compat nhận diện
+export const db = { __type: 'db' as const };
+export const storage = getStorage();
 
-// Analytics chỉ chạy được trên trình duyệt thật (không phải lúc build) và không
-// phải trình duyệt nào cũng hỗ trợ (VD chặn cookie/tracking) → phải kiểm tra isSupported()
-// trước, nếu không sẽ ném lỗi làm trắng trang trên một số thiết bị/trình duyệt.
-export let analytics: ReturnType<typeof getAnalytics> | undefined;
-if (typeof window !== 'undefined') {
-  isAnalyticsSupported()
-    .then(ok => { if (ok) analytics = getAnalytics(app); })
-    .catch(() => {});
-}
+// Analytics: Supabase không có sản phẩm tương đương Firebase Analytics — bỏ qua, không dùng nữa.
+export const analytics = undefined;

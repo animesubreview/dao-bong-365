@@ -3,7 +3,7 @@
  * Tất cả người dùng đều thấy cùng 1 config (real-time sync)
  */
 
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc } from './firestore-compat';
 import { db } from './firebase';
 import { onSnapshot } from './firestoreGuard';
 import { saveDoc } from './firebaseUtils';

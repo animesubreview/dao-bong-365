@@ -3,7 +3,7 @@
 // Sau mỗi lần hiện, phải chờ `cooldown` giây mới hiện tiếp.
 // Tài khoản admin (role === 'admin') KHÔNG bị ảnh hưởng.
 
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc } from './firestore-compat';
 import { saveDoc } from './firebaseUtils';
 import { db } from './firebase';
 import { onSnapshot } from './firestoreGuard';

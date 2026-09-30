@@ -1,4 +1,4 @@
-import { collection, doc, query, orderBy, getDocs, getDoc } from 'firebase/firestore';
+import { collection, doc, query, orderBy, getDocs, getDoc } from './firestore-compat';
 import { db } from './firebase';
 import { addDoc, updateDoc, deleteDoc, onSnapshot } from './firestoreGuard';
 import { fetchCollectionCached, invalidateCache } from './publicCache';

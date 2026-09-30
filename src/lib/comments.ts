@@ -2,7 +2,7 @@
 import {
   collection, addDoc, getDocs, deleteDoc, doc, query,
   orderBy, where, updateDoc, arrayUnion, arrayRemove, serverTimestamp, Timestamp, limit,
-} from 'firebase/firestore';
+} from './firestore-compat';
 import { db } from './firebase';
 import type { Comment } from '../types';
 

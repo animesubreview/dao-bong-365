@@ -3,7 +3,7 @@
  * Mỗi trình duyệt chỉ vote được 1 lần cho mỗi phim (ghi nhớ qua localStorage — chặn tương đối,
  * không phải cơ chế chống gian lận tuyệt đối).
  */
-import { doc, getDoc, increment } from 'firebase/firestore';
+import { doc, getDoc, increment } from './firestore-compat';
 import { db } from './firebase';
 import { setDoc, updateDoc } from './firestoreGuard';
 

@@ -6,24 +6,11 @@
 //   GACHTHEFAST_PARTNER_ID   - Partner ID (mục "Thông tin kết nối" trên gachthefast.com)
 //   GACHTHEFAST_PARTNER_KEY  - Partner Key
 //   GACHTHEFAST_DOMAIN       - (tuỳ chọn) mặc định gachthefast.com
-//   FIREBASE_PROJECT_ID / FIREBASE_CLIENT_EMAIL / FIREBASE_PRIVATE_KEY
+//   SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY
 
-const { initializeApp, getApps, cert } = require('firebase-admin/app');
-const { getFirestore }                  = require('firebase-admin/firestore');
-const crypto                            = require('crypto');
+const { getFirestore } = require('./_firestoreAdmin.js');
+const crypto           = require('crypto');
 
-// ─── Init Firebase Admin (idempotent) ────────────────────────────────────────
-function initFirebase() {
-  if (getApps().length > 0) return getFirestore();
-  initializeApp({
-    credential: cert({
-      projectId:    process.env.FIREBASE_PROJECT_ID,
-      clientEmail:  process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey:   (process.env.FIREBASE_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
-    }),
-  });
-  return getFirestore();
-}
 
 const GACHTHEFAST_DOMAIN = process.env.GACHTHEFAST_DOMAIN || 'gachthefast.com';
 
@@ -85,7 +72,7 @@ async function netlifyHandlerFn(event) {
     command: 'charging',
   });
 
-  const db = initFirebase();
+  const db = getFirestore();
   const docRef = db.collection('topup_requests').doc(String(requestId));
 
   try {

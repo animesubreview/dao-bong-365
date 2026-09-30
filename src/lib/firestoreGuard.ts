@@ -8,7 +8,7 @@
 import {
   setDoc as _setDoc, addDoc as _addDoc, updateDoc as _updateDoc, deleteDoc as _deleteDoc,
   onSnapshot as _onSnapshot,
-} from 'firebase/firestore';
+} from './firestore-compat';
 import { guardWrite, reportFirestoreError } from './firebaseUtils';
 
 export const setDoc = ((...args: any[]) => guardWrite((_setDoc as any)(...args))) as unknown as typeof _setDoc;

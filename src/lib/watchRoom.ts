@@ -3,7 +3,7 @@ import {
   collection, doc, onSnapshot, deleteDoc,
   updateDoc, addDoc, serverTimestamp, query, orderBy,
   getDoc, limit,
-} from 'firebase/firestore';
+} from './firestore-compat';
 import { db } from './firebase';
 
 // ── Trạng thái đồng bộ player ─────────────────────────────────────────────────

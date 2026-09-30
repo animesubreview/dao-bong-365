@@ -4,7 +4,7 @@
  * đây là danh sách do admin chọn tay 100%.
  */
 
-import { collection, doc, getDocs, query, orderBy } from 'firebase/firestore';
+import { collection, doc, getDocs, query, orderBy } from './firestore-compat';
 import { db } from './firebase';
 import { setDoc, deleteDoc, onSnapshot } from './firestoreGuard';
 import { fetchCollectionCached, invalidateCache } from './publicCache';

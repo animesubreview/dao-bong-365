@@ -1,6 +1,6 @@
 // ─── Livestream Service ────────────────────────────────────────────────────────
 // Quản lý cấu hình phát trực tiếp (bật/tắt, link nhúng) + chat realtime kèm theo.
-import { collection, doc, getDoc, getDocs, query, orderBy, limit, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, query, orderBy, limit, serverTimestamp, Timestamp } from './firestore-compat';
 import { db } from './firebase';
 import { addDoc, deleteDoc, setDoc, onSnapshot } from './firestoreGuard';
 

@@ -1,7 +1,7 @@
 // ─── Dịch vụ nạp thẻ cào (TrumThe v2 API) ────────────────────────────────────
 import { db } from './firebase';
 import { setDoc, updateDoc } from './firestoreGuard';
-import { doc, getDoc, collection, getDocs, query, where, orderBy } from 'firebase/firestore';
+import { doc, getDoc, collection, getDocs, query, where, orderBy } from './firestore-compat';
 
 export type CardTelco = 'VIETTEL' | 'MOBIFONE' | 'VINAPHONE' | 'VIETNAMOBILE' | 'GMOBILE';
 

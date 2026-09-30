@@ -1,6 +1,6 @@
 import { db } from './firebase';
 import { onSnapshot } from './firestoreGuard';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc } from './firestore-compat';
 import { saveDoc } from './firebaseUtils';
 
 // Toàn bộ cấu hình website (tên site, email/telegram quảng cáo, cảnh báo copy...)

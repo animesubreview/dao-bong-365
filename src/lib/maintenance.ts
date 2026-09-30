@@ -1,4 +1,4 @@
-import { doc } from 'firebase/firestore';
+import { doc } from './firestore-compat';
 import { saveDoc } from './firebaseUtils';
 import { db } from './firebase';
 import { onSnapshot } from './firestoreGuard';

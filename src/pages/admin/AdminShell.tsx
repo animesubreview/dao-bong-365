@@ -16,7 +16,7 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     title: 'Tổng quan',
     items: [
-      { id: 'section-realtime', label: 'Tổng quan', icon: Activity, desc: 'Người đang xem, kiểm tra kết nối Firebase' },
+      { id: 'section-realtime', label: 'Tổng quan', icon: Activity, desc: 'Người đang xem, kiểm tra kết nối Supabase' },
     ],
   },
   {
@@ -80,7 +80,7 @@ function FirestoreErrorBanner({ onCheck }: { onCheck: () => void }) {
     <div className="mx-4 lg:mx-8 mt-4 rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 flex gap-3 items-start">
       <AlertCircle size={18} className="text-red-400 shrink-0 mt-0.5" />
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-bold text-red-300">Firebase đang báo lỗi — dữ liệu có thể chưa được lưu</p>
+        <p className="text-sm font-bold text-red-300">Supabase đang báo lỗi — dữ liệu có thể chưa được lưu</p>
         <p className="text-[13px] text-red-200/80 mt-0.5 leading-relaxed break-words">{err.message}</p>
         <div className="flex gap-2 mt-2.5">
           <button onClick={onCheck} className="px-3 py-1.5 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-200 text-xs font-bold">

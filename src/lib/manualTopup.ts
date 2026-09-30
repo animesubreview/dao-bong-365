@@ -1,7 +1,7 @@
 // ─── Nạp thẻ thủ công — Admin duyệt ──────────────────────────────────────────
 import { db } from './firebase';
 import { setDoc, updateDoc, onSnapshot } from './firestoreGuard';
-import { doc, getDoc, collection, getDocs, query, where, orderBy, Unsubscribe } from 'firebase/firestore';
+import { doc, getDoc, collection, getDocs, query, where, orderBy, Unsubscribe } from './firestore-compat';
 import { addUserBalance } from './auth';
 
 export type ManualTopupStatus = 'pending' | 'approved' | 'rejected';

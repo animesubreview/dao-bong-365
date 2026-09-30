@@ -4,7 +4,7 @@
  * mục "Phim Mới Cập Nhật" để mọi người dễ thấy, không cần chỉnh sửa nội dung phim.
  */
 
-import { collection, doc, getDocs, query, orderBy } from 'firebase/firestore';
+import { collection, doc, getDocs, query, orderBy } from './firestore-compat';
 import { db } from './firebase';
 import { setDoc, deleteDoc, onSnapshot } from './firestoreGuard';
 import { fetchCollectionCached, invalidateCache } from './publicCache';

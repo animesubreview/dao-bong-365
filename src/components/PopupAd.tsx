@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { X, ExternalLink } from 'lucide-react';
-import { collection, doc, query, orderBy } from 'firebase/firestore';
+import { collection, doc, query, orderBy } from '../lib/firestore-compat';
 import { db } from '../lib/firebase';
 import { addDoc, updateDoc, deleteDoc } from '../lib/firestoreGuard';
 import { fetchCollectionCached, invalidateCache } from '../lib/publicCache';

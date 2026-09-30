@@ -17,7 +17,7 @@
  * lại trang mới thấy thay đổi, thay vì thấy ngay lập tức như trước. Đánh đổi này
  * chấp nhận được vì các dữ liệu này vốn không cần cập nhật tức thời.
  */
-import { collection, query, orderBy, getDocs, QueryConstraint } from 'firebase/firestore';
+import { collection, query, orderBy, getDocs, QueryConstraint } from './firestore-compat';
 import { db } from './firebase';
 
 interface Entry { at: number; data: any[] }

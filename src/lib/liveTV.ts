@@ -3,7 +3,7 @@
  * theo từng danh mục (Thời Sự, Giải Trí, Thiếu Nhi, Thể Thao...), hiển thị ở trang /tv-truc-tuyen.
  */
 
-import { collection, doc, query, orderBy } from 'firebase/firestore';
+import { collection, doc, query, orderBy } from './firestore-compat';
 import { db } from './firebase';
 import { setDoc, deleteDoc, onSnapshot } from './firestoreGuard';
 import { fetchCollectionCached, invalidateCache } from './publicCache';

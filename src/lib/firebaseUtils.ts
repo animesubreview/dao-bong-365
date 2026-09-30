@@ -1,4 +1,4 @@
-import { setDoc, getDoc, getDocFromServer, deleteDoc, doc, DocumentReference, SetOptions } from 'firebase/firestore';
+import { setDoc, getDoc, getDocFromServer, deleteDoc, doc, DocumentReference, SetOptions } from './firestore-compat';
 import { db } from './firebase';
 
 /** Lỗi lưu Firestore đã được dịch sang tiếng Việt (giữ lại .code gốc để dễ debug). */
@@ -11,33 +11,30 @@ export class FirebaseSaveError extends Error {
   }
 }
 
-/** Dịch lỗi Firebase/Firestore thành câu dễ hiểu cho admin. */
+/** Dịch lỗi Supabase/Postgres thành câu dễ hiểu cho admin. */
 export function describeFirebaseError(e: any): string {
   if (e instanceof FirebaseSaveError) return e.message;
   const code: string = e?.code || '';
   const raw: string = e?.message || String(e || '');
-  if (code.includes('permission-denied') || code.includes('unauthenticated') || /insufficient permissions/i.test(raw)) {
-    return 'Firestore từ chối ghi (permission-denied). Vào Firebase Console → Firestore Database → Rules, dán nội dung file firestore.rules rồi bấm Publish.';
+  if (code === '42501' || /row-level security|permission denied/i.test(raw)) {
+    return 'Supabase từ chối đọc/ghi (Row Level Security). Vào Supabase → SQL Editor, chạy lại file supabase_schema.sql để tạo policy cho phép đọc/ghi.';
   }
-  if (code.includes('resource-exhausted') || /quota/i.test(raw)) {
-    return 'Firestore đã hết quota miễn phí trong ngày (resource-exhausted). Đợi sang ngày mới hoặc nâng gói Blaze.';
+  if (/project is paused|project.*inactive/i.test(raw)) {
+    return 'Project Supabase đang bị tạm dừng (do free tier ngừng hoạt động 7 ngày). Vào Supabase Dashboard bấm "Restore project" để bật lại.';
   }
-  if (/database.*does not exist/i.test(raw)) {
-    return 'Chưa có Firestore Database. Vào Firebase Console → Firestore Database → Create database.';
+  if (code === '42P01' || /relation .* does not exist/i.test(raw)) {
+    return 'Chưa tạo bảng dữ liệu trên Supabase. Vào Supabase → SQL Editor, chạy toàn bộ file supabase_schema.sql.';
   }
   if (code.includes('not-found') || /no document to update/i.test(raw)) {
     return 'Không tìm thấy dữ liệu cần cập nhật (có thể đã bị xóa). Hãy tải lại trang rồi thử lại.';
   }
-  if (code.includes('failed-precondition') && /index/i.test(raw)) {
-    return 'Truy vấn cần tạo Index trong Firestore. Mở link trong Console (F12) để tạo, hoặc báo dev.';
+  if (/failed to fetch|networkerror|offline|blocked/i.test(raw)) {
+    return 'Không kết nối được tới Supabase. Hãy tắt AdBlock/VPN, đổi mạng, hoặc kiểm tra lại VITE_SUPABASE_URL rồi thử lại.';
   }
-  if (code.includes('unavailable') || code.includes('deadline-exceeded') || /offline|network|blocked/i.test(raw)) {
-    return 'Không kết nối được tới Firebase. Hãy tắt AdBlock/VPN, đổi mạng rồi lưu lại.';
+  if (/too large|payload/i.test(raw)) {
+    return 'Dữ liệu quá lớn. Hãy dùng ảnh nhỏ hơn hoặc dán link ảnh.';
   }
-  if (code.includes('invalid-argument') && /size|bytes|large/i.test(raw)) {
-    return 'Dữ liệu quá lớn (Firestore giới hạn 1MB/tài liệu). Hãy dùng ảnh nhỏ hơn hoặc dán link ảnh.';
-  }
-  return `Lỗi Firebase${code ? ` (${code})` : ''}: ${raw}`;
+  return `Lỗi Supabase${code ? ` (${code})` : ''}: ${raw}`;
 }
 
 const MAX_DOC_BYTES = 900_000; // Firestore giới hạn 1 MiB/tài liệu → chừa dư địa
@@ -55,7 +52,7 @@ export async function saveDoc(ref: DocumentReference, data: any, options?: SetOp
   if (bytes > MAX_DOC_BYTES) {
     throw new FirebaseSaveError(
       'too-large',
-      `Dữ liệu quá lớn (${(bytes / 1024).toFixed(0)}KB, Firestore giới hạn 1MB/tài liệu). Thường do ảnh/video tải lên — hãy dùng ảnh nhỏ hơn hoặc dán link.`
+      `Dữ liệu quá lớn (${(bytes / 1024).toFixed(0)}KB, dữ liệu quá lớn cho 1 dòng). Thường do ảnh/video tải lên — hãy dùng ảnh nhỏ hơn hoặc dán link.`
     );
   }
 
@@ -63,7 +60,7 @@ export async function saveDoc(ref: DocumentReference, data: any, options?: SetOp
   const timeout = new Promise<never>((_, reject) => {
     timer = setTimeout(() => reject(new FirebaseSaveError(
       'timeout',
-      'Không kết nối được tới Firebase (quá 15 giây). Hãy tắt AdBlock/VPN, đổi mạng rồi lưu lại.'
+      'Không kết nối được tới Supabase (quá 15 giây). Hãy tắt AdBlock/VPN, đổi mạng rồi lưu lại.'
     )), SAVE_TIMEOUT_MS);
   });
 
@@ -125,7 +122,7 @@ export function guardWrite<T>(promise: Promise<T>, timeoutMs = 20_000): Promise<
   const timeout = new Promise<never>((_, reject) => {
     timer = setTimeout(() => reject(new FirebaseSaveError(
       'timeout',
-      'Không kết nối được tới Firebase (quá 20 giây). Hãy tắt AdBlock/VPN, đổi mạng rồi thử lại.'
+      'Không kết nối được tới Supabase (quá 20 giây). Hãy tắt AdBlock/VPN, đổi mạng rồi thử lại.'
     )), timeoutMs);
   });
   return Promise.race([promise, timeout])
@@ -168,8 +165,8 @@ export async function runFirebaseHealthCheck(onStep?: (steps: HealthStep[]) => v
     }
   };
 
-  const ok1 = await run('Đọc dữ liệu từ Firebase', async () => { await withLimit(getDoc(doc(db, 'config', 'site_settings')), 10_000); });
-  const ok2 = await run('Ghi dữ liệu lên Firebase', async () => { await withLimit(setDoc(ref, { at: stamp, from: 'admin-health-check' }), 12_000); });
+  const ok1 = await run('Đọc dữ liệu từ Supabase', async () => { await withLimit(getDoc(doc(db, 'config', 'site_settings')), 10_000); });
+  const ok2 = await run('Ghi dữ liệu lên Supabase', async () => { await withLimit(setDoc(ref, { at: stamp, from: 'admin-health-check' }), 12_000); });
   if (ok2) {
     await run('Đọc lại từ máy chủ (xác nhận đã lưu)', async () => {
       const snap = await withLimit(getDocFromServer(ref), 10_000);

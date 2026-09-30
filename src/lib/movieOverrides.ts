@@ -3,7 +3,7 @@
  * Lưu override lên Firestore → web hiển thị thông tin đã chỉnh
  */
 
-import { collection, doc, getDoc, query, orderBy, getDocs } from 'firebase/firestore';
+import { collection, doc, getDoc, query, orderBy, getDocs } from './firestore-compat';
 import { db } from './firebase';
 import { setDoc, deleteDoc, onSnapshot } from './firestoreGuard';
 

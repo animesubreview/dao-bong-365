@@ -2,7 +2,7 @@ import { db } from './firebase';
 // Presence là ping nền, không quan trọng — lỗi tự bỏ qua (xem các .catch bên dưới),
 // nên KHÔNG dùng bản setDoc/onSnapshot có báo banner lỗi (firestoreGuard), tránh làm
 // phiền admin mỗi khi 1 lượt ping của người xem nào đó bị rớt mạng tạm thời.
-import { doc, collection, serverTimestamp, Timestamp, setDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
+import { doc, collection, serverTimestamp, Timestamp, setDoc, deleteDoc, onSnapshot } from './firestore-compat';
 
 // TTL: nếu user không ping trong 3 phút → coi là offline.
 // Tăng PING_INTERVAL từ 30s lên 90s để giảm 2/3 số lượt ghi Firestore từ mỗi khách xem
