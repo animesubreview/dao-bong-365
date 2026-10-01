@@ -11,8 +11,7 @@ const SIDE_ITEMS: Item[] = [
   { to: '/history', label: 'Lịch sử', icon: History, match: (p) => p === '/history' },
 ];
 const SIDE_ITEMS_RIGHT: Item[] = [
-  // Xem chung: mở khung tạo phòng (Header đang lắng nghe sự kiện này)
-  { onClick: () => window.dispatchEvent(new Event('open-watch-room-modal')), label: 'Xem chung', icon: Users, match: (p) => p.startsWith('/watch-room') },
+  { to: '/xem-chung', label: 'Xem chung', icon: Users, match: (p) => p.startsWith('/xem-chung') || p.startsWith('/watch-room') },
   { to: '/profile', label: 'Tài khoản', icon: User, match: (p) => p === '/profile' || p === '/auth' },
 ];
 

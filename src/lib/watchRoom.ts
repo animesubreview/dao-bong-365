@@ -2,7 +2,7 @@
 import {
   collection, doc, onSnapshot, deleteDoc,
   updateDoc, addDoc, serverTimestamp, query, orderBy,
-  getDoc, limit,
+  getDoc, limit, where,
 } from './firestore-compat';
 import { db } from './firebase';
 
@@ -205,4 +205,29 @@ export async function sendRoomMessage(
   msg: Omit<RoomMessage, 'id'>
 ): Promise<void> {
   await addDoc(collection(db, 'watchRooms', roomId, 'messages'), msg);
+}
+
+
+// Phòng đang mở (còn trong 2 giờ kể từ lúc tạo), mới nhất lên đầu
+export const ROOM_TTL_MS = 2 * 60 * 60 * 1000;
+export function subscribeActiveWatchRooms(cb: (rooms: WatchRoom[]) => void, onError?: () => void) {
+  return onSnapshot(
+    query(collection(db, 'watchRooms'), where('isActive', '==', true)),
+    (snap: any) => {
+      const now = Date.now();
+      const rooms = (snap.docs || [])
+        .map((d: any) => ({ id: d.id, ...d.data() } as WatchRoom))
+        .filter((r: WatchRoom) => {
+          const t = typeof r.createdAt === 'number' ? r.createdAt : (r.createdAt?.toMillis?.() ?? now);
+          return now - t < ROOM_TTL_MS;
+        })
+        .sort((a: WatchRoom, b: WatchRoom) => {
+          const ta = typeof a.createdAt === 'number' ? a.createdAt : (a.createdAt?.toMillis?.() ?? 0);
+          const tb = typeof b.createdAt === 'number' ? b.createdAt : (b.createdAt?.toMillis?.() ?? 0);
+          return tb - ta;
+        });
+      cb(rooms);
+    },
+    () => { onError?.(); }
+  );
 }
