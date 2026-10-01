@@ -17,8 +17,10 @@ function NavItem({ to, label, icon: Icon, active }: { to: string; label: string;
   return (
     <Link
       to={to}
-      className="flex-1 flex flex-col items-center justify-center gap-1 py-2 rounded-xl transition-colors"
+      aria-current={active ? 'page' : undefined}
+      className="relative flex-1 flex flex-col items-center justify-center gap-1 py-2.5 rounded-xl transition-colors active:scale-95"
     >
+      {active && <span className="absolute top-1 h-[3px] w-5 rounded-full bg-[var(--primary-light)]" aria-hidden />}
       <Icon
         size={20}
         strokeWidth={2}
@@ -41,7 +43,7 @@ export default function MobileBottomNav() {
   const homeActive = pathname === '/';
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 md:hidden">
+    <nav aria-label="Điều hướng chính" className="fixed bottom-0 left-0 right-0 z-40 md:hidden" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
       <div className="relative mx-3 mb-2">
         {/* Bar với phần lõm ở giữa cho nút Home nổi — mask co giãn theo mọi kích thước màn hình */}
         <div
@@ -65,6 +67,7 @@ export default function MobileBottomNav() {
         <Link
           to="/"
           aria-label="Trang chủ"
+          aria-current={homeActive ? 'page' : undefined}
           className="absolute left-1/2 -translate-x-1/2 -top-5 w-14 h-14 rounded-full flex items-center justify-center transition-transform active:scale-95"
           style={{
             background: 'linear-gradient(135deg, var(--primary-light), var(--primary))',
