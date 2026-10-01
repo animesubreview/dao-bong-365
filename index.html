@@ -162,6 +162,16 @@
             // (poster bị 404, CDN chập chờn...) và đã có cơ chế ảnh dự phòng xử lý — KHÔNG được phủ màn hình đỏ.
             var tag = String(e.target.tagName).toUpperCase();
             if (tag !== 'SCRIPT' && tag !== 'LINK') return;
+            // File bundle (/assets/*.js|css) không tải được thường do trình duyệt/CDN còn giữ index.html CŨ trỏ tới
+            // file đã bị xóa sau khi deploy bản mới → tự tải lại 1 lần để lấy index.html mới, người dùng khỏi thấy lỗi.
+            try {
+              var u = String(e.target.src || e.target.href || '');
+              if (u.indexOf('/assets/') > -1 && !sessionStorage.getItem('__asset_reload')) {
+                sessionStorage.setItem('__asset_reload', '1');
+                location.reload();
+                return;
+              }
+            } catch (_) {}
             showErr('LỖI TẢI FILE: <' + e.target.tagName + '> ' + (e.target.src || e.target.href || '') + '\n(File này không tải được — có thể do build lỗi, đường dẫn sai, hoặc mất mạng)');
           } else {
             showErr('LỖI JS: ' + (e.message || '') + '\n' + (e.filename || '') + ':' + (e.lineno || '') + ':' + (e.colno || '') + '\n' + (e.error && e.error.stack || ''));
