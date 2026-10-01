@@ -1,25 +1,25 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Tv, Library, Home, MessageCircle, User } from 'lucide-react';
+import { Search, History, Home, Users, User } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 // 5 mục — Trang chủ nằm giữa, nổi bật hơn các icon còn lại (giống app streaming)
-const SIDE_ITEMS = [
-  { to: '/tv-truc-tuyen', label: 'TV Flix', icon: Tv, match: (p: string) => p === '/tv-truc-tuyen' || p === '/truc-tiep' },
-  { to: '/favorites', label: 'Thư viện', icon: Library, match: (p: string) => p === '/favorites' || p === '/history' },
+type Item = { to?: string; onClick?: () => void; label: string; icon: any; match: (p: string) => boolean };
+
+const SIDE_ITEMS: Item[] = [
+  { to: '/search', label: 'Tìm kiếm', icon: Search, match: (p) => p === '/search' },
+  { to: '/history', label: 'Lịch sử', icon: History, match: (p) => p === '/history' },
 ];
-const SIDE_ITEMS_RIGHT = [
-  { to: '/chat', label: 'Chat', icon: MessageCircle, match: (p: string) => p === '/chat' },
-  { to: '/profile', label: 'Tài khoản', icon: User, match: (p: string) => p === '/profile' || p === '/auth' },
+const SIDE_ITEMS_RIGHT: Item[] = [
+  // Xem chung: mở khung tạo phòng (Header đang lắng nghe sự kiện này)
+  { onClick: () => window.dispatchEvent(new Event('open-watch-room-modal')), label: 'Xem chung', icon: Users, match: (p) => p.startsWith('/watch-room') },
+  { to: '/profile', label: 'Tài khoản', icon: User, match: (p) => p === '/profile' || p === '/auth' },
 ];
 
-function NavItem({ to, label, icon: Icon, active }: { to: string; label: string; icon: any; active: boolean }) {
-  return (
-    <Link
-      to={to}
-      aria-current={active ? 'page' : undefined}
-      className="relative flex-1 flex flex-col items-center justify-center gap-1 py-2.5 rounded-xl transition-colors active:scale-95"
-    >
+function NavItem({ to, onClick, label, icon: Icon, active }: Item & { active: boolean }) {
+  const cls = 'relative flex-1 flex flex-col items-center justify-center gap-1 py-2.5 rounded-xl transition-colors active:scale-95';
+  const inner = (
+    <>
       {active && <span className="absolute top-1 h-[3px] w-5 rounded-full bg-[var(--primary-light)]" aria-hidden />}
       <Icon
         size={20}
@@ -29,7 +29,12 @@ function NavItem({ to, label, icon: Icon, active }: { to: string; label: string;
       <span className={cn('text-[10px] font-semibold transition-colors', active ? 'text-[var(--primary-light)]' : 'text-slate-500')}>
         {label}
       </span>
-    </Link>
+    </>
+  );
+  return to ? (
+    <Link to={to} aria-current={active ? 'page' : undefined} className={cls}>{inner}</Link>
+  ) : (
+    <button type="button" onClick={onClick} className={cls}>{inner}</button>
   );
 }
 
@@ -54,12 +59,12 @@ export default function MobileBottomNav() {
           }}
         >
           {SIDE_ITEMS.map((it) => (
-            <NavItem key={it.to} to={it.to} label={it.label} icon={it.icon} active={it.match(pathname)} />
+            <NavItem key={it.label} {...it} active={it.match(pathname)} />
           ))}
           {/* khoảng trống cho nút Home nổi */}
           <div className="w-[72px] shrink-0" />
           {SIDE_ITEMS_RIGHT.map((it) => (
-            <NavItem key={it.to} to={it.to} label={it.label} icon={it.icon} active={it.match(pathname)} />
+            <NavItem key={it.label} {...it} active={it.match(pathname)} />
           ))}
         </div>
 
