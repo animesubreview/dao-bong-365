@@ -1,0 +1,14 @@
+rules_version = '2';
+
+// Quy tắc Firebase Storage — dán vào Console → Storage → Rules → Publish.
+// Cho phép AI CŨNG được đọc mọi file (ảnh avatar, logo...) vì đây là web công khai,
+// nhưng CHỈ cho ghi file ảnh dưới 5MB để tránh bị lạm dụng chiếm dung lượng/băng thông.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      allow read: if true;
+      allow write: if request.resource.size < 5 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+    }
+  }
+}

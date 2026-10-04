@@ -1,0 +1,126 @@
+// ─── Comments Service ──────────────────────────────────────────────────────────
+import {
+  collection, addDoc, getDocs, deleteDoc, doc, query,
+  orderBy, where, updateDoc, arrayUnion, arrayRemove, serverTimestamp, Timestamp, limit,
+} from './firestore-compat';
+import { db } from './firebase';
+import type { Comment } from '../types';
+
+const COL = 'comments';
+
+/** Lấy N bình luận mới nhất trên TOÀN site (mọi phim) — dùng cho widget "Bình luận mới" ở trang chủ */
+export async function getRecentComments(limitN: number = 9): Promise<Comment[]> {
+  try {
+    const q = query(collection(db, COL), orderBy('createdAt', 'desc'), limit(limitN));
+    const snap = await getDocs(q);
+    return snap.docs.map(d => ({ id: d.id, ...d.data() } as Comment));
+  } catch {
+    return [];
+  }
+}
+
+/** Đếm số bình luận theo từng phim (movieSlug) kể từ mốc thời gian `sinceTs` — dùng để xếp hạng phim "sôi nổi" theo lượng bình luận thật */
+export async function getCommentCountsSince(sinceTs: number, limitN: number = 500): Promise<Record<string, number>> {
+  try {
+    const q = query(
+      collection(db, COL),
+      where('createdAt', '>=', sinceTs),
+      orderBy('createdAt', 'desc'),
+      limit(limitN)
+    );
+    const snap = await getDocs(q);
+    const counts: Record<string, number> = {};
+    snap.docs.forEach(d => {
+      const slug = (d.data() as any).movieSlug;
+      if (slug) counts[slug] = (counts[slug] || 0) + 1;
+    });
+    return counts;
+  } catch {
+    return {};
+  }
+}
+
+/** Đếm tổng lượt thích (likes) trên bình luận theo từng phim kể từ mốc `sinceTs` — dùng để xếp hạng phim "yêu thích nhất" */
+export async function getCommentLikesSince(sinceTs: number, limitN: number = 500): Promise<Record<string, number>> {
+  try {
+    const q = query(
+      collection(db, COL),
+      where('createdAt', '>=', sinceTs),
+      orderBy('createdAt', 'desc'),
+      limit(limitN)
+    );
+    const snap = await getDocs(q);
+    const likes: Record<string, number> = {};
+    snap.docs.forEach(d => {
+      const data = d.data() as any;
+      const slug = data.movieSlug;
+      const n = Array.isArray(data.likes) ? data.likes.length : 0;
+      if (slug) likes[slug] = (likes[slug] || 0) + n;
+    });
+    return likes;
+  } catch {
+    return {};
+  }
+}
+
+
+export async function getComments(movieSlug: string): Promise<Comment[]> {
+  try {
+    const q = query(
+      collection(db, COL),
+      where('movieSlug', '==', movieSlug),
+      orderBy('createdAt', 'desc')
+    );
+    const snap = await getDocs(q);
+    return snap.docs.map(d => ({ id: d.id, ...d.data() } as Comment));
+  } catch {
+    return [];
+  }
+}
+
+export async function addComment(
+  movieSlug: string,
+  uid: string,
+  username: string,
+  avatar: string,
+  content: string,
+  options?: { parentId?: string; replyToUsername?: string; isAdminReply?: boolean; isSpoiler?: boolean }
+): Promise<Comment | null> {
+  try {
+    const data: any = {
+      movieSlug,
+      uid,
+      username,
+      avatar,
+      content: content.trim(),
+      createdAt: Date.now(),
+      likes: [],
+    };
+    if (options?.parentId) data.parentId = options.parentId;
+    if (options?.replyToUsername) data.replyToUsername = options.replyToUsername;
+    if (options?.isAdminReply) data.isAdminReply = true;
+    if (options?.isSpoiler) data.isSpoiler = true;
+    const ref = await addDoc(collection(db, COL), data);
+    return { id: ref.id, ...data };
+  } catch {
+    return null;
+  }
+}
+
+export async function deleteComment(commentId: string): Promise<boolean> {
+  try {
+    await deleteDoc(doc(db, COL, commentId));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function toggleLike(commentId: string, uid: string, liked: boolean): Promise<void> {
+  const ref = doc(db, COL, commentId);
+  if (liked) {
+    await updateDoc(ref, { likes: arrayRemove(uid) });
+  } else {
+    await updateDoc(ref, { likes: arrayUnion(uid) });
+  }
+}

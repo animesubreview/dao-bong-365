@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "target": "es2020",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowJs": true,
+    "noEmit": true,
+    "strict": false,
+    "isolatedModules": true,
+    "resolveJsonModule": true
+  },
+  "include": [
+    "src/components/Header.tsx",
+    "src/components/Banner.tsx",
+    "src/pages/Watch.tsx",
+    "src/components/DaoPhimPlayer.tsx",
+    "src/components/VideoAdOverlay.tsx",
+    "src/pages/Home.tsx",
+    "src/components/AdBanner.tsx",
+    "src/components/PopupAd.tsx",
+    "src/pages/Admin.tsx"
+  ]
+}
