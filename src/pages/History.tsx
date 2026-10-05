@@ -2,6 +2,7 @@ import { useSEO } from '../hooks/useSEO';
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { History as HistoryIcon, Trash2, Play, Clock, ChevronRight } from 'lucide-react';
+import { historyWatchLink, historyDetailLink, episodeLabel, readProgress, formatClock } from '../lib/watchHistory';
 import { movieApi } from '../services/api';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
@@ -21,6 +22,9 @@ export default function History() {
       setHistory([]);
     }
   };
+
+  const latest = history[0];
+  const latestProgress = latest ? readProgress(latest) : null;
 
   const removeHistoryItem = (slug: string) => {
     const newHistory = history.filter((h: any) => h.slug !== slug);
@@ -52,6 +56,24 @@ export default function History() {
           )}
         </div>
 
+        {/* Tiếp tục xem: phim vừa xem gần nhất */}
+        {latest && (
+          <Link to={historyWatchLink(latest)}
+            className="flex items-center gap-4 mb-8 p-4 rounded-2xl border border-green-500/30 bg-green-500/10 hover:bg-green-500/15 transition-colors">
+            <div className="w-14 h-14 shrink-0 rounded-full bg-green-500 text-slate-950 flex items-center justify-center shadow-lg shadow-green-500/30">
+              <Play size={24} className="fill-current ml-0.5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[11px] font-bold uppercase tracking-widest text-green-400">Tiếp tục xem</p>
+              <p className="font-black text-white truncate">{latest.name}</p>
+              <p className="text-xs text-slate-400">
+                {episodeLabel(latest)}{latestProgress ? ` · đã xem ${formatClock(latestProgress.time)}` : ''}
+              </p>
+            </div>
+            <ChevronRight className="text-green-400 shrink-0" />
+          </Link>
+        )}
+
         {history.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             <AnimatePresence>
@@ -64,7 +86,7 @@ export default function History() {
                   transition={{ delay: idx * 0.05 }}
                   className="glass-card group relative"
                 >
-                  <Link to={`/watch/${item.slug}/${item.episodeSlug}`} className="block aspect-video relative overflow-hidden bg-slate-900">
+                  <Link to={historyWatchLink(item)} className="block aspect-video relative overflow-hidden bg-slate-900">
                     {/* placeholder khi ảnh lỗi */}
                     <div className="absolute inset-0 flex items-center justify-center text-slate-700">
                       <Play size={32} />
@@ -89,17 +111,27 @@ export default function History() {
                       </div>
                     </div>
                     <div className="absolute bottom-2 right-2 bg-slate-950/80 backdrop-blur-sm px-2 py-1 rounded text-[10px] font-bold text-white border border-slate-800">
-                      Tập {item.episodeName}
+                      {episodeLabel(item)}
                     </div>
+                    {/* Thanh tiến độ xem dở */}
+                    {(() => {
+                      const pr = readProgress(item);
+                      return pr && pr.pct > 0 ? (
+                        <div className="absolute inset-x-0 bottom-0 h-1 bg-white/20 z-20">
+                          <div className="h-full bg-green-500" style={{ width: `${pr.pct}%` }} />
+                        </div>
+                      ) : null;
+                    })()}
                   </Link>
 
                   <div className="p-4 flex flex-col gap-2">
-                    <Link to={`/phim/${item.slug}`} className="font-bold text-white hover:text-indigo-400 transition-colors truncate">
+                    <Link to={historyDetailLink(item)} className="font-bold text-white hover:text-indigo-400 transition-colors truncate">
                       {item.name}
                     </Link>
                     <div className="flex items-center justify-between text-[10px] text-slate-500 font-bold uppercase tracking-widest">
                       <span className="flex items-center gap-1">
                         <Clock size={10} /> {new Date(item.updatedAt).toLocaleDateString()}
+                        {(() => { const pr = readProgress(item); return pr ? <span className="text-green-400 normal-case tracking-normal ml-1">· {formatClock(pr.time)}</span> : null; })()}
                       </span>
                       <button
                         onClick={(e) => {

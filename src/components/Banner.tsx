@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Play, Info, Heart } from 'lucide-react';
+import { Play, Info, Heart, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Movie } from '../types';
 import { movieApi } from '../services/api';
 import { cn } from '../lib/utils';
@@ -79,6 +79,16 @@ export default function Banner({ movies }: BannerProps) {
   const [dragging, setDragging] = useState(false);
   const dragRef = useRef<{ startX: number; startY: number; t: number; lock: 'x' | 'y' | null; step: number } | null>(null);
   const wasDraggedRef = useRef(false);
+
+  // Dải ảnh nhỏ (PC): hiện 5 ô/lần, kéo hoặc bấm mũi tên để xem tiếp; tự cuộn tới ô đang chọn
+  const stripRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const c = stripRef.current;
+    const b = c?.children[idx] as HTMLElement | undefined;
+    if (!c || !b) return;
+    c.scrollTo({ left: b.offsetLeft - (c.clientWidth - b.clientWidth) / 2, behavior: 'smooth' });
+  }, [idx]);
+  const scrollStrip = (dir: 1 | -1) => stripRef.current?.scrollBy({ left: dir * stripRef.current.clientWidth, behavior: 'smooth' });
 
   const onPointerDown = (e: React.PointerEvent) => {
     const h = stageRef.current?.clientHeight || 360;
@@ -167,7 +177,7 @@ export default function Banner({ movies }: BannerProps) {
       <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-slate-950 via-slate-950/60 to-transparent" />
 
       {/* Thông tin phim */}
-      <div className="absolute left-[4%] bottom-[17%] lg:bottom-[11%] w-[min(560px,56%)] lg:w-[min(560px,44%)] text-left">
+      <div className="absolute left-[4%] bottom-[12%] w-[min(560px,52%)] lg:w-[min(560px,44%)] text-left">
         <h1 className="banner-title text-4xl lg:text-5xl xl:text-6xl text-white leading-[1.1] mb-3 line-clamp-2 drop-shadow-lg">
           {decodeHtml(movie.name)}
         </h1>
@@ -210,20 +220,31 @@ export default function Banner({ movies }: BannerProps) {
         </div>
       </div>
 
-      {/* Dải ảnh thu nhỏ — bấm để chuyển phim */}
-      <div className="absolute bottom-[3%] left-[4%] right-[4%] justify-center lg:left-auto lg:right-[3%] lg:bottom-[7%] lg:justify-end flex items-center gap-1.5 lg:gap-2 xl:gap-3 p-1">
-        {items.map((m, i) => (
-          <button key={m._id} type="button" onClick={() => goTo(i)} aria-label={decodeHtml(m.name)} aria-current={i === idx}
-            className={cn('shrink-0 w-[clamp(46px,7vw,88px)] lg:w-[clamp(54px,4.3vw,116px)] aspect-video rounded-md lg:rounded-lg overflow-hidden border-2 transition-all duration-300',
-              i === idx ? 'border-white scale-110 opacity-100 z-10' : 'border-transparent opacity-60 hover:opacity-100')}>
-            <PosterImg
-              src={movieApi.getImageUrl(m.thumb_url || m.poster_url)}
-              fallbackSrc={m.thumb_url || m.poster_url}
-              movieSlug={m.slug}
-              className="w-full h-full object-cover"
-            />
-          </button>
-        ))}
+      {/* Dải ảnh thu nhỏ — góc phải dưới, hiện 5 phim/lần, kéo hoặc bấm mũi tên để xem tiếp */}
+      <div className="absolute right-[3%] bottom-[4%] lg:bottom-[7%] flex items-center gap-1.5">
+        <button type="button" onClick={() => scrollStrip(-1)} aria-label="Xem phim trước"
+          className="shrink-0 w-7 h-7 rounded-full bg-black/50 border border-white/20 text-white flex items-center justify-center hover:bg-black/70 active:scale-90">
+          <ChevronLeft size={16} />
+        </button>
+        <div ref={stripRef}
+          className="relative flex items-center gap-2 overflow-x-auto snap-x snap-proximity px-1 py-2 w-[clamp(290px,36vw,640px)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {items.map((m, i) => (
+            <button key={m._id} type="button" onClick={() => goTo(i)} aria-label={decodeHtml(m.name)} aria-current={i === idx}
+              className={cn('snap-start shrink-0 w-[calc((100%-48px)/5)] aspect-video rounded-md lg:rounded-lg overflow-hidden border-2 transition-all duration-300',
+                i === idx ? 'border-white opacity-100' : 'border-transparent opacity-60 hover:opacity-100')}>
+              <PosterImg
+                src={movieApi.getImageUrl(m.thumb_url || m.poster_url)}
+                fallbackSrc={m.thumb_url || m.poster_url}
+                movieSlug={m.slug}
+                className="w-full h-full object-cover"
+              />
+            </button>
+          ))}
+        </div>
+        <button type="button" onClick={() => scrollStrip(1)} aria-label="Xem phim sau"
+          className="shrink-0 w-7 h-7 rounded-full bg-black/50 border border-white/20 text-white flex items-center justify-center hover:bg-black/70 active:scale-90">
+          <ChevronRight size={16} />
+        </button>
       </div>
     </div>
   );

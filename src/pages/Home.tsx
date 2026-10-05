@@ -1,4 +1,5 @@
 import { useSEO, HOME_TITLE } from '../hooks/useSEO';
+import { historyWatchLink, episodeLabel, readProgress } from '../lib/watchHistory';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronRight, ChevronLeft, Loader2, Calendar, Play, Clock } from 'lucide-react';
@@ -318,7 +319,7 @@ function ContinueWatchingSection() {
         {history.map((item) => (
           <Link
             key={item.slug + item.episodeSlug}
-            to={`/watch/${item.slug}/${item.episodeSlug}`}
+            to={historyWatchLink(item)}
             className="group relative shrink-0 w-40 sm:w-48 rounded-xl overflow-hidden bg-slate-800"
             style={{ aspectRatio: '16/9' }}
           >
@@ -338,6 +339,9 @@ function ContinueWatchingSection() {
               className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/10 to-transparent" />
+            {(() => { const pr = readProgress(item); return pr && pr.pct > 0 ? (
+              <div className="absolute inset-x-0 bottom-0 h-1 bg-white/20 z-20"><div className="h-full bg-green-500" style={{ width: `${pr.pct}%` }} /></div>
+            ) : null; })()}
             <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
               <div className="w-10 h-10 rounded-full bg-green-500/90 flex items-center justify-center">
                 <Play size={18} className="text-white fill-current" />
@@ -346,7 +350,7 @@ function ContinueWatchingSection() {
             <div className="absolute bottom-0 left-0 right-0 p-2">
               <p className="text-[12px] font-bold text-white line-clamp-1">{item.name}</p>
               <div className="flex items-center justify-between mt-0.5">
-                <span className="text-[10px] text-slate-300">Tập {item.episodeName}</span>
+                <span className="text-[10px] text-slate-300">{episodeLabel(item)}</span>
                 <span className="flex items-center gap-0.5 text-[10px] text-slate-400">
                   <Clock size={9} /> {timeAgo(item.updatedAt)}
                 </span>

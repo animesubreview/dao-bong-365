@@ -19,7 +19,7 @@ function useSiteSettings() {
 import { buildEmbedUrl } from '../lib/embedUrl';
 
 // ── HLS / M3U8 Player ────────────────────────────────────────────────────────
-function HlsPlayer({ src, movie }: { src: string; movie: ManualMovie }) {
+function HlsPlayer({ src, movie, resumeKey }: { src: string; movie: ManualMovie; resumeKey?: string }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -66,6 +66,33 @@ function HlsPlayer({ src, movie }: { src: string; movie: ManualMovie }) {
     }
     return () => { hlsInstance?.destroy(); };
   }, [src]);
+
+  // ── Tiếp tục xem: lưu tiến độ mỗi 5s, mở lại thì tua tới đoạn đang xem dở ──
+  useEffect(() => {
+    const vid = videoRef.current;
+    if (!vid || !resumeKey) return;
+    const storeKey = `watchProgress:${resumeKey}`;
+    let resumed = false;
+    const onMeta = () => {
+      if (resumed) return;
+      resumed = true;
+      try {
+        const d = JSON.parse(localStorage.getItem(storeKey) || 'null');
+        if (d && typeof d.time === 'number' && d.time > 10 && (!vid.duration || d.time < vid.duration * 0.95)) {
+          vid.currentTime = d.time;
+        }
+      } catch {}
+    };
+    vid.addEventListener('loadedmetadata', onMeta);
+    const timer = setInterval(() => {
+      if (vid.paused || !vid.duration) return;
+      try {
+        if (vid.currentTime >= vid.duration * 0.97) localStorage.removeItem(storeKey); // xem gần hết = xong
+        else localStorage.setItem(storeKey, JSON.stringify({ time: vid.currentTime, duration: vid.duration, updatedAt: Date.now() }));
+      } catch {}
+    }, 5000);
+    return () => { vid.removeEventListener('loadedmetadata', onMeta); clearInterval(timer); };
+  }, [src, resumeKey]);
 
   useEffect(() => {
     const fn = () => setIsFullscreen(!!document.fullscreenElement);
@@ -405,7 +432,7 @@ export default function WatchManual() {
       {/* ── Video Player + Watermark (fullscreen-safe) ── */}
       <div className="xl:col-start-1">
       {isM3u8 ? (
-        <HlsPlayer src={embedSrc} movie={movie} />
+        <HlsPlayer src={embedSrc} movie={movie} resumeKey={`manual:${movie.id}:${epIdx}`} />
       ) : (
         <WatermarkPlayer
           src={embedSrc}
