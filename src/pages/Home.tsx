@@ -72,7 +72,7 @@ function LangEpBadge({ movie }: { movie: Movie }) {
 }
 
 /* ─── Card sizes ──────────────────────────────────────────────── */
-const CW = 'clamp(92px,27vw,135px)'; // Kích thước poster các hàng thể loại — thu nhỏ theo yêu cầu
+const CW = 'var(--cw)'; // định nghĩa ở index.css: nhỏ dần theo màn hình PC; // Kích thước poster các hàng thể loại — thu nhỏ theo yêu cầu
 const SKELETON_H = 220; // px — đủ để tránh layout shift
 
 /* ─── MCard với ảnh fade-in 500ms ────────────────────────────── */
@@ -462,7 +462,7 @@ function LazySection({ title, to, fetch: fetchFn, label, variant = 'row', color 
       <SecHeader title={title} to={to} label={label} color={color} />
       {variant === 'grid' ? (
         movies && movies.length > 0
-          ? <div className="grid grid-cols-2 gap-x-3 gap-y-4">{movies.slice(0, 4).map(m => <GridLandscapeCard key={m._id} movie={m} />)}</div>
+          ? <div className="grid grid-cols-2 md:grid-cols-4 gap-x-3 gap-y-4">{movies.slice(0, 4).map(m => <GridLandscapeCard key={m._id} movie={m} />)}</div>
           : <GridSkeleton />
       ) : variant === 'feature' ? (
         movies && movies.length > 0
@@ -776,7 +776,7 @@ function FeatureBannerCard({ movie }: { movie: Movie }) {
   const [posterOk, setPosterOk] = useState(false);
   const meta = [movie.episode_current, movie.year, movie.time].filter(Boolean).map(v => dec(String(v))).join(' • ');
   return (
-    <Link to={`/phim/${movie.slug}`} className="group shrink-0 block" style={{ width: 'clamp(220px, 68vw, 300px)', scrollSnapAlign: 'start' }}>
+    <Link to={`/phim/${movie.slug}`} className="group shrink-0 block w-[clamp(220px,68vw,300px)] md:w-[220px] lg:w-[240px] xl:w-[260px]" style={{ scrollSnapAlign: 'start' }}>
       <div className="relative rounded-xl overflow-hidden bg-slate-800" style={{ aspectRatio: '16/10' }}>
         <div className="absolute inset-0 bg-slate-800" />
         <PosterImg src={movieApi.getImageUrl(movie.thumb_url || movie.poster_url)} fallbackSrc={movie.thumb_url || movie.poster_url} alt={dec(movie.name)} movieSlug={movie.slug}
@@ -809,7 +809,7 @@ function VietFeaturedSection({ movies }: { movies: Movie[] }) {
     <section>
       <SecHeader title="Phim Việt Mới Nhất" to="/type/phim-bo?country=viet-nam" label="Xem tất cả" />
       {/* Mobile: cuộn ngang. Desktop: lưới 2 cột thẳng hàng, thẻ to hơn rõ rệt */}
-      <div className="flex gap-4 overflow-x-auto -mx-4 md:mx-0 md:overflow-visible px-4 md:px-0 pb-1 md:grid md:grid-cols-2 md:gap-5"
+      <div className="flex gap-4 overflow-x-auto -mx-4 md:mx-0 md:overflow-visible px-4 md:px-0 pb-1 md:grid md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 md:gap-4"
         style={{ scrollSnapType: 'x mandatory', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
         {movies.slice(0, 10).map(m => <VietBannerCard key={m._id} movie={m} />)}
       </div>
@@ -846,7 +846,7 @@ function FeaturedGridSection({ title, to, fetch: fetchFn }: { title: string; to:
           ))}
         </div>
       ) : (
-        <div className="flex gap-4 overflow-x-auto -mx-4 md:mx-0 md:overflow-visible px-4 md:px-0 pb-1 md:grid md:grid-cols-2 md:gap-5"
+        <div className="flex gap-4 overflow-x-auto -mx-4 md:mx-0 md:overflow-visible px-4 md:px-0 pb-1 md:grid md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 md:gap-4"
           style={{ scrollSnapType: 'x mandatory', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
           {movies.slice(0, 8).map(m => <VietBannerCard key={m._id} movie={m} />)}
         </div>
@@ -1041,7 +1041,7 @@ export default function Home() {
               style={{ scrollbarWidth:'none', msOverflowStyle:'none' }}>
               {manualMovies.slice(0, 8).map((m: ManualMovie) => (
                 <Link key={m.id} to={`/manual/${m.id}`}
-                  className="shrink-0 snap-start group" style={{ width:'calc((100% - 12px) / 2.15)' }}>
+                  className="shrink-0 snap-start group w-[calc((100%-12px)/2.15)] md:w-[220px] lg:w-[240px] xl:w-[260px]">
                   <div className="relative rounded-xl overflow-hidden bg-slate-800 shadow-lg" style={{ aspectRatio:'16/9' }}>
                     {m.posterUrl
                       ? <img src={m.posterUrl} alt={m.name} loading="lazy" referrerPolicy="no-referrer"

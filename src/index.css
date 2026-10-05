@@ -83,3 +83,9 @@
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
+
+/* Chiều rộng poster trong các hàng phim: nhỏ vừa phải trên mobile, gọn hơn trên PC */
+:root { --cw: clamp(92px, 27vw, 135px); }
+@media (min-width: 768px)  { :root { --cw: 118px; } }
+@media (min-width: 1280px) { :root { --cw: 126px; } }

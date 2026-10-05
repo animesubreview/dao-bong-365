@@ -150,7 +150,7 @@ export default function Banner({ movies }: BannerProps) {
 
   // ── Giao diện PC: nền ngang toàn chiều rộng + thông tin bên trái + dải ảnh thu nhỏ bên phải ──
   const desktopHero = (
-    <div className="hidden md:block relative w-full overflow-hidden bg-slate-950" style={{ height: 'clamp(440px, 52vw, 680px)' }}>
+    <div className="hidden md:block relative w-full overflow-hidden bg-slate-950" style={{ height: 'clamp(420px, min(46vw, 82vh), 780px)' }}>
       {items.map((m, i) => (
         <div key={m._id} className="absolute inset-0 transition-opacity duration-700" style={{ opacity: i === idx ? 1 : 0 }} aria-hidden={i !== idx}>
           <PosterImg
@@ -167,7 +167,7 @@ export default function Banner({ movies }: BannerProps) {
       <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-slate-950 via-slate-950/60 to-transparent" />
 
       {/* Thông tin phim */}
-      <div className="absolute left-[4%] bottom-[11%] w-[min(520px,46%)] text-left">
+      <div className="absolute left-[4%] bottom-[17%] lg:bottom-[11%] w-[min(560px,56%)] lg:w-[min(560px,44%)] text-left">
         <h1 className="banner-title text-4xl lg:text-5xl xl:text-6xl text-white leading-[1.1] mb-3 line-clamp-2 drop-shadow-lg">
           {decodeHtml(movie.name)}
         </h1>
@@ -211,11 +211,11 @@ export default function Banner({ movies }: BannerProps) {
       </div>
 
       {/* Dải ảnh thu nhỏ — bấm để chuyển phim */}
-      <div className="absolute right-[3%] bottom-[7%] flex items-center gap-3 max-w-[48%] overflow-hidden p-1.5">
+      <div className="absolute bottom-[3%] left-[4%] right-[4%] justify-center lg:left-auto lg:right-[3%] lg:bottom-[7%] lg:justify-end flex items-center gap-1.5 lg:gap-2 xl:gap-3 p-1">
         {items.map((m, i) => (
           <button key={m._id} type="button" onClick={() => goTo(i)} aria-label={decodeHtml(m.name)} aria-current={i === idx}
-            className={cn('shrink-0 w-28 lg:w-32 aspect-video rounded-xl overflow-hidden border-2 transition-all duration-300',
-              i === idx ? 'border-white scale-105 opacity-100' : 'border-transparent opacity-60 hover:opacity-100')}>
+            className={cn('shrink-0 w-[clamp(46px,7vw,88px)] lg:w-[clamp(54px,4.3vw,116px)] aspect-video rounded-md lg:rounded-lg overflow-hidden border-2 transition-all duration-300',
+              i === idx ? 'border-white scale-110 opacity-100 z-10' : 'border-transparent opacity-60 hover:opacity-100')}>
             <PosterImg
               src={movieApi.getImageUrl(m.thumb_url || m.poster_url)}
               fallbackSrc={m.thumb_url || m.poster_url}
