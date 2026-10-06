@@ -26,18 +26,21 @@ function stripHtml(str?: string): string {
 
 interface BannerProps { movies: Movie[]; }
 
+// Phim thủ công (ghim từ Admin) có trang riêng /manual/:id, phim API là /phim/:slug
+const detailPath = (m: any) => (m?.isManual ? `/manual/${m.manualId}` : `/phim/${m?.slug}`);
+
 export default function Banner({ movies }: BannerProps) {
   const [idx, setIdx] = useState(0);
   const [favSlugs, setFavSlugs] = useState<string[]>([]);
   const [detailMap, setDetailMap] = useState<Record<string, Movie>>({});
   const timerRef = useRef<ReturnType<typeof setInterval>>();
-  const baseItems = movies.slice(0, 8);
+  const baseItems = movies.slice(0, 10);
   // Trộn dữ liệu chi tiết (content, category) đã fetch thêm vào — danh sách
   // "phim mới cập nhật" mặc định không kèm mô tả/thể loại như trang chi tiết.
   const items = baseItems.map(m => detailMap[m.slug] || m);
 
   useEffect(() => {
-    const missing = baseItems.filter(m => !detailMap[m.slug]);
+    const missing = baseItems.filter(m => !detailMap[m.slug] && !(m as any).isManual);
     if (!missing.length) return;
     let cancelled = false;
     Promise.all(missing.map(m =>
@@ -131,13 +134,24 @@ export default function Banner({ movies }: BannerProps) {
   const readFavs = useCallback(() => {
     try {
       const raw = JSON.parse(localStorage.getItem('favorites') || '[]');
-      setFavSlugs(Array.isArray(raw) ? raw.map((m: any) => m.slug) : []);
+      const manualFavs = JSON.parse(localStorage.getItem('manual_favorites') || '[]');
+      setFavSlugs([
+        ...(Array.isArray(raw) ? raw.map((m: any) => m.slug) : []),
+        ...(Array.isArray(manualFavs) ? manualFavs.map((id: string) => `manual-${id}`) : []),
+      ]);
     } catch { setFavSlugs([]); }
   }, []);
   useEffect(() => { readFavs(); }, [readFavs]);
 
   const toggleFavorite = useCallback((movie: Movie) => {
     try {
+      if ((movie as any).isManual) {
+        const id = (movie as any).manualId as string;
+        const favs: string[] = JSON.parse(localStorage.getItem('manual_favorites') || '[]');
+        localStorage.setItem('manual_favorites', JSON.stringify(favs.includes(id) ? favs.filter(f => f !== id) : [...favs, id]));
+        readFavs();
+        return;
+      }
       const raw = JSON.parse(localStorage.getItem('favorites') || '[]');
       const list: any[] = Array.isArray(raw) ? raw : [];
       const exists = list.some(m => m.slug === movie.slug);
@@ -202,7 +216,7 @@ export default function Banner({ movies }: BannerProps) {
         {synopsis && <p className="text-sm lg:text-[15px] text-slate-200/90 leading-relaxed line-clamp-2 mb-5">{synopsis}</p>}
 
         <div className="flex items-center gap-3">
-          <Link to={`/phim/${movie.slug}`} aria-label="Xem phim"
+          <Link to={detailPath(movie)} aria-label="Xem phim"
             className="w-16 h-16 rounded-full bg-[var(--primary-light)] text-slate-950 flex items-center justify-center shadow-[0_0_30px_-4px_var(--primary-light)] hover:scale-105 active:scale-95 transition-transform">
             <Play size={28} className="fill-current ml-1" />
           </Link>
@@ -212,7 +226,7 @@ export default function Banner({ movies }: BannerProps) {
               <Heart size={22} className={cn('fill-current', isFav && 'text-red-500')} />
             </button>
             <span className="w-px h-6 bg-white/15" />
-            <Link to={`/phim/${movie.slug}`} aria-label="Chi tiết"
+            <Link to={detailPath(movie)} aria-label="Chi tiết"
               className="w-16 h-full flex items-center justify-center text-white hover:bg-white/10">
               <Info size={22} className="fill-current text-white [&_circle]:fill-white [&_path]:stroke-slate-900" />
             </Link>
@@ -298,7 +312,7 @@ export default function Banner({ movies }: BannerProps) {
           return (
             <Link
               key={m._id}
-              to={`/phim/${m.slug}`}
+              to={detailPath(m)}
               draggable={false}
               onClick={(e) => {
                 if (wasDraggedRef.current) { e.preventDefault(); return; }
@@ -345,7 +359,7 @@ export default function Banner({ movies }: BannerProps) {
         {/* Nút: "Xem Phim" dài + 1 viên liền chia đôi (yêu thích | chi tiết) */}
         <div className="flex items-stretch gap-3 mb-5">
           <Link
-            to={`/phim/${movie.slug}`}
+            to={detailPath(movie)}
             className="flex-1 h-12 rounded-full bg-[var(--primary)] text-slate-950 font-bold text-[15px] flex items-center justify-center gap-2 active:scale-95 transition-transform"
           >
             <Play size={18} className="fill-current" /> Xem Phim
@@ -359,7 +373,7 @@ export default function Banner({ movies }: BannerProps) {
             </button>
             <span className="w-px h-6 bg-white/15" />
             <Link
-              to={`/phim/${movie.slug}`} aria-label="Chi tiết"
+              to={detailPath(movie)} aria-label="Chi tiết"
               className="flex-1 h-full flex items-center justify-center text-white active:bg-white/10"
             >
               <Info size={20} className="fill-current text-white [&_circle]:fill-white [&_path]:stroke-slate-900" />

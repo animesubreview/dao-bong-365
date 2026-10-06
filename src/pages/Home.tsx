@@ -1,6 +1,7 @@
 import { useSEO, HOME_TITLE } from '../hooks/useSEO';
 import { historyWatchLink, episodeLabel, readProgress } from '../lib/watchHistory';
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useBannerPins } from '../lib/bannerPins';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronRight, ChevronLeft, Loader2, Calendar, Play, Clock } from 'lucide-react';
 import { movieApi } from '../services/api';
@@ -948,10 +949,41 @@ function ScheduleSection({ upcomingMovies }: { upcomingMovies: UpcomingMovie[] }
 
 
 export default function Home() {
-  const [bannerMovies, setBannerMovies] = useState<Movie[]>([]);
+  const [apiBanner, setApiBanner] = useState<Movie[]>([]);
   const [newUpdates, setNewUpdates] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(true);
   const manualMovies = useManualMovies();
+  const apiPins = useBannerPins();
+
+  // Banner = phim thủ công được ghim (đứng đầu) + phim mới cập nhật từ API, tối đa 10
+  const bannerMovies = useMemo<Movie[]>(() => {
+    const pinned = manualMovies
+      .filter(m => m.pinBanner)
+      .map(m => ({
+        _id: `manual-${m.id}`,
+        name: m.name,
+        origin_name: m.originName,
+        slug: `manual-${m.id}`,
+        poster_url: m.posterUrl,
+        thumb_url: m.bannerImageUrl || m.posterUrl,
+        year: Number(m.year) || undefined,
+        quality: m.quality,
+        lang: m.lang,
+        episode_current: m.status,
+        content: m.description,
+        isManual: true,
+        manualId: m.id,
+      } as unknown as Movie));
+    const pinnedApi = apiPins.map(p => ({
+      _id: p.slug, name: p.name, origin_name: p.origin_name || '', slug: p.slug,
+      poster_url: p.poster_url || '', thumb_url: p.thumb_url || p.poster_url || '',
+    } as unknown as Movie));
+    // Ghim (thủ công + API) lên đầu, sau đó tới phim mới cập nhật — bỏ phim trùng slug
+    const seen = new Set<string>();
+    return [...pinned, ...pinnedApi, ...apiBanner]
+      .filter(m => (seen.has(m.slug) ? false : (seen.add(m.slug), true)))
+      .slice(0, 10);
+  }, [manualMovies, apiPins, apiBanner]);
 
   useSEO({
     fullTitle: HOME_TITLE,
@@ -966,7 +998,7 @@ export default function Home() {
       try {
         const r1 = await movieApi.getNewUpdates(1);
         if (cancelled) return;
-        setBannerMovies(r1.items.slice(0, 10));
+        setApiBanner(r1.items.slice(0, 10));
         setNewUpdates(r1.items.slice(0, 30));
       } catch (e) { console.error(e); }
       finally { if (!cancelled) setLoading(false); }

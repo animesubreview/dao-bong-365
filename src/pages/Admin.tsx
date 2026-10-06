@@ -1,3 +1,4 @@
+import AdminBannerPins from '../components/AdminBannerPins';
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Settings, Upload, Film, Globe, Image, Type, Save, Eye, EyeOff, 
@@ -3143,6 +3144,8 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
           episodes: (validEpisodes.length > 1 ? validEpisodes : deleteField()) as any,
           description: movieForm.description || '',
           isUpcoming: movieForm.isUpcoming || false,
+          pinBanner: movieForm.pinBanner || false,
+          bannerImageUrl: movieForm.bannerImageUrl || '',
           releaseDate: movieForm.releaseDate || '',
           upcomingType: movieForm.upcomingType || 'movie',
           airingDay: movieForm.airingDay || '',
@@ -3169,6 +3172,8 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
           episodes: validEpisodes.length > 1 ? validEpisodes : undefined,
           description: movieForm.description || '',
           isUpcoming: movieForm.isUpcoming || false,
+          pinBanner: movieForm.pinBanner || false,
+          bannerImageUrl: movieForm.bannerImageUrl || '',
           releaseDate: movieForm.releaseDate || '',
           upcomingType: movieForm.upcomingType || 'movie',
           airingDay: movieForm.airingDay || '',
@@ -3450,6 +3455,9 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
           {/* QUẢN LÝ PHIM THỦ CÔNG */}
           {activeSection === 'section-movies' && (
           <div id="section-movies" className="flex flex-col gap-6">
+            <SectionCard title="Ghim phim API lên banner trang chủ" icon={Film} color="orange">
+              <AdminBannerPins showToast={showToast} />
+            </SectionCard>
             <SectionCard title="Quản lý phim thủ công" icon={Film} color="orange">
               <div className="flex flex-col gap-4">
               <div className="flex items-center justify-between">
@@ -3560,6 +3568,28 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
                   <div>
                     <label className="text-xs text-slate-400 font-semibold mb-1 block">Mô tả</label>
                     <textarea rows={3} value={movieForm.description || ''} onChange={e => setMovieForm(f => ({ ...f, description: e.target.value }))} className="input-field text-sm resize-none" placeholder="Nội dung phim..." />
+                  </div>
+
+                  {/* ── Ghim lên banner trang chủ ── */}
+                  <div className="border border-indigo-500/30 rounded-xl p-4 bg-indigo-500/5 flex flex-col gap-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="text-indigo-300 text-sm font-black">📌 Ghim lên banner trang chủ</span>
+                        <p className="text-[10px] text-slate-500 mt-0.5">Phim hiện đầu tiên ở banner poster lớn ngay đầu trang chủ</p>
+                      </div>
+                      <button
+                        onClick={() => setMovieForm(f => ({ ...f, pinBanner: !f.pinBanner }))}
+                        className={`w-11 h-6 shrink-0 rounded-full border transition-all relative ${movieForm.pinBanner ? 'bg-indigo-600 border-indigo-500' : 'bg-slate-700 border-slate-600'}`}>
+                        <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all ${movieForm.pinBanner ? 'left-5' : 'left-0.5'}`} />
+                      </button>
+                    </div>
+                    {movieForm.pinBanner && (
+                      <div>
+                        <label className="text-xs text-slate-400 font-semibold mb-1 block">Ảnh ngang cho banner PC (tuỳ chọn)</label>
+                        <input value={movieForm.bannerImageUrl || ''} onChange={e => setMovieForm(f => ({ ...f, bannerImageUrl: e.target.value }))}
+                          className="input-field text-sm" placeholder="https://... (tỉ lệ 16:9). Bỏ trống = dùng poster" />
+                      </div>
+                    )}
                   </div>
 
                   {/* ── Phim sắp chiếu ── */}

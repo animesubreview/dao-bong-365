@@ -27,6 +27,9 @@ export interface ManualMovie {
   isUpcoming?: boolean;        // true = sắp chiếu (hiện vào section riêng)
   releaseDate?: string;        // VD: "15/06/2025" hoặc "Quý 3 2025"
   upcomingType?: 'anime' | 'movie' | 'series'; // phân loại sắp chiếu
+  // Ghim lên banner trang chủ
+  pinBanner?: boolean;         // true = hiện trong banner đầu trang chủ
+  bannerImageUrl?: string;     // (tuỳ chọn) ảnh NGANG cho banner trên PC; bỏ trống = dùng poster
   // Lịch chiếu
   airingDay?: string;          // VD: "Thứ 7", "Chủ nhật", "Hàng ngày"
   airingTime?: string;         // VD: "9:30 Tối", "20:00"
