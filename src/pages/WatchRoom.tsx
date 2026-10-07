@@ -19,6 +19,12 @@ import SyncPlayer from '../components/SyncPlayer';
 import { VoiceChat, VoicePeer } from '../lib/voiceChat';
 import RoomOverlay from '../components/RoomOverlay';
 
+const epLabel = (name?: string) => {
+  const n = String(name ?? '').trim();
+  if (!n) return '';
+  return /^\d+(\.\d+)?$/.test(n) ? `Tập ${n}` : n;
+};
+
 function timeAgo(ts: number): string {
   const diff = Math.floor((Date.now() - ts) / 1000);
   if (diff < 60) return 'vừa xong';
@@ -328,7 +334,7 @@ export default function WatchRoomPage() {
   const canSync = !!room.m3u8Url;
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] flex flex-col">
+    <div className="min-h-screen bg-[#0a0a0a] flex flex-col overflow-x-hidden">
 
       {/* ── Top bar ───────────────────────────────────────────────────────────── */}
       <div className="sticky top-0 z-30 bg-[#0a0a0a]/95 backdrop-blur border-b border-white/5">
@@ -348,21 +354,26 @@ export default function WatchRoomPage() {
               )}
             </div>
             <p className="text-slate-500 text-xs">
-              Tập {room.episodeName} •{' '}
+              {epLabel(room.episodeName)} •{' '}
               <span className="text-green-400 font-medium">{memberCount}/{room.maxMembers} người</span>
             </p>
           </div>
 
           {/* Avatars */}
-          <div className="flex -space-x-1.5 shrink-0">
-            {room.members.map(m => (
+          <div className="flex -space-x-1.5 shrink-0 items-center">
+            {room.members.slice(0, 4).map(m => (
               <img key={m.uid} src={m.avatar} alt={m.username} title={m.username}
                 className="w-7 h-7 rounded-full border-2 border-[#0a0a0a] object-cover" />
             ))}
-            {Array.from({ length: room.maxMembers - memberCount }).map((_, i) => (
+            {memberCount > 4 && (
+              <div className="w-7 h-7 rounded-full border-2 border-[#0a0a0a] bg-[#2a2a2a] flex items-center justify-center text-[9px] font-bold text-slate-300">+{memberCount - 4}</div>
+            )}
+            {Array.from({ length: Math.min(2, Math.max(0, room.maxMembers - memberCount)) }).map((_, i) => (
               <div key={i} className="w-7 h-7 rounded-full border-2 border-dashed border-slate-700 bg-[#1a1a1a] flex items-center justify-center">
                 <span className="text-slate-600 text-[9px]">?</span>
               </div>
+            ))}
+          </div>
             ))}
           </div>
 
@@ -397,7 +408,7 @@ export default function WatchRoomPage() {
               <RoomOverlay
                 fullscreen={fullscreen}
                 toggleFullscreen={toggleFullscreen}
-                title={`${room.movieName} - Tập ${room.episodeName}`}
+                title={`${room.movieName} - ${epLabel(room.episodeName)}`}
                 hostName={room.hostName}
                 memberCount={room.members.length}
                 selfUid={currentUser?.uid || ''}
@@ -424,23 +435,23 @@ export default function WatchRoomPage() {
             </div>
           )}
           <div className="bg-[#141414] border-b border-white/5 px-4 py-3">
-            <div className="flex items-start justify-between gap-3">
+            <div className="flex flex-col gap-3">
               <div className="min-w-0">
                 <h2 className="text-white font-bold text-sm line-clamp-1">{room.movieName}</h2>
                 <p className="text-slate-400 text-xs mt-0.5">
-                  Tập {room.episodeName} • {room.serverName}
+                  {epLabel(room.episodeName)} • {room.serverName}
                   {canSync
                     ? <span className="ml-1.5 text-green-400">• 🟢 Đồng bộ realtime</span>
                     : <span className="ml-1.5 text-yellow-400">• ⚠️ Iframe - không sync được</span>
                   }
                 </p>
               </div>
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex flex-wrap items-center gap-2">
                 {/* Episode selector button - host only */}
                 {isHost && episodes.length > 0 && (episodes[activeServerIdx]?.server_data?.length ?? 0) > 1 && (
                   <button onClick={() => setShowEpisodePanel(v => !v)}
                     className={cn(
-                      'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-all',
+                      'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold border transition-all',
                       showEpisodePanel
                         ? 'bg-blue-500/20 border-blue-500/50 text-blue-400'
                         : 'bg-[#2a2a2a] border-slate-700 text-slate-300 hover:text-white'
@@ -453,26 +464,26 @@ export default function WatchRoomPage() {
                 {/* Mic / voice chat */}
                 <button onClick={toggleVoice} disabled={voiceBusy}
                   className={cn(
-                    'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-all disabled:opacity-60',
+                    'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold border transition-all disabled:opacity-60',
                     voiceOn ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400'
                             : 'bg-[#2a2a2a] border-slate-700 text-slate-300 hover:text-white'
                   )}>
                   {voiceBusy ? <Loader2 size={14} className="animate-spin" /> : voiceOn ? <Headphones size={14} /> : <Mic size={14} />}
-                  {voiceOn ? `Voice · ${voicePeers.length + 1}` : 'Vào voice'}
+                  {voiceOn ? `Voice · ${voicePeers.length + 1}` : 'Voice'}
                 </button>
                 {voiceOn && (
                   <button onClick={toggleMute} aria-label={micMuted ? 'Bật mic' : 'Tắt mic'}
                     className={cn(
-                      'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-all',
+                      'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold border transition-all',
                       micMuted ? 'bg-red-500/20 border-red-500/50 text-red-400' : 'bg-[#2a2a2a] border-slate-700 text-slate-200 hover:text-white'
                     )}>
                     {micMuted ? <MicOff size={14} /> : <Mic size={14} />}
-                    {micMuted ? 'Đã tắt mic' : 'Tắt mic'}
+                    {micMuted ? 'Mic tắt' : 'Mic bật'}
                   </button>
                 )}
                 <button onClick={() => setShowChat(v => !v)}
                   className={cn(
-                    'lg:hidden flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-all',
+                    'lg:hidden flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold border transition-all',
                     showChat ? 'bg-green-500/20 border-green-500/50 text-green-400' : 'bg-[#2a2a2a] border-slate-700 text-slate-400'
                   )}>
                   <MessageCircle size={14} />
@@ -482,13 +493,13 @@ export default function WatchRoomPage() {
                   <button onClick={() => setConfirmDelete(true)}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border border-red-500/40 bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-all">
                     <Trash2 size={14} />
-                    Xóa phòng
+                    Xóa
                   </button>
                 ) : (
                   <button onClick={handleLeave}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border border-slate-700 bg-[#2a2a2a] text-slate-400 hover:text-white transition-all">
                     <LogOut size={14} />
-                    Rời phòng
+                    Rời
                   </button>
                 )}
               </div>
@@ -606,8 +617,7 @@ export default function WatchRoomPage() {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 20 }}
-              className="lg:w-80 xl:w-96 flex flex-col bg-[#141414] border-l border-white/5"
-              style={{ height: 'calc(100vh - 116px)', minHeight: 300 }}
+              className="h-[50vh] min-h-[280px] lg:h-[calc(100vh-116px)] lg:w-80 xl:w-96 flex flex-col bg-[#141414] border-t lg:border-t-0 lg:border-l border-white/5"
             >
               <div className="flex items-center gap-2 px-4 py-3 border-b border-white/5 shrink-0">
                 <MessageCircle size={15} className="text-green-400" />
