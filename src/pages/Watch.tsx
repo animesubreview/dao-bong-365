@@ -263,7 +263,14 @@ export default function Watch() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0d0d0d] pb-24">
+    <div className="relative isolate min-h-screen bg-[#0d0d0d] pb-24">
+
+      {/* Nền kính (PC): poster phim phóng to + làm mờ, đứng yên khi cuộn */}
+      <div aria-hidden className="hidden xl:block fixed inset-0 -z-10 pointer-events-none">
+        <img src={movieApi.getImageUrl(movie.poster_url || movie.thumb_url)} alt="" referrerPolicy="no-referrer"
+          className="w-full h-full object-cover scale-110 blur-3xl saturate-150 opacity-45" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#0d0d0d]/55 via-[#0d0d0d]/80 to-[#0d0d0d]" />
+      </div>
 
       {/* Banner QC ngay dưới logo/header, trên cùng trang — trước cả player.
           Layout chung (App.tsx) đã paddingTop = header height cho toàn trang rồi,
@@ -308,7 +315,7 @@ export default function Watch() {
       <div className="xl:max-w-[1500px] xl:mx-auto xl:px-8 xl:pt-4 xl:grid xl:grid-cols-[1fr_380px] xl:gap-6 xl:items-start">
 
       {/* ── Video Player ── iframe + logo overlay ── */}
-      <div className="xl:col-start-1">
+      <div className="xl:col-start-1 xl:rounded-2xl xl:overflow-hidden xl:ring-1 xl:ring-white/15 xl:shadow-2xl xl:shadow-black/60">
       <DaoPhimPlayer
         src={currentEpisode.link_embed}
         m3u8={currentEpisode.link_m3u8}
@@ -334,7 +341,7 @@ export default function Watch() {
 
         {/* ── Movie info card (KhoiPhim style) ── */}
         <motion.div initial={{ y: 16, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
-          className="bg-[#181818] rounded-xl p-4">
+          className="bg-[#181818] rounded-xl p-4 xl:rounded-2xl xl:bg-white/[0.05] xl:backdrop-blur-xl xl:border xl:border-white/10 xl:shadow-xl xl:shadow-black/30">
 
           {/* Title + nav arrows */}
           <div className="flex items-start justify-between gap-3 mb-3">
@@ -434,11 +441,29 @@ export default function Watch() {
       {/* ↑ đóng content-area phần 1 (để sidebar dưới đây thành ô lưới riêng, không bị lồng bên trong) */}
 
         {/* ══ Sidebar (PC/Laptop): info phim + danh sách tập gộp chung 1 cột phải, dính khi cuộn ══ */}
-        <div className="max-w-2xl xl:max-w-none mx-auto xl:mx-0 px-3 xl:px-0 flex flex-col gap-3 xl:gap-4 xl:col-start-2 xl:[grid-row:1/-1] xl:sticky xl:top-6 xl:max-h-[calc(100vh-3rem)] xl:overflow-y-auto xl:pr-1">
+        <div className="max-w-2xl xl:max-w-none mx-auto xl:mx-0 px-3 xl:px-0 flex flex-col gap-3 xl:gap-4 xl:col-start-2 xl:[grid-row:1/-1] xl:sticky xl:top-6 xl:max-h-[calc(100vh-3rem)] xl:overflow-y-auto xl:pr-1 glass-scroll">
+
+        {/* ── Thanh thao tác nhanh (PC) ── */}
+        <div className="hidden xl:flex items-center gap-1 p-1.5 rounded-2xl bg-white/[0.06] backdrop-blur-xl border border-white/10 shadow-lg shadow-black/30">
+          {[
+            { label: 'Yêu thích', icon: <Heart size={18} className={cn(isFavorite && 'fill-current text-red-400')} />, on: toggleFavorite },
+            { label: 'Xem chung', icon: <Users size={18} />, on: () => setShowRoomModal(true) },
+            { label: 'Chia sẻ', icon: <Copy size={18} />, on: () => {
+                const url = window.location.href;
+                if (navigator.share) navigator.share({ title: movie.name, url }).catch(() => {});
+                else navigator.clipboard?.writeText(url).catch(() => {});
+              } },
+          ].map(b => (
+            <button key={b.label} type="button" onClick={b.on} title={b.label} aria-label={b.label}
+              className="flex-1 h-10 rounded-xl flex items-center justify-center gap-2 text-slate-300 hover:text-white hover:bg-white/10 active:scale-95 transition-all text-xs font-bold">
+              {b.icon}<span>{b.label}</span>
+            </button>
+          ))}
+        </div>
 
         {/* ── Movie detail mini card ── */}
         <motion.div initial={{ y: 16, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.05 }}
-          className="bg-[#181818] rounded-xl p-4 flex gap-3">
+          className="bg-[#181818] rounded-xl p-4 flex gap-3 xl:rounded-2xl xl:bg-white/[0.05] xl:backdrop-blur-xl xl:border xl:border-white/10 xl:shadow-xl xl:shadow-black/30">
           {movie.thumb_url && (
             <img
               src={movieApi.getImageUrl(movie.thumb_url)}
@@ -484,7 +509,7 @@ export default function Watch() {
         {/* ── Danh sách tập ── */}
         {currentServer && (
           <motion.div initial={{ y: 16, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.08 }}
-            className="bg-[#181818] rounded-xl overflow-hidden xl:flex xl:flex-col xl:min-h-0">
+            className="bg-[#181818] rounded-xl overflow-hidden xl:flex xl:flex-col xl:min-h-0 xl:rounded-2xl xl:bg-white/[0.05] xl:backdrop-blur-xl xl:border xl:border-white/10 xl:shadow-xl xl:shadow-black/30">
 
             {/* Section header */}
             <div className="flex items-center gap-2 px-4 py-3 border-b border-white/5">
@@ -622,6 +647,34 @@ export default function Watch() {
           </motion.div>
         )}
 
+        {/* ── Đề xuất (PC): thẻ ngang xếp dọc trong cột phải, giống AuraFlix ── */}
+        {recommended.length > 0 && (
+          <div className="hidden xl:flex flex-col gap-3 pb-2">
+            <h3 className="text-white font-black text-xs uppercase tracking-widest px-1">Đề xuất cho bạn</h3>
+            {recommended.slice(0, 8).map(m => (
+              <Link key={m._id || m.slug} to={`/phim/${m.slug}`}
+                className="group block rounded-2xl overflow-hidden border border-white/10 bg-white/[0.05] backdrop-blur-xl hover:border-green-500/50 hover:-translate-y-0.5 transition-all duration-300">
+                <div className="relative aspect-video bg-slate-800 overflow-hidden">
+                  <img src={movieApi.getImageUrl(m.thumb_url || m.poster_url)} alt={m.name} loading="lazy" referrerPolicy="no-referrer"
+                    onError={(e) => { e.currentTarget.style.visibility = 'hidden'; }}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+                  {m.episode_current && (
+                    <span className="absolute top-2 left-2 text-[10px] font-bold bg-black/60 backdrop-blur text-white px-2 py-0.5 rounded-md">{m.episode_current}</span>
+                  )}
+                  {m.quality && (
+                    <span className="absolute bottom-2 left-2 text-[10px] font-extrabold bg-green-500 text-slate-950 px-2 py-0.5 rounded-md">{m.quality}</span>
+                  )}
+                </div>
+                <div className="px-3 py-2">
+                  <p className="text-sm font-bold text-white truncate group-hover:text-green-400 transition-colors">{m.name}</p>
+                  <p className="text-[11px] text-slate-500 truncate">{m.origin_name}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+
         </div>
         {/* ↑ đóng sidebar (info phim + danh sách tập) ── */}
 
@@ -634,7 +687,7 @@ export default function Watch() {
 
         {/* ── Phim đề xuất cùng thể loại ── */}
         {recommended.length > 0 && (
-          <motion.div initial={{ y: 16, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.14 }}>
+          <motion.div className="xl:hidden" initial={{ y: 16, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.14 }}>
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-white font-black text-sm uppercase tracking-wide flex items-center gap-2">
                 <span className="w-1 h-4 bg-green-500 rounded-full inline-block shrink-0" />

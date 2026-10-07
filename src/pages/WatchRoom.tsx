@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   Users, Send, Copy, Check, LogOut, Trash2, Crown,
   MessageCircle, ChevronLeft, Loader2, Link as LinkIcon, X, UserPlus,
-  ListVideo, ChevronDown, ChevronUp, RefreshCw,
+  ListVideo, ChevronDown, ChevronUp, RefreshCw, Mic, MicOff, Headphones,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
@@ -16,6 +16,7 @@ import { getCurrentUser, getUserProfile, onAuthChange } from '../lib/auth';
 import type { UserProfile } from '../lib/auth';
 import { cn } from '../lib/utils';
 import SyncPlayer from '../components/SyncPlayer';
+import { VoiceChat, VoicePeer } from '../lib/voiceChat';
 
 function timeAgo(ts: number): string {
   const diff = Math.floor((Date.now() - ts) / 1000);
@@ -39,6 +40,14 @@ export default function WatchRoomPage() {
   const [sendingMsg, setSendingMsg] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
+  // Voice chat (mic)
+  const voiceRef = useRef<VoiceChat | null>(null);
+  const [voiceOn, setVoiceOn] = useState(false);
+  const [voiceBusy, setVoiceBusy] = useState(false);
+  const [micMuted, setMicMuted] = useState(false);
+  const [voicePeers, setVoicePeers] = useState<VoicePeer[]>([]);
+  const [voiceError, setVoiceError] = useState('');
+
   // Episode panel
   const [episodes, setEpisodes] = useState<{ server_name: string; server_data: { slug: string; name: string; link_embed: string; link_m3u8: string }[] }[]>([]);
   const [activeServerIdx, setActiveServerIdx] = useState(0);
@@ -48,6 +57,42 @@ export default function WatchRoomPage() {
   const [currentUser, setCurrentUser] = useState(getCurrentUser());
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
+
+  // Rời trang / đóng tab → tắt mic và rời voice
+  useEffect(() => {
+    const bye = () => { voiceRef.current?.leave(); };
+    window.addEventListener('beforeunload', bye);
+    return () => { window.removeEventListener('beforeunload', bye); voiceRef.current?.leave(); voiceRef.current = null; };
+  }, []);
+
+  const toggleVoice = async () => {
+    setVoiceError('');
+    if (voiceRef.current) {
+      await voiceRef.current.leave();
+      voiceRef.current = null;
+      setVoiceOn(false); setVoicePeers([]); setMicMuted(false);
+      return;
+    }
+    if (!roomId || !currentUser?.uid) { setVoiceError('Cần đăng nhập để dùng mic'); return; }
+    setVoiceBusy(true);
+    try {
+      const v = new VoiceChat(roomId, currentUser.uid, setVoicePeers);
+      await v.join();
+      voiceRef.current = v;
+      setVoiceOn(true);
+    } catch (e: any) {
+      const name = e?.name || '';
+      setVoiceError(
+        name === 'NotAllowedError' ? 'Bạn chưa cho phép dùng micro — hãy bật quyền micro cho trang web.'
+        : name === 'NotFoundError' ? 'Không tìm thấy micro trên thiết bị.'
+        : (e?.message || 'Không bật được micro'));
+    }
+    setVoiceBusy(false);
+  };
+  const toggleMute = () => {
+    const v = voiceRef.current; if (!v) return;
+    v.setMuted(!v.isMuted()); setMicMuted(v.isMuted());
+  };
   const hasJoined = useRef(false);
   // Ref luôn giữ room mới nhất → tránh stale closure trong cleanup
   const roomRef = useRef<WatchRoom | null>(null);
@@ -350,6 +395,12 @@ export default function WatchRoomPage() {
           />
 
           {/* Info + action row */}
+          {voiceError && (
+            <div className="bg-red-500/10 border-b border-red-500/30 text-red-300 text-xs px-4 py-2 flex items-center justify-between gap-3">
+              <span>{voiceError}</span>
+              <button onClick={() => setVoiceError('')} aria-label="Đóng"><X size={14} /></button>
+            </div>
+          )}
           <div className="bg-[#141414] border-b border-white/5 px-4 py-3">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
@@ -375,6 +426,26 @@ export default function WatchRoomPage() {
                     <ListVideo size={14} />
                     Chọn tập
                     {showEpisodePanel ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                  </button>
+                )}
+                {/* Mic / voice chat */}
+                <button onClick={toggleVoice} disabled={voiceBusy}
+                  className={cn(
+                    'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-all disabled:opacity-60',
+                    voiceOn ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400'
+                            : 'bg-[#2a2a2a] border-slate-700 text-slate-300 hover:text-white'
+                  )}>
+                  {voiceBusy ? <Loader2 size={14} className="animate-spin" /> : voiceOn ? <Headphones size={14} /> : <Mic size={14} />}
+                  {voiceOn ? `Voice · ${voicePeers.length + 1}` : 'Vào voice'}
+                </button>
+                {voiceOn && (
+                  <button onClick={toggleMute} aria-label={micMuted ? 'Bật mic' : 'Tắt mic'}
+                    className={cn(
+                      'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-all',
+                      micMuted ? 'bg-red-500/20 border-red-500/50 text-red-400' : 'bg-[#2a2a2a] border-slate-700 text-slate-200 hover:text-white'
+                    )}>
+                    {micMuted ? <MicOff size={14} /> : <Mic size={14} />}
+                    {micMuted ? 'Đã tắt mic' : 'Tắt mic'}
                   </button>
                 )}
                 <button onClick={() => setShowChat(v => !v)}

@@ -166,6 +166,11 @@ export default function Banner({ movies }: BannerProps) {
   const rawRating = Number((movie as any)?.imdb?.vote_average ?? (movie as any)?.tmdb?.vote_average ?? 0);
   const rating = rawRating > 0 ? rawRating.toFixed(1) : '';
   const chip = 'text-[13px] font-bold border border-white/20 text-slate-200 px-3 py-1.5 rounded-xl';
+  const imdbBadge = rating ? (
+    <span className="inline-flex items-center gap-1.5 text-[13px] font-extrabold text-white border border-[#F5C518]/50 bg-black/30 pl-1 pr-2.5 py-1 rounded-lg shadow-[0_0_14px_-4px_rgba(245,197,24,.6)]">
+      <span className="bg-[#F5C518] text-black text-[11px] font-black px-1.5 py-0.5 rounded">IMDb</span>{rating}
+    </span>
+  ) : null;
 
   if (!items.length) return null;
 
@@ -201,6 +206,7 @@ export default function Banner({ movies }: BannerProps) {
           </p>
         )}
         <div className="flex flex-wrap items-center gap-2 mb-3">
+          {imdbBadge}
           {movie.quality && <span className="text-xs font-extrabold bg-[var(--primary-light)] text-slate-950 px-2.5 py-1 rounded-md">{decodeHtml(movie.quality)}</span>}
           {movie.year ? <span className="text-xs font-bold border border-white/30 text-slate-100 px-2.5 py-1 rounded-md">{movie.year}</span> : null}
           {movie.time && <span className="text-xs font-bold border border-white/30 text-slate-100 px-2.5 py-1 rounded-md">{decodeHtml(movie.time)}</span>}
@@ -302,6 +308,11 @@ export default function Banner({ movies }: BannerProps) {
         onPointerUp={endDrag}
         onPointerCancel={endDrag}
       >
+        {/* Vầng sáng theo màu poster, nằm sau poster giữa */}
+        <img key={`aura-${movie._id}`} aria-hidden="true" referrerPolicy="no-referrer"
+          src={movieApi.getImageUrl(movie.poster_url || movie.thumb_url)} alt=""
+          className="absolute left-1/2 top-1/2 h-[92%] -translate-x-1/2 -translate-y-[44%] scale-105 blur-2xl saturate-200 opacity-60 pointer-events-none"
+          style={{ aspectRatio: '2/3', animation: 'bn-rise .6s ease-out both' }} />
         {items.map((m, i) => {
           const base = offsetOf(i);
           if (Math.abs(base) > 2.6) return null;
@@ -329,6 +340,7 @@ export default function Banner({ movies }: BannerProps) {
                 willChange: 'transform, opacity',
                 borderColor: isCenter ? 'rgba(255,255,255,0.9)' : undefined,
                 borderWidth: isCenter ? 2 : 1,
+                boxShadow: isCenter ? '0 28px 60px -14px rgba(0,0,0,.75), 0 0 46px -8px rgba(34,197,94,.4)' : undefined,
               }}
             >
               <PosterImg
@@ -340,6 +352,18 @@ export default function Banner({ movies }: BannerProps) {
                 className="w-full h-full object-cover pointer-events-none"
               />
               {!isCenter && <div className="absolute inset-0 bg-slate-950/35" />}
+              {isCenter && (
+                <>
+                  {/* Vệt sáng quét chéo qua poster */}
+                  <span aria-hidden className="pointer-events-none absolute inset-y-0 -left-1/3 w-1/3 bg-gradient-to-r from-transparent via-white/25 to-transparent"
+                    style={{ animation: 'bn-shine 4.8s ease-in-out infinite' }} />
+                  {rating && (
+                    <span className="absolute top-2.5 left-2.5 inline-flex items-center gap-1 rounded-md bg-black/65 backdrop-blur-sm pl-0.5 pr-1.5 py-0.5 text-[12px] font-extrabold text-white">
+                      <span className="bg-[#F5C518] text-black text-[10px] font-black px-1 py-px rounded">IMDb</span>{rating}
+                    </span>
+                  )}
+                </>
+              )}
             </Link>
           );
         })}
@@ -347,11 +371,11 @@ export default function Banner({ movies }: BannerProps) {
 
       {/* Thông tin phim — chữ đặt thẳng lên nền mờ, giống ảnh mẫu */}
       <div className="max-w-xl mx-auto px-5 pt-5 text-center">
-        <h1 className="banner-title text-[26px] sm:text-3xl md:text-4xl text-white leading-[1.2] mb-2 line-clamp-2">
+        <h1 key={`t-${movie._id}`} className="banner-title text-[26px] sm:text-3xl md:text-4xl text-white leading-[1.2] mb-2 line-clamp-2" style={{ animation: 'bn-rise .55s ease-out both' }}>
           {decodeHtml(movie.name)}
         </h1>
         {movie.origin_name && (
-          <p className="text-slate-400 text-[13px] sm:text-sm font-semibold uppercase tracking-[0.18em] mb-5 line-clamp-2">
+          <p key={`o-${movie._id}`} className="text-slate-400 text-[13px] sm:text-sm font-semibold uppercase tracking-[0.18em] mb-5 line-clamp-2" style={{ animation: 'bn-rise .55s .08s ease-out both' }}>
             {decodeHtml(movie.origin_name)}
           </p>
         )}
@@ -360,9 +384,13 @@ export default function Banner({ movies }: BannerProps) {
         <div className="flex items-stretch gap-3 mb-5">
           <Link
             to={detailPath(movie)}
-            className="flex-1 h-12 rounded-full bg-[var(--primary)] text-slate-950 font-bold text-[15px] flex items-center justify-center gap-2 active:scale-95 transition-transform"
+            className="relative overflow-hidden flex-1 h-12 rounded-full bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] text-slate-950 font-extrabold text-[15px] flex items-center justify-center gap-2 active:scale-95 hover:brightness-110 transition-all"
+            style={{ animation: 'bn-glow 2.4s ease-in-out infinite' }}
           >
-            <Play size={18} className="fill-current" /> Xem Phim
+            <span aria-hidden className="pointer-events-none absolute inset-y-0 -left-1/3 w-1/3 bg-gradient-to-r from-transparent via-white/60 to-transparent"
+              style={{ animation: 'bn-shine 3s ease-in-out infinite' }} />
+            <Play size={18} className="fill-current relative" style={{ animation: 'bn-pulse 1.6s ease-in-out infinite' }} />
+            <span className="relative">Xem Phim</span>
           </Link>
           <div className="flex-1 h-12 rounded-full border border-white/15 bg-black/30 backdrop-blur flex items-center overflow-hidden">
             <button
@@ -383,11 +411,7 @@ export default function Banner({ movies }: BannerProps) {
 
         {/* Badge 1 hàng: điểm · năm · chất lượng · tập */}
         <div className="flex flex-wrap items-center justify-center gap-2 mb-5">
-          {rating && (
-            <span className="text-[13px] font-bold border border-[var(--primary)]/70 bg-[var(--primary)]/10 text-[var(--primary-light)] px-3 py-1.5 rounded-xl">
-              IMDb {rating}
-            </span>
-          )}
+          {imdbBadge}
           {movie.year ? <span className={chip}>{movie.year}</span> : null}
           {movie.quality && <span className={chip}>{decodeHtml(movie.quality)}</span>}
           {movie.episode_current && <span className={chip}>{decodeHtml(movie.episode_current)}</span>}

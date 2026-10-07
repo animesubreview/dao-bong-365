@@ -424,13 +424,19 @@ export default function WatchManual() {
   const { url: embedSrc, isDrive, isM3u8 } = buildEmbedUrl(currentEp?.embedUrl || movie.embedUrl || '');
 
   return (
-    <div className="min-h-screen bg-[#0d0d0d] pb-24">
+    <div className="relative isolate min-h-screen bg-[#0d0d0d] pb-24">
+
+      {/* Nền kính (PC): poster phim phóng to + làm mờ */}
+      <div aria-hidden className="hidden xl:block fixed inset-0 -z-10 pointer-events-none">
+        {movie.posterUrl && <img src={movie.posterUrl} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover scale-110 blur-3xl saturate-150 opacity-45" />}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#0d0d0d]/55 via-[#0d0d0d]/80 to-[#0d0d0d]" />
+      </div>
 
       {/* ══ Khối bố cục: mobile/iPad giữ nguyên (cột đơn); PC/Laptop (xl+) chia 2 cột ══ */}
       <div className="xl:max-w-[1500px] xl:mx-auto xl:px-8 xl:pt-4 xl:grid xl:grid-cols-[1fr_380px] xl:gap-6 xl:items-start">
 
       {/* ── Video Player + Watermark (fullscreen-safe) ── */}
-      <div className="xl:col-start-1">
+      <div className="xl:col-start-1 xl:rounded-2xl xl:overflow-hidden xl:ring-1 xl:ring-white/15 xl:shadow-2xl xl:shadow-black/60">
       {isM3u8 ? (
         <HlsPlayer src={embedSrc} movie={movie} resumeKey={`manual:${movie.id}:${epIdx}`} />
       ) : (
@@ -454,7 +460,7 @@ export default function WatchManual() {
 
         {/* ── Title card ── */}
         <motion.div initial={{ y: 16, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
-          className="bg-[#181818] rounded-xl p-4">
+          className="bg-[#181818] xl:bg-white/[0.05] xl:backdrop-blur-xl xl:border xl:border-white/10 xl:shadow-xl xl:shadow-black/30 xl:rounded-2xl rounded-xl p-4">
           <div className="flex items-start justify-between gap-3 mb-3">
             <div className="flex-1 min-w-0">
               <h1 className="text-white font-bold text-base leading-snug line-clamp-2">{movie.name}</h1>
@@ -486,11 +492,11 @@ export default function WatchManual() {
       {/* ↑ đóng content-area phần 1 (để sidebar dưới đây thành ô lưới riêng, không bị lồng bên trong) */}
 
         {/* ══ Sidebar (PC/Laptop): info phim + danh sách tập gộp chung 1 cột phải, dính khi cuộn ══ */}
-        <div className="max-w-2xl xl:max-w-none mx-auto xl:mx-0 px-3 xl:px-0 flex flex-col gap-3 xl:gap-4 xl:col-start-2 xl:[grid-row:1/-1] xl:sticky xl:top-6 xl:max-h-[calc(100vh-3rem)] xl:overflow-y-auto xl:pr-1">
+        <div className="max-w-2xl xl:max-w-none mx-auto xl:mx-0 px-3 xl:px-0 flex flex-col gap-3 xl:gap-4 xl:col-start-2 xl:[grid-row:1/-1] xl:sticky xl:top-6 xl:max-h-[calc(100vh-3rem)] xl:overflow-y-auto xl:pr-1 glass-scroll">
 
         {/* ── Movie detail mini card ── */}
         <motion.div initial={{ y: 16, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.05 }}
-          className="bg-[#181818] rounded-xl p-4 flex gap-3">
+          className="bg-[#181818] xl:bg-white/[0.05] xl:backdrop-blur-xl xl:border xl:border-white/10 xl:shadow-xl xl:shadow-black/30 xl:rounded-2xl rounded-xl p-4 flex gap-3">
           {movie.posterUrl && (
             <img src={movie.posterUrl} alt={movie.name}
               className="w-16 h-[86px] object-cover rounded-lg shrink-0" />
@@ -517,7 +523,7 @@ export default function WatchManual() {
 
         {/* ── Danh sách tập ── */}
         <motion.div initial={{ y: 16, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.08 }}
-          className="bg-[#181818] rounded-xl overflow-hidden">
+          className="bg-[#181818] xl:bg-white/[0.05] xl:backdrop-blur-xl xl:border xl:border-white/10 xl:shadow-xl xl:shadow-black/30 xl:rounded-2xl rounded-xl overflow-hidden">
 
           <div className="flex items-center gap-2 px-4 py-3 border-b border-white/5">
             <List size={15} className="text-slate-400" />
@@ -608,7 +614,7 @@ export default function WatchManual() {
         {/* ── Nội dung ── */}
         {isDrive && (
           <motion.div initial={{ y: 16, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }}
-            className="bg-[#181818] rounded-xl overflow-hidden">
+            className="bg-[#181818] xl:bg-white/[0.05] xl:backdrop-blur-xl xl:border xl:border-white/10 xl:shadow-xl xl:shadow-black/30 xl:rounded-2xl rounded-xl overflow-hidden">
             <div className="flex items-center gap-2 px-4 py-3 border-b border-white/5">
               <Info size={15} className="text-green-400" />
               <span className="text-white font-bold text-sm uppercase tracking-wide">Lưu ý</span>
