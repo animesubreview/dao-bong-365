@@ -27,6 +27,8 @@ function mapAuthError(err: any): any {
   const msg = String(err?.message || '').toLowerCase();
   const e: any = new Error(err?.message || 'Lỗi xác thực');
   if (msg.includes('already registered') || msg.includes('already exists') || msg.includes('user_already_exists')) e.code = 'auth/email-already-in-use';
+  else if (msg.includes('email not confirmed') || msg.includes('email_not_confirmed')) e.code = 'auth/email-not-confirmed';
+  else if (msg.includes('failed to fetch') || msg.includes('networkerror') || msg.includes('network request failed')) e.code = 'auth/network-request-failed';
   else if (msg.includes('invalid login credentials') || msg.includes('invalid email or password')) e.code = 'auth/invalid-credential';
   else if (msg.includes('password') && (msg.includes('least') || msg.includes('short') || msg.includes('weak'))) e.code = 'auth/weak-password';
   else if (msg.includes('invalid') && msg.includes('email')) e.code = 'auth/invalid-email';

@@ -87,13 +87,30 @@ export async function login(
 
     const cred = await signInWithEmailAndPassword(auth, emailToUse, password);
 
-    const userDoc = await getDoc(doc(db, 'users', cred.user.uid));
-    if (userDoc.exists() && userDoc.data().isBanned) {
-      await signOut(auth);
-      return { ok: false, error: 'Tài khoản đã bị khóa' };
+    // Hồ sơ người dùng: lỗi ở bước này KHÔNG được làm hỏng việc đăng nhập (mật khẩu đã đúng)
+    try {
+      const userRef = doc(db, 'users', cred.user.uid);
+      const userDoc = await getDoc(userRef);
+      if (userDoc.exists()) {
+        if (userDoc.data().isBanned) {
+          await signOut(auth);
+          return { ok: false, error: 'Tài khoản đã bị khóa' };
+        }
+        await updateDoc(userRef, { lastLogin: Date.now() }).catch(() => {});
+      } else {
+        // Tài khoản có trên hệ thống đăng nhập nhưng thiếu hồ sơ (vd đăng ký lúc bảng dữ liệu chưa tạo) → tự tạo lại
+        const username = cred.user.displayName || (cred.user.email || 'user').split('@')[0];
+        const avatar = cred.user.photoURL || `https://api.dicebear.com/7.x/thumbs/svg?seed=${encodeURIComponent(username)}`;
+        await setDoc(userRef, {
+          uid: cred.user.uid, username, email: cred.user.email || emailToUse, avatar,
+          role: 'user', isBanned: false, createdAt: Date.now(), lastLogin: Date.now(), balance: 0,
+        } as UserProfile);
+        await setDoc(doc(db, 'usernames', username.toLowerCase()), { uid: cred.user.uid }).catch(() => {});
+      }
+    } catch (profileErr) {
+      console.warn('Không đọc/ghi được hồ sơ người dùng:', profileErr);
     }
 
-    await updateDoc(doc(db, 'users', cred.user.uid), { lastLogin: Date.now() });
     window.dispatchEvent(new Event('auth_changed'));
     return { ok: true };
   } catch (err: any) {
@@ -102,7 +119,9 @@ export async function login(
     }
     if (err.code === 'auth/wrong-password') return { ok: false, error: 'Mật khẩu không đúng' };
     if (err.code === 'auth/too-many-requests') return { ok: false, error: 'Quá nhiều lần thử, hãy thử lại sau' };
-    return { ok: false, error: 'Đăng nhập thất bại' };
+    if (err.code === 'auth/email-not-confirmed') return { ok: false, error: 'Email chưa được xác nhận. Hãy bấm link xác nhận trong hộp thư (hoặc tắt "Confirm email" trong Supabase → Authentication → Providers → Email).' };
+    if (err.code === 'auth/network-request-failed') return { ok: false, error: 'Không kết nối được máy chủ — kiểm tra mạng hoặc địa chỉ/khóa Supabase.' };
+    return { ok: false, error: 'Đăng nhập thất bại: ' + (err?.message || 'lỗi không rõ') };
   }
 }
 
