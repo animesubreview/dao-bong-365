@@ -17,6 +17,7 @@ import type { UserProfile } from '../lib/auth';
 import { cn } from '../lib/utils';
 import SyncPlayer from '../components/SyncPlayer';
 import { VoiceChat, VoicePeer } from '../lib/voiceChat';
+import RoomOverlay from '../components/RoomOverlay';
 
 function timeAgo(ts: number): string {
   const diff = Math.floor((Date.now() - ts) / 1000);
@@ -392,6 +393,27 @@ export default function WatchRoomPage() {
             isHost={isHost}
             sync={room.sync}
             hostName={room.hostName}
+            renderOverlay={({ fullscreen, toggleFullscreen }) => (
+              <RoomOverlay
+                fullscreen={fullscreen}
+                toggleFullscreen={toggleFullscreen}
+                title={`${room.movieName} - Tập ${room.episodeName}`}
+                hostName={room.hostName}
+                memberCount={room.members.length}
+                selfUid={currentUser?.uid || ''}
+                messages={messages}
+                text={text}
+                setText={setText}
+                onSend={handleSend}
+                sending={sendingMsg}
+                voiceOn={voiceOn}
+                voiceBusy={voiceBusy}
+                micMuted={micMuted}
+                voiceCount={voicePeers.length + 1}
+                onToggleVoice={toggleVoice}
+                onToggleMute={toggleMute}
+              />
+            )}
           />
 
           {/* Info + action row */}

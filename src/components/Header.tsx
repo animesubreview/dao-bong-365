@@ -522,85 +522,88 @@ export default function Header() {
 
       {/* ── WATCH ROOM MODAL ── */}
       {showWatchRoomModal && (
-        <div className="fixed inset-0 z-[300] flex items-center justify-center px-4" onClick={() => setShowWatchRoomModal(false)}>
-          <div className="absolute inset-0 bg-black/75 backdrop-blur-sm" />
+        <div className="fixed inset-0 z-[300] flex items-end sm:items-center justify-center sm:px-4" onClick={() => setShowWatchRoomModal(false)}>
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-md" />
           <div
-            className="relative w-full max-w-md bg-[#0f0f0f] border border-slate-800 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
-            style={{ maxHeight: '90vh' }}
+            className="relative w-full sm:max-w-lg bg-gradient-to-b from-[#161616] to-[#0c0c0c] border border-white/10 rounded-t-3xl sm:rounded-3xl shadow-2xl shadow-black/70 flex flex-col overflow-hidden"
+            style={{ maxHeight: '88vh' }}
             onClick={e => e.stopPropagation()}
           >
-            {/* Header modal */}
-            <div className="flex items-center gap-3 px-5 pt-5 pb-4 border-b border-slate-800/60 shrink-0">
-              <div className="w-9 h-9 rounded-xl bg-green-500/15 border border-green-500/30 flex items-center justify-center shrink-0">
-                <Users size={18} className="text-green-400" />
+            {/* Đầu khung: tiêu đề + 3 bước */}
+            <div className="px-5 pt-5 pb-3 shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center shrink-0 shadow-lg shadow-green-500/30">
+                  <Users size={19} className="text-slate-950" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-white font-black text-base leading-tight">Tạo phòng xem chung</h3>
+                  <p className="text-slate-400 text-xs truncate">
+                    {modalStep === 'search' && 'Chọn bộ phim muốn xem cùng bạn bè'}
+                    {modalStep === 'confirm' && selectedMovie?.name}
+                    {modalStep === 'done' && 'Phòng đã sẵn sàng 🎉'}
+                  </p>
+                </div>
+                <button onClick={() => setShowWatchRoomModal(false)} aria-label="Đóng"
+                  className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center transition-colors shrink-0">
+                  <X size={16} />
+                </button>
               </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="text-white font-black text-base leading-tight">Tạo phòng Xem Chung</h3>
-                <p className="text-slate-500 text-xs">
-                  {modalStep === 'search' && 'Tìm phim muốn xem cùng bạn bè'}
-                  {modalStep === 'confirm' && `Đã chọn: ${selectedMovie?.name}`}
-                  {modalStep === 'done' && 'Phòng đã được tạo thành công!'}
-                </p>
+              <div className="flex items-center gap-1.5 mt-4">
+                {(['search', 'confirm', 'done'] as const).map((st, i) => {
+                  const cur = ['search', 'confirm', 'done'].indexOf(modalStep);
+                  return <span key={st} className={cn('h-1 flex-1 rounded-full transition-all duration-300', i <= cur ? 'bg-green-500' : 'bg-white/10')} />;
+                })}
               </div>
-              <button onClick={() => setShowWatchRoomModal(false)} className="text-slate-500 hover:text-white transition-colors shrink-0">
-                <X size={18} />
-              </button>
             </div>
 
-            {/* Step: SEARCH MOVIE */}
+            {/* Bước 1: chọn phim */}
             {modalStep === 'search' && (
               <div className="flex flex-col flex-1 overflow-hidden">
-                {/* Search input */}
-                <div className="px-5 py-3 shrink-0">
+                <div className="px-5 pb-3 shrink-0">
                   <div className="relative">
                     <input
                       autoFocus
                       type="text"
-                      placeholder="Nhập tên phim muốn xem chung..."
+                      placeholder="Tìm tên phim..."
                       value={modalSearch}
                       onChange={e => setModalSearch(e.target.value)}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-xl py-2.5 pl-9 pr-4 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-green-500/60"
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 pl-10 pr-4 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-green-500/60 focus:bg-white/[0.07] transition-colors"
                     />
-                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none">
-                      {modalSearching ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} />}
+                    <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none">
+                      {modalSearching ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}
                     </div>
                   </div>
                 </div>
 
-                {/* Results */}
-                <div className="flex-1 overflow-y-auto px-5 pb-5">
+                <div className="flex-1 overflow-y-auto px-5 pb-5 glass-scroll" style={{ minHeight: 180 }}>
                   {modalSearch.trim().length < 2 ? (
-                    <div className="text-center py-8">
-                      <div className="text-3xl mb-2">🎬</div>
-                      <p className="text-slate-500 text-sm">Gõ tên phim để tìm kiếm</p>
+                    <div className="text-center py-10">
+                      <div className="text-4xl mb-2">🎬</div>
+                      <p className="text-slate-400 text-sm font-semibold">Gõ ít nhất 2 chữ để tìm phim</p>
+                      <p className="text-slate-600 text-xs mt-1">Bạn sẽ chọn tập sau khi vào phòng</p>
                     </div>
                   ) : modalMovies.length === 0 && !modalSearching ? (
-                    <div className="text-center py-8">
-                      <p className="text-slate-500 text-sm">Không tìm thấy phim nào</p>
-                    </div>
+                    <p className="text-center text-slate-500 text-sm py-10">Không tìm thấy phim nào</p>
                   ) : (
-                    <div className="grid grid-cols-3 gap-2.5">
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5">
                       {modalMovies.map(movie => (
                         <button
                           key={movie._id}
                           onClick={() => { setSelectedMovie(movie); setModalStep('confirm'); }}
-                          className="group flex flex-col rounded-xl overflow-hidden bg-slate-900 border border-slate-800 hover:border-green-500/50 transition-all text-left"
+                          className="group text-left rounded-xl overflow-hidden bg-white/5 border border-white/10 hover:border-green-500/60 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-green-500/10 transition-all duration-200"
                         >
                           <div className="relative w-full bg-slate-800" style={{ aspectRatio: '2/3' }}>
                             <img
                               src={movieApi.getImageUrl(movie.thumb_url)}
                               alt={movie.name}
+                              loading="lazy"
                               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                               referrerPolicy="no-referrer"
                             />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center pb-2">
-                              <span className="text-[10px] font-bold text-green-400">Chọn</span>
-                            </div>
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+                            {movie.year ? <span className="absolute bottom-1.5 left-1.5 text-[9px] font-bold bg-black/60 text-white px-1.5 py-0.5 rounded">{movie.year}</span> : null}
                           </div>
-                          <div className="p-1.5">
-                            <p className="text-white text-[10px] font-bold line-clamp-2 leading-tight">{movie.name}</p>
-                            <p className="text-slate-500 text-[9px] mt-0.5">{movie.year}</p>
-                          </div>
+                          <p className="text-white text-[10px] font-bold line-clamp-2 leading-tight p-1.5">{movie.name}</p>
                         </button>
                       ))}
                     </div>
@@ -609,73 +612,46 @@ export default function Header() {
               </div>
             )}
 
-            {/* Step: CONFIRM (movie selected + set max members) */}
+            {/* Bước 2: cài đặt phòng */}
             {modalStep === 'confirm' && selectedMovie && (
-              <div className="flex flex-col overflow-y-auto px-5 py-4 gap-4">
-                {/* Selected movie preview */}
-                <div className="flex gap-3 p-3 bg-slate-900 rounded-xl border border-slate-800">
+              <div className="flex flex-col overflow-y-auto px-5 pb-5 gap-4 glass-scroll">
+                <div className="flex gap-3 p-3 rounded-2xl bg-white/5 border border-white/10">
                   <div className="w-14 rounded-lg overflow-hidden shrink-0 bg-slate-800" style={{ aspectRatio: '2/3' }}>
-                    <img
-                      src={movieApi.getImageUrl(selectedMovie.thumb_url)}
-                      alt={selectedMovie.name}
-                      className="w-full h-full object-cover"
-                      referrerPolicy="no-referrer"
-                    />
+                    <img src={movieApi.getImageUrl(selectedMovie.thumb_url)} alt={selectedMovie.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                   </div>
                   <div className="flex-1 min-w-0 flex flex-col justify-center">
                     <p className="text-white text-sm font-bold line-clamp-2 leading-snug">{selectedMovie.name}</p>
-                    <p className="text-slate-500 text-xs mt-1">{selectedMovie.origin_name} · {selectedMovie.year}</p>
-                    <button
-                      onClick={() => { setModalStep('search'); setSelectedMovie(null); }}
-                      className="mt-2 text-[10px] text-green-400 hover:text-green-300 font-semibold text-left"
-                    >
+                    <p className="text-slate-500 text-xs mt-0.5 truncate">{selectedMovie.origin_name} · {selectedMovie.year}</p>
+                    <button onClick={() => { setModalStep('search'); setSelectedMovie(null); }}
+                      className="mt-1.5 text-[11px] text-green-400 hover:text-green-300 font-semibold text-left">
                       ← Đổi phim khác
                     </button>
                   </div>
                 </div>
 
-                {/* Custom member count */}
                 <div>
-                  <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Số người tối đa</p>
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => { const v = Math.max(2, watchRoomMax - 1); setWatchRoomMax(v); setWatchRoomMaxInput(String(v)); }}
-                      className="w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-black text-lg flex items-center justify-center transition-colors shrink-0"
-                    >−</button>
-                    <input
-                      type="number"
-                      min={2}
-                      max={20}
-                      value={watchRoomMaxInput}
-                      onChange={e => {
-                        setWatchRoomMaxInput(e.target.value);
-                        const v = parseInt(e.target.value);
-                        if (!isNaN(v) && v >= 2 && v <= 20) setWatchRoomMax(v);
-                      }}
-                      onBlur={() => {
-                        const v = parseInt(watchRoomMaxInput);
-                        const clamped = isNaN(v) ? 2 : Math.min(20, Math.max(2, v));
-                        setWatchRoomMax(clamped);
-                        setWatchRoomMaxInput(String(clamped));
-                      }}
-                      className="flex-1 text-center bg-slate-900 border border-slate-700 rounded-xl py-2 text-white font-black text-lg focus:outline-none focus:border-green-500/60"
-                    />
-                    <button
-                      onClick={() => { const v = Math.min(20, watchRoomMax + 1); setWatchRoomMax(v); setWatchRoomMaxInput(String(v)); }}
-                      className="w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-black text-lg flex items-center justify-center transition-colors shrink-0"
-                    >+</button>
+                  <p className="text-slate-400 text-[11px] font-bold uppercase tracking-wider mb-2">Số người tối đa</p>
+                  <div className="flex flex-wrap gap-2">
+                    {[2, 3, 4, 5, 6, 8, 10, 20].map(n => (
+                      <button key={n}
+                        onClick={() => { setWatchRoomMax(n); setWatchRoomMaxInput(String(n)); }}
+                        className={cn('min-w-[44px] h-10 px-3 rounded-xl text-sm font-black border transition-all active:scale-95',
+                          watchRoomMax === n
+                            ? 'bg-green-500 border-green-400 text-slate-950 shadow-lg shadow-green-500/25'
+                            : 'bg-white/5 border-white/10 text-slate-300 hover:border-white/30')}>
+                        {n}
+                      </button>
+                    ))}
                   </div>
-                  <p className="text-slate-600 text-[10px] text-center mt-1.5">Tối thiểu 2 · Tối đa 20 người</p>
+                  <p className="text-slate-600 text-[11px] mt-2">Có chat trực tiếp và mic trò chuyện trong phòng. Phòng tự đóng sau 2 giờ.</p>
                 </div>
 
-                {/* Login warning */}
                 {!session && (
-                  <div className="p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-xl">
-                    <p className="text-yellow-400 text-xs font-medium">⚠️ Bạn cần đăng nhập để tạo phòng xem.</p>
+                  <div className="px-3 py-2.5 bg-yellow-500/10 border border-yellow-500/25 rounded-xl">
+                    <p className="text-yellow-300 text-xs font-medium">⚠️ Bạn cần đăng nhập để tạo phòng.</p>
                   </div>
                 )}
 
-                {/* Create button */}
                 <button
                   disabled={!session || creatingRoom}
                   onClick={async () => {
@@ -700,62 +676,49 @@ export default function Header() {
                       setModalStep('done');
                     } finally { setCreatingRoom(false); }
                   }}
-                  className="w-full py-3 rounded-xl bg-green-500 text-white font-bold text-sm hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                  className="w-full h-12 rounded-2xl bg-gradient-to-r from-green-500 to-emerald-500 text-slate-950 font-black text-sm hover:brightness-110 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 shadow-lg shadow-green-500/25"
                 >
-                  {creatingRoom ? <Loader2 size={16} className="animate-spin" /> : <Users size={16} />}
+                  {creatingRoom ? <Loader2 size={17} className="animate-spin" /> : <Users size={17} />}
                   {creatingRoom ? 'Đang tạo phòng...' : `Tạo phòng · ${watchRoomMax} người`}
                 </button>
               </div>
             )}
 
-            {/* Step: DONE */}
+            {/* Bước 3: xong */}
             {modalStep === 'done' && createdRoomId && (
-              <div className="px-5 py-5 flex flex-col gap-4">
+              <div className="px-5 pb-5 flex flex-col gap-4">
                 <div className="text-center">
-                  <div className="w-14 h-14 rounded-full bg-green-500/15 flex items-center justify-center mx-auto mb-3">
+                  <div className="w-14 h-14 rounded-full bg-green-500/15 border border-green-500/30 flex items-center justify-center mx-auto mb-2">
                     <Check size={26} className="text-green-400" />
                   </div>
                   <h3 className="text-white font-bold text-base">Phòng đã được tạo!</h3>
-                  <p className="text-slate-400 text-xs mt-1">Chia sẻ link cho bạn bè · Tối đa {watchRoomMax} người</p>
+                  <p className="text-slate-400 text-xs mt-0.5">Gửi link cho bạn bè · tối đa {watchRoomMax} người</p>
                 </div>
 
-                {/* Movie info strip */}
-                {selectedMovie && (
-                  <div className="flex items-center gap-2 p-2.5 bg-slate-900 rounded-xl border border-slate-800">
-                    <div className="w-8 rounded overflow-hidden shrink-0" style={{ aspectRatio: '2/3' }}>
-                      <img src={movieApi.getImageUrl(selectedMovie.thumb_url)} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                    </div>
-                    <p className="text-slate-300 text-xs font-semibold truncate flex-1">{selectedMovie.name}</p>
-                  </div>
-                )}
-
-                {/* Link box */}
-                <div className="bg-slate-900 rounded-xl p-3 flex items-center gap-2 border border-green-500/20">
-                  <p className="flex-1 text-green-300 text-xs font-mono truncate">
+                <div className="rounded-2xl bg-white/5 border border-green-500/25 p-2.5 flex items-center gap-2">
+                  <p className="flex-1 min-w-0 text-green-300 text-xs font-mono truncate pl-1">
                     {window.location.origin}/watch-room/{createdRoomId}
                   </p>
                   <button onClick={() => {
-                    navigator.clipboard.writeText(`${window.location.origin}/watch-room/${createdRoomId}`);
+                    navigator.clipboard?.writeText(`${window.location.origin}/watch-room/${createdRoomId}`).catch(() => {});
                     setRoomLinkCopied(true);
                     setTimeout(() => setRoomLinkCopied(false), 2000);
                   }}
-                    className={cn(
-                      'shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-all',
-                      roomLinkCopied ? 'bg-green-500 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-                    )}>
-                    {roomLinkCopied ? <Check size={12} /> : <Copy size={12} />}
-                    {roomLinkCopied ? 'Đã copy!' : 'Copy'}
+                    className={cn('shrink-0 flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-bold transition-all',
+                      roomLinkCopied ? 'bg-green-500 text-slate-950' : 'bg-white/10 text-slate-200 hover:bg-white/15')}>
+                    {roomLinkCopied ? <Check size={13} /> : <Copy size={13} />}
+                    {roomLinkCopied ? 'Đã copy' : 'Copy'}
                   </button>
                 </div>
 
                 <div className="flex gap-3">
                   <button onClick={() => setShowWatchRoomModal(false)}
-                    className="flex-1 py-2.5 rounded-xl bg-slate-800 text-slate-300 font-bold text-sm hover:bg-slate-700 transition-colors">
+                    className="flex-1 h-11 rounded-2xl bg-white/5 border border-white/10 text-slate-300 font-bold text-sm hover:bg-white/10 transition-colors">
                     Đóng
                   </button>
                   <button onClick={() => { navigate(`/watch-room/${createdRoomId}`); setShowWatchRoomModal(false); }}
-                    className="flex-1 py-2.5 rounded-xl bg-green-500 text-white font-bold text-sm hover:bg-green-600 transition-colors flex items-center justify-center gap-1.5">
-                    <Users size={14} /> Vào phòng
+                    className="flex-[1.4] h-11 rounded-2xl bg-gradient-to-r from-green-500 to-emerald-500 text-slate-950 font-black text-sm hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-1.5 shadow-lg shadow-green-500/25">
+                    <Users size={15} /> Vào phòng
                   </button>
                 </div>
               </div>

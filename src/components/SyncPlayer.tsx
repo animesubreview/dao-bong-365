@@ -15,6 +15,8 @@ interface Props {
   sync: PlayerSyncState;    // realtime từ Firebase
   hostName: string;
   proxyBase?: string;       // optional Netlify proxy base
+  /** Lớp điều khiển vẽ BÊN TRONG khung phát, nên vẫn hiện khi bấm toàn màn hình */
+  renderOverlay?: (api: { fullscreen: boolean; toggleFullscreen: () => void }) => React.ReactNode;
 }
 
 // Độ trễ cho phép trước khi seek lại (giây)
@@ -30,7 +32,7 @@ function formatTime(s: number) {
 }
 
 export default function SyncPlayer({
-  roomId, m3u8Url, embedUrl, isHost, sync, hostName, proxyBase,
+  roomId, m3u8Url, embedUrl, isHost, sync, hostName, proxyBase, renderOverlay,
 }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
@@ -233,13 +235,21 @@ export default function SyncPlayer({
   // ── Fallback: iframe ───────────────────────────────────────────────────────
   if (!hlsOk || !m3u8Url) {
     return (
-      <div className="relative w-full bg-black" style={{ aspectRatio: '16/9' }}>
+      <div ref={containerRef} className="relative w-full bg-black" style={fullscreen ? { height: '100%' } : { aspectRatio: '16/9' }}>
         <iframe src={embedUrl} className="w-full h-full" allowFullScreen
           allow="autoplay; fullscreen" style={{ border: 'none' }} />
         <div className="absolute top-2 left-2 flex items-center gap-1.5 bg-black/70 px-2.5 py-1 rounded-full">
           <WifiOff size={11} className="text-yellow-400" />
           <span className="text-yellow-300 text-[10px] font-semibold">Chế độ iframe – không đồng bộ</span>
         </div>
+        {/* Nút toàn màn hình riêng (để vẫn thấy chat/mic nổi; nút của iframe chỉ phóng riêng video) */}
+        {!fullscreen && (
+          <button onClick={toggleFullscreen} aria-label="Toàn màn hình"
+            className="absolute top-2 right-2 w-9 h-9 rounded-full bg-black/60 border border-white/20 text-white flex items-center justify-center hover:bg-black/80">
+            <Maximize size={16} />
+          </button>
+        )}
+        {renderOverlay?.({ fullscreen, toggleFullscreen })}
       </div>
     );
   }
@@ -381,6 +391,8 @@ export default function SyncPlayer({
           </div>
         </div>
       </div>
+
+      {renderOverlay?.({ fullscreen, toggleFullscreen })}
 
       {/* Big play button when paused and controls hidden */}
       {!playing && !buffering && !showControls && (
