@@ -2,7 +2,7 @@ import { useSEO } from '../hooks/useSEO';
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { User, Mail, Lock, Eye, EyeOff, LogIn, UserPlus, Clapperboard, AlertCircle, Check, ArrowLeft } from 'lucide-react';
-import { register, login, onAuthChange } from '../lib/auth';
+import { register, login, onAuthChange, getUserProfile } from '../lib/auth';
 
 type Tab = 'login' | 'register';
 
@@ -66,8 +66,10 @@ export default function AuthPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const unsub = onAuthChange(user => {
-      if (user) navigate('/', { replace: true });
+    const unsub = onAuthChange(async user => {
+      if (!user) return;
+      await getUserProfile(user.uid); // tự tạo hồ sơ nếu thiếu, tránh kẹt vòng lặp đăng nhập ↔ trang chủ
+      navigate('/', { replace: true });
     });
     return () => unsub();
   }, []);

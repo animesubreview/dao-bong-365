@@ -142,7 +142,21 @@ export function onAuthChange(callback: (user: User | null) => void) {
 export async function getUserProfile(uid: string): Promise<UserProfile | null> {
   try {
     const snap = await getDoc(doc(db, 'users', uid));
-    return snap.exists() ? (snap.data() as UserProfile) : null;
+    if (snap.exists()) return snap.data() as UserProfile;
+
+    // Đang đăng nhập nhưng thiếu hồ sơ (vd đăng ký lúc bảng dữ liệu chưa tạo) → tự tạo lại,
+    // nếu không web sẽ coi như "chưa đăng nhập" còn trang /auth lại đá về trang chủ → kẹt vòng lặp.
+    const u = getCurrentUser();
+    if (!u || u.uid !== uid) return null;
+    const username = u.displayName || (u.email || 'user').split('@')[0];
+    const avatar = u.photoURL || `https://api.dicebear.com/7.x/thumbs/svg?seed=${encodeURIComponent(username)}`;
+    const profile: UserProfile = {
+      uid, username, email: u.email || '', avatar,
+      role: 'user', isBanned: false, createdAt: Date.now(), lastLogin: Date.now(), balance: 0,
+    };
+    await setDoc(doc(db, 'users', uid), profile);
+    await setDoc(doc(db, 'usernames', username.toLowerCase()), { uid }).catch(() => {});
+    return profile;
   } catch { return null; }
 }
 
