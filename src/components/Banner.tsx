@@ -163,12 +163,16 @@ export default function Banner({ movies }: BannerProps) {
 
   const movie = items[idx];
   const isFav = useMemo(() => !!movie && favSlugs.includes(movie.slug), [movie, favSlugs]);
-  const rawRating = Number((movie as any)?.imdb?.vote_average ?? (movie as any)?.tmdb?.vote_average ?? 0);
+  const imdbVal = Number((movie as any)?.imdb?.vote_average ?? 0);
+  const tmdbVal = Number((movie as any)?.tmdb?.vote_average ?? 0);
+  const ratingSrc: 'IMDb' | 'TMDb' = imdbVal > 0 ? 'IMDb' : 'TMDb';
+  const rawRating = imdbVal > 0 ? imdbVal : tmdbVal;
   const rating = rawRating > 0 ? rawRating.toFixed(1) : '';
   const chip = 'text-[13px] font-bold border border-white/20 text-slate-200 px-3 py-1.5 rounded-xl';
   const imdbBadge = rating ? (
-    <span className="inline-flex items-center gap-1.5 text-[13px] font-extrabold text-white border border-[#F5C518]/50 bg-black/30 pl-1 pr-2.5 py-1 rounded-lg shadow-[0_0_14px_-4px_rgba(245,197,24,.6)]">
-      <span className="bg-[#F5C518] text-black text-[11px] font-black px-1.5 py-0.5 rounded">IMDb</span>{rating}
+    <span className={cn('inline-flex items-center gap-1.5 text-[13px] font-extrabold text-white border bg-black/30 pl-1 pr-2.5 py-1 rounded-lg',
+      ratingSrc === 'IMDb' ? 'border-[#F5C518]/50 shadow-[0_0_14px_-4px_rgba(245,197,24,.6)]' : 'border-[#01b4e4]/50 shadow-[0_0_14px_-4px_rgba(1,180,228,.6)]')}>
+      <span className={cn('text-[11px] font-black px-1.5 py-0.5 rounded', ratingSrc === 'IMDb' ? 'bg-[#F5C518] text-black' : 'bg-[#01b4e4] text-white')}>{ratingSrc}</span>{rating}
     </span>
   ) : null;
 
@@ -179,7 +183,7 @@ export default function Banner({ movies }: BannerProps) {
 
   // ── Giao diện PC: nền ngang toàn chiều rộng + thông tin bên trái + dải ảnh thu nhỏ bên phải ──
   const desktopHero = (
-    <div className="hidden md:block relative w-full overflow-hidden bg-slate-950" style={{ height: 'clamp(420px, min(46vw, 82vh), 780px)' }}>
+    <div className="hidden md:block relative w-full overflow-hidden bg-slate-950" style={{ height: 'clamp(380px, min(42vw, 80vh), 680px)' }}>
       {items.map((m, i) => (
         <div key={m._id} className="absolute inset-0 transition-opacity duration-700" style={{ opacity: i === idx ? 1 : 0 }} aria-hidden={i !== idx}>
           <PosterImg
@@ -192,38 +196,38 @@ export default function Banner({ movies }: BannerProps) {
         </div>
       ))}
       {/* Lớp tối: trái (để đọc chữ) + dưới (hòa vào nền trang) */}
-      <div className="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-950/35 to-transparent" />
-      <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-slate-950 via-slate-950/60 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/15 to-transparent" />
+      <div className="absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
 
       {/* Thông tin phim */}
-      <div className="absolute left-[4%] bottom-[12%] w-[min(560px,52%)] lg:w-[min(560px,44%)] text-left">
-        <h1 className="banner-title text-4xl lg:text-5xl xl:text-6xl text-white leading-[1.1] mb-3 line-clamp-2 drop-shadow-lg">
+      <div className="absolute left-[4%] top-1/2 -translate-y-[52%] w-[min(620px,54%)] lg:w-[min(620px,48%)] text-left" style={{ textShadow: '0 2px 10px rgba(0,0,0,.55)' }}>
+        <h1 className="banner-title text-4xl lg:text-5xl xl:text-6xl text-white leading-[1.08] mb-3 line-clamp-2">
           {decodeHtml(movie.name)}
         </h1>
         {movie.origin_name && (
-          <p className="text-[var(--primary-light)] text-sm lg:text-base font-semibold mb-4 line-clamp-1">
+          <p className="text-amber-300 text-sm lg:text-base font-bold mb-3.5 line-clamp-1">
             {decodeHtml(movie.origin_name)}
           </p>
         )}
         <div className="flex flex-wrap items-center gap-2 mb-3">
           {imdbBadge}
-          {movie.quality && <span className="text-xs font-extrabold bg-[var(--primary-light)] text-slate-950 px-2.5 py-1 rounded-md">{decodeHtml(movie.quality)}</span>}
-          {movie.year ? <span className="text-xs font-bold border border-white/30 text-slate-100 px-2.5 py-1 rounded-md">{movie.year}</span> : null}
-          {movie.time && <span className="text-xs font-bold border border-white/30 text-slate-100 px-2.5 py-1 rounded-md">{decodeHtml(movie.time)}</span>}
-          {movie.episode_current && <span className="text-xs font-bold border border-white/30 text-slate-100 px-2.5 py-1 rounded-md">{decodeHtml(movie.episode_current)}</span>}
+          {movie.quality && <span className="text-xs font-extrabold bg-amber-300 text-slate-900 px-2.5 py-1 rounded-md">{decodeHtml(movie.quality)}</span>}
+          {movie.year ? <span className="text-xs font-semibold border border-white/45 text-white px-2.5 py-1 rounded-md bg-black/20">{movie.year}</span> : null}
+          {movie.time && <span className="text-xs font-semibold border border-white/45 text-white px-2.5 py-1 rounded-md bg-black/20">{decodeHtml(movie.time)}</span>}
+          {movie.episode_current && <span className="text-xs font-semibold border border-white/45 text-white px-2.5 py-1 rounded-md bg-black/20">{decodeHtml(movie.episode_current)}</span>}
         </div>
         {genres.length > 0 && (
           <div className="flex flex-wrap gap-2 mb-3">
             {genres.map(g => (
-              <span key={g.id || g.slug} className="text-xs font-semibold text-slate-200 bg-white/10 px-3 py-1 rounded-full">{decodeHtml(g.name)}</span>
+              <span key={g.id || g.slug} className="text-xs font-medium text-slate-100 bg-white/12 backdrop-blur-sm px-3 py-1 rounded-md">{decodeHtml(g.name)}</span>
             ))}
           </div>
         )}
-        {synopsis && <p className="text-sm lg:text-[15px] text-slate-200/90 leading-relaxed line-clamp-2 mb-5">{synopsis}</p>}
+        {synopsis && <p className="text-sm lg:text-[15px] text-white/90 leading-relaxed line-clamp-3 mb-5 max-w-[560px]">{synopsis}</p>}
 
         <div className="flex items-center gap-3">
           <Link to={detailPath(movie)} aria-label="Xem phim"
-            className="w-16 h-16 rounded-full bg-[var(--primary-light)] text-slate-950 flex items-center justify-center shadow-[0_0_30px_-4px_var(--primary-light)] hover:scale-105 active:scale-95 transition-transform">
+            className="w-16 h-16 rounded-full bg-amber-200 text-slate-900 flex items-center justify-center shadow-[0_0_34px_-2px_rgba(253,230,138,.75)] hover:scale-105 active:scale-95 transition-transform" style={{ textShadow: 'none' }}>
             <Play size={28} className="fill-current ml-1" />
           </Link>
           <div className="h-14 rounded-full border border-white/15 bg-black/40 backdrop-blur flex items-center overflow-hidden">
