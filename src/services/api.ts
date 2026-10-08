@@ -35,8 +35,14 @@ if (typeof window !== 'undefined') {
 // về để chỉnh lại cho khớp.
 const VSMOV_BASE = 'https://vsmov.com/api';
 
+// Nguồn thứ 4: api.xink.pro — GIẢ ĐỊNH cùng chuẩn KKPhim (/danh-sach/..., /phim/{slug}, /v1/api/...).
+// ⚠️ Chưa xác minh được schema thật (gốc api.xink.pro trả 404, không có tài liệu công khai, môi trường
+// không gọi được endpoint). Mọi hàm đều "thử rồi bỏ": sai cấu trúc/lỗi mạng thì coi như nguồn rỗng,
+// KHÔNG làm hỏng nguồn chính. Gửi mẫu JSON thật của nguồn này để chỉnh cho khớp 100%.
+const XINK_BASE = 'https://api.xink.pro';
+
 async function apiFetch(path: string): Promise<Response> {
-  // Đua song song phimapi.com (BASE_URL) và vsmov.com/api — cả 2 cùng chuẩn KKPhim.
+  // Đua song song phimapi.com (BASE_URL), vsmov.com/api và api.xink.pro — cùng chuẩn KKPhim.
   // Ai trả về JSON hợp lệ (status ok, có "items"/"data") trước thì dùng luôn, không cần đợi cái kia.
   // NguonC KHÔNG tham gia đua này vì cấu trúc API hoàn toàn khác (không phải danh sách theo trang
   // cùng path), chỉ dùng riêng làm nguồn ảnh dự phòng ở nơi khác trong file này.
@@ -51,7 +57,7 @@ async function apiFetch(path: string): Promise<Response> {
     return res;
   };
   try {
-    return await Promise.any([tryOne(BASE_URL), tryOne(VSMOV_BASE)]);
+    return await Promise.any([tryOne(BASE_URL), tryOne(VSMOV_BASE), tryOne(XINK_BASE)]);
   } catch {
     // Cả 2 đều lỗi/rỗng — vẫn trả về response của BASE_URL (kể cả rỗng) để hàm gọi tự xử lý
     return fetch(`${BASE_URL}${path}`);
@@ -371,6 +377,82 @@ export function mergeNguonCEpisodes(
   return nguonCConverted;
 }
 
+// ─── Xink API (api.xink.pro) ────────────────────────────────────────────────
+export interface XinkMovieDetail {
+  name: string;
+  slug: string;
+  episodes: { server_name: string; server_data: { name: string; slug: string; filename: string; link_embed: string; link_m3u8: string }[] }[];
+}
+
+/** Lấy chi tiết + danh sách server của 1 phim từ api.xink.pro. Sai schema/lỗi → null (không ném lỗi). */
+export async function getXinkDetail(slug: string): Promise<XinkMovieDetail | null> {
+  try {
+    const res = await fetch(`${XINK_BASE}/phim/${slug}`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    // Chấp nhận 2 dạng: { movie, episodes } (KKPhim) hoặc { data: { item } } (OPhim v1)
+    const movie = data?.movie || data?.data?.item;
+    const rawEpisodes: any[] = data?.episodes || data?.data?.item?.episodes || [];
+    if (!movie || !rawEpisodes.length) return null;
+    const episodes = rawEpisodes
+      .map((s: any) => ({
+        server_name: s.server_name || 'Server',
+        server_data: (s.server_data || [])
+          .map((ep: any) => ({
+            name: ep.name || ep.filename || '',
+            slug: ep.slug || ep.name || '',
+            filename: ep.filename || ep.name || '',
+            link_embed: ep.link_embed || '',
+            link_m3u8: ep.link_m3u8 || '',
+          }))
+          .filter((ep: any) => ep.name && (ep.link_embed || ep.link_m3u8)),
+      }))
+      .filter((s: any) => s.server_data.length > 0);
+    if (!episodes.length) return null;
+    return { name: movie.name || slug, slug: movie.slug || slug, episodes };
+  } catch {
+    return null;
+  }
+}
+
+/** Nối các server của Xink vào cuối danh sách (gắn nhãn "Xink - ..."). */
+export function mergeXinkEpisodes(mainEpisodes: Episode[], xink: XinkMovieDetail | null): Episode[] {
+  if (!xink?.episodes?.length) return mainEpisodes;
+  const converted: Episode[] = xink.episodes.map((s, idx) => ({
+    server_name: `Xink - ${s.server_name}`,
+    server_data: s.server_data.map((ep, epIdx) => ({
+      name: ep.name,
+      slug: `xk-s${idx}-${ep.slug || ep.name.toLowerCase().replace(/\s+/g, '-') || `tap-${epIdx + 1}`}`,
+      filename: ep.filename,
+      link_embed: ep.link_embed,
+      link_m3u8: ep.link_m3u8,
+    })),
+  }));
+  const existing = new Set(mainEpisodes.map(s => s.server_name));
+  return [...mainEpisodes, ...converted.filter(s => !existing.has(s.server_name))];
+}
+
+/**
+ * Gộp server TRÙNG NHAU giữa các nguồn: server đứng sau bị bỏ nếu ≥ 80% link phát của nó
+ * đã có trong các server đứng trước (cùng một luồng phim lấy từ nhiều nguồn). Thứ tự được giữ nguyên,
+ * nên nguồn chính luôn được ưu tiên giữ lại.
+ */
+export function dedupeEpisodes(servers: Episode[]): Episode[] {
+  const seen = new Set<string>();
+  const out: Episode[] = [];
+  const norm = (u: string) => (u || '').trim().replace(/^https?:\/\//, '').replace(/[?#].*$/, '').toLowerCase();
+  for (const s of servers) {
+    const links = (s.server_data || []).map(ep => norm(ep.link_m3u8 || ep.link_embed)).filter(Boolean);
+    if (links.length > 0) {
+      const dup = links.filter(l => seen.has(l)).length;
+      if (dup / links.length >= 0.8) continue; // trùng gần hết → bỏ server này
+      links.forEach(l => seen.add(l));
+    }
+    out.push(s);
+  }
+  return out;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
@@ -614,6 +696,13 @@ export const movieApi = {
     // 2) Nguồn phụ: vsmov.com/api — giả định cùng schema với phimapi.com (xem ghi chú ở VSMOV_BASE)
     try {
       const response = await fetch(`${VSMOV_BASE}/phim/${slug}`);
+      const data = await response.json();
+      if (response.ok && data && data.status !== false && data.movie) return data;
+    } catch { /* rơi xuống NguonC */ }
+
+    // 2b) Nguồn phụ: api.xink.pro
+    try {
+      const response = await fetch(`${XINK_BASE}/phim/${slug}`);
       const data = await response.json();
       if (response.ok && data && data.status !== false && data.movie) return data;
     } catch { /* rơi xuống NguonC */ }

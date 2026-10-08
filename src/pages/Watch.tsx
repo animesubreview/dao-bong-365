@@ -2,7 +2,7 @@ import { useSEO } from '../hooks/useSEO';
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Play, ChevronRight, ChevronLeft, Heart, SkipForward, List, Server, BookmarkPlus, Image as ImageIcon, Users, Copy, Check, X, Loader2, ArrowRightCircle } from 'lucide-react';
-import { movieApi, getNguonCDetail, mergeNguonCEpisodes, nguonCToMovie, getOPhimDetail, mergeOPhimEpisodes } from '../services/api';
+import { movieApi, getNguonCDetail, mergeNguonCEpisodes, nguonCToMovie, getOPhimDetail, mergeOPhimEpisodes, getXinkDetail, mergeXinkEpisodes, dedupeEpisodes } from '../services/api';
 import { Movie, Episode } from '../types';
 import { cn, usePageTitle, withTimeout } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
@@ -117,13 +117,14 @@ export default function Watch() {
     const fetchData = async () => {
       if (!slug) return;
       try {
-        const [res, override, nguonC, ophim] = await Promise.all([
+        const [res, override, nguonC, ophim, xink] = await Promise.all([
           movieApi.getMovieDetail(slug).catch((err) => { console.warn('[KKPhim] lỗi lấy chi tiết phim:', err); return { status: false, movie: null, episodes: [] } as any; }),
           getMovieOverride(slug).catch((err) => { console.warn('[Override] lỗi:', err); return null; }),
           getNguonCDetail(slug).catch((err) => { console.warn('[NguonC] lỗi lấy chi tiết phim:', err); return null; }),
           // OPhim chỉ dùng để BỔ SUNG thêm 1 server (không phải nguồn chính) → giới hạn 6s,
           // chậm/die thì bỏ qua, không kéo chậm cả trang xem phim
           withTimeout(getOPhimDetail(slug).catch((err) => { console.warn('[OPhim] lỗi lấy chi tiết phim:', err); return null; }), 6000, null),
+          withTimeout(getXinkDetail(slug), 6000, null),
         ]);
         // Nếu KKPhim không có phim này nhưng NguonC có → dùng NguonC làm nguồn chính
         let movieData = res.movie;
@@ -139,7 +140,7 @@ export default function Watch() {
         setMovie(mergeOverride(movieData, override));
 
         // Merge NguonC: phim đã có tập → chỉ thêm server NguonC; chưa có → dùng hẳn NguonC
-        const mergedEpisodes = mergeCustomServers(mergeOPhimEpisodes(baseEpisodes, ophim), override);
+        const mergedEpisodes = mergeCustomServers(dedupeEpisodes(mergeXinkEpisodes(mergeOPhimEpisodes(baseEpisodes, ophim), xink)), override);
         setEpisodes(mergedEpisodes);
 
         let ep = null;

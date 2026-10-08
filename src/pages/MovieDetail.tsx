@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Play, Heart, Share2, Plus, MessageCircle, Star, ChevronRight, Clock, Calendar, Globe, Film, ChevronDown, ChevronUp, Users, Search, ArrowUpDown } from 'lucide-react';
-import { movieApi, getNguonCDetail, mergeNguonCEpisodes, nguonCToMovie, getOPhimDetail, mergeOPhimEpisodes } from '../services/api';
+import { movieApi, getNguonCDetail, mergeNguonCEpisodes, nguonCToMovie, getOPhimDetail, mergeOPhimEpisodes, getXinkDetail, mergeXinkEpisodes, dedupeEpisodes } from '../services/api';
 import { Movie, Episode } from '../types';
 import { cn, withTimeout } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
@@ -48,13 +48,14 @@ export default function MovieDetail() {
     const fetchData = async () => {
       if (!slug) return;
       try {
-        const [res, override, nguonC, ophim, tmdbImgs] = await Promise.all([
+        const [res, override, nguonC, ophim, xink, tmdbImgs] = await Promise.all([
           movieApi.getMovieDetail(slug).catch((err) => { console.warn('[KKPhim] lỗi lấy chi tiết phim:', err); return { status: false, movie: null, episodes: [] } as any; }),
           getMovieOverride(slug).catch((err) => { console.warn('[Override] lỗi:', err); return null; }),
           getNguonCDetail(slug).catch((err) => { console.warn('[NguonC] lỗi lấy chi tiết phim:', err); return null; }),
           // OPhim (bổ sung server) và ảnh TMDB (chỉ để đẹp hơn, đã có ảnh KKPhim làm nền) đều
           // là nguồn PHỤ → giới hạn thời gian chờ, chậm/die thì bỏ qua, không kéo chậm trang chi tiết phim
           withTimeout(getOPhimDetail(slug).catch((err) => { console.warn('[OPhim] lỗi lấy chi tiết phim:', err); return null; }), 6000, null),
+          withTimeout(getXinkDetail(slug), 6000, null),
           withTimeout(movieApi.getMovieImagesV1(slug).catch(() => ({ posters: [], backdrops: [] })), 4000, { posters: [], backdrops: [] }),
         ]);
         setTmdbImages(tmdbImgs);
@@ -72,7 +73,7 @@ export default function MovieDetail() {
 
         setMovie(mergeOverride(movieData, override));
         // Merge OPhim vào cuối
-        setEpisodes(mergeCustomServers(mergeOPhimEpisodes(baseEpisodes, ophim), override));
+        setEpisodes(mergeCustomServers(dedupeEpisodes(mergeXinkEpisodes(mergeOPhimEpisodes(baseEpisodes, ophim), xink)), override));
         const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
         setIsFavorite(favorites.some((f: any) => f.slug === slug));
       } catch (error) {
