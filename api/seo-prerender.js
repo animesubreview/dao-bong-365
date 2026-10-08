@@ -30,6 +30,9 @@ const BOT_AGENTS = [
   'facebookexternalhit', 'twitterbot', 'linkedinbot', 'whatsapp',
   'telegrambot', 'applebot', 'sogou', 'exabot', 'ia_archiver',
   'msnbot', 'ahrefsbot', 'semrushbot', 'dotbot', 'seznambot',
+  // Ứng dụng nhắn tin / mạng xã hội — các bot tạo "thẻ xem trước link" khi chia sẻ
+  'zalo', 'facebot', 'discordbot', 'slackbot', 'viber', 'skypeuripreview',
+  'pinterest', 'redditbot', 'embedly', 'kakaotalk', 'vkshare',
 ];
 
 function isBot(userAgent) {
@@ -86,7 +89,9 @@ export default async function handler(request) {
   const movieMatch = url.pathname.match(/^\/phim\/([^/]+)$/);
   const watchMatch = url.pathname.match(/^\/watch\/([^/]+)(?:\/[^/]+)?\/?$/);
   const typeMatch  = url.pathname.match(/^\/type\/([^/]+)$/);
+  const manualMatch = url.pathname.match(/^\/(?:manual|watch-manual)\/([^/]+)(?:\/[^/]+)?\/?$/);
 
+  if (manualMatch) return handleManualMovie(manualMatch[1], request);
   if (movieMatch) return handleMovieDetail(movieMatch[1], request);
   if (watchMatch) return handleMovieDetail(watchMatch[1], request);
   if (typeMatch)  return handleTypeListing(typeMatch[1], url.searchParams, request);
@@ -206,7 +211,7 @@ async function handleMovieDetail(slug, request) {
       `Xem ${movie.name} (${movie.origin_name || ''}) ${movie.year || ''} Vietsub HD miễn phí tại Đảo Phim. ` +
       stripHtml(movie.content || '').slice(0, 150)
     );
-    const image    = escapeHtml(buildPosterUrl(movie.poster_url || movie.thumb_url));
+    const image    = escapeHtml(buildPosterUrl(movie.thumb_url || movie.poster_url));
     const pageUrl  = escapeHtml(`${SITE_URL}/phim/${slug}`);
     const genres   = (movie.category || []).map((c) => escapeHtml(c.name)).join(', ');
     const keywords = [
@@ -268,8 +273,7 @@ async function handleMovieDetail(slug, request) {
   <meta property="og:description" content="${desc}" />
   <meta property="og:url" content="${pageUrl}" />
   <meta property="og:image" content="${image}" />
-  <meta property="og:image:width" content="1200" />
-  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="Poster phim ${title}" />
   <meta property="og:locale" content="vi_VN" />
 
   <!-- Twitter Card -->
@@ -304,3 +308,97 @@ async function handleMovieDetail(slug, request) {
   }
 }
 
+
+
+// ─── Phim đăng thủ công (lưu trong Supabase, bảng firestore_docs / manual_movies) ────────
+const SUPABASE_URL = (typeof process !== 'undefined' && (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL))
+  || 'https://vfhuesiqrerwqnxatmbr.supabase.co';
+const SUPABASE_ANON = (typeof process !== 'undefined' && (process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY))
+  || 'sb_publishable_QNoZ2a9ll5FGBfAYyNiSUA_WCvcULhl';
+
+function absImage(raw) {
+  if (!raw) return DEFAULT_IMG;
+  if (raw.startsWith('//')) return `https:${raw}`;
+  if (raw.startsWith('http')) return raw;
+  return `${SITE_URL}/${raw.replace(/^\/+/, '')}`;
+}
+
+async function handleManualMovie(id, request) {
+  try {
+    const q = `${SUPABASE_URL}/rest/v1/firestore_docs?collection_path=eq.manual_movies&doc_id=eq.${encodeURIComponent(id)}&select=data`;
+    const res = await fetch(q, { headers: { apikey: SUPABASE_ANON }, signal: AbortSignal.timeout(5000) });
+    if (!res.ok) return passThrough(request);
+    const rows = await res.json();
+    const m = rows?.[0]?.data;
+    if (!m || !m.name) return passThrough(request);
+
+    const isTV = m.type === 'series';
+    const nameYear = m.year ? `${m.name} (${m.year})` : m.name;
+    const fullTitle = escapeHtml(`${nameYear} - Xem Phim ${m.lang || 'Vietsub'} HD | ${SITE_NAME}`);
+    const plain = stripHtml(m.description || '').slice(0, 170);
+    const desc = escapeHtml(
+      `Xem ${m.name}${m.originName ? ` (${m.originName})` : ''} ${m.quality || 'HD'} ${m.lang || 'Vietsub'} miễn phí tại ${SITE_NAME}. ${plain}`.trim()
+    );
+    // Ảnh xem trước: ưu tiên ảnh NGANG do admin nhập cho banner, không có thì dùng poster
+    const image = escapeHtml(absImage(m.bannerImageUrl || m.posterUrl));
+    const pageUrl = escapeHtml(`${SITE_URL}/manual/${id}`);
+    const title = escapeHtml(m.name);
+
+    const schema = {
+      '@context': 'https://schema.org',
+      '@type': isTV ? 'TVSeries' : 'Movie',
+      name: m.name,
+      alternateName: m.originName || undefined,
+      description: plain,
+      image: absImage(m.bannerImageUrl || m.posterUrl),
+      url: `${SITE_URL}/manual/${id}`,
+      datePublished: m.year ? String(m.year) : undefined,
+      inLanguage: 'vi',
+    };
+
+    const html = `<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>${fullTitle}</title>
+  <meta name="description" content="${desc}" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <link rel="canonical" href="${pageUrl}" />
+
+  <meta property="og:type" content="${isTV ? 'video.tv_show' : 'video.movie'}" />
+  <meta property="og:site_name" content="${SITE_NAME}" />
+  <meta property="og:title" content="${fullTitle}" />
+  <meta property="og:description" content="${desc}" />
+  <meta property="og:url" content="${pageUrl}" />
+  <meta property="og:image" content="${image}" />
+  <meta property="og:image:secure_url" content="${image}" />
+  <meta property="og:image:alt" content="Poster phim ${title}" />
+  <meta property="og:locale" content="vi_VN" />
+
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="${fullTitle}" />
+  <meta name="twitter:description" content="${desc}" />
+  <meta name="twitter:image" content="${image}" />
+  <script type="application/ld+json">${JSON.stringify(schema)}</script>
+</head>
+<body>
+  <h1>${title}</h1>
+  ${m.originName ? `<p>${escapeHtml(m.originName)}</p>` : ''}
+  <p>${escapeHtml(String(m.year || ''))} · ${escapeHtml(m.quality || '')} · ${escapeHtml(m.lang || 'Vietsub')}</p>
+  <p>${escapeHtml(plain)}</p>
+  <a href="${pageUrl}">Xem phim ${title} tại ${SITE_NAME}</a>
+</body>
+</html>`;
+
+    return new Response(html, {
+      headers: {
+        'content-type': 'text/html; charset=utf-8',
+        'cache-control': 'public, s-maxage=600, stale-while-revalidate=3600',
+        'x-prerendered-by': 'daophim-edge',
+      },
+    });
+  } catch {
+    return passThrough(request);
+  }
+}
