@@ -87,28 +87,15 @@ function applyMerge(existing: Record<string, any>, patch: Record<string, any>): 
   return out;
 }
 
-// ── Gộp request trùng lặp đang chạy (nhiều component cùng đọc 1 thứ → chỉ 1 request) ──
-const inflight = new Map<string, Promise<any>>();
-function dedupe<T>(key: string, fn: () => Promise<T>): Promise<T> {
-  const cur = inflight.get(key);
-  if (cur) return cur as Promise<T>;
-  const p = fn().finally(() => { inflight.delete(key); });
-  inflight.set(key, p);
-  return p;
-}
-
 export async function getDoc(ref: DocumentReference) {
-  const data = await dedupe(`doc:${ref.path}/${ref.id}`, async () => {
-    const { data, error } = await supabase
-      .from('firestore_docs').select('data')
-      .eq('collection_path', ref.path).eq('doc_id', ref.id).maybeSingle();
-    if (error) throw error;
-    return data ? (data as any).data : undefined;
-  });
+  const { data, error } = await supabase
+    .from('firestore_docs').select('data')
+    .eq('collection_path', ref.path).eq('doc_id', ref.id).maybeSingle();
+  if (error) throw error;
   return {
     id: ref.id, ref,
-    exists: () => data !== undefined,
-    data: () => (data !== undefined ? data : undefined),
+    exists: () => !!data,
+    data: () => (data ? (data as any).data : undefined),
   };
 }
 export const getDocFromServer = getDoc;
@@ -137,11 +124,9 @@ export async function getDocs(refOrQuery: CollectionReference | QueryRef) {
   const q: QueryRef = (refOrQuery as any).__type === 'query'
     ? (refOrQuery as QueryRef)
     : { __type: 'query', path: refOrQuery.path, wheres: [], orders: [], limitN: null };
-  const rows = await dedupe('q:' + JSON.stringify(q), async () => {
-    const { data, error } = await buildQuery(q);
-    if (error) throw error;
-    return (data || []) as any[];
-  });
+  const { data, error } = await buildQuery(q);
+  if (error) throw error;
+  const rows = (data || []) as any[];
   const docs = rows.map(r => ({
     id: r.doc_id,
     ref: { __type: 'doc', path: q.path, id: r.doc_id } as DocumentReference,
@@ -167,16 +152,6 @@ export async function addDoc(coll: CollectionReference, data: any) {
   return ref;
 }
 
-/** Ghi đè/ghi thẳng 1 doc bằng 1 request duy nhất (KHÔNG đọc trước như setDoc merge) — dùng cho ping presence. */
-export async function touchDoc(ref: DocumentReference, data: any) {
-  const toWrite = applyMerge({}, data);
-  const { error } = await supabase.from('firestore_docs').upsert(
-    { collection_path: ref.path, doc_id: ref.id, data: toWrite, updated_at: new Date().toISOString() },
-    { onConflict: 'collection_path,doc_id' }
-  );
-  if (error) throw error;
-}
-
 export async function updateDoc(ref: DocumentReference, data: any) {
   const cur = await getDoc(ref);
   const merged = applyMerge(cur.exists() ? cur.data() : {}, data);
@@ -192,56 +167,6 @@ export async function deleteDoc(ref: DocumentReference) {
   if (error) throw error;
 }
 
-// ── onSnapshot tiết kiệm băng thông ───────────────────────────────────────────────────
-// Trước: mỗi onSnapshot mở 1 kênh realtime riêng, và MỖI thay đổi trong collection làm TẤT CẢ
-// người đang nghe tải lại TOÀN BỘ dữ liệu ngay lập tức (kể cả tab đang ẩn) → egress nhân lên theo số khách.
-// Giờ: (1) dùng chung 1 kênh cho mỗi collection, (2) gộp nhiều thay đổi liên tiếp thành 1 lần tải
-// lại (debounce), (3) bỏ qua thay đổi của doc khác khi đang theo dõi 1 doc, (4) tab đang ẩn thì
-// KHÔNG tải, đợi khi quay lại tab mới tải, (5) doc cấu hình được cache ngắn trong sessionStorage.
-type Hub = { channel: any; subs: Set<(payload: any) => void> };
-const hubs = new Map<string, Hub>();
-const DEBOUNCE_MS = 1500;
-const DOC_CACHE_TTL = 2 * 60_000;
-
-function getHub(path: string): Hub {
-  let hub = hubs.get(path);
-  if (hub) return hub;
-  const h: Hub = { channel: null, subs: new Set() };
-  try {
-    h.channel = supabase
-      .channel(`fs_${path}_${Date.now()}_${Math.random().toString(36).slice(2)}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'firestore_docs', filter: `collection_path=eq.${path}` },
-        (payload: any) => { h.subs.forEach(fn => { try { fn(payload); } catch {} }); })
-      .subscribe();
-  } catch (e) {
-    console.error('[firestore-compat] realtime channel error:', e);
-  }
-  hubs.set(path, h);
-  return h;
-}
-
-function releaseHub(path: string, fn: (payload: any) => void) {
-  const hub = hubs.get(path);
-  if (!hub) return;
-  hub.subs.delete(fn);
-  if (hub.subs.size === 0) {
-    try { if (hub.channel) supabase.removeChannel(hub.channel); } catch {}
-    hubs.delete(path);
-  }
-}
-
-function docCacheGet(path: string, id: string): { exists: boolean; data: any } | null {
-  try {
-    const v = sessionStorage.getItem(`fsd:${path}/${id}`);
-    if (!v) return null;
-    const e = JSON.parse(v);
-    return Date.now() - e.at < DOC_CACHE_TTL ? e : null;
-  } catch { return null; }
-}
-function docCacheSet(path: string, id: string, exists: boolean, data: any) {
-  try { sessionStorage.setItem(`fsd:${path}/${id}`, JSON.stringify({ at: Date.now(), exists, data })); } catch {}
-}
-
 export function onSnapshot(refOrQuery: any, ...args: any[]): Unsubscribe {
   let onNext: any, onError: any;
   if (typeof args[0] === 'function') { onNext = args[0]; onError = args[1]; }
@@ -249,57 +174,30 @@ export function onSnapshot(refOrQuery: any, ...args: any[]): Unsubscribe {
 
   const isDoc = refOrQuery.__type === 'doc';
   const path = refOrQuery.path;
-  let stopped = false;
-  let dirty = false;
-  let timer: any = null;
 
   const fetchAndEmit = async () => {
-    if (stopped) return;
-    try {
-      const snap: any = isDoc ? await getDoc(refOrQuery) : await getDocs(refOrQuery);
-      if (stopped) return;
-      if (isDoc) docCacheSet(path, refOrQuery.id, snap.exists(), snap.data());
-      onNext(snap);
-    } catch (e) { if (!stopped) onError?.(e); }
+    try { onNext(isDoc ? await getDoc(refOrQuery) : await getDocs(refOrQuery)); }
+    catch (e) { onError?.(e); }
   };
+  fetchAndEmit();
 
-  // Lần đầu: doc cấu hình còn mới trong cache thì dùng luôn, khỏi gọi mạng
-  const cached = isDoc ? docCacheGet(path, refOrQuery.id) : null;
-  if (cached) {
-    try {
-      onNext({ id: refOrQuery.id, ref: refOrQuery, exists: () => cached.exists, data: () => (cached.exists ? cached.data : undefined) });
-    } catch (e) { onError?.(e); }
-  } else {
-    fetchAndEmit();
+  let channel: any = null;
+  try {
+    channel = supabase
+      // Tên kênh LUÔN phải là duy nhất cho mỗi lần gọi onSnapshot — nếu 2 nơi trong code
+      // cùng theo dõi 1 document/collection mà đặt tên kênh giống hệt nhau, Supabase sẽ báo lỗi
+      // "cannot add postgres_changes callbacks... after subscribe()" ở lần đăng ký thứ 2.
+      .channel(`fs_${path}_${isDoc ? refOrQuery.id : 'q'}_${Date.now()}_${Math.random().toString(36).slice(2)}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'firestore_docs', filter: `collection_path=eq.${path}` },
+        () => { fetchAndEmit(); })
+      .subscribe();
+  } catch (e) {
+    // Không để lỗi realtime làm crash cả app — chỉ báo qua onError, dữ liệu vẫn có nhờ fetchAndEmit() ở trên
+    console.error('[firestore-compat] onSnapshot channel error:', e);
+    onError?.(e);
   }
 
-  const schedule = () => {
-    if (typeof document !== 'undefined' && document.hidden) { dirty = true; return; }
-    clearTimeout(timer);
-    timer = setTimeout(fetchAndEmit, DEBOUNCE_MS);
-  };
-
-  const handler = (payload: any) => {
-    if (isDoc) {
-      const did = payload?.new?.doc_id ?? payload?.old?.doc_id;
-      if (did && did !== refOrQuery.id) return; // thay đổi của doc khác → bỏ qua
-    }
-    schedule();
-  };
-
-  const onVisible = () => {
-    if (!document.hidden && dirty) { dirty = false; schedule(); }
-  };
-  try { document.addEventListener('visibilitychange', onVisible); } catch {}
-
-  getHub(path).subs.add(handler);
-
-  return () => {
-    stopped = true;
-    clearTimeout(timer);
-    try { document.removeEventListener('visibilitychange', onVisible); } catch {}
-    releaseHub(path, handler);
-  };
+  return () => { if (channel) supabase.removeChannel(channel); };
 }
 
 // ── Timestamp tối giản, tương thích .toDate()/.toMillis() ──

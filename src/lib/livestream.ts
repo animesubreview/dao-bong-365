@@ -1,6 +1,6 @@
 // ─── Livestream Service ────────────────────────────────────────────────────────
 // Quản lý cấu hình phát trực tiếp (bật/tắt, link nhúng) + chat realtime kèm theo.
-import { collection, doc, getDoc, getDocs, query, orderBy, limit, serverTimestamp, Timestamp, touchDoc } from './firestore-compat';
+import { collection, doc, getDoc, getDocs, query, orderBy, limit, serverTimestamp, Timestamp } from './firestore-compat';
 import { db } from './firebase';
 import { addDoc, deleteDoc, setDoc, onSnapshot } from './firestoreGuard';
 
@@ -200,8 +200,8 @@ export async function removeRegistration(uid: string): Promise<void> {
 }
 
 // ── Số người đang xem phòng chiếu (presence realtime, TTL 2 phút) ────────────
-const VIEWER_PING_INTERVAL = 90_000;   // trước: 30s
-const VIEWER_OFFLINE_TTL = 240_000;    // trước: 2 phút
+const VIEWER_PING_INTERVAL = 30_000;
+const VIEWER_OFFLINE_TTL = 120_000;
 let _viewerTimer: ReturnType<typeof setInterval> | null = null;
 
 /** Gọi khi vào trang xem — bắt đầu báo hiệu "đang xem", trả về hàm dọn dẹp khi rời trang */
@@ -209,8 +209,7 @@ export function startRoomPresence(uid: string): () => void {
   const ref = doc(db, COL, DOC_ID, 'viewers', uid || `guest_${Math.random().toString(36).slice(2)}`);
 
   const ping = () => {
-    if (typeof document !== 'undefined' && document.hidden) return;
-    touchDoc(ref, { lastSeen: serverTimestamp() }).catch(() => {});
+    setDoc(ref, { lastSeen: serverTimestamp() }, { merge: true }).catch(() => {});
   };
   ping();
   _viewerTimer = setInterval(ping, VIEWER_PING_INTERVAL);
@@ -233,9 +232,8 @@ export function subscribeRoomViewerCount(cb: (count: number) => void): () => voi
     const now = Date.now();
     let count = 0;
     snap.forEach(d => {
-      const lastSeen: any = d.data().lastSeen;
-      const ms = typeof lastSeen === 'number' ? lastSeen : lastSeen?.toMillis?.();
-      if (ms && now - ms <= VIEWER_OFFLINE_TTL) count++;
+      const lastSeen: Timestamp | undefined = d.data().lastSeen;
+      if (lastSeen && now - lastSeen.toMillis() <= VIEWER_OFFLINE_TTL) count++;
     });
     cb(count);
   }, () => cb(0));

@@ -374,6 +374,8 @@ export default function WatchRoomPage() {
               </div>
             ))}
           </div>
+            ))}
+          </div>
 
           <button onClick={handleCopyLink}
             className={cn(

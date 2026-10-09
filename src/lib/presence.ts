@@ -2,18 +2,14 @@ import { db } from './firebase';
 // Presence là ping nền, không quan trọng — lỗi tự bỏ qua (xem các .catch bên dưới),
 // nên KHÔNG dùng bản setDoc/onSnapshot có báo banner lỗi (firestoreGuard), tránh làm
 // phiền admin mỗi khi 1 lượt ping của người xem nào đó bị rớt mạng tạm thời.
-import { doc, collection, serverTimestamp, touchDoc, deleteDoc, onSnapshot } from './firestore-compat';
+import { doc, collection, serverTimestamp, Timestamp, setDoc, deleteDoc, onSnapshot } from './firestore-compat';
 
 // TTL: nếu user không ping trong 3 phút → coi là offline.
 // Tăng PING_INTERVAL từ 30s lên 90s để giảm 2/3 số lượt ghi Firestore từ mỗi khách xem
 // (mỗi khách = 1 lượt ghi mỗi chu kỳ, nhân với số khách đang online cùng lúc rất dễ
 // chạm giới hạn 20.000 lượt ghi/ngày của gói miễn phí).
-// Giảm egress/log Supabase: ping 3 phút/lần (trước 90s), TTL 7 phút, chỉ ping khi tab đang hiện,
-// và ping bằng 1 request upsert duy nhất (trước đây = 1 lượt đọc + 1 lượt ghi).
-const PING_INTERVAL = 180_000; // 3 phút
-const OFFLINE_TTL = 420_000;   // 7 phút
-const MIN_GAP = 120_000;       // không ping dày hơn 2 phút dù tab ẩn/hiện liên tục
-let _lastPing = 0;
+const PING_INTERVAL = 90_000; // 90s
+const OFFLINE_TTL = 180_000;  // 3 phút
 
 let _sessionId: string | null = null;
 let _pingTimer: ReturnType<typeof setInterval> | null = null;
@@ -35,11 +31,7 @@ export function startPresence() {
   const ref = doc(db, 'presence', sessionId);
 
   const ping = () => {
-    if (document.hidden) return;
-    const now = Date.now();
-    if (now - _lastPing < MIN_GAP) return;
-    _lastPing = now;
-    touchDoc(ref, { lastSeen: serverTimestamp(), ua: navigator.userAgent.slice(0, 80) })
+    setDoc(ref, { lastSeen: serverTimestamp(), ua: navigator.userAgent.slice(0, 80) }, { merge: true })
       .catch(() => {/* ignore network errors */});
   };
 
@@ -52,9 +44,12 @@ export function startPresence() {
   };
 
   window.addEventListener('beforeunload', cleanup);
-  // Không xóa/ghi lại mỗi lần ẩn–hiện tab nữa (mỗi lần là 1 request); hết hạn tự tính offline theo TTL.
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') ping();
+    if (document.visibilityState === 'hidden') {
+      deleteDoc(ref).catch(() => {});
+    } else {
+      ping();
+    }
   });
 
   return cleanup;
@@ -84,9 +79,9 @@ export function subscribeOnlineUsers(callback: (stats: PresenceStats) => void): 
 
     snapshot.forEach(d => {
       const data = d.data();
-      const lastSeen: any = data.lastSeen;
+      const lastSeen: Timestamp | undefined = data.lastSeen;
       if (!lastSeen) return;
-      const ms = typeof lastSeen === 'number' ? lastSeen : lastSeen.toMillis();
+      const ms = lastSeen.toMillis();
       if (now - ms > OFFLINE_TTL) return; // quá cũ → skip
       total++;
       const device = detectDevice(data.ua || '');
