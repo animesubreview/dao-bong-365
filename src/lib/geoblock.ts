@@ -65,11 +65,11 @@ export async function getGeoblockEnabled(): Promise<boolean> {
     }
   } catch {}
 
-  // Fetch Firestore
+  // Fetch Firestore/Supabase — tối đa 3 giây, quá hạn thì dùng giá trị mặc định
   try {
     const { getDoc } = await import('./firestore-compat');
-    const snap = await getDoc(doc(db, 'config', 'geoblock'));
-    if (snap.exists()) {
+    const snap: any = await withTimeout(getDoc(doc(db, 'config', 'geoblock')) as Promise<any>, 3000, null);
+    if (snap && snap.exists()) {
       const data = { ...DEFAULT_GEOBLOCK, ...snap.data() } as GeoblockConfig;
       try { localStorage.setItem('geoblock_config', JSON.stringify(data)); } catch {}
       return data.enabled;
@@ -78,10 +78,27 @@ export async function getGeoblockEnabled(): Promise<boolean> {
     console.warn('getGeoblockEnabled error:', err);
   }
 
+  // Có cache cũ (quá 5 phút) thì vẫn ưu tiên dùng khi không lấy được bản mới
+  try {
+    const v = localStorage.getItem('geoblock_config');
+    if (v) return !!(JSON.parse(v) as GeoblockConfig).enabled;
+  } catch {}
+
   return DEFAULT_GEOBLOCK.enabled;
 }
 
-// ── Các hàm detect IP (giữ nguyên) ───────────────────────────────────────────
+// Bọc 1 promise với timeout — không bao giờ treo vô hạn (Supabase bị chặn/pause/mạng yếu)
+function withTimeout<T>(p: Promise<T>, ms: number, fallback: T): Promise<T> {
+  return new Promise<T>(function(resolve) {
+    const t = setTimeout(function() { resolve(fallback); }, ms);
+    p.then(
+      function(v) { clearTimeout(t); resolve(v); },
+      function() { clearTimeout(t); resolve(fallback); }
+    );
+  });
+}
+
+// ── Các hàm detect IP ───────────────────────────────────────────
 function fetchTimeout(url: string, ms: number): Promise<Response> {
   const ctrl = new AbortController();
   const timer = setTimeout(function() { ctrl.abort(); }, ms);
@@ -92,20 +109,20 @@ function fetchTimeout(url: string, ms: number): Promise<Response> {
 }
 
 async function checkWithIpApi(): Promise<string> {
-  const res = await fetchTimeout('https://ipapi.co/country/', 5000);
+  const res = await fetchTimeout('https://ipapi.co/country/', 3000);
   if (!res.ok) throw new Error('fail');
   return (await res.text()).trim().toUpperCase();
 }
 
 async function checkWithIpApiFallback(): Promise<string> {
-  const res = await fetchTimeout('https://ip-api.com/json/?fields=countryCode', 5000);
+  const res = await fetchTimeout('https://ip-api.com/json/?fields=countryCode', 3000);
   if (!res.ok) throw new Error('fail');
   const j = await res.json();
   return String(j.countryCode || '').toUpperCase();
 }
 
 async function checkWithCountryIs(): Promise<string> {
-  const res = await fetchTimeout('https://api.country.is/', 5000);
+  const res = await fetchTimeout('https://api.country.is/', 3000);
   if (!res.ok) throw new Error('fail');
   const j = await res.json();
   return String(j.country || '').toUpperCase();
@@ -130,11 +147,11 @@ export async function getGeoResult(): Promise<GeoResult> {
     if (cached === 'vn' || cached === 'foreign') return cached;
   } catch (_) { /* TV có thể block sessionStorage */ }
 
-  // Timeout tổng 12 giây, sau đó cho vào luôn
+  // Timeout tổng 5 giây, sau đó cho vào luôn
   const result: 'vn' | 'foreign' | 'error' = await Promise.race([
     detectCountry(),
     new Promise<'error'>(function(resolve) {
-      setTimeout(function() { resolve('error'); }, 12000);
+      setTimeout(function() { resolve('error'); }, 5000);
     }),
   ]);
 

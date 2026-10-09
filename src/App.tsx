@@ -124,14 +124,20 @@ export default function App() {
 
   // Kiểm tra IP khi app khởi động — chỉ chặn nếu admin bật tính năng
   useEffect(() => {
-    getGeoblockEnabled().then(enabled => {
-      setGeoblockEnabled(enabled);
-      if (enabled) {
-        getGeoResult().then(setGeoResult);
-      } else {
+    let done = false;
+    // Lưới an toàn: sau 6s mà chưa có kết quả thì cho qua (fail-open)
+    const safety = setTimeout(() => { if (!done) setGeoResult(r => (r === 'loading' ? 'error' : r)); }, 6000);
+    getGeoblockEnabled()
+      .then(enabled => {
+        setGeoblockEnabled(enabled);
+        if (enabled) {
+          return getGeoResult().then(r => { done = true; setGeoResult(r); });
+        }
+        done = true;
         setGeoResult('vn'); // Bỏ qua check IP nếu tính năng đã tắt
-      }
-    });
+      })
+      .catch(() => { done = true; setGeoResult('error'); });
+    return () => clearTimeout(safety);
   }, []);
 
   // Theo doi presence realtime
@@ -144,24 +150,9 @@ export default function App() {
     return <LoadingScreen fadeOut={fadeOut} />;
   }
 
-  // Vẫn đang kiểm tra IP → hiện spinner nhỏ, không block
-  if (geoResult === 'loading') {
-    return (
-      <div style={{
-        position: 'fixed', top: 0, right: 0, bottom: 0, left: 0, backgroundColor: '#0a0a0f',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-      }}>
-        <div style={{
-          width: 40, height: 40,
-          border: '3px solid rgba(34,197,94,0.2)',
-          borderTop: '3px solid #22c55e',
-          borderRadius: '50%',
-          animation: 'spin 0.9s linear infinite',
-        }} />
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-      </div>
-    );
-  }
+  // Đang kiểm tra IP → KHÔNG chặn giao diện, cho vào trang luôn.
+  // Nếu sau đó xác định là IP nước ngoài thì mới chuyển sang trang chặn.
+  // (Trước đây spinner ở đây làm trang xoay mãi khi Supabase/API IP chậm hoặc bị chặn.)
 
   // IP nước ngoài → chặn hoàn toàn
   // geoResult === 'error' → cho qua, tránh chặn nhầm khi API lỗi
