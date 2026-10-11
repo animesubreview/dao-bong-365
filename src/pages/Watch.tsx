@@ -2,14 +2,16 @@ import { useSEO } from '../hooks/useSEO';
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Play, ChevronRight, ChevronLeft, Heart, SkipForward, List, Server, BookmarkPlus, Image as ImageIcon, Users, Copy, Check, X, Loader2, ArrowRightCircle } from 'lucide-react';
-import { movieApi, getNguonCDetail, mergeNguonCEpisodes, nguonCToMovie, getOPhimDetail, mergeOPhimEpisodes, getXinkDetail, mergeXinkEpisodes, dedupeEpisodes } from '../services/api';
+import { movieApi, getNguonCDetail, mergeNguonCEpisodes, nguonCToMovie, getOPhimDetail, mergeOPhimEpisodes, getXinkDetail, mergeXinkEpisodes, getExtraServers, mergeExtraEpisodes, dedupeEpisodes } from '../services/api';
 import { Movie, Episode } from '../types';
 import { cn, usePageTitle, withTimeout } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import CommentSection from '../components/CommentSection';
 import MovieCard from '../components/MovieCard';
 import DaoPhimPlayer from '../components/DaoPhimPlayer';
-import DiscordBanner from '../components/DiscordBanner';
+import { doc } from '../lib/firestore-compat';
+import { db } from '../lib/firebase';
+import { setDoc } from '../lib/firestoreGuard';
 import AdBanner from '../components/AdBanner';
 import { getMovieOverride, mergeOverride, mergeCustomServers } from '../lib/movieOverrides';
 import { createWatchRoom } from '../lib/watchRoom';
@@ -29,6 +31,8 @@ export default function Watch() {
   const [activeServerIdx, setActiveServerIdx] = useState(0);
   const [showThumbs, setShowThumbs] = useState(false);
   const [autoNext, setAutoNext] = useState(true);
+  const [theater, setTheater] = useState(false);
+  const [reported, setReported] = useState(false);
   const navigate = useNavigate();
 
   // ── SEO cho trang xem phim ─────────────────────────────────────
@@ -117,7 +121,7 @@ export default function Watch() {
     const fetchData = async () => {
       if (!slug) return;
       try {
-        const [res, override, nguonC, ophim, xink] = await Promise.all([
+        const [res, override, nguonC, ophim, xink, extra] = await Promise.all([
           movieApi.getMovieDetail(slug).catch((err) => { console.warn('[KKPhim] lỗi lấy chi tiết phim:', err); return { status: false, movie: null, episodes: [] } as any; }),
           getMovieOverride(slug).catch((err) => { console.warn('[Override] lỗi:', err); return null; }),
           getNguonCDetail(slug).catch((err) => { console.warn('[NguonC] lỗi lấy chi tiết phim:', err); return null; }),
@@ -125,6 +129,7 @@ export default function Watch() {
           // chậm/die thì bỏ qua, không kéo chậm cả trang xem phim
           withTimeout(getOPhimDetail(slug).catch((err) => { console.warn('[OPhim] lỗi lấy chi tiết phim:', err); return null; }), 6000, null),
           withTimeout(getXinkDetail(slug), 6000, null),
+          withTimeout(getExtraServers(slug), 6000, [] as Episode[]),
         ]);
         // Nếu KKPhim không có phim này nhưng NguonC có → dùng NguonC làm nguồn chính
         let movieData = res.movie;
@@ -140,7 +145,7 @@ export default function Watch() {
         setMovie(mergeOverride(movieData, override));
 
         // Merge NguonC: phim đã có tập → chỉ thêm server NguonC; chưa có → dùng hẳn NguonC
-        const mergedEpisodes = mergeCustomServers(dedupeEpisodes(mergeXinkEpisodes(mergeOPhimEpisodes(baseEpisodes, ophim), xink)), override);
+        const mergedEpisodes = mergeCustomServers(dedupeEpisodes(mergeExtraEpisodes(mergeXinkEpisodes(mergeOPhimEpisodes(baseEpisodes, ophim), xink), extra)), override);
         setEpisodes(mergedEpisodes);
 
         let ep = null;
@@ -316,7 +321,8 @@ export default function Watch() {
       <div className="xl:max-w-[1500px] xl:mx-auto xl:px-8 xl:pt-4 xl:grid xl:grid-cols-[1fr_380px] xl:gap-6 xl:items-start">
 
       {/* ── Video Player ── iframe + logo overlay ── */}
-      <div className="xl:col-start-1 xl:rounded-2xl xl:overflow-hidden xl:ring-1 xl:ring-white/15 xl:shadow-2xl xl:shadow-black/60">
+      {theater && <div className="fixed inset-0 bg-black/90 z-30" onClick={() => setTheater(false)} />}
+      <div className={cn('xl:col-start-1 xl:rounded-2xl xl:overflow-hidden xl:ring-1 xl:ring-white/15 xl:shadow-2xl xl:shadow-black/60', theater && 'relative z-40')}>
       <DaoPhimPlayer
         src={currentEpisode.link_embed}
         m3u8={currentEpisode.link_m3u8}
@@ -330,11 +336,6 @@ export default function Watch() {
         }}
         onNext={nextEpisode ? () => navigate(`/watch/${movie.slug}/${nextEpisode.slug}?server=${encodeURIComponent(nextEpisode.server_name)}`) : undefined}
       />
-      </div>
-
-      {/* Mời vào nhóm Discord */}
-      <div className="max-w-2xl xl:max-w-none mx-auto xl:mx-0 px-3 xl:px-0 pt-3">
-        <DiscordBanner />
       </div>
 
       {/* ── Content area ── */}
@@ -372,53 +373,40 @@ export default function Watch() {
             </div>
           </div>
 
-          {/* Action bar */}
-          <div className="flex items-center gap-2 border-t border-white/5 pt-3 overflow-x-auto scrollbar-hide">
-            <button
-              onClick={toggleFavorite}
-              className={cn('flex flex-col items-center gap-1 px-3 py-1.5 rounded-lg min-w-[56px] transition-colors',
-                isFavorite ? 'text-red-400' : 'text-slate-400 hover:text-white')}
-            >
-              <Heart size={20} className={cn(isFavorite && 'fill-current')} />
-              <span className="text-[10px] font-semibold">Yêu thích</span>
-            </button>
-
-            <button
-              onClick={() => setAutoNext(v => !v)}
-              className={cn('flex flex-col items-center gap-1 px-3 py-1.5 rounded-lg min-w-[56px] transition-colors',
-                autoNext ? 'text-green-400' : 'text-slate-400 hover:text-white')}
-            >
-              <SkipForward size={20} />
-              <div className="flex items-center gap-1">
-                <span className="text-[10px] font-semibold">Chuyển tập</span>
-                <span className={cn('text-[9px] font-black px-1 rounded', autoNext ? 'bg-green-500 text-white' : 'bg-slate-700 text-slate-400')}>
-                  {autoNext ? 'ON' : 'OFF'}
-                </span>
+          {/* Thanh công cụ: trái = Yêu thích/Thêm vào, phải = chuyển tập/rạp phim/báo lỗi */}
+          {(() => {
+            const btn = 'flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors';
+            const tag = (on: boolean) => <span className={cn('text-[9px] font-black px-1 rounded', on ? 'bg-green-500 text-white' : 'bg-slate-700 text-slate-400')}>{on ? 'ON' : 'OFF'}</span>;
+            const reportError = async () => {
+              if (reported) return;
+              setReported(true);
+              try { await setDoc(doc(db, 'error_reports', `${Date.now()}`), { slug: movie.slug, episode: episodeSlug || '', server: serverName || '', at: Date.now() }); } catch {}
+            };
+            return (
+              <div className="flex items-center justify-between gap-2 border-t border-white/5 pt-3 overflow-x-auto scrollbar-hide">
+                <div className="flex items-center gap-1">
+                  <button onClick={toggleFavorite} className={cn(btn, isFavorite ? 'text-red-400' : 'text-slate-400 hover:text-white')}>
+                    <Heart size={16} className={cn(isFavorite && 'fill-current')} /> Yêu thích
+                  </button>
+                  <button onClick={() => setShowRoomModal(true)} className={cn(btn, 'text-slate-400 hover:text-white')}>
+                    <Users size={16} /> Xem chung
+                  </button>
+                </div>
+                <div className="flex items-center gap-1">
+                  <button onClick={() => setAutoNext(v => !v)} className={cn(btn, autoNext ? 'text-green-400' : 'text-slate-400 hover:text-white')}>
+                    <SkipForward size={16} /> Tự động chuyển tập {tag(autoNext)}
+                  </button>
+                  <button onClick={() => setTheater(v => !v)} className={cn(btn, theater ? 'text-green-400' : 'text-slate-400 hover:text-white')}>
+                    <ImageIcon size={16} /> Rạp phim {tag(theater)}
+                  </button>
+                  <button onClick={reportError} className={cn(btn, reported ? 'text-green-400' : 'text-slate-400 hover:text-white')}>
+                    <X size={16} className={cn(reported && 'hidden')} />{reported && <Check size={16} />} {reported ? 'Đã gửi' : 'Báo lỗi'}
+                  </button>
+                </div>
               </div>
-            </button>
+            );
+          })()}
 
-            {nextEpisode && (
-              <Link
-                to={`/watch/${movie.slug}/${nextEpisode.slug}?server=${encodeURIComponent(nextEpisode.server_name)}`}
-                className="flex flex-col items-center gap-1 px-3 py-1.5 rounded-lg min-w-[56px] text-slate-400 hover:text-white transition-colors"
-              >
-                <Play size={20} />
-                <span className="text-[10px] font-semibold">Bỏ qua</span>
-              </Link>
-            )}
-
-            {/* Xem chung button */}
-            <button
-              onClick={() => setShowRoomModal(true)}
-              className="flex flex-col items-center gap-1 px-3 py-1.5 rounded-lg min-w-[56px] text-slate-400 hover:text-green-400 transition-colors"
-            >
-              <Users size={20} />
-              <span className="text-[10px] font-semibold">Xem chung</span>
-            </button>
-          </div>
-
-          {/* Underline nav indicator */}
-          <div className="h-[2px] bg-green-500 rounded-full mt-2 w-16" />
         </motion.div>
 
         {/* ── Nhắc đăng nhập để lưu lịch sử/tiến độ xem (chỉ hiện khi chưa đăng nhập) ── */}

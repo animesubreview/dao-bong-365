@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -7,30 +7,30 @@ import NotificationDisplay from './components/NotificationDisplay';
 import Home from './pages/Home';
 import MovieDetail from './pages/MovieDetail';
 import Watch from './pages/Watch';
-import PlayerStudio from './pages/PlayerStudio';
-import Search from './pages/Search';
-import History from './pages/History';
-import Favorites from './pages/Favorites';
-import MovieList from './pages/MovieList';
-import Admin from './pages/Admin';
-import WatchManual from './pages/WatchManual';
-import ManualMovieDetail from './pages/ManualMovieDetail';
-import Auth from './pages/Auth';
-import Profile from './pages/Profile';
-import Account from './pages/Account';
-import SchedulePage from './pages/Schedule';
-import WatchRoomPage from './pages/WatchRoom';
-import XemChung from './pages/XemChung';
-import TruyenTranh from './pages/TruyenTranh';
-import ChatPage from './pages/Chat';
-import NapThe from './pages/NapThe';
-import MuaVip from './pages/MuaVip';
-import Notifications from './pages/Notifications';
-import LiveStreamPage from './pages/LiveStream';
-import TVTrucTuyen from './pages/TVTrucTuyen';
-import NotFound from './pages/NotFound';
-import HtmlSitemap from './pages/HtmlSitemap';
-import InfoPage from './pages/InfoPage';
+const PlayerStudio = lazy(() => import('./pages/PlayerStudio'));
+const Search = lazy(() => import('./pages/Search'));
+const History = lazy(() => import('./pages/History'));
+const Favorites = lazy(() => import('./pages/Favorites'));
+const MovieList = lazy(() => import('./pages/MovieList'));
+const Admin = lazy(() => import('./pages/Admin'));
+const WatchManual = lazy(() => import('./pages/WatchManual'));
+const ManualMovieDetail = lazy(() => import('./pages/ManualMovieDetail'));
+const Auth = lazy(() => import('./pages/Auth'));
+const Profile = lazy(() => import('./pages/Profile'));
+const Account = lazy(() => import('./pages/Account'));
+const SchedulePage = lazy(() => import('./pages/Schedule'));
+const WatchRoomPage = lazy(() => import('./pages/WatchRoom'));
+const XemChung = lazy(() => import('./pages/XemChung'));
+const TruyenTranh = lazy(() => import('./pages/TruyenTranh'));
+const ChatPage = lazy(() => import('./pages/Chat'));
+const NapThe = lazy(() => import('./pages/NapThe'));
+const MuaVip = lazy(() => import('./pages/MuaVip'));
+const Notifications = lazy(() => import('./pages/Notifications'));
+const LiveStreamPage = lazy(() => import('./pages/LiveStream'));
+const TVTrucTuyen = lazy(() => import('./pages/TVTrucTuyen'));
+const NotFound = lazy(() => import('./pages/NotFound'));
+const HtmlSitemap = lazy(() => import('./pages/HtmlSitemap'));
+const InfoPage = lazy(() => import('./pages/InfoPage'));
 import MaintenancePage from './components/MaintenancePage';
 import GeoBlockPage from './components/GeoBlockPage';
 import TVOptimizer from './components/TVOptimizer';
@@ -189,9 +189,11 @@ function AppInner({ maintenance, maintenanceLoaded }: { maintenance: Maintenance
   // Header/Footer/MobileBottomNav/quảng cáo của website chính đè lên nữa.
   if (isAdminPage) {
     return (
-      <Routes>
+      <Suspense fallback={<div className="min-h-[60vh]" />}>
+<Routes>
         <Route path="/daophim/admin" element={<Admin />} />
       </Routes>
+</Suspense>
     );
   }
 
@@ -202,7 +204,8 @@ function AppInner({ maintenance, maintenanceLoaded }: { maintenance: Maintenance
         <Header />
         <NotificationDisplay />
         <div className="flex-1 pb-20 md:pb-0" style={{ paddingTop: 'var(--app-header-h, 4rem)' }}>
-          <Routes>
+          <Suspense fallback={<div className="min-h-[60vh]" />}>
+<Routes>
             <Route path="/" element={<Home />} />
             <Route path="/phim/:slug" element={<MovieDetail />} />
             <Route path="/watch/:slug/:episodeSlug" element={<Watch />} />
@@ -233,6 +236,7 @@ function AppInner({ maintenance, maintenanceLoaded }: { maintenance: Maintenance
             <Route path="/info/:type" element={<InfoPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
+</Suspense>
         </div>
         <Footer />
         <MobileBottomNav />

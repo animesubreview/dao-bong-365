@@ -432,6 +432,64 @@ export function mergeXinkEpisodes(mainEpisodes: Episode[], xink: XinkMovieDetail
   return [...mainEpisodes, ...converted.filter(s => !existing.has(s.server_name))];
 }
 
+// ─── VSMOV + VODPHIM (cùng chuẩn KKPhim: /phim/{slug} → { movie, episodes }) ─────────────
+// ⚠️ Schema của 2 nguồn này chưa xác minh được từ môi trường dev — hàm "thử rồi bỏ": sai schema/lỗi mạng
+// thì coi như không có server, KHÔNG ảnh hưởng nguồn chính. Nếu VODPHIM dùng domain/đường dẫn API khác,
+// chỉ cần sửa VODPHIM_BASE bên dưới.
+const VODPHIM_BASE = 'https://vodphim.com/api';
+
+const EXTRA_SOURCES: { base: string; label: string; prefix: string }[] = [
+  { base: VSMOV_BASE, label: 'VSMOV', prefix: 'vs' },
+  { base: VODPHIM_BASE, label: 'VODPHIM.COM', prefix: 'vp' },
+];
+
+async function fetchKKStyleServers(base: string, slug: string): Promise<Episode[]> {
+  try {
+    const res = await fetch(`${base}/phim/${slug}`);
+    if (!res.ok) return [];
+    const data = await res.json();
+    const raw: any[] = data?.episodes || data?.data?.item?.episodes || [];
+    return raw
+      .map((s: any) => ({
+        server_name: s.server_name || 'Server',
+        server_data: (s.server_data || [])
+          .map((ep: any) => ({
+            name: ep.name || ep.filename || '',
+            slug: ep.slug || ep.name || '',
+            filename: ep.filename || ep.name || '',
+            link_embed: ep.link_embed || '',
+            link_m3u8: ep.link_m3u8 || '',
+          }))
+          .filter((ep: any) => ep.name && (ep.link_embed || ep.link_m3u8)),
+      }))
+      .filter((s: any) => s.server_data.length > 0);
+  } catch {
+    return [];
+  }
+}
+
+/** Lấy server tập phim từ VSMOV + VODPHIM.COM, gắn nhãn "VSMOV - ..." / "VODPHIM.COM - ...". */
+export async function getExtraServers(slug: string): Promise<Episode[]> {
+  const results = await Promise.all(EXTRA_SOURCES.map(async src => {
+    const servers = await fetchKKStyleServers(src.base, slug);
+    return servers.map((s, idx) => ({
+      server_name: `${src.label} - ${s.server_name}`,
+      server_data: s.server_data.map((ep, epIdx) => ({
+        ...ep,
+        slug: `${src.prefix}-s${idx}-${ep.slug || ep.name.toLowerCase().replace(/\s+/g, '-') || `tap-${epIdx + 1}`}`,
+      })),
+    }));
+  }));
+  return results.flat();
+}
+
+/** Nối các server phụ vào cuối danh sách (bỏ server trùng tên). */
+export function mergeExtraEpisodes(mainEpisodes: Episode[], extra: Episode[]): Episode[] {
+  if (!extra?.length) return mainEpisodes;
+  const existing = new Set(mainEpisodes.map(s => s.server_name));
+  return [...mainEpisodes, ...extra.filter(s => !existing.has(s.server_name))];
+}
+
 /**
  * Gộp server TRÙNG NHAU giữa các nguồn: server đứng sau bị bỏ nếu ≥ 80% link phát của nó
  * đã có trong các server đứng trước (cùng một luồng phim lấy từ nhiều nguồn). Thứ tự được giữ nguyên,
