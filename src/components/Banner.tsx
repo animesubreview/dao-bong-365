@@ -183,7 +183,7 @@ export default function Banner({ movies }: BannerProps) {
 
   // ── Giao diện PC: nền ngang toàn chiều rộng + thông tin bên trái + dải ảnh thu nhỏ bên phải ──
   const desktopHero = (
-    <div className="hidden md:block relative w-full overflow-hidden bg-slate-950" style={{ height: 'clamp(380px, min(42vw, 80vh), 680px)' }}>
+    <div className="hidden md:block relative w-full overflow-hidden bg-slate-950" style={{ aspectRatio: '16 / 9' }}>
       {items.map((m, i) => (
         <div key={m._id} className="absolute inset-0 transition-opacity duration-700" style={{ opacity: i === idx ? 1 : 0 }} aria-hidden={i !== idx}>
           <PosterImg
@@ -191,7 +191,7 @@ export default function Banner({ movies }: BannerProps) {
             fallbackSrc={m.thumb_url || m.poster_url}
             movieSlug={m.slug}
             loading={i === idx ? 'eager' : 'lazy'}
-            className="w-full h-full object-cover object-top"
+            className="w-full h-full object-cover object-center"
           />
         </div>
       ))}
