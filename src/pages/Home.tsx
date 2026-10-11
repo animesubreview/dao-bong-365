@@ -995,9 +995,9 @@ export default function Home() {
     let cancelled = false;
     (async () => {
       try {
-        const r1 = await movieApi.getNewUpdates(1);
+        const [r1, top10] = await Promise.all([movieApi.getNewUpdates(1), movieApi.getTop10KK()]);
         if (cancelled) return;
-        setApiBanner(r1.items.slice(0, 10));
+        setApiBanner(top10.length ? top10 : r1.items.slice(0, 10));
         setNewUpdates(r1.items.slice(0, 30));
       } catch (e) { console.error(e); }
       finally { if (!cancelled) setLoading(false); }
@@ -1022,14 +1022,18 @@ export default function Home() {
           Không cần bù thêm chiều cao header ở đây vì layout chung (App.tsx) đã
           paddingTop = var(--app-header-h) cho toàn bộ nội dung trang rồi — banner
           này đã tự nằm ngay dưới header, chỉ cần chút margin nhỏ cho thoáng. */}
-      <div className="max-w-2xl md:max-w-5xl lg:max-w-[1400px] mx-auto px-4 md:px-6 lg:px-8">
+      <div className="flex flex-col">
+      <div className="md:order-2 max-w-2xl md:max-w-5xl lg:max-w-[1400px] w-full mx-auto px-4 md:px-6 lg:px-8">
         {/* lg:max-w-2xl giới hạn bề ngang banner trên PC để không bị quá to/tràn hết màn hình */}
         <div className="lg:max-w-2xl lg:mx-auto">
           <AdBanner position="top" className="pt-3" />
         </div>
       </div>
 
-      <Banner movies={bannerMovies} />
+      <div className="md:order-1 md:-mt-[var(--app-header-h,72px)]">
+        <Banner movies={bannerMovies} />
+      </div>
+      </div>
 
       <main className="max-w-2xl md:max-w-5xl lg:max-w-[1400px] mx-auto px-4 md:px-6 lg:px-8 mt-6 flex flex-col gap-5">
 

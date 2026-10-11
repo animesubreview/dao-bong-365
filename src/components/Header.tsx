@@ -268,109 +268,68 @@ export default function Header() {
         <AdBanner position="header" />
         {/* ── HEADER BAR ── */}
         <header className="relative bg-transparent backdrop-blur-0 border-b border-transparent transition-all duration-300" id="main-header" style={{ background: 'transparent', backdropFilter: 'none' }}>
-        <div className="max-w-7xl mx-auto px-3 md:px-6 h-16 flex items-center gap-2 md:gap-3">
+        <div className="w-full px-3 md:px-[4.5%] h-[72px] flex items-center gap-2 md:gap-3">
 
           {/* Logo — 1 lần duy nhất */}
           <Link to="/" className="shrink-0"><Logo settings={settings} /></Link>
 
           {/* Desktop nav links */}
-          <nav ref={navMenuRef} className="hidden lg:flex items-center gap-0.5 ml-2 shrink-0">
+          <nav ref={navMenuRef} className="hidden lg:flex items-center gap-1 ml-8 shrink-0">
             {[
-              { to: '/type/phim-le', label: 'Phim Lẻ' },
+              { to: '/', label: 'Trang chủ' },
               { to: '/type/phim-bo', label: 'Phim Bộ' },
-              { to: '/type/song-ngu', label: 'Song Ngữ' },
+              { to: '/type/phim-le', label: 'Phim Lẻ' },
+              { to: '/type/hoat-hinh', label: 'Hoạt Hình' },
+              { to: '/type/phim-chieu-rap', label: 'Chiếu Rạp' },
+              { to: '/tv-truc-tuyen', label: 'TV Trực Tuyến' },
             ].map(l => (
               <Link key={l.to} to={l.to}
-                className={cn('px-3 py-1.5 rounded-lg text-sm font-semibold transition-all whitespace-nowrap',
-                  location.pathname === l.to ? 'text-green-400' : 'text-slate-400 hover:text-white')}>
+                className={cn('px-3 py-1.5 text-[15px] font-bold transition-colors whitespace-nowrap drop-shadow-[0_1px_4px_rgba(0,0,0,.7)]',
+                  location.pathname === l.to ? 'text-green-400' : 'text-white/70 hover:text-white')}>
                 {l.label}
               </Link>
             ))}
 
-            {/* Mới — Xem Chung */}
-            <button onClick={openWatchRoomModal}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold text-slate-400 hover:text-white transition-all whitespace-nowrap">
-              <span className="text-[9px] font-black bg-red-500 text-white px-1.5 py-0.5 rounded">Mới</span>
-              Xem Chung
-            </button>
-
-            {/* Thể Loại */}
+            {/* Menu phụ: các mục còn lại (thể loại, quốc gia...) gom vào dấu ⋯ để thanh menu gọn như thiết kế */}
             <div className="relative">
-              <button onClick={() => setOpenNavMenu(v => v === 'genre' ? null : 'genre')}
-                className={cn('flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-semibold transition-all whitespace-nowrap',
-                  openNavMenu === 'genre' ? 'text-white' : 'text-slate-400 hover:text-white')}>
-                Thể Loại <ChevronDown size={13} className={cn('transition-transform', openNavMenu === 'genre' && 'rotate-180')} />
-              </button>
-              {openNavMenu === 'genre' && (
-                <div className="absolute top-full left-0 mt-2 w-[420px] bg-slate-900 border border-slate-700/60 rounded-2xl shadow-2xl z-50 p-3 grid grid-cols-3 gap-1">
-                  {GENRES.map(g => (
-                    <Link key={g} to={`/type/${g}`} onClick={() => setOpenNavMenu(null)}
-                      className="px-2.5 py-1.5 rounded-lg text-xs text-slate-300 hover:bg-slate-800 hover:text-white transition-colors truncate">
-                      {g}
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Quốc Gia */}
-            <div className="relative">
-              <button onClick={() => setOpenNavMenu(v => v === 'country' ? null : 'country')}
-                className={cn('flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-semibold transition-all whitespace-nowrap',
-                  openNavMenu === 'country' ? 'text-white' : 'text-slate-400 hover:text-white')}>
-                Quốc Gia <ChevronDown size={13} className={cn('transition-transform', openNavMenu === 'country' && 'rotate-180')} />
-              </button>
-              {openNavMenu === 'country' && (
-                <div className="absolute top-full left-0 mt-2 w-56 bg-slate-900 border border-slate-700/60 rounded-2xl shadow-2xl z-50 p-3 grid grid-cols-2 gap-1">
-                  {COUNTRIES.map(c => (
-                    <Link key={c.slug} to={`/quoc-gia/${c.slug}`} onClick={() => setOpenNavMenu(null)}
-                      className="px-2.5 py-1.5 rounded-lg text-xs text-slate-300 hover:bg-slate-800 hover:text-white transition-colors truncate">
-                      {c.name}
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Thêm */}
-            <div className="relative">
-              <button onClick={() => setOpenNavMenu(v => v === 'more' ? null : 'more')}
-                className={cn('flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-semibold transition-all whitespace-nowrap',
-                  openNavMenu === 'more' ? 'text-white' : 'text-slate-400 hover:text-white')}>
-                Thêm <ChevronDown size={13} className={cn('transition-transform', openNavMenu === 'more' && 'rotate-180')} />
+              <button onClick={() => setOpenNavMenu(v => v === 'more' ? null : 'more')} aria-label="Xem thêm"
+                className={cn('px-2 py-1.5 transition-colors', openNavMenu === 'more' ? 'text-white' : 'text-white/70 hover:text-white')}>
+                <ChevronDown size={18} className={cn('transition-transform', openNavMenu === 'more' && 'rotate-180')} />
               </button>
               {openNavMenu === 'more' && (
-                <div className="absolute top-full left-0 mt-2 w-48 bg-slate-900 border border-slate-700/60 rounded-2xl shadow-2xl z-50 p-1.5">
-                  {[
-                    { to: '/type/hoat-hinh', label: 'Hoạt Hình' },
-                    { to: '/type/phim-chieu-rap', label: 'Chiếu Rạp' },
-                    { to: '/tv-truc-tuyen', label: 'TV Trực Tuyến' },
-                    { to: '/lich-chieu', label: 'Lịch Chiếu' },
-                    { to: '/truyen-tranh', label: 'Truyện Tranh' },
-                  ].map(l => (
-                    <Link key={l.to} to={l.to} onClick={() => setOpenNavMenu(null)}
-                      className="block px-3 py-2 rounded-lg text-xs text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">
-                      {l.label}
-                    </Link>
-                  ))}
+                <div className="absolute top-full left-0 mt-2 w-[440px] bg-slate-900 border border-slate-700/60 rounded-2xl shadow-2xl z-50 p-3 max-h-[70vh] overflow-y-auto">
+                  <div className="flex flex-wrap gap-1 pb-2 mb-2 border-b border-slate-800">
+                    {[
+                      { to: '/type/song-ngu', label: 'Song Ngữ' },
+                      { to: '/lich-chieu', label: 'Lịch Chiếu' },
+                      { to: '/truyen-tranh', label: 'Truyện Tranh' },
+                    ].map(l => (
+                      <Link key={l.to} to={l.to} onClick={() => setOpenNavMenu(null)}
+                        className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">{l.label}</Link>
+                    ))}
+                    <button onClick={() => { setOpenNavMenu(null); openWatchRoomModal(); }}
+                      className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">Xem Chung</button>
+                  </div>
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-wider px-1 mb-1">Thể loại</p>
+                  <div className="grid grid-cols-3 gap-1 mb-3">
+                    {GENRES.map(g => (
+                      <Link key={g} to={`/type/${g}`} onClick={() => setOpenNavMenu(null)}
+                        className="px-2.5 py-1.5 rounded-lg text-xs text-slate-300 hover:bg-slate-800 hover:text-white transition-colors truncate">{g}</Link>
+                    ))}
+                  </div>
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-wider px-1 mb-1">Quốc gia</p>
+                  <div className="grid grid-cols-3 gap-1">
+                    {COUNTRIES.map(c => (
+                      <Link key={c.slug} to={`/quoc-gia/${c.slug}`} onClick={() => setOpenNavMenu(null)}
+                        className="px-2.5 py-1.5 rounded-lg text-xs text-slate-300 hover:bg-slate-800 hover:text-white transition-colors truncate">{c.name}</Link>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
           </nav>
 
           <div className="flex-1" />
-
-          {/* Tải ứng dụng — desktop only */}
-          <a href="/" onClick={e => e.preventDefault()}
-            className="hidden xl:flex items-center gap-2 pr-3 mr-1 border-r border-white/10 shrink-0 cursor-pointer group">
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-slate-950 font-black text-[11px] shrink-0">
-              DP
-            </div>
-            <div className="leading-tight">
-              <p className="text-[10px] text-slate-400 group-hover:text-slate-300">Tải ứng dụng</p>
-              <p className="text-xs font-bold text-white -mt-0.5">DaoPhim</p>
-            </div>
-          </a>
 
           {/* Tìm kiếm — icon riêng cho mobile, mở thẳng trang /search */}
           <Link

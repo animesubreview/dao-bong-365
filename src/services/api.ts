@@ -710,6 +710,26 @@ export const movieApi = {
   },
 
   /**
+   * Top 10 phim cho banner trang chủ — lấy THẲNG từ KKPhim (BASE_URL), không đua với nguồn phụ.
+   * KKPhim không có endpoint "xem nhiều nhất", nên lấy phim mới cập nhật gần nhất, ưu tiên phim
+   * có ảnh ngang và năm mới, bỏ trùng; thiếu thì bù bằng các phim còn lại. Lỗi → trả mảng rỗng.
+   */
+  getTop10KK: async (): Promise<Movie[]> => {
+    try {
+      const res = await fetch(`${BASE_URL}/danh-sach/phim-moi-cap-nhat?page=1`);
+      if (!res.ok) return [];
+      const data = await res.json();
+      const items: Movie[] = (data?.items || data?.data?.items || []).filter((m: Movie) => m?.slug && (m.thumb_url || m.poster_url));
+      const minYear = new Date().getFullYear() - 1;
+      const fresh = items.filter(m => Number(m.year) >= minYear);
+      const rest = items.filter(m => !(Number(m.year) >= minYear));
+      return [...fresh, ...rest].slice(0, 10);
+    } catch {
+      return [];
+    }
+  },
+
+  /**
    * Lấy "lịch chiếu" theo từng ngày — dựa trên field modified.time (thời gian
    * KKPhim cập nhật phim/tập mới). Gom nhiều trang phim-moi-cap-nhat lại,
    * nhóm theo ngày dương lịch (yyyy-mm-dd) của modified.time.

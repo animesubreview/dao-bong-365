@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Play, Info, Heart, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Play, Info, Heart } from 'lucide-react';
 import { Movie } from '../types';
 import { movieApi } from '../services/api';
 import { cn } from '../lib/utils';
@@ -91,7 +91,6 @@ export default function Banner({ movies }: BannerProps) {
     if (!c || !b) return;
     c.scrollTo({ left: b.offsetLeft - (c.clientWidth - b.clientWidth) / 2, behavior: 'smooth' });
   }, [idx]);
-  const scrollStrip = (dir: 1 | -1) => stripRef.current?.scrollBy({ left: dir * stripRef.current.clientWidth, behavior: 'smooth' });
 
   const onPointerDown = (e: React.PointerEvent) => {
     const h = stageRef.current?.clientHeight || 360;
@@ -183,7 +182,7 @@ export default function Banner({ movies }: BannerProps) {
 
   // ── Giao diện PC: nền ngang toàn chiều rộng + thông tin bên trái + dải ảnh thu nhỏ bên phải ──
   const desktopHero = (
-    <div className="hidden md:block relative w-full overflow-hidden bg-slate-950" style={{ aspectRatio: '16 / 9' }}>
+    <div className="hidden md:block relative w-full overflow-hidden bg-slate-950" style={{ height: 'clamp(480px, 46vw, 820px)' }}>
       {items.map((m, i) => (
         <div key={m._id} className="absolute inset-0 transition-opacity duration-700" style={{ opacity: i === idx ? 1 : 0 }} aria-hidden={i !== idx}>
           <PosterImg
@@ -196,66 +195,61 @@ export default function Banner({ movies }: BannerProps) {
         </div>
       ))}
       {/* Lớp tối: trái (để đọc chữ) + dưới (hòa vào nền trang) */}
-      <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/15 to-transparent" />
-      <div className="absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-r from-black/55 via-black/10 to-transparent" />
+      <div className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-black/60 to-transparent" />
+      <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
 
       {/* Thông tin phim */}
-      <div className="absolute left-[4%] top-1/2 -translate-y-[52%] w-[min(380px,40%)] lg:w-[min(420px,35%)] text-left" style={{ textShadow: '0 2px 10px rgba(0,0,0,.55)' }}>
-        <h1 className="banner-title text-2xl lg:text-3xl xl:text-4xl text-white leading-[1.1] mb-2 line-clamp-2">
+      <div className="absolute left-[4.5%] bottom-[14%] w-[min(52%,740px)] text-left" style={{ textShadow: '0 2px 12px rgba(0,0,0,.55)' }}>
+        <h1 className="banner-title text-[clamp(30px,3.9vw,60px)] text-white leading-[1.15] mb-3 line-clamp-2">
           {decodeHtml(movie.name)}
         </h1>
         {movie.origin_name && (
-          <p className="text-amber-300 text-xs lg:text-sm font-bold mb-2 line-clamp-1">
+          <p className="text-[var(--primary)] text-[clamp(14px,1.35vw,20px)] font-bold mb-3.5 line-clamp-1">
             {decodeHtml(movie.origin_name)}
           </p>
         )}
-        <div className="flex flex-wrap items-center gap-1.5 mb-2">
+        <div className="flex flex-wrap items-center gap-2 mb-3">
           {imdbBadge}
-          {movie.quality && <span className="text-[11px] font-extrabold bg-amber-300 text-slate-900 px-2 py-0.5 rounded-md">{decodeHtml(movie.quality)}</span>}
-          {movie.year ? <span className="text-[11px] font-semibold border border-white/45 text-white px-2 py-0.5 rounded-md bg-black/20">{movie.year}</span> : null}
-          {movie.time && <span className="text-[11px] font-semibold border border-white/45 text-white px-2 py-0.5 rounded-md bg-black/20">{decodeHtml(movie.time)}</span>}
-          {movie.episode_current && <span className="text-[11px] font-semibold border border-white/45 text-white px-2 py-0.5 rounded-md bg-black/20">{decodeHtml(movie.episode_current)}</span>}
+          {movie.quality && <span className="text-xs font-extrabold bg-teal-400 text-slate-950 px-2.5 py-0.5 rounded-md">{decodeHtml(movie.quality)}</span>}
+          {movie.year ? <span className="text-xs font-semibold border border-white/50 text-white px-2.5 py-0.5 rounded-md bg-black/20">{movie.year}</span> : null}
+          {movie.time && <span className="text-xs font-semibold border border-white/50 text-white px-2.5 py-0.5 rounded-md bg-black/20">{decodeHtml(movie.time)}</span>}
+          {movie.episode_current && <span className="text-xs font-semibold border border-white/50 text-white px-2.5 py-0.5 rounded-md bg-black/20">{decodeHtml(movie.episode_current)}</span>}
         </div>
         {genres.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mb-2">
+          <div className="flex flex-wrap gap-2 mb-3.5">
             {genres.map(g => (
-              <span key={g.id || g.slug} className="text-[11px] font-medium text-slate-100 bg-white/12 backdrop-blur-sm px-2 py-0.5 rounded-md">{decodeHtml(g.name)}</span>
+              <span key={g.id || g.slug} className="text-xs font-semibold text-slate-100 bg-white/15 backdrop-blur-sm px-3 py-1.5 rounded-lg">{decodeHtml(g.name)}</span>
             ))}
           </div>
         )}
-        {synopsis && <p className="text-xs lg:text-[13px] text-white/90 leading-relaxed line-clamp-2 mb-3.5 max-w-[400px]">{synopsis}</p>}
+        {synopsis && <p className="text-[clamp(13px,1.15vw,17px)] text-white/90 leading-relaxed line-clamp-2 mb-5 max-w-[620px]">{synopsis}</p>}
 
         <div className="flex items-center gap-3">
           <Link to={detailPath(movie)} aria-label="Xem phim"
-            className="w-12 h-12 rounded-full bg-[var(--primary)] text-slate-950 flex items-center justify-center shadow-[0_0_34px_-2px_rgba(34,197,94,.75)] hover:scale-105 active:scale-95 transition-transform" style={{ textShadow: 'none' }}>
-            <Play size={20} className="fill-current ml-1" />
+            className="w-14 h-14 rounded-full bg-[var(--primary)] text-slate-950 flex items-center justify-center shadow-[0_0_34px_-2px_rgba(34,197,94,.7)] hover:scale-105 active:scale-95 transition-transform" style={{ textShadow: 'none' }}>
+            <Play size={22} className="fill-current ml-0.5" />
           </Link>
-          <div className="h-11 rounded-full border border-white/15 bg-black/40 backdrop-blur flex items-center overflow-hidden">
-            <button type="button" aria-label="Yêu thích" onClick={() => toggleFavorite(movie)}
-              className="w-12 h-full flex items-center justify-center text-white hover:bg-white/10">
-              <Heart size={18} className={cn('fill-current', isFav && 'text-red-500')} />
-            </button>
-            <span className="w-px h-6 bg-white/15" />
-            <Link to={detailPath(movie)} aria-label="Chi tiết"
-              className="w-12 h-full flex items-center justify-center text-white hover:bg-white/10">
-              <Info size={18} className="fill-current text-white [&_circle]:fill-white [&_path]:stroke-slate-900" />
-            </Link>
-          </div>
+          <button type="button" aria-label="Yêu thích" onClick={() => toggleFavorite(movie)}
+            className="w-11 h-11 rounded-full border border-white/40 bg-black/30 backdrop-blur flex items-center justify-center text-white hover:bg-white/15 transition-colors">
+            <Heart size={18} className={cn(isFav && 'fill-current text-red-500')} />
+          </button>
+          <Link to={detailPath(movie)} aria-label="Chi tiết"
+            className="w-11 h-11 rounded-full border border-white/40 bg-black/30 backdrop-blur flex items-center justify-center text-white hover:bg-white/15 transition-colors">
+            <Info size={18} />
+          </Link>
         </div>
       </div>
 
-      {/* Dải ảnh thu nhỏ — góc phải dưới, hiện 5 phim/lần, kéo hoặc bấm mũi tên để xem tiếp */}
-      <div className="absolute right-[3%] bottom-[4%] lg:bottom-[7%] flex items-center gap-1.5">
-        <button type="button" onClick={() => scrollStrip(-1)} aria-label="Xem phim trước"
-          className="shrink-0 w-7 h-7 rounded-full bg-black/50 border border-white/20 text-white flex items-center justify-center hover:bg-black/70 active:scale-90">
-          <ChevronLeft size={16} />
-        </button>
+      {/* TOP 10 hôm nay — dải ảnh thu nhỏ góc phải dưới */}
+      <div className="absolute right-[3%] bottom-[7%] flex flex-col items-end gap-2">
+        <span className="text-[11px] font-black tracking-wider text-white/70">TOP 10 HÔM NAY</span>
         <div ref={stripRef}
-          className="relative flex items-center gap-2 overflow-x-auto snap-x snap-proximity px-1 py-2 w-[clamp(290px,36vw,640px)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          className="flex items-center gap-2 overflow-x-auto snap-x snap-proximity py-1 px-0.5 w-[clamp(300px,30vw,480px)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {items.map((m, i) => (
             <button key={m._id} type="button" onClick={() => goTo(i)} aria-label={decodeHtml(m.name)} aria-current={i === idx}
-              className={cn('snap-start shrink-0 w-[calc((100%-48px)/5)] aspect-video rounded-md lg:rounded-lg overflow-hidden border-2 transition-all duration-300',
-                i === idx ? 'border-white opacity-100' : 'border-transparent opacity-60 hover:opacity-100')}>
+              className={cn('snap-start shrink-0 w-[calc((100%-40px)/6)] aspect-[16/10] rounded-md overflow-hidden border-2 transition-all duration-300',
+                i === idx ? 'border-[var(--primary)] opacity-100 scale-105' : 'border-transparent opacity-70 hover:opacity-100')}>
               <PosterImg
                 src={movieApi.getImageUrl(m.thumb_url || m.poster_url)}
                 fallbackSrc={m.thumb_url || m.poster_url}
@@ -265,10 +259,6 @@ export default function Banner({ movies }: BannerProps) {
             </button>
           ))}
         </div>
-        <button type="button" onClick={() => scrollStrip(1)} aria-label="Xem phim sau"
-          className="shrink-0 w-7 h-7 rounded-full bg-black/50 border border-white/20 text-white flex items-center justify-center hover:bg-black/70 active:scale-90">
-          <ChevronRight size={16} />
-        </button>
       </div>
     </div>
   );
