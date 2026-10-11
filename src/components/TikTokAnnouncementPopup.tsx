@@ -20,7 +20,7 @@ export default function TikTokAnnouncementPopup() {
   };
 
   const handleJoin = () => {
-    window.open('https://tiktok.me/group/ZS9KPEXUP/', '_blank', 'noopener,noreferrer');
+    window.open('https://tiktok.me/group/ZS9KPEXUP/', '_blank', 'noopener');
     handleClose();
   };
 

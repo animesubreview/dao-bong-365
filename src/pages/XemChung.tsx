@@ -106,7 +106,7 @@ export default function XemChung() {
             return (
               <Link key={r.id} to={`/watch-room/${r.id}`}
                 className="flex gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-3 active:scale-[0.99] transition-transform">
-                <img src={r.movieThumb} alt="" loading="lazy" referrerPolicy="no-referrer"
+                <img src={r.movieThumb} alt="" loading="lazy"
                   onError={(e) => { (e.currentTarget as HTMLImageElement).style.visibility = 'hidden'; }}
                   className="w-16 h-24 rounded-xl object-cover bg-slate-800 shrink-0" />
                 <div className="min-w-0 flex-1 flex flex-col justify-between">

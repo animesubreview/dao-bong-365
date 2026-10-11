@@ -51,7 +51,6 @@ function ScheduleRow({ movie }: { movie: Movie }) {
           src={movieApi.getImageUrl(movie.poster_url || movie.thumb_url)}
           alt={dec(movie.name)}
           loading="lazy"
-          referrerPolicy="no-referrer"
           onLoad={() => setOk(true)}
           className="absolute inset-0 w-full h-full object-cover"
           style={{ opacity: ok ? 1 : 0, transition: 'opacity 400ms ease' }}

@@ -114,7 +114,7 @@ export default function ManualMovieDetail() {
 
       {/* ══ HERO BANNER – full width ══ */}
       <div className="relative w-full overflow-hidden" style={{ height: 'clamp(300px, 48vw, 580px)' }}>
-        <img src={poster} alt={movie.name} referrerPolicy="no-referrer"
+        <img src={poster} alt={movie.name}
           onError={(e) => { if (!e.currentTarget.src.endsWith(LOGO)) e.currentTarget.src = LOGO; }}
           className="w-full h-full object-cover object-top" />
         <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-slate-950/60 to-transparent" />
@@ -128,7 +128,7 @@ export default function ManualMovieDetail() {
         <div className="flex flex-col items-center text-center md:items-start md:text-left md:flex-row md:gap-8 -mt-28 sm:-mt-32 md:-mt-20 relative z-10">
 
           <div className="w-40 sm:w-48 md:w-52 shrink-0 rounded-2xl overflow-hidden border-2 border-white/90 shadow-2xl shadow-black/60" style={{ aspectRatio: '2/3' }}>
-            <img src={poster} alt={movie.name} className="w-full h-full object-cover" referrerPolicy="no-referrer"
+            <img src={poster} alt={movie.name} className="w-full h-full object-cover"
               onError={(e) => { if (!e.currentTarget.src.endsWith(LOGO)) e.currentTarget.src = LOGO; }} />
           </div>
 
@@ -322,7 +322,7 @@ export default function ManualMovieDetail() {
                     <Link key={m.id} to={`/manual/${m.id}`} className="group block">
                       <div className="rounded-xl overflow-hidden bg-slate-800 border border-slate-700/40 group-hover:border-green-500/40 transition-all" style={{ aspectRatio: '2/3' }}>
                         {m.posterUrl
-                          ? <img src={m.posterUrl} alt={m.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" referrerPolicy="no-referrer" />
+                          ? <img src={m.posterUrl} alt={m.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                           : <div className="w-full h-full flex items-center justify-center"><Film size={24} className="text-slate-600" /></div>}
                       </div>
                       <div className="mt-1.5 px-0.5">

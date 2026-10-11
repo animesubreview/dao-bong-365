@@ -294,7 +294,7 @@ export default function Banner({ movies }: BannerProps) {
           <img
             key={m._id}
             src={movieApi.getImageUrl(m.thumb_url || m.poster_url)}
-            alt="" aria-hidden="true" referrerPolicy="no-referrer"
+            alt="" aria-hidden="true"
             className="absolute inset-0 w-full h-full object-cover scale-125 blur-3xl saturate-150 transition-opacity duration-700"
             style={{ opacity: i === idx ? 0.55 : 0 }}
           />
@@ -313,7 +313,7 @@ export default function Banner({ movies }: BannerProps) {
         onPointerCancel={endDrag}
       >
         {/* Vầng sáng theo màu poster, nằm sau poster giữa */}
-        <img key={`aura-${movie._id}`} aria-hidden="true" referrerPolicy="no-referrer"
+        <img key={`aura-${movie._id}`} aria-hidden="true"
           src={movieApi.getImageUrl(movie.poster_url || movie.thumb_url)} alt=""
           className="absolute left-1/2 top-1/2 h-[92%] -translate-x-1/2 -translate-y-[44%] scale-105 blur-2xl saturate-200 opacity-60 pointer-events-none"
           style={{ aspectRatio: '2/3', animation: 'bn-rise .6s ease-out both' }} />

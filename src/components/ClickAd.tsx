@@ -32,7 +32,7 @@ export default function ClickAd() {
         const last1 = parseInt(localStorage.getItem(LAST_CLICK_KEY) || '0', 10);
         if (now - last1 >= (cfg.cooldown ?? 60) * 1000) {
           localStorage.setItem(LAST_CLICK_KEY, String(now));
-          try { window.open(cfg.link, '_blank', 'noopener,noreferrer'); } catch {}
+          try { window.open(cfg.link, '_blank', 'noopener'); } catch {}
         }
       }
 
@@ -41,7 +41,7 @@ export default function ClickAd() {
         const last2 = parseInt(localStorage.getItem(LAST_CLICK_KEY_2) || '0', 10);
         if (now - last2 >= (cfg.cooldown2 ?? 60) * 1000) {
           localStorage.setItem(LAST_CLICK_KEY_2, String(now));
-          try { window.open(cfg.link2, '_blank', 'noopener,noreferrer'); } catch {}
+          try { window.open(cfg.link2, '_blank', 'noopener'); } catch {}
         }
       }
     };

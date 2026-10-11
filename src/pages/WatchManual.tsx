@@ -277,7 +277,6 @@ function WatermarkPlayer({ src, title, movie }: WatermarkPlayerProps) {
         allowFullScreen
         allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
         title={title || 'Video'}
-        referrerPolicy="no-referrer"
       />
 
       {/* ── Watermark ── */}
@@ -428,7 +427,7 @@ export default function WatchManual() {
 
       {/* Nền kính (PC): poster phim phóng to + làm mờ */}
       <div aria-hidden className="hidden xl:block fixed inset-0 -z-10 pointer-events-none">
-        {movie.posterUrl && <img src={movie.posterUrl} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover scale-110 blur-3xl saturate-150 opacity-45" />}
+        {movie.posterUrl && <img src={movie.posterUrl} alt="" className="w-full h-full object-cover scale-110 blur-3xl saturate-150 opacity-45" />}
         <div className="absolute inset-0 bg-gradient-to-b from-[#0d0d0d]/55 via-[#0d0d0d]/80 to-[#0d0d0d]" />
       </div>
 
@@ -478,7 +477,7 @@ export default function WatchManual() {
               <span className="text-[10px] font-semibold">Yêu thích</span>
             </button>
             {isDrive && (
-              <a href={currentEp?.embedUrl || movie.embedUrl} target="_blank" rel="noopener noreferrer"
+              <a href={currentEp?.embedUrl || movie.embedUrl} target="_blank" rel="noopener"
                 className="flex flex-col items-center gap-1 px-3 py-1.5 rounded-lg min-w-[56px] text-slate-400 hover:text-white transition-colors">
                 <ExternalLink size={20} />
                 <span className="text-[10px] font-semibold">Mở Drive</span>

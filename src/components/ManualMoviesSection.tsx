@@ -38,7 +38,7 @@ export function ManualMovieCard({ movie, className }: { movie: ManualMovie; clas
       <Link to={`/manual/${movie.id}`} className="block">
         <div className="relative rounded-xl overflow-hidden bg-slate-800" style={{ aspectRatio: '2/3' }}>
           {movie.posterUrl
-            ? <img src={movie.posterUrl} alt={movie.name} loading="lazy" referrerPolicy="no-referrer"
+            ? <img src={movie.posterUrl} alt={movie.name} loading="lazy"
                 className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
             : <div className="absolute inset-0 w-full h-full bg-slate-800 flex items-center justify-center text-slate-600 text-3xl">🎬</div>
           }

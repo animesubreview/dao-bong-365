@@ -441,7 +441,6 @@ export default function Header() {
                               src={movieApi.getImageUrl(movie.thumb_url)}
                               alt={movie.name}
                               className="w-full h-full object-cover"
-                              referrerPolicy="no-referrer"
                             />
                           </div>
                           <div className="flex-1 min-w-0">
@@ -598,7 +597,6 @@ export default function Header() {
                               alt={movie.name}
                               loading="lazy"
                               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                              referrerPolicy="no-referrer"
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
                             {movie.year ? <span className="absolute bottom-1.5 left-1.5 text-[9px] font-bold bg-black/60 text-white px-1.5 py-0.5 rounded">{movie.year}</span> : null}
@@ -617,7 +615,7 @@ export default function Header() {
               <div className="flex flex-col overflow-y-auto px-5 pb-5 gap-4 glass-scroll">
                 <div className="flex gap-3 p-3 rounded-2xl bg-white/5 border border-white/10">
                   <div className="w-14 rounded-lg overflow-hidden shrink-0 bg-slate-800" style={{ aspectRatio: '2/3' }}>
-                    <img src={movieApi.getImageUrl(selectedMovie.thumb_url)} alt={selectedMovie.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                    <img src={movieApi.getImageUrl(selectedMovie.thumb_url)} alt={selectedMovie.name} className="w-full h-full object-cover" />
                   </div>
                   <div className="flex-1 min-w-0 flex flex-col justify-center">
                     <p className="text-white text-sm font-bold line-clamp-2 leading-snug">{selectedMovie.name}</p>

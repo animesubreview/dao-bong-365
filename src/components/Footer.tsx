@@ -68,7 +68,7 @@ export default function Footer() {
         {socials.length > 0 && (
           <div className="flex items-center gap-3">
             {socials.map(s => (
-              <a key={s.label} href={s.url} target="_blank" rel="noopener noreferrer" aria-label={s.label}
+              <a key={s.label} href={s.url} target="_blank" rel="noopener" aria-label={s.label}
                 className="w-9 h-9 rounded-full bg-slate-900/70 border border-slate-800 flex items-center justify-center text-slate-400 hover:text-[var(--primary-light)] hover:border-[var(--primary)]/50 transition-colors">
                 <s.icon size={16} />
               </a>
@@ -147,7 +147,7 @@ export default function Footer() {
             <a
               href={`https://t.me/${adsTelegram}`}
               target="_blank"
-              rel="noopener noreferrer"
+              rel="noopener"
               className="flex items-center gap-1 text-sky-400 hover:text-sky-300 font-semibold transition-colors"
             >
               <Send size={12} />

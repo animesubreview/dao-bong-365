@@ -96,7 +96,7 @@ function ComicCard({ comic, onClick }: { comic: Comic; onClick: () => void }) {
         {!allFailed ? (
           <img src={imgSrc} alt={comic.name}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-            onError={handleImgError} referrerPolicy="no-referrer" />
+            onError={handleImgError} />
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center gap-2 px-2">
             <BookOpen size={24} className="text-slate-600 shrink-0" />
@@ -230,7 +230,7 @@ function ReaderView({
       <div className="max-w-2xl mx-auto">
         {images.map(img => (
           <img key={img.page} src={img.src} alt={`Trang ${img.page}`}
-            className="w-full block" referrerPolicy="no-referrer"
+            className="w-full block"
             onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
         ))}
       </div>
@@ -377,13 +377,13 @@ function DetailView({ slug, onBack }: { slug: string; onBack: () => void }) {
       <div className="flex gap-5 p-5 bg-slate-900 rounded-2xl border border-slate-800/60 mb-5 relative overflow-hidden">
         {imgSrc && (
           <div className="absolute inset-0">
-            <img src={imgSrc} alt="" className="w-full h-full object-cover blur-2xl opacity-10 scale-110" referrerPolicy="no-referrer" onError={() => {}} />
+            <img src={imgSrc} alt="" className="w-full h-full object-cover blur-2xl opacity-10 scale-110" onError={() => {}} />
           </div>
         )}
         <div className="relative shrink-0 w-28 sm:w-36 rounded-xl overflow-hidden shadow-2xl border border-slate-700/50" style={{ aspectRatio: '2/3' }}>
           {imgSrc ? (
             <img src={imgSrc} alt={detail.name} className="w-full h-full object-cover"
-              onError={handleCoverError} referrerPolicy="no-referrer" />
+              onError={handleCoverError} />
           ) : (
             <div className="w-full h-full bg-slate-800 flex items-center justify-center">
               <BookOpen size={32} className="text-slate-600" />

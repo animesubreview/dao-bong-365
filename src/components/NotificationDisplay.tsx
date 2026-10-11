@@ -73,7 +73,7 @@ function ImageLinkPopup({ notif, onDismiss }: { notif: SiteNotification; onDismi
         {/* Hình ảnh — nhấn vào sẽ nhảy đến link */}
         {notif.imageUrl ? (
           hasLink ? (
-            <a href={notif.targetUrl} target="_blank" rel="noopener noreferrer" onClick={onDismiss}>
+            <a href={notif.targetUrl} target="_blank" rel="noopener" onClick={onDismiss}>
               <img
                 src={notif.imageUrl}
                 alt={notif.title || 'Thông báo'}
@@ -108,7 +108,7 @@ function ImageLinkPopup({ notif, onDismiss }: { notif: SiteNotification; onDismi
               <a
                 href={notif.targetUrl}
                 target="_blank"
-                rel="noopener noreferrer"
+                rel="noopener"
                 onClick={onDismiss}
                 className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-black bg-green-500 hover:bg-green-400 text-slate-950 transition-colors"
               >
@@ -158,7 +158,7 @@ function NotificationPopup({ notif, onDismiss }: { notif: SiteNotification; onDi
         <p className="text-slate-300 text-sm leading-relaxed whitespace-pre-wrap">{notif.message}</p>
         <div className="flex gap-2 mt-5">
           {notif.targetUrl && (
-            <a href={notif.targetUrl} target="_blank" rel="noopener noreferrer"
+            <a href={notif.targetUrl} target="_blank" rel="noopener"
               className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold border ${cfg.border} ${cfg.text} ${cfg.bg} hover:opacity-80 transition-opacity`}>
               <ExternalLink size={15} /> Xem thêm
             </a>
@@ -188,7 +188,7 @@ function NotificationBanner({ notif, onDismiss }: { notif: SiteNotification; onD
         <span className="text-slate-400 text-xs truncate hidden sm:inline">{notif.message}</span>
       </div>
       {notif.targetUrl && (
-        <a href={notif.targetUrl} target="_blank" rel="noopener noreferrer"
+        <a href={notif.targetUrl} target="_blank" rel="noopener"
           className={`shrink-0 text-xs font-bold ${cfg.text} hover:underline flex items-center gap-1`}>
           Chi tiết <ExternalLink size={11} />
         </a>

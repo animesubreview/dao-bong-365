@@ -166,7 +166,7 @@ export default function MovieDetail() {
         className="relative w-full overflow-hidden"
         style={{ height: 'clamp(300px, 48vw, 580px)' }}
       >
-        <img src={thumbUrl} alt={movie.name} referrerPolicy="no-referrer"
+        <img src={thumbUrl} alt={movie.name}
           onError={(e) => {
             const fallback = movieApi.getImageUrl(movie.thumb_url || movie.poster_url);
             if (fallback && e.currentTarget.src !== fallback) e.currentTarget.src = fallback;
@@ -184,7 +184,7 @@ export default function MovieDetail() {
         <div className="flex flex-col items-center text-center md:items-start md:text-left md:flex-row md:gap-8 -mt-28 sm:-mt-32 md:-mt-20 relative z-10">
 
           <div className="w-40 sm:w-48 md:w-52 shrink-0 rounded-2xl overflow-hidden border-2 border-white/90 shadow-2xl shadow-black/60" style={{ aspectRatio: '2/3' }}>
-            <img src={posterUrl} alt={movie.name} className="w-full h-full object-cover" referrerPolicy="no-referrer"
+            <img src={posterUrl} alt={movie.name} className="w-full h-full object-cover"
               onError={(e) => {
                 const fallback = movieApi.getImageUrl(movie.poster_url || movie.thumb_url);
                 if (fallback && e.currentTarget.src !== fallback) e.currentTarget.src = fallback;

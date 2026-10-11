@@ -69,7 +69,7 @@ export default function Notifications() {
     }
     if (n.targetUrl) {
       if (n.targetUrl.startsWith('http')) {
-        window.open(n.targetUrl, '_blank', 'noopener,noreferrer');
+        window.open(n.targetUrl, '_blank', 'noopener');
       } else {
         navigate(n.targetUrl);
       }

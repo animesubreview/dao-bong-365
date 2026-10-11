@@ -268,7 +268,7 @@ export default function Watch() {
 
       {/* Nền kính (PC): poster phim phóng to + làm mờ, đứng yên khi cuộn */}
       <div aria-hidden className="hidden xl:block fixed inset-0 -z-10 pointer-events-none">
-        <img src={movieApi.getImageUrl(movie.poster_url || movie.thumb_url)} alt="" referrerPolicy="no-referrer"
+        <img src={movieApi.getImageUrl(movie.poster_url || movie.thumb_url)} alt=""
           className="w-full h-full object-cover scale-110 blur-3xl saturate-150 opacity-45" />
         <div className="absolute inset-0 bg-gradient-to-b from-[#0d0d0d]/55 via-[#0d0d0d]/80 to-[#0d0d0d]" />
       </div>
@@ -606,7 +606,6 @@ export default function Watch() {
                           src={movieApi.getImageUrl(movie.thumb_url || movie.poster_url)}
                           alt={label}
                           loading="lazy"
-                          referrerPolicy="no-referrer"
                           className="absolute inset-0 w-full h-full object-cover"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-black/20" />
@@ -656,7 +655,7 @@ export default function Watch() {
               <Link key={m._id || m.slug} to={`/phim/${m.slug}`}
                 className="group block rounded-2xl overflow-hidden border border-white/10 bg-white/[0.05] backdrop-blur-xl hover:border-green-500/50 hover:-translate-y-0.5 transition-all duration-300">
                 <div className="relative aspect-video bg-slate-800 overflow-hidden">
-                  <img src={movieApi.getImageUrl(m.thumb_url || m.poster_url)} alt={m.name} loading="lazy" referrerPolicy="no-referrer"
+                  <img src={movieApi.getImageUrl(m.thumb_url || m.poster_url)} alt={m.name} loading="lazy"
                     onError={(e) => { e.currentTarget.style.visibility = 'hidden'; }}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />

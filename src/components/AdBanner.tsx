@@ -96,7 +96,7 @@ export default function AdBanner({ position, className = '' }: AdBannerProps) {
         <a
           href={banner.linkUrl}
           target="_blank"
-          rel="noopener noreferrer"
+          rel="noopener"
           title={banner.title}
           className="flex items-center justify-center w-full h-full"
         >
@@ -149,7 +149,7 @@ export default function AdBanner({ position, className = '' }: AdBannerProps) {
                 <a
                   href={banner.linkUrl}
                   target="_blank"
-                  rel="noopener noreferrer"
+                  rel="noopener"
                   title={banner.title}
                   className="flex items-center justify-center w-full"
                 >
@@ -187,7 +187,7 @@ export default function AdBanner({ position, className = '' }: AdBannerProps) {
           <a
             href={banner.linkUrl}
             target="_blank"
-            rel="noopener noreferrer"
+            rel="noopener"
             className="block w-full"
             title={banner.title}
           >

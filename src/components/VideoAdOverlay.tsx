@@ -75,7 +75,7 @@ export default function VideoAdOverlay({ adUrl, skipAfterSeconds, onDone, clickU
       {clickUrl && (
         <button
           type="button"
-          onClick={() => window.open(clickUrl, '_blank', 'noopener,noreferrer')}
+          onClick={() => window.open(clickUrl, '_blank', 'noopener')}
           aria-label="Xem chi tiết quảng cáo"
           className="absolute inset-0 z-0 cursor-pointer"
           title={clickUrl}

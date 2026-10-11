@@ -107,7 +107,7 @@ export default function PopupAd({ movieKey }: { movieKey: string }) {
         onClick={countdown === 0 ? close : undefined}
       />
       <div className="relative z-10 w-full max-w-sm mx-auto rounded-2xl overflow-hidden shadow-2xl shadow-black/80 border border-slate-700/50">
-        <a href={ad.linkUrl} target="_blank" rel="noopener noreferrer" className="block" onClick={close}>
+        <a href={ad.linkUrl} target="_blank" rel="noopener" className="block" onClick={close}>
           {ad.mediaType === 'mp4' ? (
             <video
               src={ad.mediaUrl} autoPlay loop muted playsInline
@@ -123,7 +123,7 @@ export default function PopupAd({ movieKey }: { movieKey: string }) {
         </a>
         <div className="bg-slate-900 px-4 py-3 flex items-center justify-between gap-3">
           <a
-            href={ad.linkUrl} target="_blank" rel="noopener noreferrer" onClick={close}
+            href={ad.linkUrl} target="_blank" rel="noopener" onClick={close}
             className="flex items-center gap-1.5 text-green-400 text-xs font-bold hover:text-green-300 transition-colors truncate"
           >
             <ExternalLink size={13} />

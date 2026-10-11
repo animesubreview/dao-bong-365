@@ -226,7 +226,6 @@ function LivePlayer({ embedUrl, title, viewerCount }: { embedUrl: string; title:
           allow="autoplay; encrypted-media; picture-in-picture"
           allowFullScreen={false}
           title={title || 'Livestream'}
-          referrerPolicy="no-referrer"
         />
       )}
 
@@ -401,7 +400,6 @@ function LivePlayer({ embedUrl, title, viewerCount }: { embedUrl: string; title:
           allow="autoplay; encrypted-media; picture-in-picture"
           allowFullScreen
           title={title || 'Livestream'}
-          referrerPolicy="no-referrer"
         />
       )}
 

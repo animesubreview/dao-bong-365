@@ -91,7 +91,7 @@ export function RecentCommentsSection() {
                     </div>
                     {movie && (
                       <Link to={`/phim/${c.movieSlug}`} className="shrink-0 w-9 h-12 rounded-md overflow-hidden bg-slate-800 border border-slate-700">
-                        <img src={movieApi.getImageUrl(movie.thumb_url)} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
+                        <img src={movieApi.getImageUrl(movie.thumb_url)} alt="" className="w-full h-full object-cover" />
                       </Link>
                     )}
                   </div>
@@ -175,7 +175,7 @@ export function TrendingMoviesSection() {
                     {r.trend === 'new' && <span className="text-[9px] font-black text-green-400">MỚI</span>}
                   </span>
                   {movie ? (
-                    <img src={movieApi.getImageUrl(movie.thumb_url)} alt="" referrerPolicy="no-referrer"
+                    <img src={movieApi.getImageUrl(movie.thumb_url)} alt=""
                       className="w-9 h-12 rounded-md object-cover bg-slate-800 shrink-0" />
                   ) : <div className="w-9 h-12 rounded-md bg-slate-800 shrink-0" />}
                   <span className="flex-1 min-w-0 text-[13px] font-semibold text-slate-200 truncate">{movie ? dec(movie.name) : r.slug}</span>
@@ -231,7 +231,7 @@ export function FavoriteMoviesSection() {
                   className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-800/40 transition-colors">
                   <span className={`text-lg font-black w-5 text-center shrink-0 ${i < 3 ? 'text-pink-400' : 'text-slate-600'}`}>{i + 1}</span>
                   {movie ? (
-                    <img src={movieApi.getImageUrl(movie.thumb_url)} alt="" referrerPolicy="no-referrer"
+                    <img src={movieApi.getImageUrl(movie.thumb_url)} alt=""
                       className="w-9 h-12 rounded-md object-cover bg-slate-800 shrink-0" />
                   ) : <div className="w-9 h-12 rounded-md bg-slate-800 shrink-0" />}
                   <span className="flex-1 min-w-0 text-[13px] font-semibold text-slate-200 truncate">{movie ? dec(movie.name) : r.slug}</span>

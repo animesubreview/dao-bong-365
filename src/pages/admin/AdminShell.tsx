@@ -160,7 +160,7 @@ export function AdminShell({ active, onNavigate, onLogout, headerRight, children
         </nav>
 
         <div className="p-3 border-t border-white/[.06] flex flex-col gap-1.5 shrink-0">
-          <a href="/" target="_blank" rel="noreferrer"
+          <a href="/" target="_blank" rel="noopener"
             className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] font-semibold text-slate-400 hover:text-white hover:bg-white/[.04]">
             <ExternalLink size={16} /> Xem website
           </a>
@@ -255,7 +255,7 @@ export function AdminShell({ active, onNavigate, onLogout, headerRight, children
             ))}
 
             <div className="grid grid-cols-2 gap-2 mt-6">
-              <a href="/" target="_blank" rel="noreferrer"
+              <a href="/" target="_blank" rel="noopener"
                 className="flex items-center justify-center gap-2 py-3 rounded-2xl bg-white/[.05] text-slate-200 text-sm font-semibold">
                 <ExternalLink size={16} /> Xem website
               </a>

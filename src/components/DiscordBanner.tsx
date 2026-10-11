@@ -25,11 +25,11 @@ export default function DiscordBanner({ className = '' }: { className?: string }
     <a
       href={discordUrl}
       target="_blank"
-      rel="noopener noreferrer"
+      rel="noopener"
       className={`block w-full rounded-xl overflow-hidden group ${className}`}
     >
       {bannerImage ? (
-        <img src={bannerImage} alt="Tham gia Discord" className="w-full h-auto object-cover" referrerPolicy="no-referrer" />
+        <img src={bannerImage} alt="Tham gia Discord" className="w-full h-auto object-cover" />
       ) : (
         <div className="relative flex items-center gap-3 px-4 py-3 md:py-3.5 bg-gradient-to-r from-[#4752C4] via-[#5865F2] to-[#4752C4] active:scale-[0.99] group-hover:brightness-110 transition-all">
           <div className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-white/15 flex items-center justify-center shrink-0">

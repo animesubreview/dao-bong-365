@@ -179,7 +179,6 @@ function TVPlayer({ url }: { url: string }) {
       className="w-full h-full"
       allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
       allowFullScreen
-      referrerPolicy="no-referrer"
     />
   );
 }
@@ -296,7 +295,7 @@ export default function TVTrucTuyen() {
               }`}
               style={{ aspectRatio: '16/10' }}>
               {c.logoUrl ? (
-                <img src={c.logoUrl} alt={c.name} className="w-full h-full object-contain p-2" referrerPolicy="no-referrer" />
+                <img src={c.logoUrl} alt={c.name} className="w-full h-full object-contain p-2" />
               ) : (
                 <span className="text-[11px] font-bold text-slate-300 px-1.5 text-center line-clamp-2">{c.name}</span>
               )}

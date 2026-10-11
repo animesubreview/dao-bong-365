@@ -328,7 +328,6 @@ function ContinueWatchingSection() {
               src={movieApi.getImageUrl(item.thumb_url || item.poster_url || '')}
               alt={item.name}
               loading="lazy"
-              referrerPolicy="no-referrer"
               onError={(e) => {
                 const t = e.currentTarget;
                 if (item.poster_url && !t.src.includes(item.poster_url)) {
@@ -706,7 +705,7 @@ function BilingualCard({ movie }: { movie: Movie }) {
       <div className="relative rounded-lg overflow-hidden bg-slate-800 transition-transform duration-300 group-hover:-translate-y-1" style={{ aspectRatio: '2/3' }}>
         <div className="absolute inset-0 bg-slate-800" />
         <PosterImg src={movieApi.getImageUrl(movie.poster_url || movie.thumb_url)} fallbackSrc={movie.poster_url || movie.thumb_url} alt={dec(movie.name)} movieSlug={movie.slug}
-          loading="lazy" referrerPolicy="no-referrer" onLoad={() => setOk(true)}
+          loading="lazy" onLoad={() => setOk(true)}
           className="absolute inset-0 w-full h-full object-cover"
           style={{ opacity: ok ? 1 : 0, transition: 'opacity 500ms ease' }} />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent" />
@@ -1080,7 +1079,7 @@ export default function Home() {
                   className="shrink-0 snap-start group w-[calc((100%-12px)/2.15)] md:w-[220px] lg:w-[240px] xl:w-[260px]">
                   <div className="relative rounded-xl overflow-hidden bg-slate-800 shadow-lg" style={{ aspectRatio:'16/9' }}>
                     {m.posterUrl
-                      ? <img src={m.posterUrl} alt={m.name} loading="lazy" referrerPolicy="no-referrer"
+                      ? <img src={m.posterUrl} alt={m.name} loading="lazy"
                           className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                       : <div className="absolute inset-0 flex items-center justify-center text-slate-600 text-3xl">🎬</div>}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />

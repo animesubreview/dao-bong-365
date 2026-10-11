@@ -38,7 +38,7 @@ export default function AdminBannerPins({ showToast }: { showToast?: (m: string)
 
   const row = (m: any) => (
     <div key={m.slug} className="flex items-center gap-3 bg-slate-800/60 border border-slate-700/50 rounded-xl p-2.5">
-      <img src={movieApi.getImageUrl(m.thumb_url || m.poster_url)} alt="" referrerPolicy="no-referrer"
+      <img src={movieApi.getImageUrl(m.thumb_url || m.poster_url)} alt=""
         className="w-12 h-16 rounded-lg object-cover bg-slate-700 shrink-0" />
       <div className="min-w-0 flex-1">
         <p className="text-sm font-bold text-white truncate">{m.name}</p>

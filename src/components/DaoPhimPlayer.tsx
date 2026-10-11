@@ -703,7 +703,6 @@ export default function DaoPhimPlayer({ src, m3u8, title, className = '', onEnde
           allowFullScreen
           allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
           title={title || 'Video'}
-          referrerPolicy="no-referrer"
         />
       )}
 

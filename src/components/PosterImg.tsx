@@ -42,7 +42,6 @@ export default function PosterImg({
       src={src || '/assets/logo-daophim.png'}
       alt={alt}
       loading={loading}
-      referrerPolicy="no-referrer"
       onLoad={onLoad}
       onError={(e) => {
         const img = e.currentTarget;

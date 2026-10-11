@@ -1325,7 +1325,7 @@ function AdsSection({ onToast }: { onToast: (msg: string, t: 'success' | 'error'
               {clickCfg.link && (
                 <div>
                   <p className="text-slate-400 mb-1">🔗 Link QC 1:</p>
-                  <a href={clickCfg.link} target="_blank" rel="noopener noreferrer" className="text-orange-400 hover:text-orange-300 break-all font-mono text-xs">
+                  <a href={clickCfg.link} target="_blank" rel="noopener" className="text-orange-400 hover:text-orange-300 break-all font-mono text-xs">
                     {clickCfg.link}
                   </a>
                 </div>
@@ -1333,7 +1333,7 @@ function AdsSection({ onToast }: { onToast: (msg: string, t: 'success' | 'error'
               {clickCfg.link2 && (
                 <div>
                   <p className="text-slate-400 mb-1">🔗 Link QC 2:</p>
-                  <a href={clickCfg.link2} target="_blank" rel="noopener noreferrer" className="text-orange-400 hover:text-orange-300 break-all font-mono text-xs">
+                  <a href={clickCfg.link2} target="_blank" rel="noopener" className="text-orange-400 hover:text-orange-300 break-all font-mono text-xs">
                     {clickCfg.link2}
                   </a>
                 </div>
