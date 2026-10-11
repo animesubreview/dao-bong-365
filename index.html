@@ -166,9 +166,16 @@
             // file đã bị xóa sau khi deploy bản mới → tự tải lại 1 lần để lấy index.html mới, người dùng khỏi thấy lỗi.
             try {
               var u = String(e.target.src || e.target.href || '');
-              if (u.indexOf('/assets/') > -1 && !sessionStorage.getItem('__asset_reload')) {
-                sessionStorage.setItem('__asset_reload', '1');
-                location.reload();
+              var tries = Number(sessionStorage.getItem('__asset_reload') || 0);
+              if (u.indexOf('/assets/') > -1 && tries < 2) {
+                sessionStorage.setItem('__asset_reload', String(tries + 1));
+                // Lần 2 thêm tham số ngẫu nhiên để vượt cache CDN/trình duyệt đang giữ index.html cũ
+                if (tries === 1) {
+                  var q = location.search.replace(/([?&])_v=\d+&?/, '$1').replace(/[?&]$/, '');
+                  location.replace(location.pathname + q + (q ? '&' : '?') + '_v=' + Date.now() + location.hash);
+                } else {
+                  location.reload();
+                }
                 return;
               }
             } catch (_) {}
