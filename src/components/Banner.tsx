@@ -227,7 +227,7 @@ export default function Banner({ movies }: BannerProps) {
 
         <div className="flex items-center gap-3">
           <Link to={detailPath(movie)} aria-label="Xem phim"
-            className="w-16 h-16 rounded-full bg-amber-200 text-slate-900 flex items-center justify-center shadow-[0_0_34px_-2px_rgba(253,230,138,.75)] hover:scale-105 active:scale-95 transition-transform" style={{ textShadow: 'none' }}>
+            className="w-16 h-16 rounded-full bg-[var(--primary)] text-slate-950 flex items-center justify-center shadow-[0_0_34px_-2px_rgba(34,197,94,.75)] hover:scale-105 active:scale-95 transition-transform" style={{ textShadow: 'none' }}>
             <Play size={28} className="fill-current ml-1" />
           </Link>
           <div className="h-14 rounded-full border border-white/15 bg-black/40 backdrop-blur flex items-center overflow-hidden">
