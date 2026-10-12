@@ -59,8 +59,17 @@ async function apiFetch(path: string): Promise<Response> {
   try {
     return await Promise.any([tryOne(BASE_URL), tryOne(VSMOV_BASE), tryOne(XINK_BASE)]);
   } catch {
-    // Cả 2 đều lỗi/rỗng — vẫn trả về response của BASE_URL (kể cả rỗng) để hàm gọi tự xử lý
-    return fetch(`${BASE_URL}${path}`);
+    // Tất cả nguồn đều lỗi/rỗng. Thử gọi thẳng BASE_URL; nếu trình duyệt không kết nối được
+    // (mạng chặn/CORS) thì đi vòng qua proxy server /api/kk-proxy; vẫn hỏng thì trả JSON rỗng
+    // để trang hiển thị "không có dữ liệu" thay vì ném lỗi "Failed to fetch" làm sập màn hình.
+    try { return await fetch(`${BASE_URL}${path}`); } catch { /* thử proxy */ }
+    try {
+      const r = await fetch(`/api/kk-proxy?path=${encodeURIComponent(path)}`);
+      if (r.ok) return r;
+    } catch { /* bỏ qua */ }
+    return new Response(JSON.stringify({ status: false, items: [], data: { items: [] } }), {
+      status: 200, headers: { 'Content-Type': 'application/json' },
+    });
   }
 }
 

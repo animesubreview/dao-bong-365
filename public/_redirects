@@ -5,6 +5,7 @@
 /rss.xml /.netlify/functions/rss 200
 
 # ── Telegram notify webhook ───────────────────────────────────────
+/api/kk-proxy /.netlify/functions/kk-proxy 200
 /api/telegram-notify /.netlify/functions/telegram-notify 200
 
 # ── Redirect URL cũ /movie/ -> /phim/ (SEO)

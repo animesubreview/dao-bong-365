@@ -188,6 +188,8 @@
           var r = e.reason;
           // Hủy chia sẻ / hủy thao tác (AbortError, NotAllowedError) là hành vi bình thường của người dùng, không phải lỗi.
           if (r && (r.name === 'AbortError' || r.name === 'NotAllowedError' || /canceled|cancelled/i.test(String(r.message || r)))) return;
+          // Lỗi mạng thoáng qua (đứt mạng, API chập chờn) không phải lỗi app — đừng phủ màn hình đỏ lên trang.
+          if (r && r.name === 'TypeError' && /failed to fetch|networkerror|load failed/i.test(String(r.message || ''))) { try { console.warn('Network error:', r); } catch (_) {} return; }
           showErr('LỖI PROMISE: ' + (r && (r.message || r.toString()) || String(r)) + '\n' + (r && r.stack || ''));
         });
         // Nếu sau 6 giây #root vẫn trống mà không có lỗi nào bắt được ở trên — báo luôn để biết
