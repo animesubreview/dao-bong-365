@@ -355,7 +355,7 @@ export default function WatchRoomPage() {
             </div>
             <p className="text-slate-500 text-xs">
               {epLabel(room.episodeName)} •{' '}
-              <span className="text-green-400 font-medium">{memberCount}/{room.maxMembers} người</span>
+              <span className="text-green-400 font-medium">{memberCount}/{room.maxMembers > 0 ? room.maxMembers : '∞'} người</span>
             </p>
           </div>
 
@@ -368,7 +368,7 @@ export default function WatchRoomPage() {
             {memberCount > 4 && (
               <div className="w-7 h-7 rounded-full border-2 border-[#0a0a0a] bg-[#2a2a2a] flex items-center justify-center text-[9px] font-bold text-slate-300">+{memberCount - 4}</div>
             )}
-            {Array.from({ length: Math.min(2, Math.max(0, room.maxMembers - memberCount)) }).map((_, i) => (
+            {Array.from({ length: room.maxMembers > 0 ? Math.min(2, Math.max(0, room.maxMembers - memberCount)) : 0 }).map((_, i) => (
               <div key={i} className="w-7 h-7 rounded-full border-2 border-dashed border-slate-700 bg-[#1a1a1a] flex items-center justify-center">
                 <span className="text-slate-600 text-[9px]">?</span>
               </div>
@@ -562,7 +562,7 @@ export default function WatchRoomPage() {
             </AnimatePresence>
 
             {/* Invite banner */}
-            {memberCount < room.maxMembers && (
+            {(room.maxMembers <= 0 || memberCount < room.maxMembers) && (
               <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
                 className="mt-3 flex items-center gap-2 bg-green-500/10 border border-green-500/20 rounded-xl px-3 py-2.5">
                 <LinkIcon size={14} className="text-green-400 shrink-0" />
@@ -587,7 +587,7 @@ export default function WatchRoomPage() {
             <div className="flex items-center gap-2 mb-2">
               <Users size={13} className="text-slate-400" />
               <span className="text-slate-400 text-xs font-bold uppercase tracking-wider">
-                Thành viên ({memberCount}/{room.maxMembers})
+                Thành viên ({memberCount}/{room.maxMembers > 0 ? room.maxMembers : '∞'})
               </span>
               {isHost && (
                 <span className="ml-auto text-[10px] text-slate-600">

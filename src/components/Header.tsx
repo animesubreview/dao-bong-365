@@ -10,6 +10,7 @@ import { movieApi } from '../services/api';
 import { Movie } from '../types';
 import { logout, onAuthChange, getUserProfile, UserProfile } from '../lib/auth';
 import { createWatchRoom } from '../lib/watchRoom';
+import { useCommunityConfig } from '../lib/communityRoom';
 import { subscribeNotifications, countUnread, SiteNotification } from '../lib/notifications';
 import { subscribeSiteSettings } from '../lib/siteSettings';
 import AdBanner from './AdBanner';
@@ -56,6 +57,11 @@ export const COUNTRIES = [
 
 export default function Header() {
   const [session, setSession] = useState<UserProfile | null>(null);
+  const communityCfg = useCommunityConfig();
+  const communityCfgRef = React.useRef(communityCfg);
+  communityCfgRef.current = communityCfg;
+  const sessionRef = React.useRef<UserProfile | null>(null);
+  sessionRef.current = session;
   const [showUserMenu, setShowUserMenu] = useState(false);
   // Watch Room quick-create modal
   const [showWatchRoomModal, setShowWatchRoomModal] = useState(false);
@@ -243,6 +249,9 @@ export default function Header() {
   };
 
   const openWatchRoomModal = () => {
+    // Chỉ admin được tạo phòng cộng đồng; người dùng thường chỉ xem danh sách phòng
+    if (sessionRef.current?.role !== 'admin') { navigate('/xem-chung'); return; }
+    if (!communityCfgRef.current.roomCreateEnabled) { alert('Phòng cộng đồng đang tắt — bật trong Admin → Chat cộng đồng.'); return; }
     setShowWatchRoomModal(true);
     setCreatedRoomId(null);
     setRoomLinkCopied(false);
@@ -590,14 +599,14 @@ export default function Header() {
                 <div>
                   <p className="text-slate-400 text-[11px] font-bold uppercase tracking-wider mb-2">Số người tối đa</p>
                   <div className="flex flex-wrap gap-2">
-                    {[2, 3, 4, 5, 6, 8, 10, 20].map(n => (
+                    {[2, 3, 4, 5, 6, 8, 10, 20, ...(communityCfg.roomUnlimited ? [0] : [])].map(n => (
                       <button key={n}
                         onClick={() => { setWatchRoomMax(n); setWatchRoomMaxInput(String(n)); }}
                         className={cn('min-w-[44px] h-10 px-3 rounded-xl text-sm font-black border transition-all active:scale-95',
                           watchRoomMax === n
                             ? 'bg-green-500 border-green-400 text-slate-950 shadow-lg shadow-green-500/25'
                             : 'bg-white/5 border-white/10 text-slate-300 hover:border-white/30')}>
-                        {n}
+                        {n === 0 ? '∞' : n}
                       </button>
                     ))}
                   </div>
@@ -632,12 +641,14 @@ export default function Header() {
                       });
                       setCreatedRoomId(roomId);
                       setModalStep('done');
+                    } catch (e: any) {
+                      alert(e?.message || 'Không tạo được phòng, thử lại sau.');
                     } finally { setCreatingRoom(false); }
                   }}
                   className="w-full h-12 rounded-2xl bg-gradient-to-r from-green-500 to-emerald-500 text-slate-950 font-black text-sm hover:brightness-110 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 shadow-lg shadow-green-500/25"
                 >
                   {creatingRoom ? <Loader2 size={17} className="animate-spin" /> : <Users size={17} />}
-                  {creatingRoom ? 'Đang tạo phòng...' : `Tạo phòng · ${watchRoomMax} người`}
+                  {creatingRoom ? 'Đang tạo phòng...' : `Tạo phòng · ${watchRoomMax === 0 ? 'không giới hạn' : watchRoomMax + ' người'}`}
                 </button>
               </div>
             )}
@@ -650,7 +661,7 @@ export default function Header() {
                     <Check size={26} className="text-green-400" />
                   </div>
                   <h3 className="text-white font-bold text-base">Phòng đã được tạo!</h3>
-                  <p className="text-slate-400 text-xs mt-0.5">Gửi link cho bạn bè · tối đa {watchRoomMax} người</p>
+                  <p className="text-slate-400 text-xs mt-0.5">Gửi link cho bạn bè · {watchRoomMax === 0 ? 'không giới hạn người' : `tối đa ${watchRoomMax} người`}</p>
                 </div>
 
                 <div className="rounded-2xl bg-white/5 border border-green-500/25 p-2.5 flex items-center gap-2">

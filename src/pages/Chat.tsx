@@ -77,7 +77,7 @@ export default function ChatPage() {
     setJoining(true);
     try {
       const n = await countVoiceUsers();
-      if (n >= cfg.micMax) { flash(`Phòng thoại đã đủ ${cfg.micMax} người, thử lại sau nhé.`); return; }
+      if (!cfg.micUnlimited && n >= cfg.micMax) { flash(`Phòng thoại đã đủ ${cfg.micMax} người, thử lại sau nhé.`); return; }
       const vc = new VoiceChat(COMMUNITY_VOICE_ROOM, currentUser.uid, setPeers);
       await vc.join();
       voiceRef.current = vc; setInVoice(true); setMuted(false);

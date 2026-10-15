@@ -63,6 +63,9 @@ export async function register(
   } catch (err: any) {
     if (err.code === 'auth/email-already-in-use') return { ok: false, error: 'Email đã được đăng ký' };
     if (err.code === 'auth/invalid-email') return { ok: false, error: 'Email không hợp lệ' };
+    if (err.code === 'auth/signup-disabled') return { ok: false, error: 'Hệ thống đang tạm tắt đăng ký tài khoản mới. Vui lòng thử lại sau.' };
+    if (err.code === 'auth/email-not-confirmed') return { ok: false, error: 'Vui lòng kiểm tra email để xác nhận tài khoản, sau đó đăng nhập.' };
+    if (err.code === 'auth/too-many-requests') return { ok: false, error: 'Thao tác quá nhiều lần, vui lòng thử lại sau ít phút.' };
     if (err.code === 'auth/weak-password') return { ok: false, error: 'Mật khẩu quá yếu' };
     return { ok: false, error: 'Đăng ký thất bại: ' + (err.message || '') };
   }

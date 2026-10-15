@@ -2083,7 +2083,7 @@ function CommunityAdminSection() {
     catch (e: any) { alert(describeFirebaseError(e)); }
     finally { setSaving(false); }
   };
-  const Toggle = ({ label, desc, k }: { label: string; desc: string; k: 'chatEnabled' | 'micEnabled' | 'requestsEnabled' }) => (
+  const Toggle = ({ label, desc, k }: { label: string; desc: string; k: 'chatEnabled' | 'micEnabled' | 'requestsEnabled' | 'roomCreateEnabled' | 'micUnlimited' | 'roomUnlimited' }) => (
     <div className="flex items-center justify-between p-3.5 bg-slate-800/60 rounded-2xl border border-slate-700/40">
       <div><p className="text-sm font-black text-white">{label}</p><p className="text-xs text-slate-500 mt-0.5">{desc}</p></div>
       <button onClick={() => setCfg(c => ({ ...c, [k]: !c[k] }))} aria-label={label}
@@ -2103,9 +2103,12 @@ function CommunityAdminSection() {
         <Toggle k="chatEnabled" label="Cho phép chat" desc="Tắt: người dùng chỉ xem, không gửi được tin nhắn" />
         <Toggle k="micEnabled" label="Cho phép bật mic (phòng thoại)" desc="Người dùng đăng nhập có thể vào phòng thoại và nói chuyện" />
         <Toggle k="requestsEnabled" label="Cho phép yêu cầu phim" desc="Hiện tab Yêu cầu phim trong trang chat cộng đồng" />
-        <div>
+        <Toggle k="roomCreateEnabled" label="Bật phòng cộng đồng (chỉ admin tạo)" desc="Bật: phòng admin tạo hiện ưu tiên ở đầu trang chủ. Tắt: ẩn khỏi trang chủ và không tạo được phòng mới" />
+        <Toggle k="roomUnlimited" label="Phòng cộng đồng không giới hạn người" desc="Bật: khi admin tạo phòng có thêm lựa chọn ∞ (không giới hạn)" />
+        <Toggle k="micUnlimited" label="Phòng thoại không giới hạn người" desc="Bật: bỏ giới hạn số người trong phòng thoại (nhiều người có thể bị lag)" />
+        <div className={cfg.micUnlimited ? 'opacity-40' : ''}>
           <label className="text-xs text-slate-400 font-semibold mb-1 block">Số người tối đa trong phòng thoại (2–12)</label>
-          <input type="number" min={2} max={12} value={cfg.micMax} onChange={e => setCfg(c => ({ ...c, micMax: Number(e.target.value) }))} className="input-field text-sm w-28" />
+          <input type="number" min={2} max={12} disabled={cfg.micUnlimited} value={cfg.micMax} onChange={e => setCfg(c => ({ ...c, micMax: Number(e.target.value) }))} className="input-field text-sm w-28" />
           <p className="text-[11px] text-slate-600 mt-1">Mic dùng kết nối trực tiếp giữa các máy, nên giữ từ 8 người trở xuống để âm thanh mượt.</p>
         </div>
         <div>

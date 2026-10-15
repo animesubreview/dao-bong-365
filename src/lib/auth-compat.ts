@@ -26,7 +26,8 @@ function mapUser(u: any): User | null {
 function mapAuthError(err: any): any {
   const msg = String(err?.message || '').toLowerCase();
   const e: any = new Error(err?.message || 'Lỗi xác thực');
-  if (msg.includes('already registered') || msg.includes('already exists') || msg.includes('user_already_exists')) e.code = 'auth/email-already-in-use';
+  if (msg.includes('signups not allowed') || msg.includes('signup_disabled') || msg.includes('signups are disabled')) e.code = 'auth/signup-disabled';
+  else if (msg.includes('already registered') || msg.includes('already exists') || msg.includes('user_already_exists')) e.code = 'auth/email-already-in-use';
   else if (msg.includes('email not confirmed') || msg.includes('email_not_confirmed')) e.code = 'auth/email-not-confirmed';
   else if (msg.includes('failed to fetch') || msg.includes('networkerror') || msg.includes('network request failed')) e.code = 'auth/network-request-failed';
   else if (msg.includes('invalid login credentials') || msg.includes('invalid email or password')) e.code = 'auth/invalid-credential';
@@ -69,6 +70,12 @@ export async function createUserWithEmailAndPassword(_auth: any, email: string, 
   const { data, error } = await supabase.auth.signUp({ email, password });
   if (error) throw mapAuthError(error);
   if (!data.user) throw mapAuthError({ message: 'Cần xác nhận email trước khi đăng nhập được' });
+  // Nếu bật "Confirm email" thì signUp không trả về session → các bước ghi hồ sơ sau đó sẽ bị RLS chặn
+  if (!data.session) {
+    const e: any = new Error('Cần xác nhận email trước khi đăng nhập được');
+    e.code = 'auth/email-not-confirmed';
+    throw e;
+  }
   authInstance.currentUser = mapUser(data.user);
   return { user: authInstance.currentUser };
 }

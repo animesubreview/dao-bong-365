@@ -5,6 +5,7 @@ import {
   getDoc, limit, where,
 } from './firestore-compat';
 import { db } from './firebase';
+import { getCommunityConfig } from './communityRoom';
 
 // ── Trạng thái đồng bộ player ─────────────────────────────────────────────────
 export interface PlayerSyncState {
@@ -65,6 +66,14 @@ export async function createWatchRoom(data: {
   hostAvatar: string;
   maxMembers: number;
 }): Promise<string> {
+  // Admin có thể khóa tạo phòng / cho phép phòng không giới hạn (config/community_chat)
+  const cfg = await getCommunityConfig();
+  if (!cfg.roomCreateEnabled) throw new Error('Phòng cộng đồng đang tắt.');
+  // Chỉ admin được tạo phòng cộng đồng
+  let isAdmin = false;
+  try { const u: any = await getDoc(doc(db, 'users', data.hostUid)); isAdmin = u.exists() && u.data()?.role === 'admin'; } catch {}
+  if (!isAdmin) throw new Error('Chỉ admin mới được tạo phòng cộng đồng.');
+  if (data.maxMembers === 0 && !cfg.roomUnlimited) throw new Error('Phòng không giới hạn người hiện chưa được bật.');
   const member: RoomMember = {
     uid: data.hostUid,
     username: data.hostName,
@@ -84,6 +93,7 @@ export async function createWatchRoom(data: {
     sync: initialSync,
     createdAt: serverTimestamp(),
     isActive: true,
+    isCommunity: true, // phòng do admin tạo → hiện ưu tiên ở trang chủ
   });
   return ref.id;
 }
@@ -123,7 +133,7 @@ export async function joinWatchRoom(
 
     // Chưa từng vào phòng → kiểm tra giới hạn
     const wasEverMember = pastUids.includes(member.uid);
-    if (!wasEverMember && members.length >= room.maxMembers)
+    if (!wasEverMember && room.maxMembers > 0 && members.length >= room.maxMembers)
       return { ok: false, error: `Phòng đã đủ ${room.maxMembers} người` };
 
     // Thêm vào members + ghi nhớ uid vào pastMemberUids
@@ -222,6 +232,8 @@ export function subscribeActiveWatchRooms(cb: (rooms: WatchRoom[]) => void, onEr
           return now - t < ROOM_TTL_MS;
         })
         .sort((a: WatchRoom, b: WatchRoom) => {
+          const ca = (a as any).isCommunity ? 1 : 0, cb2 = (b as any).isCommunity ? 1 : 0;
+          if (ca !== cb2) return cb2 - ca; // phòng cộng đồng lên đầu
           const ta = typeof a.createdAt === 'number' ? a.createdAt : (a.createdAt?.toMillis?.() ?? 0);
           const tb = typeof b.createdAt === 'number' ? b.createdAt : (b.createdAt?.toMillis?.() ?? 0);
           return tb - ta;

@@ -1,4 +1,5 @@
-import { collection, doc, addDoc, updateDoc, deleteDoc, getDocs, onSnapshot as snap, query, orderBy, limit } from './firestore-compat';
+import { useEffect, useState } from 'react';
+import { collection, doc, getDoc, addDoc, updateDoc, deleteDoc, getDocs, onSnapshot as snap, query, orderBy, limit } from './firestore-compat';
 import { onSnapshot } from './firestoreGuard';
 import { saveDoc } from './firebaseUtils';
 import { db } from './firebase';
@@ -13,13 +14,35 @@ export interface CommunityConfig {
   micEnabled: boolean;
   requestsEnabled: boolean;
   micMax: number;     // số người tối đa trong phòng thoại (mesh WebRTC nên giữ ≤ 8)
+  micUnlimited: boolean;      // true = phòng thoại không giới hạn số người
+  roomCreateEnabled: boolean; // false = khóa tính năng tạo phòng xem chung
+  roomUnlimited: boolean;     // true = cho phép chọn "Không giới hạn" khi tạo phòng xem chung
   notice: string;     // thông báo ghim đầu phòng chat
   updatedAt: number;
 }
 
 export const DEFAULT_COMMUNITY: CommunityConfig = {
-  chatEnabled: true, micEnabled: true, requestsEnabled: true, micMax: 8, notice: '', updatedAt: 0,
+  chatEnabled: true, micEnabled: true, requestsEnabled: true, micMax: 8, micUnlimited: false, roomCreateEnabled: true, roomUnlimited: false, notice: '', updatedAt: 0,
 };
+
+/** Quy ước: maxMembers = 0 nghĩa là không giới hạn số người. */
+export const UNLIMITED = 0;
+export const isUnlimitedMax = (n?: number) => n === UNLIMITED;
+export const formatMax = (n?: number) => (isUnlimitedMax(n) ? '∞' : String(n ?? 2));
+
+/** Hook đọc cấu hình cộng đồng realtime (dùng ở Header, Watch, XemChung...). */
+export function useCommunityConfig(): CommunityConfig {
+  const [cfg, setCfg] = useState<CommunityConfig>(DEFAULT_COMMUNITY);
+  useEffect(() => subscribeCommunityConfig(setCfg), []);
+  return cfg;
+}
+
+export async function getCommunityConfig(): Promise<CommunityConfig> {
+  try {
+    const s: any = await getDoc(doc(db, 'config', 'community_chat'));
+    return s.exists() ? ({ ...DEFAULT_COMMUNITY, ...s.data() } as CommunityConfig) : DEFAULT_COMMUNITY;
+  } catch { return DEFAULT_COMMUNITY; }
+}
 
 export async function saveCommunityConfig(cfg: CommunityConfig): Promise<void> {
   const data = { ...cfg, micMax: Math.min(12, Math.max(2, Number(cfg.micMax) || 8)), updatedAt: Date.now() };

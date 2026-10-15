@@ -15,6 +15,7 @@ import { setDoc } from '../lib/firestoreGuard';
 import AdBanner from '../components/AdBanner';
 import { getMovieOverride, mergeOverride, mergeCustomServers } from '../lib/movieOverrides';
 import { createWatchRoom } from '../lib/watchRoom';
+import { useCommunityConfig } from '../lib/communityRoom';
 import { getCurrentUser, getUserProfile, onAuthChange } from '../lib/auth';
 import type { UserProfile } from '../lib/auth';
 import { getMovieRating, voteMovieRating, hasVoted, RATING_LABELS, RATING_EMOJIS, MovieRating } from '../lib/movieRatings';
@@ -53,6 +54,7 @@ export default function Watch() {
   // Watch room state
   const [showRoomModal, setShowRoomModal] = useState(false);
   const [roomMaxMembers, setRoomMaxMembers] = useState<number>(2);
+  const communityCfg = useCommunityConfig();
   const [creatingRoom, setCreatingRoom] = useState(false);
   const [roomCreated, setRoomCreated] = useState<string | null>(null);
   const [roomLinkCopied, setRoomLinkCopied] = useState(false);
@@ -751,7 +753,7 @@ export default function Watch() {
                   <div className="mb-5">
                     <p className="text-slate-400 text-xs font-semibold mb-2 uppercase tracking-wider">Số người tối đa</p>
                     <div className="grid grid-cols-4 gap-2">
-                      {([2, 3, 4, 5, 6, 8, 10, 12] as const).map(n => (
+                      {([2, 3, 4, 5, 6, 8, 10, 12, ...(communityCfg.roomUnlimited ? [0] : [])] as number[]).map(n => (
                         <button key={n} onClick={() => setRoomMaxMembers(n)}
                           className={cn(
                             'py-2.5 rounded-xl border-2 text-sm font-black transition-all flex flex-col items-center gap-0.5',
@@ -760,13 +762,19 @@ export default function Watch() {
                               : 'bg-[#2a2a2a] border-transparent text-slate-400 hover:border-slate-600'
                           )}>
                           <span className="text-base leading-none">
-                            {n <= 2 ? '👥' : n <= 4 ? '👨‍👩‍👦' : n <= 6 ? '🧑‍🤝‍🧑' : '🎉'}
+                            {n === 0 ? '♾️' : n <= 2 ? '👥' : n <= 4 ? '👨‍👩‍👦' : n <= 6 ? '🧑‍🤝‍🧑' : '🎉'}
                           </span>
-                          <span className="text-xs">{n}</span>
+                          <span className="text-xs">{n === 0 ? '∞' : n}</span>
                         </button>
                       ))}
                     </div>
                   </div>
+
+                  {(!communityCfg.roomCreateEnabled || profile?.role !== 'admin') && (
+                    <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
+                      <p className="text-red-400 text-xs font-medium">Chỉ admin mới được tạo phòng cộng đồng (hoặc phòng đang tắt).</p>
+                    </div>
+                  )}
 
                   {/* Not logged in warning */}
                   {!currentUser && (
@@ -776,7 +784,7 @@ export default function Watch() {
                   )}
 
                   <button
-                    disabled={!currentUser || !profile || creatingRoom}
+                    disabled={!currentUser || !profile || creatingRoom || !communityCfg.roomCreateEnabled || profile?.role !== 'admin'}
                     onClick={async () => {
                       if (!movie || !currentEpisode || !currentUser || !profile) return;
                       setCreatingRoom(true);
@@ -797,6 +805,8 @@ export default function Watch() {
                           maxMembers: roomMaxMembers,
                         });
                         setRoomCreated(roomId);
+                      } catch (e: any) {
+                        alert(e?.message || 'Không tạo được phòng, thử lại sau.');
                       } finally {
                         setCreatingRoom(false);
                       }
