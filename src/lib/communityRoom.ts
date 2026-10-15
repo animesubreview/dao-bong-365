@@ -15,16 +15,17 @@ export interface CommunityConfig {
   requestsEnabled: boolean;
   micMax: number;     // số người tối đa trong phòng thoại (mesh WebRTC nên giữ ≤ 8)
   micUnlimited: boolean;      // true = phòng thoại không giới hạn số người
-  pinEnabled: boolean;        // true = ghim Phòng cộng đồng nổi bật ở đầu trang chủ (admin bật/tắt)
-  pinTitle: string;           // tiêu đề thẻ ghim ở trang chủ
+  pinEnabled: boolean;        // true = hiện popup Phòng cộng đồng nổi trên trang chủ (admin bật/tắt)
+  pinTitle: string;           // tiêu đề popup ở trang chủ
   pinDesc: string;            // mô tả ngắn dưới tiêu đề
+  pinPoster: string;          // poster popup (link ảnh hoặc data URL), để trống = dùng hình mặc định
   roomUnlimited: boolean;     // true = cho phép chọn "Không giới hạn" khi tạo phòng xem chung
   notice: string;     // thông báo ghim đầu phòng chat
   updatedAt: number;
 }
 
 export const DEFAULT_COMMUNITY: CommunityConfig = {
-  chatEnabled: true, micEnabled: true, requestsEnabled: true, micMax: 8, micUnlimited: false, pinEnabled: false, pinTitle: 'Phòng cộng đồng', pinDesc: 'Vào trò chuyện, nói chuyện bằng mic và yêu cầu phim', roomUnlimited: false, notice: '', updatedAt: 0,
+  chatEnabled: true, micEnabled: true, requestsEnabled: true, micMax: 8, micUnlimited: false, pinEnabled: false, pinTitle: 'Phòng cộng đồng', pinDesc: 'Vào trò chuyện, nói chuyện bằng mic và yêu cầu phim', pinPoster: '', roomUnlimited: false, notice: '', updatedAt: 0,
 };
 
 /** Quy ước: maxMembers = 0 nghĩa là không giới hạn số người. */

@@ -2103,13 +2103,31 @@ function CommunityAdminSection() {
         <Toggle k="chatEnabled" label="Cho phép chat" desc="Tắt: người dùng chỉ xem, không gửi được tin nhắn" />
         <Toggle k="micEnabled" label="Cho phép bật mic (phòng thoại)" desc="Người dùng đăng nhập có thể vào phòng thoại và nói chuyện" />
         <Toggle k="requestsEnabled" label="Cho phép yêu cầu phim" desc="Hiện tab Yêu cầu phim trong trang chat cộng đồng" />
-        <Toggle k="pinEnabled" label="Ghim phòng cộng đồng lên trang chủ" desc="Bật: hiện thẻ Phòng cộng đồng nổi bật ở đầu trang chủ. Tắt: ẩn khỏi trang chủ" />
+        <Toggle k="pinEnabled" label="Popup phòng cộng đồng nổi ở trang chủ" desc="Bật: hiện popup nổi (có poster) trên màn hình trang chủ để mọi người dễ thấy. Tắt: ẩn" />
         {cfg.pinEnabled && (
           <div className="flex flex-col gap-2 p-3.5 bg-slate-800/40 rounded-2xl border border-green-500/20">
-            <label className="text-xs text-slate-400 font-semibold">Tiêu đề thẻ ghim</label>
+            <label className="text-xs text-slate-400 font-semibold">Tiêu đề popup</label>
             <input value={cfg.pinTitle} onChange={e => setCfg(c => ({ ...c, pinTitle: e.target.value }))} maxLength={60} className="input-field text-sm" placeholder="Phòng cộng đồng" />
             <label className="text-xs text-slate-400 font-semibold">Mô tả (nếu có "Thông báo ghim" bên dưới thì ưu tiên hiện thông báo đó)</label>
             <input value={cfg.pinDesc} onChange={e => setCfg(c => ({ ...c, pinDesc: e.target.value }))} maxLength={120} className="input-field text-sm" placeholder="Vào trò chuyện, nói chuyện bằng mic và yêu cầu phim" />
+            <label className="text-xs text-slate-400 font-semibold">Poster popup (ảnh dọc 4:5 đẹp nhất — để trống dùng hình mặc định)</label>
+            <div className="flex gap-2">
+              <input value={cfg.pinPoster?.startsWith('data:') ? '(ảnh đã tải lên)' : (cfg.pinPoster || '')}
+                onChange={e => setCfg(c => ({ ...c, pinPoster: e.target.value }))} className="input-field text-sm flex-1" placeholder="Dán link ảnh hoặc bấm Tải ảnh" />
+              <label className="shrink-0 px-4 py-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-white text-sm font-bold cursor-pointer flex items-center">
+                Tải ảnh<input type="file" accept="image/*" className="hidden" onChange={async e => {
+                  const file = e.target.files?.[0]; if (!file) return;
+                  try {
+                    const url = await resizeImageToDataUrl(file, 800, 0.8);
+                    if (url.length > 700 * 1024) { alert('Ảnh còn quá nặng, hãy chọn ảnh nhỏ hơn hoặc dán link ảnh.'); return; }
+                    setCfg(c => ({ ...c, pinPoster: url }));
+                  } catch { alert('Không đọc được ảnh này!'); }
+                  finally { e.target.value = ''; }
+                }} />
+              </label>
+              {cfg.pinPoster && <button onClick={() => setCfg(c => ({ ...c, pinPoster: '' }))} className="shrink-0 px-3 rounded-xl bg-slate-800 text-slate-400 hover:text-white text-sm">Xóa</button>}
+            </div>
+            {cfg.pinPoster && <img src={cfg.pinPoster} alt="Xem trước poster" className="w-32 rounded-xl border border-slate-700 object-cover aspect-[4/5]" />}
           </div>
         )}
         <Toggle k="roomUnlimited" label="Phòng xem chung không giới hạn người" desc="Bật: khi tạo phòng xem chung có thêm lựa chọn ∞ (không giới hạn)" />

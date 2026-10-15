@@ -14,7 +14,7 @@ import { subscribeBilingualMovies, bilingualToMovie, BilingualMovie } from '../l
 import { cn } from '../lib/utils';
 import { onAuthChange } from '../lib/auth';
 import Banner from '../components/Banner';
-import CommunityRoomsBanner from '../components/CommunityRoomsBanner';
+import CommunityPopup from '../components/CommunityPopup';
 import AdBanner from '../components/AdBanner';
 import LiveBanner from '../components/LiveBanner';
 import PosterImg from '../components/PosterImg';
@@ -1038,8 +1038,8 @@ export default function Home() {
 
       <main className="max-w-2xl md:max-w-5xl lg:max-w-[1400px] mx-auto px-4 md:px-6 lg:px-8 mt-6 flex flex-col gap-5">
 
-        {/* Phòng cộng đồng do admin tạo — ưu tiên đầu trang */}
-        <CommunityRoomsBanner />
+        {/* Popup nổi Phòng cộng đồng (admin bật/tắt + đặt poster trong Admin → Chat cộng đồng) */}
+        <CommunityPopup />
 
         {/* Bạn đang quan tâm gì */}
         <section className="py-5">
