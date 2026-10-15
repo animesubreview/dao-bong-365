@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-route
 import Header from './components/Header';
 import Footer from './components/Footer';
 import MobileBottomNav from './components/MobileBottomNav';
+import LiveNotice from './components/LiveNotice';
 import NotificationDisplay from './components/NotificationDisplay';
 import Home from './pages/Home';
 import MovieDetail from './pages/MovieDetail';
@@ -240,6 +241,7 @@ function AppInner({ maintenance, maintenanceLoaded }: { maintenance: Maintenance
         </div>
         <Footer />
         <MobileBottomNav />
+        <LiveNotice />
         {/* Banner QC cố định cuối màn hình — hiển thị mọi trang (PC & Mobile),
             trừ trang admin và trang xem phim (tránh che player) */}
         {!isAdminPage && !location.pathname.startsWith('/watch') && (

@@ -51,6 +51,7 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     title: 'Hệ thống',
     items: [
+      { id: 'section-live-notice', label: 'Thông báo Live', icon: Radio, desc: 'Link live TikTok/YouTube/Facebook, poster, bật/tắt' },
       { id: 'section-maintenance', label: 'Bảo trì',   icon: Wrench, desc: 'Bật/tắt chế độ bảo trì website' },
       { id: 'section-geoblock',    label: 'Chặn IP',   icon: Globe,  desc: 'Chặn truy cập từ nước ngoài' },
       { id: 'section-guide',       label: 'Hướng dẫn', icon: Info,   desc: 'Ghi chú sử dụng' },

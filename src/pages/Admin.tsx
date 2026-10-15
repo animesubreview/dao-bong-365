@@ -67,6 +67,7 @@ import {
   saveMaintenanceConfig, subscribeMaintenanceConfig,
   MaintenanceConfig, DEFAULT_MAINTENANCE,
 } from '../lib/maintenance';
+import { saveLiveNotice, subscribeLiveNotice, LiveNoticeConfig, DEFAULT_LIVE_NOTICE, detectLivePlatform, safeLiveUrl, PLATFORM_LABEL } from '../lib/liveNotice';
 import {
   saveGeoblockConfig, subscribeGeoblockConfig,
   GeoblockConfig, DEFAULT_GEOBLOCK,
@@ -2057,6 +2058,107 @@ function VipKeysSection({ onToast }: { onToast: (msg: string, t: 'success' | 'er
           <p>• Thời hạn VIP cộng dồn nếu user đang còn VIP hạn cũ.</p>
           <p>• Có thể khóa key tạm thời (🔌) mà không cần xóa hẳn.</p>
         </div>
+      </div>
+    </SectionCard>
+  );
+}
+
+// ── LiveNoticeSection ─────────────────────────────────────────────────────────
+function LiveNoticeSection() {
+  const [cfg, setCfg] = useState<LiveNoticeConfig>(DEFAULT_LIVE_NOTICE);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const loaded = useRef(false);
+
+  useEffect(() => subscribeLiveNotice(c => { if (!loaded.current) { loaded.current = true; setCfg(c); } }), []);
+
+  const platform = cfg.url ? detectLivePlatform(cfg.url) : 'other';
+  const urlOk = !cfg.url || !!safeLiveUrl(cfg.url);
+
+  const save = async () => {
+    if (cfg.enabled && !safeLiveUrl(cfg.url)) { alert('Hãy nhập link live hợp lệ (bắt đầu bằng https://) trước khi bật.'); return; }
+    setSaving(true);
+    try {
+      await saveLiveNotice({ ...cfg, platform });
+      setSaved(true); setTimeout(() => setSaved(false), 2000);
+    } catch (e: any) { alert(describeFirebaseError(e)); }
+    finally { setSaving(false); }
+  };
+
+  const handlePoster = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]; if (!file) return;
+    try {
+      const url = await resizeImageToDataUrl(file, 960, 0.8);
+      if (url.length > 800 * 1024) { alert('Ảnh còn quá nặng, hãy chọn ảnh nhỏ hơn hoặc dán link ảnh.'); return; }
+      setCfg(c => ({ ...c, posterUrl: url }));
+    } catch { alert('Không đọc được ảnh này!'); }
+    finally { e.target.value = ''; }
+  };
+
+  return (
+    <SectionCard title="Thông báo Live" icon={Radio} color="red">
+      <div className="flex items-center justify-between p-4 bg-slate-800/60 rounded-2xl border border-slate-700/40 mb-5">
+        <div>
+          <p className="text-sm font-black text-white">Hiện thông báo live</p>
+          <p className="text-xs text-slate-500 mt-0.5">{cfg.enabled ? 'Đang BẬT — người dùng thấy thẻ "Xem live ngay"' : 'Đang TẮT — không hiển thị gì'}</p>
+        </div>
+        <button onClick={() => setCfg(c => ({ ...c, enabled: !c.enabled }))} aria-label="Bật/tắt thông báo live"
+          className={`relative w-14 h-7 rounded-full border transition-all duration-300 ${cfg.enabled ? 'bg-red-500 border-red-400' : 'bg-slate-700 border-slate-600'}`}>
+          <span className={`absolute top-0.5 w-6 h-6 rounded-full bg-white shadow transition-all duration-300 ${cfg.enabled ? 'left-7' : 'left-0.5'}`} />
+        </button>
+      </div>
+
+      <div className="flex flex-col gap-4">
+        <div>
+          <label className="text-xs text-slate-400 font-semibold mb-1 block">Link phát live {cfg.url && <span className="text-red-400 font-black">· {PLATFORM_LABEL[platform]}</span>}</label>
+          <input value={cfg.url} onChange={e => setCfg(c => ({ ...c, url: e.target.value }))}
+            className="input-field text-sm" placeholder="https://www.tiktok.com/@kenh/live  hoặc  https://youtube.com/live/...  hoặc  https://fb.watch/..." />
+          {!urlOk && <p className="text-xs text-red-400 mt-1">Link không hợp lệ — cần bắt đầu bằng https://</p>}
+        </div>
+        <div>
+          <label className="text-xs text-slate-400 font-semibold mb-1 block">Tiêu đề</label>
+          <input value={cfg.title} onChange={e => setCfg(c => ({ ...c, title: e.target.value }))} className="input-field text-sm" placeholder="Đang phát trực tiếp!" />
+        </div>
+        <div>
+          <label className="text-xs text-slate-400 font-semibold mb-1 block">Nội dung ngắn</label>
+          <input value={cfg.message} onChange={e => setCfg(c => ({ ...c, message: e.target.value }))} className="input-field text-sm" placeholder="Vào xem live cùng Đảo Phim ngay nào." />
+        </div>
+        <div>
+          <label className="text-xs text-slate-400 font-semibold mb-1 block">Chữ trên nút</label>
+          <input value={cfg.buttonText} onChange={e => setCfg(c => ({ ...c, buttonText: e.target.value }))} className="input-field text-sm" placeholder="Xem live ngay" />
+        </div>
+        <div>
+          <label className="text-xs text-slate-400 font-semibold mb-1 block">Poster live (ảnh ngang 16:9)</label>
+          <div className="flex gap-2">
+            <input value={cfg.posterUrl.startsWith('data:') ? '(ảnh đã tải lên)' : cfg.posterUrl}
+              onChange={e => setCfg(c => ({ ...c, posterUrl: e.target.value }))} className="input-field text-sm flex-1" placeholder="Dán link ảnh hoặc bấm Tải ảnh" />
+            <label className="shrink-0 px-4 py-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-white text-sm font-bold cursor-pointer flex items-center">
+              Tải ảnh<input type="file" accept="image/*" className="hidden" onChange={handlePoster} />
+            </label>
+            {cfg.posterUrl && <button onClick={() => setCfg(c => ({ ...c, posterUrl: '' }))} className="shrink-0 px-3 rounded-xl bg-slate-800 text-slate-400 hover:text-white text-sm">Xóa</button>}
+          </div>
+        </div>
+
+        {/* Xem trước */}
+        <div>
+          <p className="text-xs text-slate-400 font-semibold mb-2">Xem trước</p>
+          <div className="w-[280px] max-w-full rounded-2xl overflow-hidden bg-slate-900 border border-slate-700/70">
+            <div className="relative aspect-video bg-gradient-to-br from-red-700 to-slate-900">
+              {cfg.posterUrl ? <img src={cfg.posterUrl} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center"><Radio size={40} className="text-white/80" /></div>}
+              <span className="absolute top-2 left-2 bg-red-600 text-white text-[11px] font-black px-2 py-1 rounded-md">● LIVE · {PLATFORM_LABEL[platform]}</span>
+            </div>
+            <div className="p-3">
+              <p className="text-sm font-black text-white">{cfg.title || 'Đang phát trực tiếp!'}</p>
+              {cfg.message && <p className="text-xs text-slate-400 mt-1">{cfg.message}</p>}
+              <div className="mt-3 text-center bg-red-600 text-white text-sm font-black py-2.5 rounded-xl">{cfg.buttonText || 'Xem live ngay'}</div>
+            </div>
+          </div>
+        </div>
+
+        <button onClick={save} disabled={saving}
+          className="self-start px-6 py-3 rounded-xl bg-red-600 hover:bg-red-500 disabled:opacity-60 text-white font-black text-sm transition-colors">
+          {saving ? 'Đang lưu...' : saved ? '✓ Đã lưu' : 'Lưu thông báo'}
+        </button>
       </div>
     </SectionCard>
   );
@@ -4401,6 +4503,12 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
           )}
 
           {/* BẢO TRÌ */}
+          {activeSection === 'section-live-notice' && (
+          <div id="section-live-notice">
+            <LiveNoticeSection />
+          </div>
+          )}
+
           {activeSection === 'section-maintenance' && (
           <div id="section-maintenance">
             <MaintenanceSection />
