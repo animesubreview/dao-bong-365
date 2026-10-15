@@ -2,8 +2,7 @@ import React, { useEffect, useState } from 'react';
 import {
   Activity, Film, Users, Menu as MenuIcon, X, LogOut, ExternalLink, Shield, Palette, Radio, Clock,
   Edit3, Pin, Languages, Tv, Megaphone, Bell, Crown, KeyRound, Globe, Wrench, CreditCard, Info,
-  AlertCircle, ChevronRight, LayoutGrid,
-} from 'lucide-react';
+  AlertCircle, ChevronRight, LayoutGrid, Mic } from 'lucide-react';
 import type { FirestoreErrorEvent } from '../../lib/firebaseUtils';
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -51,6 +50,7 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     title: 'Hệ thống',
     items: [
+      { id: 'section-community', label: 'Chat cộng đồng', icon: Mic, desc: 'Bật/tắt chat, mic, yêu cầu phim, kiểm duyệt' },
       { id: 'section-live-notice', label: 'Thông báo Live', icon: Radio, desc: 'Link live TikTok/YouTube/Facebook, poster, bật/tắt' },
       { id: 'section-maintenance', label: 'Bảo trì',   icon: Wrench, desc: 'Bật/tắt chế độ bảo trì website' },
       { id: 'section-geoblock',    label: 'Chặn IP',   icon: Globe,  desc: 'Chặn truy cập từ nước ngoài' },

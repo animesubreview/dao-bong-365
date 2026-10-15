@@ -301,6 +301,7 @@ export default function Header() {
                   <div className="flex flex-wrap gap-1 pb-2 mb-2 border-b border-slate-800">
                     {[
                       { to: '/type/song-ngu', label: 'Song Ngữ' },
+                      { to: '/chat', label: 'Chat Cộng Đồng' },
                       { to: '/lich-chieu', label: 'Lịch Chiếu' },
                       { to: '/truyen-tranh', label: 'Truyện Tranh' },
                     ].map(l => (

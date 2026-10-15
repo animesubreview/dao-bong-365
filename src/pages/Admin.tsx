@@ -7,8 +7,7 @@ import {
   RefreshCw, Link as LinkIcon, Info, Lock, LogOut, KeyRound,
   Bell, BellPlus, Users, Ban, UserCheck, Clock, Megaphone, MonitorPlay,
   Wallet, PlusCircle, MinusCircle, CreditCard, Wrench, Crown,
-  History, Search, Radio, Trash, Pin, ArrowUp, ArrowDown, Copy, Shuffle, Power, Languages, Tv,
-} from 'lucide-react';
+  History, Search, Radio, Trash, Pin, ArrowUp, ArrowDown, Copy, Shuffle, Power, Languages, Tv, Mic, Clapperboard } from 'lucide-react';
 import { getAdBanners, createAdBanner, updateAdBanner, deleteAdBanner, AdBannerData } from '../components/AdBanner';
 import { createPopupAd, updatePopupAd, deletePopupAd, PopupAdData } from '../components/PopupAd';
 import { subscribeTVChannels, saveTVChannel, deleteTVChannel, TVChannel, TV_CATEGORIES } from '../lib/liveTV';
@@ -67,6 +66,8 @@ import {
   saveMaintenanceConfig, subscribeMaintenanceConfig,
   MaintenanceConfig, DEFAULT_MAINTENANCE,
 } from '../lib/maintenance';
+import { CommunityConfig, DEFAULT_COMMUNITY, saveCommunityConfig, subscribeCommunityConfig, MovieRequest, subscribeMovieRequests, setMovieRequestStatus, deleteMovieRequest } from '../lib/communityRoom';
+import { subscribeCommunityChat, deleteCommunityChatMessage, LiveChatMessage } from '../lib/livestream';
 import { saveLiveNotice, subscribeLiveNotice, LiveNoticeConfig, DEFAULT_LIVE_NOTICE, detectLivePlatform, safeLiveUrl, PLATFORM_LABEL } from '../lib/liveNotice';
 import {
   saveGeoblockConfig, subscribeGeoblockConfig,
@@ -2058,6 +2059,102 @@ function VipKeysSection({ onToast }: { onToast: (msg: string, t: 'success' | 'er
           <p>• Thời hạn VIP cộng dồn nếu user đang còn VIP hạn cũ.</p>
           <p>• Có thể khóa key tạm thời (🔌) mà không cần xóa hẳn.</p>
         </div>
+      </div>
+    </SectionCard>
+  );
+}
+
+// ── CommunityAdminSection ─────────────────────────────────────────────────────
+function CommunityAdminSection() {
+  const [cfg, setCfg] = useState<CommunityConfig>(DEFAULT_COMMUNITY);
+  const [msgs, setMsgs] = useState<LiveChatMessage[]>([]);
+  const [reqs, setReqs] = useState<MovieRequest[]>([]);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const loaded = useRef(false);
+
+  useEffect(() => subscribeCommunityConfig(c => { if (!loaded.current) { loaded.current = true; setCfg(c); } }), []);
+  useEffect(() => subscribeCommunityChat(setMsgs), []);
+  useEffect(() => subscribeMovieRequests(setReqs, 100), []);
+
+  const save = async () => {
+    setSaving(true);
+    try { await saveCommunityConfig(cfg); setSaved(true); setTimeout(() => setSaved(false), 2000); }
+    catch (e: any) { alert(describeFirebaseError(e)); }
+    finally { setSaving(false); }
+  };
+  const Toggle = ({ label, desc, k }: { label: string; desc: string; k: 'chatEnabled' | 'micEnabled' | 'requestsEnabled' }) => (
+    <div className="flex items-center justify-between p-3.5 bg-slate-800/60 rounded-2xl border border-slate-700/40">
+      <div><p className="text-sm font-black text-white">{label}</p><p className="text-xs text-slate-500 mt-0.5">{desc}</p></div>
+      <button onClick={() => setCfg(c => ({ ...c, [k]: !c[k] }))} aria-label={label}
+        className={`relative w-14 h-7 rounded-full border transition-all ${cfg[k] ? 'bg-green-500 border-green-400' : 'bg-slate-700 border-slate-600'}`}>
+        <span className={`absolute top-0.5 w-6 h-6 rounded-full bg-white shadow transition-all ${cfg[k] ? 'left-7' : 'left-0.5'}`} />
+      </button>
+    </div>
+  );
+  const statusBtn = (r: MovieRequest, st: 'pending' | 'done' | 'rejected', label: string, cls: string) => (
+    <button onClick={() => setMovieRequestStatus(r.id, st).catch(e => alert(describeFirebaseError(e)))}
+      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border ${r.status === st ? cls : 'border-slate-700 text-slate-400 hover:text-white'}`}>{label}</button>
+  );
+
+  return (
+    <SectionCard title="Chat cộng đồng · Mic · Yêu cầu phim" icon={Mic} color="green">
+      <div className="flex flex-col gap-3 mb-5">
+        <Toggle k="chatEnabled" label="Cho phép chat" desc="Tắt: người dùng chỉ xem, không gửi được tin nhắn" />
+        <Toggle k="micEnabled" label="Cho phép bật mic (phòng thoại)" desc="Người dùng đăng nhập có thể vào phòng thoại và nói chuyện" />
+        <Toggle k="requestsEnabled" label="Cho phép yêu cầu phim" desc="Hiện tab Yêu cầu phim trong trang chat cộng đồng" />
+        <div>
+          <label className="text-xs text-slate-400 font-semibold mb-1 block">Số người tối đa trong phòng thoại (2–12)</label>
+          <input type="number" min={2} max={12} value={cfg.micMax} onChange={e => setCfg(c => ({ ...c, micMax: Number(e.target.value) }))} className="input-field text-sm w-28" />
+          <p className="text-[11px] text-slate-600 mt-1">Mic dùng kết nối trực tiếp giữa các máy, nên giữ từ 8 người trở xuống để âm thanh mượt.</p>
+        </div>
+        <div>
+          <label className="text-xs text-slate-400 font-semibold mb-1 block">Thông báo ghim đầu phòng chat</label>
+          <input value={cfg.notice} onChange={e => setCfg(c => ({ ...c, notice: e.target.value }))} maxLength={200} className="input-field text-sm" placeholder="VD: Tối nay 20h live xem phim chung!" />
+        </div>
+        <button onClick={save} disabled={saving} className="self-start px-6 py-3 rounded-xl bg-green-600 hover:bg-green-500 disabled:opacity-60 text-white font-black text-sm">
+          {saving ? 'Đang lưu...' : saved ? '✓ Đã lưu' : 'Lưu cài đặt'}
+        </button>
+      </div>
+
+      <h3 className="text-sm font-black text-white mb-2 flex items-center gap-2"><Clapperboard size={15} /> Yêu cầu phim ({reqs.length})</h3>
+      <div className="flex flex-col gap-2 max-h-80 overflow-y-auto mb-5">
+        {reqs.length === 0 && <p className="text-xs text-slate-500">Chưa có yêu cầu nào.</p>}
+        {reqs.map(r => (
+          <div key={r.id} className="p-3 rounded-xl bg-slate-800/50 border border-slate-700/40">
+            <p className="text-sm font-bold text-white break-words">{r.title}</p>
+            {r.note && <p className="text-xs text-slate-400 break-words">{r.note}</p>}
+            <p className="text-[10px] text-slate-600 mt-0.5">{r.username} · {new Date(r.createdAt).toLocaleString('vi-VN')}</p>
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              {statusBtn(r, 'pending', 'Chờ xử lý', 'border-amber-500/40 bg-amber-500/15 text-amber-400')}
+              {statusBtn(r, 'done', 'Đã thêm', 'border-green-500/40 bg-green-500/15 text-green-400')}
+              {statusBtn(r, 'rejected', 'Từ chối', 'border-red-500/40 bg-red-500/15 text-red-400')}
+              <button onClick={() => { if (confirm('Xóa yêu cầu này?')) deleteMovieRequest(r.id).catch(e => alert(describeFirebaseError(e))); }}
+                className="ml-auto px-2.5 py-1 rounded-lg text-[11px] font-bold text-slate-500 hover:text-red-400"><Trash2 size={13} /></button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="text-sm font-black text-white">Tin nhắn gần đây ({msgs.length})</h3>
+        {msgs.length > 0 && (
+          <button onClick={async () => { if (confirm(`Xóa toàn bộ ${msgs.length} tin nhắn?`)) { for (const m of msgs) { try { await deleteCommunityChatMessage(m.id); } catch {} } } }}
+            className="text-xs font-bold text-red-400 hover:text-red-300">Xóa tất cả</button>
+        )}
+      </div>
+      <div className="flex flex-col gap-1.5 max-h-72 overflow-y-auto">
+        {msgs.length === 0 && <p className="text-xs text-slate-500">Chưa có tin nhắn.</p>}
+        {[...msgs].reverse().map(m => (
+          <div key={m.id} className="flex items-start gap-2 p-2 rounded-lg bg-slate-800/40">
+            <div className="min-w-0 flex-1">
+              <span className={`text-xs font-bold ${m.isAdmin ? 'text-amber-400' : 'text-slate-300'}`}>{m.username}</span>
+              <span className="text-[10px] text-slate-600 ml-2">{new Date(m.createdAt).toLocaleTimeString('vi-VN')}</span>
+              <p className="text-xs text-slate-400 break-words">{m.text}</p>
+            </div>
+            <button onClick={() => deleteCommunityChatMessage(m.id).catch(e => alert(describeFirebaseError(e)))} aria-label="Xóa tin nhắn" className="text-slate-500 hover:text-red-400 shrink-0"><Trash2 size={14} /></button>
+          </div>
+        ))}
       </div>
     </SectionCard>
   );
@@ -4503,6 +4600,12 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
           )}
 
           {/* BẢO TRÌ */}
+          {activeSection === 'section-community' && (
+          <div id="section-community">
+            <CommunityAdminSection />
+          </div>
+          )}
+
           {activeSection === 'section-live-notice' && (
           <div id="section-live-notice">
             <LiveNoticeSection />
