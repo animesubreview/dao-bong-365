@@ -66,13 +66,8 @@ export async function createWatchRoom(data: {
   hostAvatar: string;
   maxMembers: number;
 }): Promise<string> {
-  // Admin có thể khóa tạo phòng / cho phép phòng không giới hạn (config/community_chat)
+  // Admin có thể cho phép phòng xem chung không giới hạn người (config/community_chat)
   const cfg = await getCommunityConfig();
-  if (!cfg.roomCreateEnabled) throw new Error('Phòng cộng đồng đang tắt.');
-  // Chỉ admin được tạo phòng cộng đồng
-  let isAdmin = false;
-  try { const u: any = await getDoc(doc(db, 'users', data.hostUid)); isAdmin = u.exists() && u.data()?.role === 'admin'; } catch {}
-  if (!isAdmin) throw new Error('Chỉ admin mới được tạo phòng cộng đồng.');
   if (data.maxMembers === 0 && !cfg.roomUnlimited) throw new Error('Phòng không giới hạn người hiện chưa được bật.');
   const member: RoomMember = {
     uid: data.hostUid,
@@ -93,7 +88,6 @@ export async function createWatchRoom(data: {
     sync: initialSync,
     createdAt: serverTimestamp(),
     isActive: true,
-    isCommunity: true, // phòng do admin tạo → hiện ưu tiên ở trang chủ
   });
   return ref.id;
 }
@@ -232,8 +226,6 @@ export function subscribeActiveWatchRooms(cb: (rooms: WatchRoom[]) => void, onEr
           return now - t < ROOM_TTL_MS;
         })
         .sort((a: WatchRoom, b: WatchRoom) => {
-          const ca = (a as any).isCommunity ? 1 : 0, cb2 = (b as any).isCommunity ? 1 : 0;
-          if (ca !== cb2) return cb2 - ca; // phòng cộng đồng lên đầu
           const ta = typeof a.createdAt === 'number' ? a.createdAt : (a.createdAt?.toMillis?.() ?? 0);
           const tb = typeof b.createdAt === 'number' ? b.createdAt : (b.createdAt?.toMillis?.() ?? 0);
           return tb - ta;

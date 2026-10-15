@@ -3,8 +3,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, LogIn, Plus, RefreshCw, Tv, Users, Clock } from 'lucide-react';
 import { subscribeActiveWatchRooms, WatchRoom } from '../lib/watchRoom';
 import { usePageTitle } from '../lib/utils';
-import { useCommunityConfig } from '../lib/communityRoom';
-import { onAuthChange, getUserProfile } from '../lib/auth';
 
 function createdMs(r: WatchRoom): number {
   const c: any = r.createdAt;
@@ -41,9 +39,6 @@ export default function XemChung() {
     if (id) navigate(`/watch-room/${id}`);
   };
   // Mở khung tạo phòng (chọn phim → chọn tập → tạo) đã có sẵn ở Header
-  const cfg = useCommunityConfig();
-  const [isAdmin, setIsAdmin] = useState(false);
-  useEffect(() => onAuthChange(async (u) => { setIsAdmin(u ? (await getUserProfile(u.uid))?.role === 'admin' : false); }), []);
   const createRoom = () => window.dispatchEvent(new Event('open-watch-room-modal'));
 
   return (
@@ -85,10 +80,10 @@ export default function XemChung() {
             className="w-10 h-10 rounded-full border border-white/10 bg-white/5 flex items-center justify-center text-slate-300 active:scale-95">
             <RefreshCw size={16} />
           </button>
-          {isAdmin && cfg.roomCreateEnabled && <button onClick={createRoom}
+          <button onClick={createRoom}
             className="inline-flex items-center gap-1.5 rounded-full bg-[var(--primary)] text-slate-950 font-bold text-sm px-4 h-10 active:scale-95">
             <Plus size={16} /> Tạo phòng chiếu
-          </button>}
+          </button>
         </div>
       </div>
 
@@ -99,11 +94,9 @@ export default function XemChung() {
           <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-[var(--primary)]/10 border border-[var(--primary)]/30 flex items-center justify-center text-[var(--primary-light)]"><Tv size={28} /></div>
           <h3 className="text-lg font-bold text-white mb-1">Chưa có phòng chiếu nào đang mở</h3>
           <p className="text-sm text-slate-400 mb-5">Hãy là người đầu tiên tạo phòng và chọn phim xem cùng bạn bè nhé!</p>
-          {isAdmin && cfg.roomCreateEnabled
-            ? <button onClick={createRoom} className="inline-flex items-center gap-2 rounded-full bg-[var(--primary)] text-slate-950 font-bold px-6 py-3 active:scale-95">
-                <Plus size={18} /> Tạo phòng chiếu mới
-              </button>
-            : <p className="text-xs text-amber-400">Phòng cộng đồng do admin tạo — hãy chờ admin mở phòng nhé.</p>}
+          <button onClick={createRoom} className="inline-flex items-center gap-2 rounded-full bg-[var(--primary)] text-slate-950 font-bold px-6 py-3 active:scale-95">
+            <Plus size={18} /> Tạo phòng chiếu mới
+          </button>
         </div>
       ) : (
         <div className="space-y-3">

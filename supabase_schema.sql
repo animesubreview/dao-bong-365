@@ -35,16 +35,6 @@ create policy "insert policy" on firestore_docs for insert
   with check (
     -- collection "users": chỉ được tạo đúng document của chính mình (doc_id = uid đang đăng nhập)
     (collection_path <> 'users' or doc_id = auth.uid()::text)
-    -- collection "watchRooms": chỉ admin (users/{uid}.data.role = 'admin') mới được tạo phòng cộng đồng
-    and (collection_path <> 'watchRooms' or (
-      coalesce(data->>'isCommunity', 'false') = 'true'
-      and exists (
-        select 1 from firestore_docs u
-        where u.collection_path = 'users'
-          and u.doc_id = auth.uid()::text
-          and u.data->>'role' = 'admin'
-      )
-    ))
   );
 
 drop policy if exists "update policy" on firestore_docs;

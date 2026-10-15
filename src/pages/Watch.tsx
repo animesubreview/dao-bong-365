@@ -770,12 +770,6 @@ export default function Watch() {
                     </div>
                   </div>
 
-                  {(!communityCfg.roomCreateEnabled || profile?.role !== 'admin') && (
-                    <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
-                      <p className="text-red-400 text-xs font-medium">Chỉ admin mới được tạo phòng cộng đồng (hoặc phòng đang tắt).</p>
-                    </div>
-                  )}
-
                   {/* Not logged in warning */}
                   {!currentUser && (
                     <div className="mb-4 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-xl">
@@ -784,7 +778,7 @@ export default function Watch() {
                   )}
 
                   <button
-                    disabled={!currentUser || !profile || creatingRoom || !communityCfg.roomCreateEnabled || profile?.role !== 'admin'}
+                    disabled={!currentUser || !profile || creatingRoom}
                     onClick={async () => {
                       if (!movie || !currentEpisode || !currentUser || !profile) return;
                       setCreatingRoom(true);

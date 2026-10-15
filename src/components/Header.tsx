@@ -249,9 +249,6 @@ export default function Header() {
   };
 
   const openWatchRoomModal = () => {
-    // Chỉ admin được tạo phòng cộng đồng; người dùng thường chỉ xem danh sách phòng
-    if (sessionRef.current?.role !== 'admin') { navigate('/xem-chung'); return; }
-    if (!communityCfgRef.current.roomCreateEnabled) { alert('Phòng cộng đồng đang tắt — bật trong Admin → Chat cộng đồng.'); return; }
     setShowWatchRoomModal(true);
     setCreatedRoomId(null);
     setRoomLinkCopied(false);

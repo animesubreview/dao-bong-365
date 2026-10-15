@@ -1,46 +1,42 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Users, Radio } from 'lucide-react';
-import { subscribeActiveWatchRooms, WatchRoom } from '../lib/watchRoom';
-import { useCommunityConfig } from '../lib/communityRoom';
+import { MessageCircle, Mic, Pin, Users } from 'lucide-react';
+import { useCommunityConfig, countVoiceUsers } from '../lib/communityRoom';
 
-// Phòng cộng đồng do admin tạo — hiện ưu tiên ở đầu trang chủ khi admin bật.
+// Phòng cộng đồng (chat + mic + yêu cầu phim, trang /chat) — admin bật trong
+// Admin → Chat cộng đồng thì thẻ này được ghim nổi bật ở đầu trang chủ.
 export default function CommunityRoomsBanner() {
   const cfg = useCommunityConfig();
-  const [rooms, setRooms] = useState<WatchRoom[]>([]);
+  const [voiceCount, setVoiceCount] = useState(0);
 
-  useEffect(() => subscribeActiveWatchRooms(r => setRooms(r.filter(x => (x as any).isCommunity))), []);
+  useEffect(() => {
+    if (!cfg.pinEnabled || !cfg.micEnabled) return;
+    let alive = true;
+    const load = () => countVoiceUsers().then(n => { if (alive) setVoiceCount(n); });
+    load();
+    const t = setInterval(load, 30_000);
+    return () => { alive = false; clearInterval(t); };
+  }, [cfg.pinEnabled, cfg.micEnabled]);
 
-  if (!cfg.roomCreateEnabled || rooms.length === 0) return null;
+  if (!cfg.pinEnabled) return null;
 
   return (
-    <section className="flex flex-col gap-2">
-      <h2 className="flex items-center gap-2 text-sm font-black text-white">
-        <Radio size={15} className="text-red-400" /> Phòng cộng đồng đang mở
-      </h2>
-      {rooms.map(r => {
-        const n = r.members?.length || 0;
-        const unlimited = r.maxMembers === 0;
-        const full = !unlimited && n >= (r.maxMembers || 2);
-        return (
-          <Link key={r.id} to={`/watch-room/${r.id}`}
-            className="flex gap-3 rounded-2xl border border-green-500/30 bg-gradient-to-r from-green-500/10 to-transparent p-3 active:scale-[0.99] transition-transform">
-            <img src={r.movieThumb} alt="" loading="lazy"
-              onError={(e) => { (e.currentTarget as HTMLImageElement).style.visibility = 'hidden'; }}
-              className="w-14 h-20 rounded-xl object-cover bg-slate-800 shrink-0" />
-            <div className="min-w-0 flex-1 flex flex-col justify-between">
-              <div>
-                <p className="font-bold text-white text-sm line-clamp-2">{r.movieName}</p>
-                <p className="text-xs text-slate-400 mt-0.5 line-clamp-1">{r.episodeName} · Chủ phòng: {r.hostName}</p>
-              </div>
-              <div className="flex items-center justify-between text-xs">
-                <span className="inline-flex items-center gap-1 text-slate-400"><Users size={13} /> {n}/{unlimited ? '∞' : r.maxMembers}</span>
-                <span className={full ? 'font-bold text-slate-500' : 'font-bold text-green-400'}>{full ? 'Đã đầy' : 'Vào phòng →'}</span>
-              </div>
-            </div>
-          </Link>
-        );
-      })}
-    </section>
+    <Link to="/chat"
+      className="relative flex items-center gap-3 rounded-2xl border border-green-500/40 bg-gradient-to-r from-green-500/20 via-green-500/10 to-transparent p-3.5 shadow-lg shadow-green-500/10 active:scale-[0.99] transition-transform">
+      <span className="absolute top-2 right-3 inline-flex items-center gap-1 text-[10px] font-bold text-green-300/80"><Pin size={11} /> Ghim</span>
+      <div className="w-12 h-12 shrink-0 rounded-2xl bg-green-500 text-slate-950 flex items-center justify-center shadow-lg shadow-green-500/30">
+        <MessageCircle size={24} />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="font-black text-white text-sm sm:text-base line-clamp-1">{cfg.pinTitle || 'Phòng cộng đồng'}</p>
+        <p className="text-xs text-slate-300/80 mt-0.5 line-clamp-2">{cfg.notice || cfg.pinDesc}</p>
+        {cfg.micEnabled && voiceCount > 0 && (
+          <p className="inline-flex items-center gap-1 text-[11px] font-bold text-green-400 mt-1">
+            <Mic size={12} /> <Users size={12} /> {voiceCount} người đang nói chuyện
+          </p>
+        )}
+      </div>
+      <span className="shrink-0 text-xs font-black text-green-400 pr-1 pt-4">Vào →</span>
+    </Link>
   );
 }

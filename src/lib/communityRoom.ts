@@ -4,7 +4,7 @@ import { onSnapshot } from './firestoreGuard';
 import { saveDoc } from './firebaseUtils';
 import { db } from './firebase';
 
-// Phòng cộng đồng: chat + mic (WebRTC) + yêu cầu phim. Admin bật/tắt từng phần tại config/community_chat.
+// Phòng cộng đồng (trang /chat, KHÁC phòng xem chung): chat + mic (WebRTC) + yêu cầu phim. Admin bật/tắt từng phần tại config/community_chat.
 export const COMMUNITY_VOICE_ROOM = 'community_voice';
 const CONFIG_KEY = 'community_config';
 const REQ_COL = 'movie_requests';
@@ -15,14 +15,16 @@ export interface CommunityConfig {
   requestsEnabled: boolean;
   micMax: number;     // số người tối đa trong phòng thoại (mesh WebRTC nên giữ ≤ 8)
   micUnlimited: boolean;      // true = phòng thoại không giới hạn số người
-  roomCreateEnabled: boolean; // false = khóa tính năng tạo phòng xem chung
+  pinEnabled: boolean;        // true = ghim Phòng cộng đồng nổi bật ở đầu trang chủ (admin bật/tắt)
+  pinTitle: string;           // tiêu đề thẻ ghim ở trang chủ
+  pinDesc: string;            // mô tả ngắn dưới tiêu đề
   roomUnlimited: boolean;     // true = cho phép chọn "Không giới hạn" khi tạo phòng xem chung
   notice: string;     // thông báo ghim đầu phòng chat
   updatedAt: number;
 }
 
 export const DEFAULT_COMMUNITY: CommunityConfig = {
-  chatEnabled: true, micEnabled: true, requestsEnabled: true, micMax: 8, micUnlimited: false, roomCreateEnabled: true, roomUnlimited: false, notice: '', updatedAt: 0,
+  chatEnabled: true, micEnabled: true, requestsEnabled: true, micMax: 8, micUnlimited: false, pinEnabled: false, pinTitle: 'Phòng cộng đồng', pinDesc: 'Vào trò chuyện, nói chuyện bằng mic và yêu cầu phim', roomUnlimited: false, notice: '', updatedAt: 0,
 };
 
 /** Quy ước: maxMembers = 0 nghĩa là không giới hạn số người. */
