@@ -167,6 +167,43 @@ export async function deleteDoc(ref: DocumentReference) {
   if (error) throw error;
 }
 
+// ── Polling dùng chung cho cấu hình công khai (thay cho kênh realtime) ──
+const POLL_PATHS = new Set(['config', 'site_config', 'settings', 'popup_ads', 'ad_banners', 'notifications']);
+const POLL_INTERVAL = 90_000;
+function shouldPoll(path: string): boolean {
+  if (!POLL_PATHS.has(path)) return false;
+  try { if (location.pathname.startsWith('/daophim/admin')) return false; } catch {}
+  return true;
+}
+interface Poller { subs: Set<{ onNext: any; onError: any }>; timer: any; last: any; hasLast: boolean; first: Promise<void> | null; }
+const pollers = new Map<string, Poller>();
+function startSharedPoll(key: string, load: () => Promise<any>, onNext: any, onError: any): Unsubscribe {
+  let p = pollers.get(key);
+  const sub = { onNext, onError };
+  if (!p) {
+    const np: Poller = { subs: new Set(), timer: null, last: null, hasLast: false, first: null };
+    const tick = async (force = false) => {
+      if (!force && typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
+      try { const v = await load(); np.last = v; np.hasLast = true; np.subs.forEach(x => x.onNext(v)); }
+      catch (e) { np.subs.forEach(x => x.onError?.(e)); }
+    };
+    np.timer = setInterval(() => tick(), POLL_INTERVAL);
+    pollers.set(key, np); p = np;
+    p.subs.add(sub);
+    p.first = tick(true); // lần đọc đầu tiên, chia sẻ cho mọi người nghe đăng ký sau
+  } else {
+    p.subs.add(sub);
+    // Người nghe thứ 2 trở đi: dùng kết quả gần nhất (hoặc chờ lần đọc đầu) thay vì gọi mạng thêm
+    if (p.hasLast) { try { onNext(p.last); } catch {} }
+    else p.first?.then(() => { if (p!.hasLast) { try { onNext(p!.last); } catch {} } });
+  }
+  return () => {
+    const cur = pollers.get(key); if (!cur) return;
+    cur.subs.delete(sub);
+    if (cur.subs.size === 0) { clearInterval(cur.timer); pollers.delete(key); }
+  };
+}
+
 export function onSnapshot(refOrQuery: any, ...args: any[]): Unsubscribe {
   let onNext: any, onError: any;
   if (typeof args[0] === 'function') { onNext = args[0]; onError = args[1]; }
@@ -179,6 +216,16 @@ export function onSnapshot(refOrQuery: any, ...args: any[]): Unsubscribe {
     try { onNext(isDoc ? await getDoc(refOrQuery) : await getDocs(refOrQuery)); }
     catch (e) { onError?.(e); }
   };
+
+  // ── Tiết kiệm quota Supabase Realtime (Free: 200 kết nối đồng thời) ──
+  // Các cấu hình công khai (config/site_config/settings/popup_ads...) KHÔNG cần realtime:
+  // trước đây mỗi khách mở hàng chục kênh websocket chỉ để nghe cấu hình hiếm khi đổi.
+  // Giờ dùng polling dùng chung (1 bộ đếm cho mọi nơi nghe cùng 1 tài liệu, tạm dừng khi tab ẩn).
+  // Trang Admin vẫn dùng realtime như cũ để thấy thay đổi ngay.
+  if (shouldPoll(path)) {
+    return startSharedPoll(`${path}|${isDoc ? refOrQuery.id : JSON.stringify([refOrQuery.wheres, refOrQuery.orders, refOrQuery.limitN])}`,
+      async () => (isDoc ? await getDoc(refOrQuery) : await getDocs(refOrQuery)), onNext, onError);
+  }
   fetchAndEmit();
 
   let channel: any = null;
