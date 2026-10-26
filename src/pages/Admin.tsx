@@ -1207,6 +1207,9 @@ function AdsSection({ onToast }: { onToast: (msg: string, t: 'success' | 'error'
     bottom: '⬇️ Dưới trang',
     middle: '↕️ Giữa trang',
     sticky: '📌 Cố định cuối màn hình (PC & Mobile)',
+    header: '🔝 Trên cùng (dính Header)',
+    left: '◀️ Sidebar trái',
+    right: '▶️ Sidebar phải',
   };
 
   return (
@@ -1398,6 +1401,8 @@ function AdsSection({ onToast }: { onToast: (msg: string, t: 'success' | 'error'
                     <option value="middle">↕️ Giữa trang (giữa các section)</option>
                     <option value="bottom">⬇️ Dưới trang (Trang chủ: sau danh sách phim · Chi tiết phim & Xem phim: cuối trang)</option>
                     <option value="sticky">📌 Cố định cuối màn hình (PC &amp; Mobile)</option>
+                    <option value="left">◀️ Sidebar TRÁI (cố định, chỉ hiện trên PC màn rộng ≥1660px)</option>
+                    <option value="right">▶️ Sidebar PHẢI (cố định, chỉ hiện trên PC màn rộng ≥1660px)</option>
                   </select>
                 </div>
               </div>

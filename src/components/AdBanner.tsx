@@ -12,8 +12,9 @@ export interface AdBannerData {
   mediaType: 'gif' | 'mp4' | 'image';
   linkUrl: string;
   // 'sticky' = banner cố định (fixed) ở cuối màn hình, hiển thị trên mọi trang, cả PC lẫn Mobile
+  // 'left' / 'right' = banner dọc cố định ở 2 bên sidebar trái/phải, chỉ hiện trên màn hình rộng (≥1660px)
   // 'header' = banner mỏng dính ngay trên cùng, phía trên thanh header, hiển thị trên MỌI trang
-  position: 'top' | 'bottom' | 'middle' | 'sticky' | 'header';
+  position: 'top' | 'bottom' | 'middle' | 'sticky' | 'header' | 'left' | 'right';
   active: boolean;
   createdAt: number;
 }
@@ -50,7 +51,7 @@ export async function deleteAdBanner(id: string) {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 interface AdBannerProps {
-  position: 'top' | 'bottom' | 'middle' | 'sticky' | 'header';
+  position: 'top' | 'bottom' | 'middle' | 'sticky' | 'header' | 'left' | 'right';
   className?: string;
 }
 
@@ -118,6 +119,35 @@ export default function AdBanner({ position, className = '' }: AdBannerProps) {
         >
           <X size={11} className="text-white" />
         </button>
+      </div>
+    );
+  }
+
+  // ── Banner 2 bên (sidebar trái / phải) — cố định dọc theo màn hình, chỉ hiện khi
+  // màn hình đủ rộng (≥1660px) để không đè lên nội dung (nội dung tối đa 1400px).
+  // Nhiều banner cùng vị trí thì xếp chồng theo chiều dọc.
+  if (position === 'left' || position === 'right') {
+    return (
+      <div
+        className={`hidden min-[1660px]:flex flex-col gap-3 fixed z-[40] w-[150px] min-[1800px]:w-[190px] max-h-[calc(100vh-var(--app-header-h,72px)-32px)] overflow-y-auto ${position === 'left' ? 'left-3' : 'right-3'} ${className}`}
+        style={{ top: 'calc(var(--app-header-h, 72px) + 16px)', scrollbarWidth: 'none' }}
+      >
+        {visible.map(banner => (
+          <div key={banner.id} className="relative group w-full overflow-hidden rounded-xl border border-slate-700/60 bg-black shadow-lg shadow-black/40">
+            <a href={banner.linkUrl} target="_blank" rel="noopener" title={banner.title} className="block w-full">
+              {banner.mediaType === 'mp4' ? (
+                <video src={banner.mediaUrl} autoPlay loop muted playsInline className="w-full h-auto block cursor-pointer" />
+              ) : (
+                <img src={banner.mediaUrl} alt={banner.title || 'Quảng cáo'} loading="lazy" className="w-full h-auto block cursor-pointer"
+                  onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+              )}
+            </a>
+            <button onClick={() => dismiss(banner.id)} title="Đóng quảng cáo"
+              className="absolute top-1.5 right-1.5 w-6 h-6 bg-black/70 hover:bg-black rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+              <X size={12} className="text-white" />
+            </button>
+          </div>
+        ))}
       </div>
     );
   }
