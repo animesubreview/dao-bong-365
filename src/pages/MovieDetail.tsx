@@ -169,7 +169,7 @@ export default function MovieDetail() {
       <PopupAd movieKey={slug || ''} />
 
       <div className="max-w-[1100px] mx-auto px-4 md:px-8">
-        <div className="lg:max-w-2xl lg:mx-auto">
+        <div className="lg:max-w-4xl lg:mx-auto">
           <AdBanner position="top" className="rounded-xl overflow-hidden pt-3" />
         </div>
       </div>

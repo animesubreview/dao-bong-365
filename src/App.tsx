@@ -247,7 +247,7 @@ function AppInner({ maintenance, maintenanceLoaded }: { maintenance: Maintenance
         {!isAdminPage && !location.pathname.startsWith('/watch') && (
           <AdBanner position="sticky" />
         )}
-        {/* Banner 2 bên sidebar trái/phải — chỉ hiện trên màn hình rộng, trừ trang admin */}
+        {/* Banner 2 bên sidebar trái/phải — hiện cả mobile & PC, trừ trang admin */}
         {!isAdminPage && (
           <>
             <AdBanner position="left" />

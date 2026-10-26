@@ -12,7 +12,7 @@ export interface AdBannerData {
   mediaType: 'gif' | 'mp4' | 'image';
   linkUrl: string;
   // 'sticky' = banner cố định (fixed) ở cuối màn hình, hiển thị trên mọi trang, cả PC lẫn Mobile
-  // 'left' / 'right' = banner dọc cố định ở 2 bên sidebar trái/phải, chỉ hiện trên màn hình rộng (≥1660px)
+  // 'left' / 'right' = banner dọc cố định ở 2 bên sidebar trái/phải, hiện cả mobile (thanh hẹp) lẫn PC (rộng ≥1660px)
   // 'header' = banner mỏng dính ngay trên cùng, phía trên thanh header, hiển thị trên MỌI trang
   position: 'top' | 'bottom' | 'middle' | 'sticky' | 'header' | 'left' | 'right';
   active: boolean;
@@ -129,22 +129,22 @@ export default function AdBanner({ position, className = '' }: AdBannerProps) {
   if (position === 'left' || position === 'right') {
     return (
       <div
-        className={`hidden min-[1660px]:flex flex-col gap-3 fixed z-[40] w-[150px] min-[1800px]:w-[190px] max-h-[calc(100vh-var(--app-header-h,72px)-32px)] overflow-y-auto ${position === 'left' ? 'left-3' : 'right-3'} ${className}`}
-        style={{ top: 'calc(var(--app-header-h, 72px) + 16px)', scrollbarWidth: 'none' }}
+        className={`flex flex-col gap-2 fixed z-[40] w-[50px] sm:w-[90px] md:w-[120px] min-[1660px]:w-[150px] min-[1800px]:w-[190px] max-h-[45vh] min-[1660px]:max-h-[calc(100vh-var(--app-header-h,72px)-32px)] overflow-y-auto ${position === 'left' ? 'left-0.5 sm:left-2 min-[1660px]:left-3' : 'right-0.5 sm:right-2 min-[1660px]:right-3'} ${className}`}
+        style={{ top: 'calc(var(--app-header-h, 72px) + 130px)', scrollbarWidth: 'none' }}
       >
         {visible.map(banner => (
-          <div key={banner.id} className="relative group w-full overflow-hidden rounded-xl border border-slate-700/60 bg-black shadow-lg shadow-black/40">
+          <div key={banner.id} className="relative group w-full overflow-hidden rounded-lg sm:rounded-xl border border-slate-700/60 bg-black shadow-lg shadow-black/40">
             <a href={banner.linkUrl} target="_blank" rel="noopener" title={banner.title} className="block w-full">
               {banner.mediaType === 'mp4' ? (
-                <video src={banner.mediaUrl} autoPlay loop muted playsInline className="w-full h-auto block cursor-pointer" />
+                <video src={banner.mediaUrl} autoPlay loop muted playsInline className="w-full h-28 sm:h-40 min-[1660px]:h-auto object-cover block cursor-pointer" />
               ) : (
-                <img src={banner.mediaUrl} alt={banner.title || 'Quảng cáo'} loading="lazy" className="w-full h-auto block cursor-pointer"
+                <img src={banner.mediaUrl} alt={banner.title || 'Quảng cáo'} loading="lazy" className="w-full h-28 sm:h-40 min-[1660px]:h-auto object-cover block cursor-pointer"
                   onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
               )}
             </a>
             <button onClick={() => dismiss(banner.id)} title="Đóng quảng cáo"
-              className="absolute top-1.5 right-1.5 w-6 h-6 bg-black/70 hover:bg-black rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-              <X size={12} className="text-white" />
+              className="absolute top-0.5 right-0.5 w-5 h-5 bg-black/70 hover:bg-black rounded-full flex items-center justify-center sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+              <X size={10} className="text-white" />
             </button>
           </div>
         ))}
@@ -211,9 +211,10 @@ export default function AdBanner({ position, className = '' }: AdBannerProps) {
   }
 
   return (
-    <div className={`flex flex-col gap-2 w-full ${className}`}>
+    // Mobile: xếp dọc. PC (≥768px): các banner xếp thành 1 HÀNG NGANG, chia đều chiều rộng.
+    <div className={`flex flex-col md:flex-row md:items-stretch gap-2 md:gap-3 w-full ${className}`}>
       {visible.map(banner => (
-        <div key={banner.id} className="relative w-full group overflow-hidden rounded-xl">
+        <div key={banner.id} className="relative w-full md:flex-1 md:min-w-0 group overflow-hidden rounded-xl">
           <a
             href={banner.linkUrl}
             target="_blank"

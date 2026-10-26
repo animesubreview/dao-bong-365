@@ -285,7 +285,7 @@ export default function Watch() {
           nên banner này tự nằm ngay dưới header, không cần bù thêm. */}
       <div className="max-w-2xl xl:max-w-[1500px] xl:mx-auto mx-auto px-3 xl:px-8">
         {/* xl:max-w-2xl giới hạn bề ngang banner trên PC để không bị quá to/tràn hết màn hình */}
-        <div className="xl:max-w-2xl xl:mx-auto">
+        <div className="xl:max-w-4xl xl:mx-auto">
           <AdBanner position="top" className="rounded-xl overflow-hidden pt-3" />
         </div>
       </div>

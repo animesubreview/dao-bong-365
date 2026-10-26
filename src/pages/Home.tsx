@@ -1026,7 +1026,7 @@ export default function Home() {
       <div className="flex flex-col">
       <div className="md:order-2 max-w-2xl md:max-w-5xl lg:max-w-[1400px] w-full mx-auto px-4 md:px-6 lg:px-8">
         {/* lg:max-w-2xl giới hạn bề ngang banner trên PC để không bị quá to/tràn hết màn hình */}
-        <div className="lg:max-w-2xl lg:mx-auto">
+        <div className="lg:max-w-4xl lg:mx-auto">
           <AdBanner position="top" className="pt-3" />
         </div>
       </div>
