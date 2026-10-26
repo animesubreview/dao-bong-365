@@ -162,24 +162,49 @@
             // (poster bị 404, CDN chập chờn...) và đã có cơ chế ảnh dự phòng xử lý — KHÔNG được phủ màn hình đỏ.
             var tag = String(e.target.tagName).toUpperCase();
             if (tag !== 'SCRIPT' && tag !== 'LINK') return;
+            // <link rel=preload|modulepreload|prefetch> lỗi chỉ là tối ưu tải trước, KHÔNG làm hỏng trang → bỏ qua.
+            // Chỉ <link rel=stylesheet> và <script> mới là file cốt lõi.
+            if (tag === 'LINK') {
+              var rel = String(e.target.rel || '').toLowerCase();
+              if (rel.indexOf('stylesheet') === -1) return;
+            }
             // File bundle (/assets/*.js|css) không tải được thường do trình duyệt/CDN còn giữ index.html CŨ trỏ tới
-            // file đã bị xóa sau khi deploy bản mới → tự tải lại 1 lần để lấy index.html mới, người dùng khỏi thấy lỗi.
-            try {
-              var u = String(e.target.src || e.target.href || '');
-              var tries = Number(sessionStorage.getItem('__asset_reload') || 0);
-              if (u.indexOf('/assets/') > -1 && tries < 2) {
-                sessionStorage.setItem('__asset_reload', String(tries + 1));
-                // Lần 2 thêm tham số ngẫu nhiên để vượt cache CDN/trình duyệt đang giữ index.html cũ
-                if (tries === 1) {
-                  var q = location.search.replace(/([?&])_v=\d+&?/, '$1').replace(/[?&]$/, '');
-                  location.replace(location.pathname + q + (q ? '&' : '?') + '_v=' + Date.now() + location.hash);
-                } else {
-                  location.reload();
-                }
-                return;
-              }
-            } catch (_) {}
-            showErr('LỖI TẢI FILE: <' + e.target.tagName + '> ' + (e.target.src || e.target.href || '') + '\n(File này không tải được — có thể do build lỗi, đường dẫn sai, hoặc mất mạng)');
+            // file đã bị xóa sau khi deploy bản mới → xóa cache + tự tải lại để lấy index.html mới (tối đa 3 lần/phiên).
+            var u = String(e.target.src || e.target.href || '');
+            var tries = 0;
+            try { tries = Number(sessionStorage.getItem('__asset_reload') || 0); } catch (_) {}
+            var hardReload = function () {
+              var go = function () {
+                var q = location.search.replace(/([?&])_v=\d+&?/, '$1').replace(/[?&]$/, '');
+                location.replace(location.pathname + q + (q ? '&' : '?') + '_v=' + Date.now() + location.hash);
+              };
+              try {
+                var jobs = [];
+                if (window.caches && caches.keys) jobs.push(caches.keys().then(function (ks) { return Promise.all(ks.map(function (k) { return caches.delete(k); })); }));
+                if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) jobs.push(navigator.serviceWorker.getRegistrations().then(function (rs) { return Promise.all(rs.map(function (r) { return r.unregister(); })); }));
+                Promise.all(jobs).then(go, go);
+                setTimeout(go, 1500);
+              } catch (_) { go(); }
+            };
+            if (u.indexOf('/assets/') > -1 && tries < 3) {
+              try { sessionStorage.setItem('__asset_reload', String(tries + 1)); } catch (_) {}
+              hardReload();
+              return;
+            }
+            // Hết lượt tự sửa: hiện thông báo thân thiện + nút tải lại thay vì màn hình lỗi đỏ khó hiểu
+            if (!document.getElementById('__err_overlay__')) {
+              var box = document.createElement('div');
+              box.id = '__err_overlay__';
+              box.style.cssText = 'position:fixed;inset:0;z-index:2147483647;background:#0b1020;color:#e2e8f0;font:16px/1.6 sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center;';
+              box.innerHTML = '<div style="font-size:20px;font-weight:800">Web vừa được cập nhật</div><div style="color:#94a3b8;max-width:320px">Trình duyệt đang giữ bản cũ. Bấm nút bên dưới để tải bản mới nhất.</div>';
+              var btn = document.createElement('button');
+              btn.textContent = 'Tải lại trang';
+              btn.style.cssText = 'background:#22c55e;color:#052e16;font-weight:800;border:0;border-radius:12px;padding:12px 28px;font-size:16px;cursor:pointer;';
+              btn.onclick = function () { try { sessionStorage.removeItem('__asset_reload'); } catch (_) {} hardReload(); };
+              box.appendChild(btn);
+              document.documentElement.appendChild(box);
+            }
+            try { console.error('Không tải được file:', u); } catch (_) {}
           } else {
             showErr('LỖI JS: ' + (e.message || '') + '\n' + (e.filename || '') + ':' + (e.lineno || '') + ':' + (e.colno || '') + '\n' + (e.error && e.error.stack || ''));
           }
@@ -192,6 +217,11 @@
           if (r && r.name === 'TypeError' && /failed to fetch|networkerror|load failed/i.test(String(r.message || ''))) { try { console.warn('Network error:', r); } catch (_) {} return; }
           showErr('LỖI PROMISE: ' + (r && (r.message || r.toString()) || String(r)) + '\n' + (r && r.stack || ''));
         });
+        // Trang đã dựng xong → xóa bộ đếm tự tải lại để lần deploy sau còn đủ lượt tự sửa
+        setTimeout(function () {
+          var r = document.getElementById('root');
+          if (r && r.children.length > 0) { try { sessionStorage.removeItem('__asset_reload'); } catch (_) {} }
+        }, 5000);
         // Nếu sau 6 giây #root vẫn trống mà không có lỗi nào bắt được ở trên — báo luôn để biết
         setTimeout(function () {
           var root = document.getElementById('root');
