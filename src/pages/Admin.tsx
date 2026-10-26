@@ -1526,7 +1526,7 @@ function AdsSection({ onToast }: { onToast: (msg: string, t: 'success' | 'error'
           </div>
 
           <div className="bg-green-600/5 border border-green-600/20 rounded-xl px-4 py-3 text-[12px] text-green-300/80">
-            ℹ️ Popup hiện <strong>1 lần duy nhất mỗi phiên</strong> khi người dùng nhấn vào chi tiết phim. Chỉ popup đầu tiên đang <strong>bật</strong> sẽ được hiển thị.
+            ℹ️ Popup hiện <strong>1 lần duy nhất mỗi phiên</strong> khi người dùng nhấn vào chi tiết phim. Hiện tối đa <strong>2 popup đang bật</strong>: hiện popup 1, người dùng bấm <strong>Đóng/Bỏ qua</strong> thì hiện tiếp popup 2.
           </div>
 
           {showPopupForm && (

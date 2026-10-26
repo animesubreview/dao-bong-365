@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { X, ExternalLink } from 'lucide-react';
+import { X } from 'lucide-react';
 import { collection, doc, query, orderBy } from '../lib/firestore-compat';
 import { db } from '../lib/firebase';
 import { addDoc, updateDoc, deleteDoc } from '../lib/firestoreGuard';
@@ -53,22 +53,23 @@ function markShown(movieKey: string) {
 // ── Hook ──────────────────────────────────────────────────────────────────────
 export function usePopupAd(movieKey: string) {
   const [show, setShow] = useState(false);
-  const [ad, setAd] = useState<PopupAdData | null>(null);
+  const [ads, setAds] = useState<PopupAdData[]>([]);
+  const [idx, setIdx] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
     fetchCollectionCached<PopupAdData>(COL, COL, [orderBy('createdAt', 'desc')])
       .then(all => {
         if (cancelled) return;
-        const ads = all.filter(a => a.active);
-        setAd(ads[0] ?? null);
+        // Lấy tối đa 2 popup đang bật: hiện popup 1, người dùng bấm Đóng/Bỏ qua thì hiện tiếp popup 2
+        setAds(all.filter(a => a.active).slice(0, 2));
       })
       .catch(e => console.error('[PopupAd] fetch error:', e));
     return () => { cancelled = true; };
   }, []);
 
   useEffect(() => {
-    if (!movieKey || !ad) return;
+    if (!movieKey || ads.length === 0) return;
     const shown = getShownSet();
     if (shown.has(movieKey)) return;
     const t = setTimeout(() => {
@@ -76,14 +77,20 @@ export function usePopupAd(movieKey: string) {
       markShown(movieKey);
     }, 800);
     return () => clearTimeout(t);
-  }, [movieKey, ad]);
+  }, [movieKey, ads]);
 
-  return { show, ad, close: () => setShow(false) };
+  // Đóng popup hiện tại; nếu còn popup tiếp theo thì hiện luôn, hết thì ẩn
+  const close = () => {
+    if (idx + 1 < ads.length) setIdx(idx + 1);
+    else setShow(false);
+  };
+
+  return { show, ad: ads[idx] ?? null, idx, close, closeAll: () => setShow(false) };
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
 export default function PopupAd({ movieKey }: { movieKey: string }) {
-  const { show, ad, close } = usePopupAd(movieKey);
+  const { show, ad, idx, close, closeAll } = usePopupAd(movieKey);
   const [countdown, setCountdown] = useState(5);
 
   useEffect(() => {
@@ -96,7 +103,7 @@ export default function PopupAd({ movieKey }: { movieKey: string }) {
       });
     }, 1000);
     return () => clearInterval(iv);
-  }, [show]);
+  }, [show, idx]);
 
   if (!show || !ad) return null;
 
@@ -107,7 +114,7 @@ export default function PopupAd({ movieKey }: { movieKey: string }) {
         onClick={countdown === 0 ? close : undefined}
       />
       <div className="relative z-10 w-full max-w-sm mx-auto rounded-2xl overflow-hidden shadow-2xl shadow-black/80 border border-slate-700/50">
-        <a href={ad.linkUrl} target="_blank" rel="noopener" className="block" onClick={close}>
+        <a href={ad.linkUrl} target="_blank" rel="noopener" className="block" onClick={closeAll}>
           {ad.mediaType === 'mp4' ? (
             <video
               src={ad.mediaUrl} autoPlay loop muted playsInline
@@ -122,13 +129,7 @@ export default function PopupAd({ movieKey }: { movieKey: string }) {
           )}
         </a>
         <div className="bg-slate-900 px-4 py-3 flex items-center justify-between gap-3">
-          <a
-            href={ad.linkUrl} target="_blank" rel="noopener" onClick={close}
-            className="flex items-center gap-1.5 text-green-400 text-xs font-bold hover:text-green-300 transition-colors truncate"
-          >
-            <ExternalLink size={13} />
-            <span className="truncate">{ad.title || 'Xem thêm'}</span>
-          </a>
+          <span />
           {countdown > 0 ? (
             <span className="shrink-0 text-xs text-slate-500 font-bold bg-slate-800 px-3 py-1.5 rounded-lg">
               Đóng sau {countdown}s
