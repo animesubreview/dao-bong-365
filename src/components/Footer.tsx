@@ -169,6 +169,11 @@ export default function Footer() {
           <Link to="/info/terms" className="hover:text-slate-300 transition-colors">Terms</Link>
           <Link to="/site-map" className="hover:text-slate-300 transition-colors">Sitemap</Link>
         </div>
+
+        {/* Dòng đối tác cuối web */}
+        <p className="text-slate-500 text-[11px] sm:text-xs text-center leading-relaxed px-2">
+          Đối tác Hi88 QQ88 PATRICK - BOOK SITE- Cỏ Mực - THÁNG 10
+        </p>
       </div>
     </footer>
   );
