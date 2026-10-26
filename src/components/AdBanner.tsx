@@ -129,16 +129,16 @@ export default function AdBanner({ position, className = '' }: AdBannerProps) {
   if (position === 'left' || position === 'right') {
     return (
       <div
-        className={`flex flex-col gap-2 fixed z-[40] w-[56px] sm:w-[84px] md:w-[110px] min-[1660px]:w-[150px] min-[1800px]:w-[190px] max-h-[65vh] min-[1660px]:max-h-[calc(100vh-var(--app-header-h,72px)-32px)] overflow-y-auto ${position === 'left' ? 'left-1 sm:left-2 min-[1660px]:left-3' : 'right-1 sm:right-2 min-[1660px]:right-3'} ${className}`}
-        style={{ top: 'calc(var(--app-header-h, 72px) + 130px)', scrollbarWidth: 'none' }}
+        className={`flex flex-col gap-2 fixed z-[40] top-[calc(var(--app-header-h,72px)+130px)] lg:top-[calc(var(--app-header-h,72px)+16px)] w-[68px] sm:w-[96px] md:w-[120px] lg:w-[150px] min-[1800px]:w-[190px] max-h-[65vh] lg:max-h-[calc(100vh-var(--app-header-h,72px)-32px)] overflow-y-auto ${position === 'left' ? 'left-1 sm:left-2 lg:left-3' : 'right-1 sm:right-2 lg:right-3'} ${className}`}
+        style={{ scrollbarWidth: 'none' }}
       >
         {visible.map(banner => (
           <div key={banner.id} className="relative group w-full overflow-hidden rounded-lg sm:rounded-xl border border-slate-700/60 bg-black shadow-lg shadow-black/40">
             <a href={banner.linkUrl} target="_blank" rel="noopener" title={banner.title} className="block w-full">
               {banner.mediaType === 'mp4' ? (
-                <video src={banner.mediaUrl} autoPlay loop muted playsInline className="w-full h-80 sm:h-96 min-[1660px]:h-auto object-cover block cursor-pointer" />
+                <video src={banner.mediaUrl} autoPlay loop muted playsInline className="w-full h-auto object-contain block cursor-pointer" />
               ) : (
-                <img src={banner.mediaUrl} alt={banner.title || 'Quảng cáo'} loading="lazy" className="w-full h-80 sm:h-96 min-[1660px]:h-auto object-cover block cursor-pointer"
+                <img src={banner.mediaUrl} alt={banner.title || 'Quảng cáo'} loading="lazy" className="w-full h-auto object-contain block cursor-pointer"
                   onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
               )}
             </a>
