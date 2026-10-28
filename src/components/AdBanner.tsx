@@ -159,7 +159,7 @@ export default function AdBanner({ position, className = '' }: AdBannerProps) {
       <div
         className={`fixed inset-x-0 bottom-[64px] md:bottom-0 z-[45] flex justify-center px-2.5 pb-1 md:px-4 md:pb-3 pointer-events-none ${className}`}
       >
-        <div className="relative w-full md:w-[94%] md:max-w-[1600px] pointer-events-auto">
+        <div className="relative w-full md:w-[94%] md:max-w-[760px] pointer-events-auto">
           {/* Nút đóng toàn bộ khối banner sticky */}
           <button
             onClick={() => setAllClosed(true)}
@@ -170,11 +170,11 @@ export default function AdBanner({ position, className = '' }: AdBannerProps) {
             <X size={15} className="text-white hidden md:block" />
           </button>
 
-          <div className="flex flex-col md:flex-row md:items-center w-full divide-y md:divide-y-0 md:divide-x divide-slate-800 border border-slate-700/60 md:border rounded-2xl md:rounded-2xl overflow-hidden shadow-[0_-6px_24px_rgba(0,0,0,0.55)]">
+          <div className="flex flex-col w-full divide-y divide-slate-800 border border-slate-700/60 md:border rounded-2xl md:rounded-2xl overflow-hidden shadow-[0_-6px_24px_rgba(0,0,0,0.55)]">
             {visible.map(banner => (
               <div
                 key={banner.id}
-                className="relative w-full md:flex-1 bg-black/95 md:bg-black overflow-hidden"
+                className="relative w-full bg-black/95 md:bg-black overflow-hidden"
               >
                 <a
                   href={banner.linkUrl}
@@ -187,13 +187,13 @@ export default function AdBanner({ position, className = '' }: AdBannerProps) {
                     <video
                       src={banner.mediaUrl}
                       autoPlay loop muted playsInline
-                      className="w-full h-auto max-h-16 sm:max-h-20 md:max-h-28 lg:max-h-32 object-contain cursor-pointer"
+                      className="w-full h-auto max-h-16 sm:max-h-20 md:max-h-none object-contain cursor-pointer"
                     />
                   ) : (
                     <img
                       src={banner.mediaUrl}
                       alt={banner.title || 'Quảng cáo'}
-                      className="w-full h-auto max-h-16 sm:max-h-20 md:max-h-28 lg:max-h-32 object-contain cursor-pointer"
+                      className="w-full h-auto max-h-16 sm:max-h-20 md:max-h-none object-contain cursor-pointer"
                       onError={e => {
                         const t = e.target as HTMLImageElement;
                         t.style.display = 'none';
@@ -211,10 +211,10 @@ export default function AdBanner({ position, className = '' }: AdBannerProps) {
   }
 
   return (
-    // Mobile: xếp dọc. PC (≥768px): các banner xếp thành 1 HÀNG NGANG, chia đều chiều rộng.
-    <div className={`flex flex-col md:flex-row md:items-stretch gap-2 md:gap-3 w-full ${className}`}>
+    // Mobile: xếp dọc có khoảng cách. PC (≥768px): các banner CHỒNG SÁT NHAU thành 1 khối dọc, to, căn giữa.
+    <div className={`flex flex-col gap-2 md:gap-0 w-full md:max-w-[760px] md:mx-auto md:rounded-xl md:overflow-hidden md:border md:border-slate-700/60 ${className}`}>
       {visible.map(banner => (
-        <div key={banner.id} className="relative w-full md:flex-1 md:min-w-0 group overflow-hidden rounded-xl">
+        <div key={banner.id} className="relative w-full group overflow-hidden rounded-xl md:rounded-none">
           <a
             href={banner.linkUrl}
             target="_blank"
@@ -226,13 +226,13 @@ export default function AdBanner({ position, className = '' }: AdBannerProps) {
               <video
                 src={banner.mediaUrl}
                 autoPlay loop muted playsInline
-                className="w-full h-auto max-h-20 sm:max-h-24 md:max-h-28 lg:max-h-24 object-contain rounded-xl cursor-pointer bg-black/20"
+                className="w-full h-auto max-h-20 sm:max-h-24 md:max-h-none object-contain rounded-xl md:rounded-none cursor-pointer bg-black/20"
               />
             ) : (
               <img
                 src={banner.mediaUrl}
                 alt={banner.title || 'Quảng cáo'}
-                className="w-full h-auto max-h-20 sm:max-h-24 md:max-h-28 lg:max-h-24 object-contain rounded-xl cursor-pointer bg-black/20"
+                className="w-full h-auto max-h-20 sm:max-h-24 md:max-h-none object-contain rounded-xl md:rounded-none cursor-pointer bg-black/20"
                 onError={e => {
                   const t = e.target as HTMLImageElement;
                   t.style.display = 'none';
