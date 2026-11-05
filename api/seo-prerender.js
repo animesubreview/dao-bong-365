@@ -312,9 +312,9 @@ async function handleMovieDetail(slug, request) {
 
 // ─── Phim đăng thủ công (lưu trong Supabase, bảng firestore_docs / manual_movies) ────────
 const SUPABASE_URL = (typeof process !== 'undefined' && (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL))
-  || 'https://opbqajqiftiydtaaxjhs.supabase.co';
+  || 'https://zbtkxpdlaoozhqlrzkhv.supabase.co';
 const SUPABASE_ANON = (typeof process !== 'undefined' && (process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY))
-  || 'sb_publishable_Uk9ztlmuGQNvhUlxj3ldFQ_vcDNiKt_';
+  || 'sb_publishable_AuTbV8M1aIqRXydpqOUqKw_JQdUDhof';
 
 function absImage(raw) {
   if (!raw) return DEFAULT_IMG;

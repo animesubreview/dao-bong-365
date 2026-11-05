@@ -12,8 +12,8 @@ import { createClient } from '@supabase/supabase-js';
 //  4) Vào Authentication → Providers, bật "Email" (tương đương Email/Password của Firebase).
 //  5) Vào Storage, tạo 1 bucket tên "media" (Public bucket) để thay Firebase Storage.
 const env = import.meta.env;
-const SUPABASE_URL = env.VITE_SUPABASE_URL || 'https://opbqajqiftiydtaaxjhs.supabase.co';
-const SUPABASE_ANON_KEY = env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_Uk9ztlmuGQNvhUlxj3ldFQ_vcDNiKt_';
+const SUPABASE_URL = env.VITE_SUPABASE_URL || 'https://zbtkxpdlaoozhqlrzkhv.supabase.co';
+const SUPABASE_ANON_KEY = env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_AuTbV8M1aIqRXydpqOUqKw_JQdUDhof';
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
