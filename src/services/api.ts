@@ -1,4 +1,5 @@
 import { Movie, APIResponse, MovieDetailResponse, Episode } from '../types';
+import { API_BASE } from '../lib/apiBase';
 
 // Domain API chính (KKPhim/phimapi.com) — có thể đổi trong Admin → Cài đặt Website
 // nếu domain gốc bị sập, dùng domain mirror khác mà không cần sửa code.
@@ -64,7 +65,7 @@ async function apiFetch(path: string): Promise<Response> {
     // để trang hiển thị "không có dữ liệu" thay vì ném lỗi "Failed to fetch" làm sập màn hình.
     try { return await fetch(`${BASE_URL}${path}`); } catch { /* thử proxy */ }
     try {
-      const r = await fetch(`/api/kk-proxy?path=${encodeURIComponent(path)}`);
+      const r = await fetch(`${API_BASE}/api/kk-proxy?path=${encodeURIComponent(path)}`);
       if (r.ok) return r;
     } catch { /* bỏ qua */ }
     return new Response(JSON.stringify({ status: false, items: [], data: { items: [] } }), {

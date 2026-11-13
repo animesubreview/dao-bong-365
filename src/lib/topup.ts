@@ -2,6 +2,7 @@
 import { db } from './firebase';
 import { setDoc, updateDoc } from './firestoreGuard';
 import { doc, getDoc, collection, getDocs, query, where, orderBy } from './firestore-compat';
+import { API_BASE } from './apiBase';
 
 export type CardTelco = 'VIETTEL' | 'MOBIFONE' | 'VINAPHONE' | 'VIETNAMOBILE' | 'GMOBILE';
 
@@ -75,7 +76,7 @@ export async function submitCardTopup(
     await setDoc(topupRef, topupData);
 
     // Gọi Netlify Function để charge card
-    const res = await fetch('/.netlify/functions/charge-card', {
+    const res = await fetch(`${API_BASE}/.netlify/functions/charge-card`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ requestId, uid, telco, serial: serial.trim(), code: code.trim(), amount }),

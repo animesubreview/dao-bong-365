@@ -1,3 +1,4 @@
+import { API_BASE } from './apiBase';
 // ─── Nạp Thẻ Cào — nappay.vn ─────────────────────────────────────────────────
 
 export type CardTelco = 'VIETTEL' | 'VINAPHONE' | 'MOBIFONE' | 'VNMOBI' | 'ZING';
@@ -83,7 +84,7 @@ export async function submitCardTopup(
   const request_id = makeRequestId();
 
   try {
-    const res = await fetch('/.netlify/functions/card-topup', {
+    const res = await fetch(`${API_BASE}/.netlify/functions/card-topup`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

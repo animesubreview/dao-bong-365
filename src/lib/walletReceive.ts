@@ -1,3 +1,4 @@
+import { API_BASE } from './apiBase';
 // ─── API Check Lịch sử Nhận Tiền ─────────────────────────────────────────────
 
 export type WalletApiProvider = 'gachthefast' | 'doithe1s';
@@ -40,7 +41,7 @@ async function fetchGachTheFastHistory(
   config: WalletReceiveConfig
 ): Promise<WalletReceiveResponse> {
   try {
-    const res = await fetch('/.netlify/functions/wallet-receive-history', {
+    const res = await fetch(`${API_BASE}/.netlify/functions/wallet-receive-history`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -81,7 +82,7 @@ async function fetchDoithe1sHistory(
   config: WalletReceiveConfig
 ): Promise<WalletReceiveResponse> {
   try {
-    const res = await fetch('/.netlify/functions/wallet-receive-history', {
+    const res = await fetch(`${API_BASE}/.netlify/functions/wallet-receive-history`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
