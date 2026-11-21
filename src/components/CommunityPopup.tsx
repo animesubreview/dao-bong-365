@@ -83,7 +83,7 @@ export default function CommunityPopup() {
           </button>
 
           {/* Poster */}
-          <button type="button" onClick={() => close(() => navigate('/chat'))} className="relative block w-full text-left cp-shine overflow-hidden" aria-label={`Vào ${title}`}>
+          <button type="button" onClick={() => close(() => window.dispatchEvent(new Event('open-chat-tong')))} className="relative block w-full text-left cp-shine overflow-hidden" aria-label={`Vào ${title}`}>
             {hasPoster ? (
               <img src={cfg.pinPoster} alt={title} onError={() => setPosterOk(false)}
                 className="w-full block object-cover aspect-[4/5]" loading="eager" />
@@ -118,7 +118,7 @@ export default function CommunityPopup() {
               {cfg.micEnabled && voiceCount > 0 && <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30"><Users size={12} /> {voiceCount} đang nói chuyện</span>}
             </div>
 
-            <button onClick={() => close(() => navigate('/chat'))}
+            <button onClick={() => close(() => window.dispatchEvent(new Event('open-chat-tong')))}
               className="cp-btn w-full py-3 rounded-2xl text-base font-black text-slate-950 bg-gradient-to-r from-green-400 to-emerald-500 hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2">
               <MessageCircle size={18} /> VÀO CHAT NGAY →
             </button>

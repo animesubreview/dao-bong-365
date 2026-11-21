@@ -19,6 +19,7 @@ import { useCommunityConfig } from '../lib/communityRoom';
 import { getCurrentUser, getUserProfile, onAuthChange } from '../lib/auth';
 import type { UserProfile } from '../lib/auth';
 import { getMovieRating, voteMovieRating, hasVoted, RATING_LABELS, RATING_EMOJIS, MovieRating } from '../lib/movieRatings';
+import { announceWatching } from '../lib/chatTong';
 
 export default function Watch() {
   const { slug, episodeSlug } = useParams<{ slug: string; episodeSlug: string }>();
@@ -193,6 +194,9 @@ export default function Watch() {
           episodeSlug: ep?.slug || '', updatedAt: Date.now()
         });
         localStorage.setItem('watchHistory', JSON.stringify(newHistory.slice(0, 20)));
+
+        // Báo vào Kênh Chat Tổng: "Đang xem phim ..." (có giới hạn tần suất, bỏ qua nếu chưa đăng nhập)
+        announceWatching({ movieName: movieData.name, episodeName: ep?.name, link: `/watch/${movieData.slug}/${ep?.slug || ''}`, key: `${movieData.slug}:${ep?.slug || ''}` });
 
         const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
         setIsFavorite(favorites.some((f: any) => f.slug === slug));
