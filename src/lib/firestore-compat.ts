@@ -183,20 +183,33 @@ function shouldPoll(path: string): boolean {
   try { if (location.pathname.startsWith('/daophim/admin')) return false; } catch {}
   return true;
 }
-interface Poller { subs: Set<{ onNext: any; onError: any }>; timer: any; last: any; hasLast: boolean; first: Promise<void> | null; tick: (force?: boolean) => Promise<void>; }
+interface Poller { subs: Set<{ onNext: any; onError: any }>; timer: any; last: any; hasLast: boolean; first: Promise<void> | null; sig?: string; docId?: string; tick: (force?: boolean) => Promise<void>; }
 const pollers = new Map<string, Poller>();
 // Sau khi trình duyệt này ghi vào 1 collection đang polling → làm mới ngay (người up phim thấy liền, không chờ 90s)
 export function refreshPollers(path: string) {
   pollers.forEach((p, key) => { if (key.startsWith(path + '|')) p.tick(true); });
 }
-function startSharedPoll(key: string, load: () => Promise<any>, onNext: any, onError: any): Unsubscribe {
+async function probeSignature(path: string, docId?: string): Promise<string | null> {
+  try {
+    let q: any = supabase.from('firestore_docs').select('updated_at', { count: 'exact' }).eq('collection_path', path);
+    if (docId) q = q.eq('doc_id', docId);
+    const { data, count, error } = await q.order('updated_at', { ascending: false }).limit(1);
+    if (error) return null;
+    return `${count ?? 0}|${(data && data[0] && data[0].updated_at) || ''}`;
+  } catch { return null; }
+}
+function startSharedPoll(key: string, load: () => Promise<any>, onNext: any, onError: any, docId?: string): Unsubscribe {
   let p = pollers.get(key);
   const sub = { onNext, onError };
   if (!p) {
-    const np: Poller = { subs: new Set(), timer: null, last: null, hasLast: false, first: null, tick: async () => {} };
+    const np: Poller = { subs: new Set(), timer: null, last: null, hasLast: false, first: null, docId, tick: async () => {} };
     const tick = async (force = false) => {
       if (!force && typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
-      try { const v = await load(); np.last = v; np.hasLast = true; np.subs.forEach(x => x.onNext(v)); }
+      try {
+        // Hỏi chữ ký nhẹ (số dòng + updated_at mới nhất) — không đổi thì KHÔNG tải lại dữ liệu (tiết kiệm egress)
+        const sig = await probeSignature(key.split('|')[0], np.docId);
+        if (!force && np.hasLast && sig && sig === np.sig) return;
+        const v = await load(); np.last = v; np.hasLast = true; np.sig = sig || np.sig; np.subs.forEach(x => x.onNext(v)); }
       catch (e) { np.subs.forEach(x => x.onError?.(e)); }
     };
     np.tick = tick;
@@ -237,7 +250,7 @@ export function onSnapshot(refOrQuery: any, ...args: any[]): Unsubscribe {
   // Trang Admin vẫn dùng realtime như cũ để thấy thay đổi ngay.
   if (shouldPoll(path)) {
     return startSharedPoll(`${path}|${isDoc ? refOrQuery.id : JSON.stringify([refOrQuery.wheres, refOrQuery.orders, refOrQuery.limitN])}`,
-      async () => (isDoc ? await getDoc(refOrQuery) : await getDocs(refOrQuery)), onNext, onError);
+      async () => (isDoc ? await getDoc(refOrQuery) : await getDocs(refOrQuery)), onNext, onError, isDoc ? refOrQuery.id : undefined);
   }
   fetchAndEmit();
 

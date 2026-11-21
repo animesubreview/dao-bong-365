@@ -13,8 +13,9 @@ export function ref(_storage: any, path: string) {
   return { __type: 'storageRef' as const, path };
 }
 
-export async function uploadBytes(storageRef: { path: string }, file: File | Blob) {
-  const { error } = await supabase.storage.from(BUCKET).upload(storageRef.path, file, { upsert: true });
+export async function uploadBytes(storageRef: { path: string }, file: File | Blob, _meta?: any) {
+  // cacheControl 1 năm: trình duyệt/CDN giữ ảnh, không tải lại mỗi lần xem → giảm egress Storage
+  const { error } = await supabase.storage.from(BUCKET).upload(storageRef.path, file, { upsert: true, cacheControl: '31536000', contentType: _meta?.contentType || (file as File).type || undefined });
   if (error) throw error;
   return { ref: storageRef };
 }

@@ -89,9 +89,11 @@ const COMMUNITY_COL = 'community_chat';
 const COMMUNITY_DOC_ID = 'global';
 
 export function subscribeCommunityChat(cb: (msgs: LiveChatMessage[]) => void): () => void {
-  const q = query(collection(db, COMMUNITY_COL, COMMUNITY_DOC_ID, 'messages'), orderBy('createdAt', 'asc'), limit(200));
+  // Lấy 60 tin MỚI NHẤT (desc) rồi đảo lại. Trước đây 'asc + limit 200' chỉ lấy 200 tin CŨ NHẤT nên
+  // tin mới không hiện sau khi đủ 200 tin, đồng thời mỗi tin mới làm tải lại 200 dòng → tốn egress.
+  const q = query(collection(db, COMMUNITY_COL, COMMUNITY_DOC_ID, 'messages'), orderBy('createdAt', 'desc'), limit(60));
   return onSnapshot(q, snap => {
-    cb(snap.docs.map(d => ({ id: d.id, ...d.data() } as LiveChatMessage)));
+    cb(snap.docs.map(d => ({ id: d.id, ...d.data() } as LiveChatMessage)).reverse());
   });
 }
 
