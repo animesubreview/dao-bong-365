@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Crown, Film, LogIn, Send, Trash2, Volume2, VolumeX, X, CornerUpLeft } from 'lucide-react';
 import { getCurrentUser, getUserProfile, onAuthChange, UserProfile } from '../lib/auth';
+import ProfileCard from './ProfileCard';
 import { useCommunityConfig } from '../lib/communityRoom';
 import {
   ChatTongMessage, ChatReply, OnlineCounts, deleteChatMessage, fetchOnlineCounts, loadRecentMessages,
@@ -37,6 +38,7 @@ export default function ChatTong() {
   const [replyTo, setReplyTo] = useState<ChatReply | null>(null);
   const [sending, setSending] = useState(false);
   const [err, setErr] = useState('');
+  const [card, setCard] = useState<{ uid: string; name: string; avatar: string } | null>(null);
   const [user, setUser] = useState(getCurrentUser());
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [sound, setSound] = useState(() => { try { return localStorage.getItem(SOUND_KEY) !== '0'; } catch { return true; } });
@@ -171,12 +173,12 @@ export default function ChatTong() {
                 const mine = !!user && m.uid === user.uid;
                 return (
                   <div key={m.id} className="group flex items-end gap-2">
-                    <span className="w-9 h-9 rounded-full shrink-0 p-[2px]" style={{ background: 'conic-gradient(from 0deg, var(--primary-light), #fbbf24, #38bdf8, var(--primary-light))' }}>
+                    <span onClick={() => setCard({ uid: m.uid, name: m.username, avatar: m.avatar })} role="button" aria-label={`Xem hồ sơ ${m.username}`} className="w-9 h-9 rounded-full shrink-0 p-[2px] cursor-pointer" style={{ background: 'conic-gradient(from 0deg, var(--primary-light), #fbbf24, #38bdf8, var(--primary-light))' }}>
                       <img src={m.avatar} alt="" loading="lazy" className="w-full h-full rounded-full object-cover bg-slate-800 border border-black" />
                     </span>
                     <div className="min-w-0 max-w-[82%]">
                       <div className="flex items-center gap-1.5 px-1 mb-0.5">
-                        <span className={`text-[13px] font-bold truncate ${m.isAdmin ? 'text-amber-400' : mine ? 'text-[var(--primary-light)]' : 'text-slate-300'}`}>{m.username}</span>
+                        <span onClick={() => setCard({ uid: m.uid, name: m.username, avatar: m.avatar })} className={`cursor-pointer text-[13px] font-bold truncate ${m.isAdmin ? 'text-amber-400' : mine ? 'text-[var(--primary-light)]' : 'text-slate-300'}`}>{m.username}</span>
                         {m.isAdmin && <span className="inline-flex items-center gap-1 text-[11px] font-black text-amber-400"><Crown size={12} />QTV</span>}
                       </div>
 
@@ -248,6 +250,10 @@ export default function ChatTong() {
             </div>
           </div>
         </div>
+      )}
+      {open && card && (
+        <ProfileCard uid={card.uid} fallbackName={card.name} fallbackAvatar={card.avatar} onClose={() => setCard(null)}
+          onMention={n => { setText(t => (t.includes(`@${n} `) ? t : `@${n} ${t}`).slice(0, 300)); }} />
       )}
     </>
   );
