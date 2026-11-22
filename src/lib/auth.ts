@@ -23,6 +23,8 @@ export interface UserProfile {
   balance: number; // số dư tài khoản (VNĐ)
   vipTier?: 'UVIP' | 'SVIP' | 'SSVIP' | null;
   vipExpiry?: number | null; // timestamp ms
+  banner?: string;       // ảnh/GIF bìa hồ sơ do người dùng tải lên
+  bannerTheme?: string;  // chủ đề banner động có sẵn (cosmic|aurora|sunset|sakura|matrix)
 }
 
 // ─── Đăng ký ──────────────────────────────────────────────────────────────────
@@ -183,11 +185,13 @@ export async function deleteUserProfile(uid: string) {
 
 export async function updateUserProfile(
   uid: string,
-  updates: { username?: string; avatar?: string }
+  updates: { username?: string; avatar?: string; banner?: string; bannerTheme?: string }
 ): Promise<{ ok: boolean; error?: string }> {
   try {
     const updateData: Partial<UserProfile> = {};
     if (updates.avatar) updateData.avatar = updates.avatar;
+    if (updates.banner !== undefined) updateData.banner = updates.banner;
+    if (updates.bannerTheme !== undefined) updateData.bannerTheme = updates.bannerTheme;
 
     if (updates.username) {
       const newUsername = updates.username.trim();

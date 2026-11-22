@@ -200,7 +200,7 @@ export default function Watch() {
 
         // Báo vào Kênh Chat Tổng: "Đang xem phim ..." (có giới hạn tần suất, bỏ qua nếu chưa đăng nhập)
         trackWatchStart(movieData.slug);
-        announceWatching({ movieName: movieData.name, episodeName: ep?.name, link: `/watch/${movieData.slug}/${ep?.slug || ''}`, key: `${movieData.slug}:${ep?.slug || ''}` });
+        announceWatching({ movieName: movieData.name, episodeName: ep?.name, link: `/watch/${movieData.slug}/${ep?.slug || ''}`, key: `${movieData.slug}:${ep?.slug || ''}`, thumb: movieApi.getImageUrl(movieData.thumb_url || movieData.poster_url || '') || undefined });
 
         const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
         setIsFavorite(favorites.some((f: any) => f.slug === slug));

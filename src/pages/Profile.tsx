@@ -10,6 +10,7 @@ import { onAuthChange, getUserProfile, updateUserProfile, UserProfile } from '..
 import { storage } from '../lib/firebase';
 import { ref, uploadBytes, getDownloadURL } from '../lib/storage-compat';
 import { formatVND } from '../lib/topup';
+import ProfileBanner, { BANNER_THEMES } from '../components/ProfileBanner';
 import {
   purchaseVip, useVipPrices, isVipActive, vipExpiryText, VIP_META, VipTier,
 } from '../lib/vip';
@@ -282,6 +283,31 @@ export default function ProfilePage() {
     }
   };
 
+  // ── Banner hồ sơ (lưu ngay, không cần bấm "Lưu thay đổi") ──
+  const [bannerBusy, setBannerBusy] = useState(false);
+  const [bannerMsg, setBannerMsg] = useState('');
+  const saveBanner = async (u: { banner?: string; bannerTheme?: string }) => {
+    if (!profile) return;
+    setBannerBusy(true); setBannerMsg('');
+    const r = await updateUserProfile(profile.uid, u);
+    setBannerBusy(false);
+    if (r.ok) { setProfile(prev => prev ? { ...prev, ...u } : prev); setBannerMsg('Đã cập nhật banner ✓'); setTimeout(() => setBannerMsg(''), 2500); }
+    else setBannerMsg(r.error || 'Cập nhật thất bại');
+  };
+  const onBannerFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0]; e.target.value = '';
+    if (!f || !profile) return;
+    if (!f.type.startsWith('image/')) { setBannerMsg('Chỉ hỗ trợ ảnh (JPG, PNG, WebP, GIF động)'); return; }
+    if (f.size > 4 * 1024 * 1024) { setBannerMsg('Ảnh banner tối đa 4MB'); return; }
+    setBannerBusy(true); setBannerMsg('');
+    try {
+      const ext = (f.type.split('/')[1] || 'jpg').replace('jpeg', 'jpg').replace(/[^a-z0-9]/gi, '');
+      const snap = await uploadBytes(ref(storage, `banners/${profile.uid}-${Date.now()}.${ext}`), f, { contentType: f.type });
+      const url = await getDownloadURL(snap.ref);
+      await saveBanner({ banner: url });
+    } catch { setBannerBusy(false); setBannerMsg('Tải ảnh thất bại, thử lại nhé'); }
+  };
+
   const handleDiscard = () => {
     if (!profile) return;
     setUsername(profile.username);
@@ -422,6 +448,30 @@ export default function ProfilePage() {
                 </span>
                 <ImagePlus size={15} className="text-slate-500 group-hover:text-green-400 transition-colors shrink-0" />
               </button>
+            </div>
+
+            {/* Banner hồ sơ động */}
+            <div className="mb-5">
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">Banner hồ sơ</label>
+              <div className="relative h-24 rounded-xl overflow-hidden border border-slate-700/50">
+                <ProfileBanner theme={profile.bannerTheme || (profile.role === 'admin' ? 'cosmic' : 'aurora')} image={profile.banner} className="absolute inset-0" />
+                {bannerBusy && <div className="absolute inset-0 bg-black/50 flex items-center justify-center"><Loader2 className="animate-spin text-white" size={20} /></div>}
+              </div>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {BANNER_THEMES.map(t => (
+                  <button key={t.id} disabled={bannerBusy} onClick={() => saveBanner({ bannerTheme: t.id, banner: '' })}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition ${!profile.banner && (profile.bannerTheme || (profile.role === 'admin' ? 'cosmic' : 'aurora')) === t.id ? 'bg-green-500/20 border-green-500/60 text-green-300' : 'bg-slate-800/60 border-slate-700/50 text-slate-300 hover:border-slate-500'}`}>{t.name}</button>
+                ))}
+              </div>
+              <div className="mt-2 flex items-center gap-2">
+                <label className={`flex-1 flex items-center justify-center gap-2 rounded-xl border border-dashed border-slate-600 py-2.5 text-sm font-bold text-slate-300 cursor-pointer hover:border-green-500/60 hover:text-white transition ${bannerBusy ? 'opacity-50 pointer-events-none' : ''}`}>
+                  <ImagePlus size={15} /> Tải ảnh / GIF động làm banner
+                  <input type="file" accept="image/*" className="hidden" onChange={onBannerFile} />
+                </label>
+                {profile.banner && <button disabled={bannerBusy} onClick={() => saveBanner({ banner: '' })} className="px-3 py-2.5 rounded-xl bg-slate-800 border border-slate-700/50 text-xs font-bold text-slate-300 hover:text-white">Gỡ ảnh</button>}
+              </div>
+              {bannerMsg && <p className="mt-1.5 text-xs text-slate-400">{bannerMsg}</p>}
+              <p className="mt-1 text-[11px] text-slate-600">Ảnh tối đa 4MB. GIF/WebP động sẽ chuyển động trong thẻ hồ sơ.</p>
             </div>
 
             {/* Feedback messages */}
