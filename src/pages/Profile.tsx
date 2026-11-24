@@ -302,7 +302,7 @@ export default function ProfilePage() {
     setBannerBusy(true); setBannerMsg('');
     try {
       const ext = (f.type.split('/')[1] || 'jpg').replace('jpeg', 'jpg').replace(/[^a-z0-9]/gi, '');
-      const snap = await uploadBytes(ref(storage, `banners/${profile.uid}-${Date.now()}.${ext}`), f, { contentType: f.type });
+      const snap = await uploadBytes(ref(storage, `banners/${profile.uid}-${Date.now()}.${ext}`), f, { contentType: f.type, replace: profile.banner });
       const url = await getDownloadURL(snap.ref);
       await saveBanner({ banner: url });
     } catch { setBannerBusy(false); setBannerMsg('Tải ảnh thất bại, thử lại nhé'); }

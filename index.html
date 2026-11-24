@@ -168,43 +168,29 @@
               var rel = String(e.target.rel || '').toLowerCase();
               if (rel.indexOf('stylesheet') === -1) return;
             }
-            // File bundle (/assets/*.js|css) không tải được thường do trình duyệt/CDN còn giữ index.html CŨ trỏ tới
-            // file đã bị xóa sau khi deploy bản mới → xóa cache + tự tải lại để lấy index.html mới (tối đa 3 lần/phiên).
+            // Chỉ quan tâm file bundle CỦA CHÍNH WEB (cùng tên miền, nằm trong /assets/). Script/CSS của bên thứ ba
+            // (quảng cáo, font, thống kê...) bị trình chặn quảng cáo hay mạng chặn là chuyện bình thường → bỏ qua, KHÔNG làm gì cả.
             var u = String(e.target.src || e.target.href || '');
+            var sameOrigin = false;
+            try { sameOrigin = new URL(u, location.href).origin === location.origin; } catch (_) {}
+            if (!sameOrigin || u.indexOf('/assets/') === -1) return;
+            // Bundle không tải được thường do trình duyệt/CDN còn giữ index.html CŨ trỏ tới file đã bị xóa sau khi deploy
+            // → âm thầm xóa cache + tải lại để lấy bản mới (tối đa 3 lần/phiên). Không hiện bảng thông báo nào.
             var tries = 0;
             try { tries = Number(sessionStorage.getItem('__asset_reload') || 0); } catch (_) {}
-            var hardReload = function () {
-              var go = function () {
-                var q = location.search.replace(/([?&])_v=\d+&?/, '$1').replace(/[?&]$/, '');
-                location.replace(location.pathname + q + (q ? '&' : '?') + '_v=' + Date.now() + location.hash);
-              };
-              try {
-                var jobs = [];
-                if (window.caches && caches.keys) jobs.push(caches.keys().then(function (ks) { return Promise.all(ks.map(function (k) { return caches.delete(k); })); }));
-                if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) jobs.push(navigator.serviceWorker.getRegistrations().then(function (rs) { return Promise.all(rs.map(function (r) { return r.unregister(); })); }));
-                Promise.all(jobs).then(go, go);
-                setTimeout(go, 1500);
-              } catch (_) { go(); }
+            if (tries >= 3) { try { console.error('Không tải được file:', u); } catch (_) {} return; }
+            try { sessionStorage.setItem('__asset_reload', String(tries + 1)); } catch (_) {}
+            var go = function () {
+              var q = location.search.replace(/([?&])_v=\d+&?/, '$1').replace(/[?&]$/, '');
+              location.replace(location.pathname + q + (q ? '&' : '?') + '_v=' + Date.now() + location.hash);
             };
-            if (u.indexOf('/assets/') > -1 && tries < 3) {
-              try { sessionStorage.setItem('__asset_reload', String(tries + 1)); } catch (_) {}
-              hardReload();
-              return;
-            }
-            // Hết lượt tự sửa: hiện thông báo thân thiện + nút tải lại thay vì màn hình lỗi đỏ khó hiểu
-            if (!document.getElementById('__err_overlay__')) {
-              var box = document.createElement('div');
-              box.id = '__err_overlay__';
-              box.style.cssText = 'position:fixed;inset:0;z-index:2147483647;background:#0b1020;color:#e2e8f0;font:16px/1.6 sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center;';
-              box.innerHTML = '<div style="font-size:20px;font-weight:800">Web vừa được cập nhật</div><div style="color:#94a3b8;max-width:320px">Trình duyệt đang giữ bản cũ. Bấm nút bên dưới để tải bản mới nhất.</div>';
-              var btn = document.createElement('button');
-              btn.textContent = 'Tải lại trang';
-              btn.style.cssText = 'background:#22c55e;color:#052e16;font-weight:800;border:0;border-radius:12px;padding:12px 28px;font-size:16px;cursor:pointer;';
-              btn.onclick = function () { try { sessionStorage.removeItem('__asset_reload'); } catch (_) {} hardReload(); };
-              box.appendChild(btn);
-              document.documentElement.appendChild(box);
-            }
-            try { console.error('Không tải được file:', u); } catch (_) {}
+            try {
+              var jobs = [];
+              if (window.caches && caches.keys) jobs.push(caches.keys().then(function (ks) { return Promise.all(ks.map(function (k) { return caches.delete(k); })); }));
+              if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) jobs.push(navigator.serviceWorker.getRegistrations().then(function (rs) { return Promise.all(rs.map(function (r) { return r.unregister(); })); }));
+              Promise.all(jobs).then(go, go);
+              setTimeout(go, 1500);
+            } catch (_) { go(); }
           } else {
             showErr('LỖI JS: ' + (e.message || '') + '\n' + (e.filename || '') + ':' + (e.lineno || '') + ':' + (e.colno || '') + '\n' + (e.error && e.error.stack || ''));
           }

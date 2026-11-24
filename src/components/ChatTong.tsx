@@ -49,12 +49,12 @@ export default function ChatTong() {
 
   useEffect(() => onAuthChange(async u => { setUser(u); uidRef.current = u?.uid ?? null; setProfile(u ? await getUserProfile(u.uid) : null); }), []);
 
-  // Số online: đếm nhẹ mỗi 60 giây (chỉ khi tab đang hiện)
+  // Số online: đếm nhẹ mỗi 3 phút (chỉ khi tab đang hiện)
   useEffect(() => {
     let alive = true;
     const load = () => { if (document.visibilityState === 'hidden') return; fetchOnlineCounts().then(c => { if (alive) setCounts(c); }).catch(() => {}); };
     load();
-    const t = setInterval(load, 60_000);
+    const t = setInterval(load, 180_000);
     return () => { alive = false; clearInterval(t); };
   }, []);
 
