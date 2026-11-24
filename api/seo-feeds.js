@@ -1,11 +1,11 @@
 // Gộp 3 hàm nhỏ (sitemap thể loại, sitemap ảnh, RSS) vào MỘT hàm để không vượt giới hạn 12 Serverless Functions
-// của Vercel gói Hobby. Mã gốc nằm trong api/_feeds/ (thư mục bắt đầu bằng "_" không bị tính là hàm riêng).
+// của Vercel gói Hobby. Mã gốc nằm ngoài thư mục api (server-lib/feeds/) nên không bị Vercel tính là hàm riêng.
 //   /sitemap-categories.xml → /api/seo-feeds?t=categories
 //   /sitemap-images.xml     → /api/seo-feeds?t=images
 //   /rss.xml                → /api/seo-feeds?t=rss
-import categories from './_feeds/sitemap-categories.js';
-import images from './_feeds/sitemap-images.js';
-import rss from './_feeds/rss.js';
+import categories from '../server-lib/feeds/sitemap-categories.js';
+import images from '../server-lib/feeds/sitemap-images.js';
+import rss from '../server-lib/feeds/rss.js';
 
 export default function handler(req, res) {
   const t = String((req.query && req.query.t) || '');
