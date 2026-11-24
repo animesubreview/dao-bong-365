@@ -20,12 +20,9 @@ import { getCurrentUser, getUserProfile, onAuthChange } from '../lib/auth';
 import type { UserProfile } from '../lib/auth';
 import { getMovieRating, voteMovieRating, hasVoted, RATING_LABELS, RATING_EMOJIS, MovieRating } from '../lib/movieRatings';
 import { announceWatching } from '../lib/chatTong';
-import { trackWatchStart, startWatchTimer } from '../lib/userStats';
 
 export default function Watch() {
   const { slug, episodeSlug } = useParams<{ slug: string; episodeSlug: string }>();
-  // Đếm giờ xem cho thẻ hồ sơ (ghi thưa, 5 phút/lần)
-  useEffect(() => startWatchTimer(), []);
   const [searchParams, setSearchParams] = useSearchParams();
   const serverName = searchParams.get('server');
   const [movie, setMovie] = useState<Movie | null>(null);
@@ -199,8 +196,7 @@ export default function Watch() {
         localStorage.setItem('watchHistory', JSON.stringify(newHistory.slice(0, 20)));
 
         // Báo vào Kênh Chat Tổng: "Đang xem phim ..." (có giới hạn tần suất, bỏ qua nếu chưa đăng nhập)
-        trackWatchStart(movieData.slug);
-        announceWatching({ movieName: movieData.name, episodeName: ep?.name, link: `/watch/${movieData.slug}/${ep?.slug || ''}`, key: `${movieData.slug}:${ep?.slug || ''}`, thumb: movieApi.getImageUrl(movieData.thumb_url || movieData.poster_url || '') || undefined });
+        announceWatching({ movieName: movieData.name, episodeName: ep?.name, link: `/watch/${movieData.slug}/${ep?.slug || ''}`, key: `${movieData.slug}:${ep?.slug || ''}` });
 
         const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
         setIsFavorite(favorites.some((f: any) => f.slug === slug));

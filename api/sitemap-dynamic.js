@@ -126,5 +126,5 @@ ${movieUrls.join('\n')}
   }
 };
 
-import { wrapNetlifyHandler } from '../server-lib/_compat.js';
+import { wrapNetlifyHandler } from './_compat.js';
 export default wrapNetlifyHandler(netlifyHandlerFn);

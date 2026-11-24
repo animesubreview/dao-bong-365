@@ -82,17 +82,16 @@ export async function deleteNotification(id: string) {
 // polling nhẹ mỗi 60s để thông báo mới vẫn hiện ra mà không tốn 1 kết nối/khách/trang.
 export function subscribeNotifications(cb: (notifs: SiteNotification[]) => void): () => void {
   let stopped = false;
-  const POLL_MS = 300_000;
+  const POLL_MS = 60_000;
 
-  const tick = (force: boolean | unknown = false) => {
-    if (force !== true && document.visibilityState === 'hidden') return;
+  const tick = () => {
     fetchCollectionCached<SiteNotification>(NOTIFS_COL, NOTIFS_COL, [orderBy('createdAt', 'desc')], POLL_MS)
       .then(list => { if (!stopped) cb(list); })
       .catch(() => { if (!stopped) cb([]); });
   };
 
-  tick(true);
-  const timer = setInterval(() => tick(), POLL_MS);
+  tick();
+  const timer = setInterval(tick, POLL_MS);
   // Tự đọc lại ngay khi có nơi khác (VD Admin vừa tạo/sửa/xóa thông báo) làm mất hiệu lực cache,
   // để không phải đợi tới lượt poll kế tiếp mới thấy.
   const unsubInvalidate = onCacheInvalidated(NOTIFS_COL, tick);

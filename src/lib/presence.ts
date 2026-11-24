@@ -32,17 +32,13 @@ export function startPresence() {
   const ref = doc(db, 'presence', sessionId);
 
   const ping = () => {
-    // Tab đang ẩn thì không báo "đang online" (đỡ request, số online cũng đúng hơn)
-    if (document.visibilityState === 'hidden') return;
-    // Ghi đè thẳng (KHÔNG merge): merge buộc phải đọc tài liệu trước rồi mới ghi = gấp đôi request mỗi lần ping.
     // uid = null nếu là khách → dùng để đếm "thành viên / khách" ở Kênh Chat Tổng
-    setDoc(ref, { lastSeen: serverTimestamp(), ua: navigator.userAgent.slice(0, 80), uid: getCurrentUser()?.uid ?? null })
+    setDoc(ref, { lastSeen: serverTimestamp(), ua: navigator.userAgent.slice(0, 80), uid: getCurrentUser()?.uid ?? null }, { merge: true })
       .catch(() => {/* ignore network errors */});
   };
 
   ping();
   _pingTimer = setInterval(ping, PING_INTERVAL);
-  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') ping(); });
 
   const cleanup = () => {
     if (_pingTimer) clearInterval(_pingTimer);

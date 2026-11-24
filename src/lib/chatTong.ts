@@ -12,7 +12,7 @@ const MAX_LOAD = 60;      // số tin nhắn gần nhất khi mở khung
 const MAX_KEEP = 150;     // giữ tối đa trong bộ nhớ
 
 export interface ChatReply { id: string; username: string; text: string }
-export interface ChatActivity { movieName: string; episodeName?: string; link: string; thumb?: string }
+export interface ChatActivity { movieName: string; episodeName?: string; link: string }
 export interface ChatTongMessage {
   id: string;
   uid: string;
@@ -85,7 +85,7 @@ export async function fetchOnlineCounts(): Promise<OnlineCounts> {
 
 // ── Thông báo "Đang xem phim" vào kênh chat ────────────────────────────────────
 // Mỗi người tối đa 1 thông báo / 90 giây, và mỗi phim-tập chỉ báo 1 lần / 30 phút (tránh spam khi tải lại trang).
-export async function announceWatching(info: { movieName: string; episodeName?: string; link: string; key: string; thumb?: string }): Promise<void> {
+export async function announceWatching(info: { movieName: string; episodeName?: string; link: string; key: string }): Promise<void> {
   try {
     const user = getCurrentUser();
     if (!user) return;
@@ -100,7 +100,7 @@ export async function announceWatching(info: { movieName: string; episodeName?: 
     await sendChatMessage({
       uid: user.uid, username: profile.username, avatar: profile.avatar, text: '',
       isAdmin: profile.role === 'admin', createdAt: now, kind: 'activity',
-      activity: { movieName: info.movieName.slice(0, 120), episodeName: info.episodeName?.slice(0, 40), link: info.link, ...(info.thumb ? { thumb: info.thumb.slice(0, 300) } : {}) },
+      activity: { movieName: info.movieName.slice(0, 120), episodeName: info.episodeName?.slice(0, 40), link: info.link },
     });
   } catch { /* thông báo nền — lỗi thì bỏ qua */ }
 }

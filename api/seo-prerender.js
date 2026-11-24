@@ -68,7 +68,7 @@ export const config = { runtime: 'edge' };
 
 // Fallback: nếu không dựng được HTML (phim không tồn tại, API lỗi...) thì trả về
 // đúng file index.html tĩnh của SPA, để bot vẫn nhận được trang thay vì lỗi.
-import { checkRateLimit, getClientIp } from '../server-lib/_rateLimit.js';
+import { checkRateLimit, getClientIp } from './_rateLimit.js';
 
 async function passThrough(request) {
   const indexUrl = new URL('/index.html', request.url);

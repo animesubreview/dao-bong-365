@@ -4,7 +4,7 @@
  * GET /.netlify/functions/m3u8-proxy?url=https://...
  */
 
-import { checkRateLimit, getClientIp } from '../server-lib/_rateLimit.js';
+import { checkRateLimit, getClientIp } from './_rateLimit.js';
 
 async function netlifyHandlerFn(event) {
   const url = event.queryStringParameters?.url;
@@ -101,5 +101,5 @@ async function netlifyHandlerFn(event) {
   }
 };
 
-import { wrapNetlifyHandler } from '../server-lib/_compat.js';
+import { wrapNetlifyHandler } from './_compat.js';
 export default wrapNetlifyHandler(netlifyHandlerFn);

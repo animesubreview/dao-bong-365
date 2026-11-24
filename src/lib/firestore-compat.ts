@@ -177,29 +177,7 @@ const POLL_PATHS = new Set([
   'config', 'site_config', 'settings', 'popup_ads', 'ad_banners', 'notifications',
   'manual_movies', 'movie_overrides', 'upcoming_movies', 'pinned_movies', 'bilingual_movies', 'tv_channels',
 ]);
-// MỘT truy vấn duy nhất cho TẤT CẢ các mục polling (trước đây mỗi mục tự hỏi riêng → ~20 request / khách / 90s,
-// làm Egress + Log ingestion của Supabase đầy rất nhanh). Giờ: 1 request / khách / 5 phút, chỉ khi tab đang hiện.
-const POLL_INTERVAL = 300_000;
-const FULL_CHECK_MS = 3_600_000; // mỗi giờ kiểm tra kỹ 1 lần (để bắt cả trường hợp xóa dữ liệu)
-let globalTimer: any = null, globalSig = '', lastFull = Date.now();
-async function globalProbe(): Promise<string | null> {
-  try {
-    const { data, error } = await supabase.from('firestore_docs').select('collection_path,updated_at')
-      .in('collection_path', Array.from(POLL_PATHS)).order('updated_at', { ascending: false }).limit(1);
-    if (error) return null;
-    return data && data[0] ? `${data[0].collection_path}|${data[0].updated_at}` : 'empty';
-  } catch { return null; }
-}
-async function globalTick() {
-  if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
-  if (pollers.size === 0) return;
-  const sig = await globalProbe();
-  if (!sig) return;
-  const fullDue = Date.now() - lastFull > FULL_CHECK_MS;
-  if (globalSig && sig === globalSig && !fullDue) return; // không có gì mới → không tải gì thêm
-  globalSig = sig; if (fullDue) lastFull = Date.now();
-  pollers.forEach(p => p.tick(false)); // từng mục tự so chữ ký rồi mới tải lại nếu thật sự đổi
-}
+const POLL_INTERVAL = 90_000;
 function shouldPoll(path: string): boolean {
   if (!POLL_PATHS.has(path)) return false;
   try { if (location.pathname.startsWith('/daophim/admin')) return false; } catch {}
@@ -228,17 +206,14 @@ function startSharedPoll(key: string, load: () => Promise<any>, onNext: any, onE
     const tick = async (force = false) => {
       if (!force && typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
       try {
-        if (!force) {
-          // Hỏi chữ ký nhẹ (số dòng + updated_at mới nhất) — không đổi thì KHÔNG tải lại dữ liệu (tiết kiệm egress)
-          const sig = await probeSignature(key.split('|')[0], np.docId);
-          if (np.hasLast && sig && sig === np.sig) return;
-          np.sig = sig || np.sig;
-        }
-        const v = await load(); np.last = v; np.hasLast = true; np.subs.forEach(x => x.onNext(v)); }
+        // Hỏi chữ ký nhẹ (số dòng + updated_at mới nhất) — không đổi thì KHÔNG tải lại dữ liệu (tiết kiệm egress)
+        const sig = await probeSignature(key.split('|')[0], np.docId);
+        if (!force && np.hasLast && sig && sig === np.sig) return;
+        const v = await load(); np.last = v; np.hasLast = true; np.sig = sig || np.sig; np.subs.forEach(x => x.onNext(v)); }
       catch (e) { np.subs.forEach(x => x.onError?.(e)); }
     };
     np.tick = tick;
-    if (!globalTimer) globalTimer = setInterval(globalTick, POLL_INTERVAL);
+    np.timer = setInterval(() => tick(), POLL_INTERVAL);
     pollers.set(key, np); p = np;
     p.subs.add(sub);
     p.first = tick(true); // lần đọc đầu tiên, chia sẻ cho mọi người nghe đăng ký sau
@@ -251,7 +226,7 @@ function startSharedPoll(key: string, load: () => Promise<any>, onNext: any, onE
   return () => {
     const cur = pollers.get(key); if (!cur) return;
     cur.subs.delete(sub);
-    if (cur.subs.size === 0) { pollers.delete(key); if (pollers.size === 0 && globalTimer) { clearInterval(globalTimer); globalTimer = null; } }
+    if (cur.subs.size === 0) { clearInterval(cur.timer); pollers.delete(key); }
   };
 }
 

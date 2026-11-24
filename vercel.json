@@ -9,9 +9,9 @@
   "rewrites": [
     { "source": "/.netlify/functions/:name", "destination": "/api/:name" },
     { "source": "/sitemap-movies.xml", "destination": "/api/sitemap-dynamic" },
-    { "source": "/sitemap-categories.xml", "destination": "/api/seo-feeds?t=categories" },
-    { "source": "/sitemap-images.xml", "destination": "/api/seo-feeds?t=images" },
-    { "source": "/rss.xml", "destination": "/api/seo-feeds?t=rss" },
+    { "source": "/sitemap-categories.xml", "destination": "/api/sitemap-categories" },
+    { "source": "/sitemap-images.xml", "destination": "/api/sitemap-images" },
+    { "source": "/rss.xml", "destination": "/api/rss" },
     { "source": "/api/telegram-notify", "destination": "/api/telegram-notify" },
 
     {
