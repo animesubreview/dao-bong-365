@@ -8,8 +8,8 @@
 //   GACHTHEFAST_DOMAIN       - (tuỳ chọn) mặc định gachthefast.com
 //   SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY
 
-const { getFirestore } = require('../server-lib/_firestoreAdmin.js');
-const crypto           = require('crypto');
+import { getFirestore } from '../server-lib/_firestoreAdmin.js';
+import crypto from 'crypto';
 
 
 const GACHTHEFAST_DOMAIN = process.env.GACHTHEFAST_DOMAIN || 'gachthefast.com';

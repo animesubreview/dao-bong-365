@@ -1,6 +1,6 @@
 // netlify/functions/wallet-receive-history.js
 // Hỗ trợ 2 nguồn: gachthefast | doithe1s
-const crypto = require('crypto');
+import crypto from 'crypto';
 
 async function netlifyHandlerFn(event) {
   if (event.httpMethod !== 'POST') {

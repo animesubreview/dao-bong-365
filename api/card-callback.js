@@ -8,8 +8,8 @@
 //   SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
 //   GACHTHEFAST_PARTNER_KEY - dùng để verify chữ ký callback
 
-const { getFirestore } = require('../server-lib/_firestoreAdmin.js');
-const crypto           = require('crypto');
+import { getFirestore } from '../server-lib/_firestoreAdmin.js';
+import crypto from 'crypto';
 
 
 // ─── Handler ───────────────────────────────────────────────────────────────

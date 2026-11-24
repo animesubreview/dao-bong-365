@@ -6,7 +6,7 @@
 //   SUPABASE_URL               - giống VITE_SUPABASE_URL
 //   SUPABASE_SERVICE_ROLE_KEY  - lấy ở Supabase Dashboard → Project Settings → API →
 //                                 "service_role" key (secret — TUYỆT ĐỐI không lộ ra frontend)
-const { createClient } = require('@supabase/supabase-js');
+import { createClient } from '@supabase/supabase-js';
 
 let _client = null;
 function getSupabaseAdmin() {
@@ -63,4 +63,4 @@ function getFirestore() {
   return { collection: (name) => collectionRef(name) };
 }
 
-module.exports = { getFirestore };
+export { getFirestore };
