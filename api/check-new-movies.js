@@ -340,7 +340,7 @@ async function netlifyHandlerFn(event) {
   }
 };
 
-import { wrapNetlifyHandler } from './_compat.js';
+import { wrapNetlifyHandler } from '../server-lib/_compat.js';
 export const config = {
   maxDuration: 60, // giây — cần vì giờ có thể xử lý tới 20 phim/lần chạy, mặc định 10s sẽ không đủ
 };

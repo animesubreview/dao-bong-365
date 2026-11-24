@@ -2,7 +2,7 @@
  * Proxy API KKPhim phía server — dự phòng khi trình duyệt người dùng không gọi thẳng được phimapi.com
  * (mạng chặn, CORS, DNS...). GET /api/kk-proxy?path=%2Fv1%2Fapi%2Ftim-kiem%3Fkeyword%3Dabc
  */
-import { checkRateLimit, getClientIp } from './_rateLimit.js';
+import { checkRateLimit, getClientIp } from '../server-lib/_rateLimit.js';
 
 const UPSTREAM = 'https://phimapi.com';
 
@@ -32,5 +32,5 @@ async function netlifyHandlerFn(event) {
   }
 }
 
-import { wrapNetlifyHandler } from './_compat.js';
+import { wrapNetlifyHandler } from '../server-lib/_compat.js';
 export default wrapNetlifyHandler(netlifyHandlerFn);

@@ -171,5 +171,5 @@ async function handleDoithe1s({ partner_id, partner_key, limit = 100 }) {
   };
 }
 
-import { wrapNetlifyHandler } from './_compat.js';
+import { wrapNetlifyHandler } from '../server-lib/_compat.js';
 export default wrapNetlifyHandler(netlifyHandlerFn);

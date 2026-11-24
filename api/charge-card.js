@@ -8,7 +8,7 @@
 //   GACHTHEFAST_DOMAIN       - (tuỳ chọn) mặc định gachthefast.com
 //   SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY
 
-const { getFirestore } = require('./_firestoreAdmin.js');
+const { getFirestore } = require('../server-lib/_firestoreAdmin.js');
 const crypto           = require('crypto');
 
 
@@ -174,5 +174,5 @@ async function creditUserBalance(db, uid, amount, requestId) {
   });
 }
 
-import { wrapNetlifyHandler } from './_compat.js';
+import { wrapNetlifyHandler } from '../server-lib/_compat.js';
 export default wrapNetlifyHandler(netlifyHandlerFn);

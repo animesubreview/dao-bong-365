@@ -60,5 +60,5 @@ ${urls.join('\n')}
   };
 };
 
-import { wrapNetlifyHandler } from '../../api/_compat.js';
+import { wrapNetlifyHandler } from '../_compat.js';
 export default wrapNetlifyHandler(netlifyHandlerFn);
