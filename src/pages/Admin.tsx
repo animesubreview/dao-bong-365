@@ -1207,9 +1207,6 @@ function AdsSection({ onToast }: { onToast: (msg: string, t: 'success' | 'error'
     bottom: '⬇️ Dưới trang',
     middle: '↕️ Giữa trang',
     sticky: '📌 Cố định cuối màn hình (PC & Mobile)',
-    header: '🔝 Trên cùng (dính Header)',
-    left: '◀️ Sidebar trái',
-    right: '▶️ Sidebar phải',
   };
 
   return (
@@ -1401,8 +1398,6 @@ function AdsSection({ onToast }: { onToast: (msg: string, t: 'success' | 'error'
                     <option value="middle">↕️ Giữa trang (giữa các section)</option>
                     <option value="bottom">⬇️ Dưới trang (Trang chủ: sau danh sách phim · Chi tiết phim & Xem phim: cuối trang)</option>
                     <option value="sticky">📌 Cố định cuối màn hình (PC &amp; Mobile)</option>
-                    <option value="left">◀️ Sidebar TRÁI (cố định hai bên màn hình, cả Mobile & PC)</option>
-                    <option value="right">▶️ Sidebar PHẢI (cố định hai bên màn hình, cả Mobile & PC)</option>
                   </select>
                 </div>
               </div>
@@ -1526,7 +1521,7 @@ function AdsSection({ onToast }: { onToast: (msg: string, t: 'success' | 'error'
           </div>
 
           <div className="bg-green-600/5 border border-green-600/20 rounded-xl px-4 py-3 text-[12px] text-green-300/80">
-            ℹ️ Popup hiện <strong>1 lần duy nhất mỗi phiên</strong> khi người dùng nhấn vào chi tiết phim. Hiện tối đa <strong>2 popup đang bật</strong>: hiện popup 1, người dùng bấm <strong>Đóng/Bỏ qua</strong> thì hiện tiếp popup 2.
+            ℹ️ Popup hiện <strong>1 lần duy nhất mỗi phiên</strong> khi người dùng nhấn vào chi tiết phim. Chỉ popup đầu tiên đang <strong>bật</strong> sẽ được hiển thị.
           </div>
 
           {showPopupForm && (

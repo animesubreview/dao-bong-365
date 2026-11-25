@@ -19,35 +19,19 @@
  */
 import { collection, query, orderBy, getDocs, QueryConstraint } from './firestore-compat';
 import { db } from './firebase';
-import { supabase } from './supabase';
 
-interface Entry { at: number; data: any[]; sig?: string }
-// Khi TTL hết hạn nhưng dữ liệu KHÔNG đổi (chữ ký giống nhau) thì dùng lại bản đang có, không tải lại cả danh sách.
-// Tối đa dùng lại trong 12 giờ rồi mới bắt buộc tải mới.
-const MAX_REUSE_MS = 12 * 3600_000;
-
-/** Chữ ký rất nhẹ của 1 collection: số dòng + thời điểm sửa gần nhất (không tải dữ liệu) */
-export async function collectionSignature(path: string): Promise<string | null> {
-  try {
-    const { data, count, error } = await supabase.from('firestore_docs')
-      .select('updated_at', { count: 'exact' }).eq('collection_path', path)
-      .order('updated_at', { ascending: false }).limit(1);
-    if (error) return null;
-    return `${count ?? 0}|${(data && data[0] && (data[0] as any).updated_at) || ''}`;
-  } catch { return null; }
-}
+interface Entry { at: number; data: any[] }
 const mem = new Map<string, Entry>();
 const inflight = new Map<string, Promise<any[]>>();
 
-// Lưu ở localStorage (qua các lần mở lại web) thay vì sessionStorage — kèm chữ ký để biết khi nào thật sự cần tải lại
 function sessionGet(key: string): Entry | null {
   try {
-    const v = localStorage.getItem('pc:' + key);
+    const v = sessionStorage.getItem('pc:' + key);
     return v ? JSON.parse(v) : null;
   } catch { return null; }
 }
 function sessionSet(key: string, entry: Entry) {
-  try { localStorage.setItem('pc:' + key, JSON.stringify(entry)); } catch {}
+  try { sessionStorage.setItem('pc:' + key, JSON.stringify(entry)); } catch {}
 }
 
 /**
@@ -71,17 +55,6 @@ export async function fetchCollectionCached<T = any>(
     return sHit.data as T[];
   }
 
-  // Hết TTL nhưng còn bản cũ → hỏi chữ ký (rất nhẹ). Giống nhau thì dùng lại, khỏi tải cả danh sách.
-  const old = memHit || sHit;
-  if (old && old.sig && now - old.at < MAX_REUSE_MS) {
-    const sig = await collectionSignature(colName);
-    if (sig && sig === old.sig) {
-      const kept = { ...old, at: Date.now() };
-      mem.set(key, kept); sessionSet(key, kept);
-      return old.data as T[];
-    }
-  }
-
   // Gộp nhiều lời gọi trùng lúc trang đang tải (nhiều component cùng cần) thành 1 request
   const pending = inflight.get(key);
   if (pending) return pending as Promise<T[]>;
@@ -92,10 +65,9 @@ export async function fetchCollectionCached<T = any>(
     // đúng 1 lần trước khi bỏ cuộc — tránh mục bị "biến mất" oan chỉ vì 1 lượt rớt mạng thoáng qua.
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
-        const sig = await collectionSignature(colName); // lấy TRƯỚC khi tải để không bỏ sót thay đổi xen giữa
         const snap = await getDocs(q);
         const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        const entry: Entry = { at: Date.now(), data, sig: sig || undefined };
+        const entry = { at: Date.now(), data };
         mem.set(key, entry);
         sessionSet(key, entry);
         inflight.delete(key);
@@ -121,7 +93,7 @@ export async function fetchCollectionCached<T = any>(
  */
 export function invalidateCache(key: string) {
   mem.delete(key);
-  try { localStorage.removeItem('pc:' + key); sessionStorage.removeItem('pc:' + key); } catch {}
+  try { sessionStorage.removeItem('pc:' + key); } catch {}
   try { window.dispatchEvent(new CustomEvent('pc-invalidate', { detail: { key } })); } catch {}
 }
 

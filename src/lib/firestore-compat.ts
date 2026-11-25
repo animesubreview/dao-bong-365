@@ -144,7 +144,6 @@ export async function setDoc(ref: DocumentReference, data: any, opts?: SetOption
     { onConflict: 'collection_path,doc_id' }
   );
   if (error) throw error;
-  refreshPollers(ref.path);
 }
 
 export async function addDoc(coll: CollectionReference, data: any) {
@@ -160,74 +159,12 @@ export async function updateDoc(ref: DocumentReference, data: any) {
     .update({ data: merged, updated_at: new Date().toISOString() })
     .eq('collection_path', ref.path).eq('doc_id', ref.id);
   if (error) throw error;
-  refreshPollers(ref.path);
 }
 
 export async function deleteDoc(ref: DocumentReference) {
   const { error } = await supabase.from('firestore_docs').delete()
     .eq('collection_path', ref.path).eq('doc_id', ref.id);
   if (error) throw error;
-  refreshPollers(ref.path);
-}
-
-// ── Polling dùng chung cho cấu hình công khai (thay cho kênh realtime) ──
-// Nội dung công khai ít đổi (cấu hình, banner, danh sách phim up thủ công/ghim/sắp chiếu/song ngữ/kênh TV):
-// không cần realtime, đọc định kỳ + tự làm mới ngay khi chính trình duyệt này vừa ghi (refreshPollers).
-const POLL_PATHS = new Set([
-  'config', 'site_config', 'settings', 'popup_ads', 'ad_banners', 'notifications',
-  'manual_movies', 'movie_overrides', 'upcoming_movies', 'pinned_movies', 'bilingual_movies', 'tv_channels',
-]);
-const POLL_INTERVAL = 90_000;
-function shouldPoll(path: string): boolean {
-  if (!POLL_PATHS.has(path)) return false;
-  try { if (location.pathname.startsWith('/daophim/admin')) return false; } catch {}
-  return true;
-}
-interface Poller { subs: Set<{ onNext: any; onError: any }>; timer: any; last: any; hasLast: boolean; first: Promise<void> | null; sig?: string; docId?: string; tick: (force?: boolean) => Promise<void>; }
-const pollers = new Map<string, Poller>();
-// Sau khi trình duyệt này ghi vào 1 collection đang polling → làm mới ngay (người up phim thấy liền, không chờ 90s)
-export function refreshPollers(path: string) {
-  pollers.forEach((p, key) => { if (key.startsWith(path + '|')) p.tick(true); });
-}
-async function probeSignature(path: string, docId?: string): Promise<string | null> {
-  try {
-    let q: any = supabase.from('firestore_docs').select('updated_at', { count: 'exact' }).eq('collection_path', path);
-    if (docId) q = q.eq('doc_id', docId);
-    const { data, count, error } = await q.order('updated_at', { ascending: false }).limit(1);
-    if (error) return null;
-    return `${count ?? 0}|${(data && data[0] && data[0].updated_at) || ''}`;
-  } catch { return null; }
-}
-function startSharedPoll(key: string, load: () => Promise<any>, onNext: any, onError: any, docId?: string): Unsubscribe {
-  let p = pollers.get(key);
-  const sub = { onNext, onError };
-  if (!p) {
-    const np: Poller = { subs: new Set(), timer: null, last: null, hasLast: false, first: null, docId, tick: async () => {} };
-    const tick = async (force = false) => {
-      if (!force && typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
-      try {
-        // Hỏi chữ ký nhẹ (số dòng + updated_at mới nhất) — không đổi thì KHÔNG tải lại dữ liệu (tiết kiệm egress)
-        const sig = await probeSignature(key.split('|')[0], np.docId);
-        if (!force && np.hasLast && sig && sig === np.sig) return;
-        const v = await load(); np.last = v; np.hasLast = true; np.sig = sig || np.sig; np.subs.forEach(x => x.onNext(v)); }
-      catch (e) { np.subs.forEach(x => x.onError?.(e)); }
-    };
-    np.tick = tick;
-    np.timer = setInterval(() => tick(), POLL_INTERVAL);
-    pollers.set(key, np); p = np;
-    p.subs.add(sub);
-    p.first = tick(true); // lần đọc đầu tiên, chia sẻ cho mọi người nghe đăng ký sau
-  } else {
-    p.subs.add(sub);
-    // Người nghe thứ 2 trở đi: dùng kết quả gần nhất (hoặc chờ lần đọc đầu) thay vì gọi mạng thêm
-    if (p.hasLast) { try { onNext(p.last); } catch {} }
-    else p.first?.then(() => { if (p!.hasLast) { try { onNext(p!.last); } catch {} } });
-  }
-  return () => {
-    const cur = pollers.get(key); if (!cur) return;
-    cur.subs.delete(sub);
-    if (cur.subs.size === 0) { clearInterval(cur.timer); pollers.delete(key); }
-  };
 }
 
 export function onSnapshot(refOrQuery: any, ...args: any[]): Unsubscribe {
@@ -242,73 +179,25 @@ export function onSnapshot(refOrQuery: any, ...args: any[]): Unsubscribe {
     try { onNext(isDoc ? await getDoc(refOrQuery) : await getDocs(refOrQuery)); }
     catch (e) { onError?.(e); }
   };
-
-  // ── Tiết kiệm quota Supabase Realtime (Free: 200 kết nối đồng thời) ──
-  // Các cấu hình công khai (config/site_config/settings/popup_ads...) KHÔNG cần realtime:
-  // trước đây mỗi khách mở hàng chục kênh websocket chỉ để nghe cấu hình hiếm khi đổi.
-  // Giờ dùng polling dùng chung (1 bộ đếm cho mọi nơi nghe cùng 1 tài liệu, tạm dừng khi tab ẩn).
-  // Trang Admin vẫn dùng realtime như cũ để thấy thay đổi ngay.
-  if (shouldPoll(path)) {
-    return startSharedPoll(`${path}|${isDoc ? refOrQuery.id : JSON.stringify([refOrQuery.wheres, refOrQuery.orders, refOrQuery.limitN])}`,
-      async () => (isDoc ? await getDoc(refOrQuery) : await getDocs(refOrQuery)), onNext, onError, isDoc ? refOrQuery.id : undefined);
-  }
   fetchAndEmit();
 
-  // ── Realtime: 1 kênh DÙNG CHUNG cho mỗi collection (trước đây mỗi lần gọi onSnapshot mở 1 kênh riêng) ──
-  // Sự kiện thay đổi được GỘP (debounce) và bị hoãn khi tab đang ẩn → bớt hẳn số lần tải lại + số message.
-  const listener = makeLiveListener(path, fetchAndEmit);
-  try { joinSharedChannel(path, listener); }
-  catch (e) {
+  let channel: any = null;
+  try {
+    channel = supabase
+      // Tên kênh LUÔN phải là duy nhất cho mỗi lần gọi onSnapshot — nếu 2 nơi trong code
+      // cùng theo dõi 1 document/collection mà đặt tên kênh giống hệt nhau, Supabase sẽ báo lỗi
+      // "cannot add postgres_changes callbacks... after subscribe()" ở lần đăng ký thứ 2.
+      .channel(`fs_${path}_${isDoc ? refOrQuery.id : 'q'}_${Date.now()}_${Math.random().toString(36).slice(2)}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'firestore_docs', filter: `collection_path=eq.${path}` },
+        () => { fetchAndEmit(); })
+      .subscribe();
+  } catch (e) {
+    // Không để lỗi realtime làm crash cả app — chỉ báo qua onError, dữ liệu vẫn có nhờ fetchAndEmit() ở trên
     console.error('[firestore-compat] onSnapshot channel error:', e);
     onError?.(e);
   }
-  return () => { listener.dispose(); leaveSharedChannel(path, listener); };
-}
 
-// Collection ghi liên tục (presence) chỉ cần làm mới thưa; còn lại gộp trong 400ms
-const LIVE_MIN_GAP: Record<string, number> = { presence: 8000 };
-interface LiveListener { onChange: () => void; dispose: () => void; }
-function makeLiveListener(path: string, run: () => void): LiveListener {
-  const gap = LIVE_MIN_GAP[path] ?? 400;
-  let timer: any = null, last = 0, dirty = false, dead = false;
-  // Kênh thoại/tín hiệu WebRTC cần phản hồi ngay kể cả khi tab ẩn → không hoãn
-  const urgent = /voice|signal/i.test(path);
-  const flush = () => {
-    timer = null;
-    if (dead) return;
-    if (!urgent && typeof document !== 'undefined' && document.visibilityState === 'hidden') { dirty = true; return; }
-    dirty = false; last = Date.now(); run();
-  };
-  const onVis = () => { if (dirty && document.visibilityState === 'visible') flush(); };
-  if (typeof document !== 'undefined') document.addEventListener('visibilitychange', onVis);
-  return {
-    onChange: () => {
-      if (timer || dead) return;
-      const wait = Math.max(gap - (Date.now() - last), 0) || gap;
-      timer = setTimeout(flush, wait);
-    },
-    dispose: () => { dead = true; if (timer) clearTimeout(timer); if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', onVis); },
-  };
-}
-const sharedChannels = new Map<string, { channel: any; listeners: Set<LiveListener> }>();
-function joinSharedChannel(path: string, l: LiveListener) {
-  let e = sharedChannels.get(path);
-  if (!e) {
-    const listeners = new Set<LiveListener>();
-    const channel = supabase
-      .channel(`fs_shared_${path}_${Math.random().toString(36).slice(2)}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'firestore_docs', filter: `collection_path=eq.${path}` },
-        () => { listeners.forEach(x => x.onChange()); })
-      .subscribe();
-    e = { channel, listeners };
-    sharedChannels.set(path, e);
-  }
-  e.listeners.add(l);
-}
-function leaveSharedChannel(path: string, l: LiveListener) {
-  const e = sharedChannels.get(path); if (!e) return;
-  e.listeners.delete(l);
-  if (e.listeners.size === 0) { try { supabase.removeChannel(e.channel); } catch {} sharedChannels.delete(path); }
+  return () => { if (channel) supabase.removeChannel(channel); };
 }
 
 // ── Timestamp tối giản, tương thích .toDate()/.toMillis() ──

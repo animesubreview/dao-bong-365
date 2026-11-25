@@ -1,4 +1,3 @@
-import { API_BASE } from './apiBase';
 /**
  * Helper gửi thông báo Telegram khi có phim mới
  * Gọi Netlify Function /.netlify/functions/telegram-notify
@@ -9,7 +8,7 @@ const NOTIFY_SECRET = import.meta.env.VITE_NOTIFY_SECRET || '';
 
 async function callNotify(payload: object) {
   try {
-    const res = await fetch(`${API_BASE}/.netlify/functions/telegram-notify`, {
+    const res = await fetch('/.netlify/functions/telegram-notify', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

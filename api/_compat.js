@@ -5,11 +5,6 @@
  */
 export function wrapNetlifyHandler(netlifyFn) {
   return async function (req, res) {
-    // CORS: cho phép web chạy trên hosting khác domain (hosting tĩnh) gọi các hàm này.
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Notify-Secret');
-    if (req.method === 'OPTIONS') { res.status(204).end(); return; }
     const event = {
       httpMethod: req.method,
       headers: req.headers,

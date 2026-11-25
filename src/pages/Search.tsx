@@ -5,7 +5,7 @@ import { movieApi } from '../services/api';
 import { Movie } from '../types';
 import MovieCard from '../components/MovieCard';
 import { ManualMovieCard, ManualMovie } from '../components/ManualMoviesSection';
-import { getManualMoviesCached } from '../lib/manualMovies';
+import { subscribeManualMovies } from '../lib/manualMovies';
 import { Search as SearchIcon, Loader2, ChevronLeft, ChevronRight, LayoutGrid } from 'lucide-react';
 import { cn, usePageTitle } from '../lib/utils';
 
@@ -43,10 +43,8 @@ export default function Search() {
 
   // Load manual movies
   useEffect(() => {
-    // Đọc có cache (chỉ tải lại khi dữ liệu thật sự đổi) thay vì realtime tải lại toàn bộ danh sách
-    let alive = true;
-    getManualMoviesCached().then(l => { if (alive) setAllManual(l); });
-    return () => { alive = false; };
+    const unsub = subscribeManualMovies(setAllManual);
+    return unsub;
   }, []);
 
   // Load browse movies khi chưa có query

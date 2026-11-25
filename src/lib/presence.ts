@@ -1,5 +1,4 @@
 import { db } from './firebase';
-import { getCurrentUser } from './auth';
 // Presence là ping nền, không quan trọng — lỗi tự bỏ qua (xem các .catch bên dưới),
 // nên KHÔNG dùng bản setDoc/onSnapshot có báo banner lỗi (firestoreGuard), tránh làm
 // phiền admin mỗi khi 1 lượt ping của người xem nào đó bị rớt mạng tạm thời.
@@ -32,8 +31,7 @@ export function startPresence() {
   const ref = doc(db, 'presence', sessionId);
 
   const ping = () => {
-    // uid = null nếu là khách → dùng để đếm "thành viên / khách" ở Kênh Chat Tổng
-    setDoc(ref, { lastSeen: serverTimestamp(), ua: navigator.userAgent.slice(0, 80), uid: getCurrentUser()?.uid ?? null }, { merge: true })
+    setDoc(ref, { lastSeen: serverTimestamp(), ua: navigator.userAgent.slice(0, 80) }, { merge: true })
       .catch(() => {/* ignore network errors */});
   };
 

@@ -40,7 +40,6 @@ import { getGeoResult, getGeoblockEnabled, GeoResult } from './lib/geoblock';
 import ClickAd from './components/ClickAd';
 import AdBanner from './components/AdBanner';
 import { startPresence } from './lib/presence';
-import ChatTong from './components/ChatTong';
 
 function LoadingScreen({ fadeOut }: { fadeOut: boolean }) {
   return (
@@ -243,19 +242,10 @@ function AppInner({ maintenance, maintenanceLoaded }: { maintenance: Maintenance
         <Footer />
         <MobileBottomNav />
         <LiveNotice />
-        {/* Kênh Chat Tổng: quả cầu nổi + khung chat (ẩn ở trang admin, xem phim, đăng nhập) */}
-        {!isAdminPage && <ChatTong />}
         {/* Banner QC cố định cuối màn hình — hiển thị mọi trang (PC & Mobile),
             trừ trang admin và trang xem phim (tránh che player) */}
         {!isAdminPage && !location.pathname.startsWith('/watch') && (
           <AdBanner position="sticky" />
-        )}
-        {/* Banner 2 bên sidebar trái/phải — hiện cả mobile & PC, trừ trang admin */}
-        {!isAdminPage && (
-          <>
-            <AdBanner position="left" />
-            <AdBanner position="right" />
-          </>
         )}
       </div>
   );

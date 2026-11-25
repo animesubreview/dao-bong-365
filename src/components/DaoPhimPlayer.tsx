@@ -7,7 +7,6 @@ import {
 import { subscribePlayerConfig, PlayerConfig, DEFAULT_CONFIG } from '../lib/playerConfig';
 import { subscribeSiteSettings } from '../lib/siteSettings';
 import VideoAdOverlay from './VideoAdOverlay';
-import { API_BASE } from '../lib/apiBase';
 
 interface DaoPhimPlayerProps {
   src: string;        // link_embed (iframe) - dùng làm fallback
@@ -223,7 +222,7 @@ export default function DaoPhimPlayer({ src, m3u8, title, className = '', onEnde
 
     let hls: Hls | null = null;
     const playUrl = mode === 'proxy'
-      ? `${API_BASE}/.netlify/functions/m3u8-proxy?url=${encodeURIComponent(m3u8)}`
+      ? `/.netlify/functions/m3u8-proxy?url=${encodeURIComponent(m3u8)}`
       : m3u8;
 
     const onCanPlay = () => setLoading(false);

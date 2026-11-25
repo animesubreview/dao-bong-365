@@ -19,7 +19,6 @@ import { useCommunityConfig } from '../lib/communityRoom';
 import { getCurrentUser, getUserProfile, onAuthChange } from '../lib/auth';
 import type { UserProfile } from '../lib/auth';
 import { getMovieRating, voteMovieRating, hasVoted, RATING_LABELS, RATING_EMOJIS, MovieRating } from '../lib/movieRatings';
-import { announceWatching } from '../lib/chatTong';
 
 export default function Watch() {
   const { slug, episodeSlug } = useParams<{ slug: string; episodeSlug: string }>();
@@ -195,9 +194,6 @@ export default function Watch() {
         });
         localStorage.setItem('watchHistory', JSON.stringify(newHistory.slice(0, 20)));
 
-        // Báo vào Kênh Chat Tổng: "Đang xem phim ..." (có giới hạn tần suất, bỏ qua nếu chưa đăng nhập)
-        announceWatching({ movieName: movieData.name, episodeName: ep?.name, link: `/watch/${movieData.slug}/${ep?.slug || ''}`, key: `${movieData.slug}:${ep?.slug || ''}` });
-
         const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
         setIsFavorite(favorites.some((f: any) => f.slug === slug));
       } catch (error) {
@@ -289,7 +285,7 @@ export default function Watch() {
           nên banner này tự nằm ngay dưới header, không cần bù thêm. */}
       <div className="max-w-2xl xl:max-w-[1500px] xl:mx-auto mx-auto px-3 xl:px-8">
         {/* xl:max-w-2xl giới hạn bề ngang banner trên PC để không bị quá to/tràn hết màn hình */}
-        <div className="xl:max-w-4xl xl:mx-auto">
+        <div className="xl:max-w-2xl xl:mx-auto">
           <AdBanner position="top" className="rounded-xl overflow-hidden pt-3" />
         </div>
       </div>

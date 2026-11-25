@@ -58,14 +58,12 @@ async function netlifyHandlerFn(event) {
       let text = await response.text();
       const baseUrl = url.substring(0, url.lastIndexOf('/') + 1);
 
-      // Địa chỉ tuyệt đối của chính proxy để web ở domain khác (hosting tĩnh) vẫn tải được các đoạn video
-      const selfBase = event.headers && (event.headers['x-forwarded-host'] || event.headers.host) ? `https://${event.headers['x-forwarded-host'] || event.headers.host}` : '';
       // Replace relative .ts and .m3u8 URLs with proxied versions
       text = text.replace(/^(?!#)(.+\.(ts|m3u8|aac|mp4))$/gm, (match) => {
         if (match.startsWith('http')) {
-          return `${selfBase}/.netlify/functions/m3u8-proxy?url=${encodeURIComponent(match)}`;
+          return `/.netlify/functions/m3u8-proxy?url=${encodeURIComponent(match)}`;
         } else {
-          return `${selfBase}/.netlify/functions/m3u8-proxy?url=${encodeURIComponent(baseUrl + match)}`;
+          return `/.netlify/functions/m3u8-proxy?url=${encodeURIComponent(baseUrl + match)}`;
         }
       });
 
