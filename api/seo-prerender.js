@@ -70,14 +70,26 @@ export const config = { runtime: 'edge' };
 // đúng file index.html tĩnh của SPA, để bot vẫn nhận được trang thay vì lỗi.
 import { checkRateLimit, getClientIp } from './_rateLimit.js';
 
+const ALLOWED_SITES = ['https://daophim.online', 'https://www.daophim.online', 'https://test.daophim.online'];
+
 async function passThrough(request) {
-  const indexUrl = new URL('/index.html', request.url);
-  const res = await fetch(indexUrl);
+  // Khi được gọi từ Cloudflare Worker, __site chỉ tới web thật (chỉ nhận domain trong allowlist)
+  const reqUrl = new URL(request.url);
+  const site = reqUrl.searchParams.get('__site');
+  const okSite = site && ALLOWED_SITES.includes(site) ? site : reqUrl.origin;
+  const res = await fetch(new URL('/index.html', okSite));
   return new Response(await res.text(), { headers: { 'content-type': 'text/html; charset=utf-8' } });
 }
 
 export default async function handler(request) {
   const url = new URL(request.url);
+  // Cloudflare Worker truyền đường dẫn gốc qua ?__path=
+  const overridePath = url.searchParams.get('__path');
+  if (overridePath && overridePath.startsWith('/')) {
+    url.pathname = overridePath.split('?')[0];
+    const q = overridePath.split('?')[1];
+    if (q) new URLSearchParams(q).forEach((v, k) => url.searchParams.set(k, v));
+  }
 
   // Chống bot giả mạo User-Agent (Googlebot giả...) spam gọi hàm này liên tục —
   // mỗi hàm gọi đều kéo theo 1 lượt request sang API KKPhim, khá tốn tài nguyên.
