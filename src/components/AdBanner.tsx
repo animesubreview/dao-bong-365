@@ -1,0 +1,255 @@
+import React, { useEffect, useState } from 'react';
+import { X, AlertCircle } from 'lucide-react';
+import { collection, doc, query, orderBy } from '../lib/firestore-compat';
+import { db } from '../lib/firebase';
+import { addDoc, updateDoc, deleteDoc } from '../lib/firestoreGuard';
+import { fetchCollectionCached, invalidateCache } from '../lib/publicCache';
+
+export interface AdBannerData {
+  id: string;
+  title: string;
+  mediaUrl: string;
+  mediaType: 'gif' | 'mp4' | 'image';
+  linkUrl: string;
+  // 'sticky' = banner cố định (fixed) ở cuối màn hình, hiển thị trên mọi trang, cả PC lẫn Mobile
+  // 'left' / 'right' = banner dọc cố định ở 2 bên sidebar trái/phải, hiện cả mobile (thanh hẹp) lẫn PC (rộng ≥1660px)
+  // 'header' = banner mỏng dính ngay trên cùng, phía trên thanh header, hiển thị trên MỌI trang
+  position: 'top' | 'bottom' | 'middle' | 'sticky' | 'header' | 'left' | 'right';
+  active: boolean;
+  createdAt: number;
+}
+
+const COL = 'ad_banners';
+
+// ── Firestore CRUD ────────────────────────────────────────────────────────────
+export async function getAdBanners(): Promise<AdBannerData[]> {
+  try {
+    const { getDocs } = await import('../lib/firestore-compat');
+    const snap = await getDocs(query(collection(db, COL), orderBy('createdAt', 'desc')));
+    return snap.docs.map(d => ({ id: d.id, ...d.data() } as AdBannerData));
+  } catch (e) {
+    console.error('[AdBanner] getAdBanners error:', e);
+    return [];
+  }
+}
+
+export async function createAdBanner(data: Omit<AdBannerData, 'id'>): Promise<string> {
+  const ref = await addDoc(collection(db, COL), { ...data, createdAt: Date.now() });
+  invalidateCache(COL);
+  return ref.id;
+}
+
+export async function updateAdBanner(id: string, data: Partial<AdBannerData>) {
+  await updateDoc(doc(db, COL, id), data);
+  invalidateCache(COL);
+}
+
+export async function deleteAdBanner(id: string) {
+  await deleteDoc(doc(db, COL, id));
+  invalidateCache(COL);
+}
+
+// ── Component ─────────────────────────────────────────────────────────────────
+interface AdBannerProps {
+  position: 'top' | 'bottom' | 'middle' | 'sticky' | 'header' | 'left' | 'right';
+  className?: string;
+}
+
+export default function AdBanner({ position, className = '' }: AdBannerProps) {
+  const [banners, setBanners] = useState<AdBannerData[]>([]);
+  const [dismissed, setDismissed] = useState<Set<string>>(new Set());
+  const [error, setError] = useState(false);
+  const [allClosed, setAllClosed] = useState(false); // dùng cho position="sticky": đóng toàn bộ khối banner
+
+  useEffect(() => {
+    let cancelled = false;
+    setError(false);
+    // Đọc có cache (3 phút) thay vì onSnapshot — mọi <AdBanner/> trên trang chia sẻ
+    // chung 1 lượt đọc, không phải mỗi vị trí (top/bottom/sticky...) tự đọc riêng.
+    fetchCollectionCached<AdBannerData>(COL, COL, [orderBy('createdAt', 'desc')])
+      .then(all => {
+        if (cancelled) return;
+        setBanners(all.filter(b => b.active && b.position === position));
+      })
+      .catch(e => { console.error('[AdBanner] fetch error:', e); if (!cancelled) setError(true); });
+    return () => { cancelled = true; };
+  }, [position]);
+
+  const visible = banners.filter(b => !dismissed.has(b.id));
+  if (!visible.length) return null;
+
+  const dismiss = (id: string) => {
+    setDismissed(prev => new Set(prev).add(id));
+  };
+
+  // ── Banner cố định (sticky) ở cuối màn hình — hiển thị trên mọi trang,
+  // cả PC lẫn Mobile. Hiện TẤT CẢ banner đang active, xếp chồng theo chiều dọc
+  // (giống nhiều site quảng cáo: nhiều banner nhỏ xếp lên nhau ở đáy màn hình).
+  // ── Banner mỏng dính TRÊN CÙNG, phía trên thanh header — hiển thị trên MỌI trang.
+  // Được nhúng bên trong wrapper `fixed` của Header (xem Header.tsx), nên ở đây
+  // KHÔNG tự set `fixed` — chỉ là 1 thanh ngang chiều cao cố định để Header đo
+  // và chừa khoảng trống tương ứng cho nội dung trang bên dưới.
+  if (position === 'header') {
+    const banner = visible[0]; // chỉ hiện 1 banner đầu ở vị trí này cho gọn
+    if (!banner) return null;
+    return (
+      <div className={`relative w-full h-9 md:h-11 bg-black overflow-hidden ${className}`}>
+        <a
+          href={banner.linkUrl}
+          target="_blank"
+          rel="noopener"
+          title={banner.title}
+          className="flex items-center justify-center w-full h-full"
+        >
+          {banner.mediaType === 'mp4' ? (
+            <video src={banner.mediaUrl} autoPlay loop muted playsInline className="w-full h-full object-cover cursor-pointer" />
+          ) : (
+            <img
+              src={banner.mediaUrl}
+              alt={banner.title || 'Quảng cáo'}
+              className="w-full h-full object-cover cursor-pointer"
+              onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+            />
+          )}
+        </a>
+        <button
+          onClick={() => dismiss(banner.id)}
+          className="absolute top-1/2 -translate-y-1/2 right-1.5 w-5 h-5 md:w-6 md:h-6 bg-black/70 hover:bg-black rounded-full flex items-center justify-center"
+          title="Đóng quảng cáo"
+        >
+          <X size={11} className="text-white" />
+        </button>
+      </div>
+    );
+  }
+
+  // ── Banner 2 bên (sidebar trái / phải) — cố định dọc theo màn hình, chỉ hiện khi
+  // màn hình đủ rộng (≥1660px) để không đè lên nội dung (nội dung tối đa 1400px).
+  // Nhiều banner cùng vị trí thì xếp chồng theo chiều dọc.
+  if (position === 'left' || position === 'right') {
+    return (
+      <div
+        className={`flex flex-col gap-2 fixed z-[40] top-[calc(var(--app-header-h,72px)+130px)] lg:top-[calc(var(--app-header-h,72px)+16px)] bottom-[200px] lg:bottom-auto w-[68px] sm:w-[96px] md:w-[120px] lg:w-[150px] min-[1800px]:w-[190px] lg:max-h-[calc(100vh-var(--app-header-h,72px)-32px)] overflow-hidden lg:overflow-y-auto ${position === 'left' ? 'left-1 sm:left-2 lg:left-3' : 'right-1 sm:right-2 lg:right-3'} ${className}`}
+        style={{ scrollbarWidth: 'none' }}
+      >
+        {visible.map(banner => (
+          <div key={banner.id} className="relative group w-full flex-1 min-h-0 lg:flex-none overflow-hidden rounded-lg sm:rounded-xl border border-slate-700/60 bg-black shadow-lg shadow-black/40">
+            <a href={banner.linkUrl} target="_blank" rel="noopener" title={banner.title} className="block w-full h-full lg:h-auto">
+              {banner.mediaType === 'mp4' ? (
+                <video src={banner.mediaUrl} autoPlay loop muted playsInline className="w-full h-full object-fill lg:h-auto lg:object-contain block cursor-pointer" />
+              ) : (
+                <img src={banner.mediaUrl} alt={banner.title || 'Quảng cáo'} loading="lazy" className="w-full h-full object-fill lg:h-auto lg:object-contain block cursor-pointer"
+                  onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+              )}
+            </a>
+            <button onClick={() => dismiss(banner.id)} title="Đóng quảng cáo"
+              className="absolute top-0.5 right-0.5 w-5 h-5 bg-black/70 hover:bg-black rounded-full flex items-center justify-center sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+              <X size={10} className="text-white" />
+            </button>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (position === 'sticky') {
+    if (allClosed) return null;
+
+    return (
+      <div
+        className={`fixed inset-x-0 bottom-[64px] md:bottom-0 z-[45] flex justify-center px-2.5 pb-1 md:px-4 md:pb-3 pointer-events-none ${className}`}
+      >
+        <div className="relative w-full md:w-[94%] md:max-w-[760px] pointer-events-auto">
+          {/* Nút đóng toàn bộ khối banner sticky */}
+          <button
+            onClick={() => setAllClosed(true)}
+            className="absolute -top-3 right-1 md:-top-3.5 md:right-0 z-10 w-6 h-6 md:w-7 md:h-7 bg-black/80 hover:bg-black rounded-full flex items-center justify-center border border-slate-600/60 shadow-md"
+            title="Đóng tất cả quảng cáo"
+          >
+            <X size={13} className="text-white md:hidden" />
+            <X size={15} className="text-white hidden md:block" />
+          </button>
+
+          <div className="flex flex-col w-full divide-y divide-slate-800 border border-slate-700/60 md:border rounded-2xl md:rounded-2xl overflow-hidden shadow-[0_-6px_24px_rgba(0,0,0,0.55)]">
+            {visible.map(banner => (
+              <div
+                key={banner.id}
+                className="relative w-full bg-black/95 md:bg-black overflow-hidden"
+              >
+                <a
+                  href={banner.linkUrl}
+                  target="_blank"
+                  rel="noopener"
+                  title={banner.title}
+                  className="flex items-center justify-center w-full"
+                >
+                  {banner.mediaType === 'mp4' ? (
+                    <video
+                      src={banner.mediaUrl}
+                      autoPlay loop muted playsInline
+                      className="w-full h-auto max-h-16 sm:max-h-20 md:max-h-none object-contain cursor-pointer"
+                    />
+                  ) : (
+                    <img
+                      src={banner.mediaUrl}
+                      alt={banner.title || 'Quảng cáo'}
+                      className="w-full h-auto max-h-16 sm:max-h-20 md:max-h-none object-contain cursor-pointer"
+                      onError={e => {
+                        const t = e.target as HTMLImageElement;
+                        t.style.display = 'none';
+                        console.error('[AdBanner] Image failed to load:', banner.mediaUrl);
+                      }}
+                    />
+                  )}
+                </a>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    // Mobile: xếp dọc có khoảng cách. PC (≥768px): các banner CHỒNG SÁT NHAU thành 1 khối dọc, to, căn giữa.
+    <div className={`flex flex-col gap-2 md:gap-0 w-full md:max-w-[760px] md:mx-auto md:rounded-xl md:overflow-hidden md:border md:border-slate-700/60 ${className}`}>
+      {visible.map(banner => (
+        <div key={banner.id} className="relative w-full group overflow-hidden rounded-xl md:rounded-none">
+          <a
+            href={banner.linkUrl}
+            target="_blank"
+            rel="noopener"
+            className="block w-full"
+            title={banner.title}
+          >
+            {banner.mediaType === 'mp4' ? (
+              <video
+                src={banner.mediaUrl}
+                autoPlay loop muted playsInline
+                className="w-full h-auto max-h-20 sm:max-h-24 md:max-h-none object-contain rounded-xl md:rounded-none cursor-pointer bg-black/20"
+              />
+            ) : (
+              <img
+                src={banner.mediaUrl}
+                alt={banner.title || 'Quảng cáo'}
+                className="w-full h-auto max-h-20 sm:max-h-24 md:max-h-none object-contain rounded-xl md:rounded-none cursor-pointer bg-black/20"
+                onError={e => {
+                  const t = e.target as HTMLImageElement;
+                  t.style.display = 'none';
+                  console.error('[AdBanner] Image failed to load:', banner.mediaUrl);
+                }}
+              />
+            )}
+          </a>
+          <button
+            onClick={() => dismiss(banner.id)}
+            className="absolute top-1.5 right-1.5 w-6 h-6 bg-black/60 hover:bg-black/80 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+            title="Đóng quảng cáo"
+          >
+            <X size={12} className="text-white" />
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}

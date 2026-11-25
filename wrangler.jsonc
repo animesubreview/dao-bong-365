@@ -1,0 +1,9 @@
+{
+  // Cấu hình để Cloudflare phục vụ web tĩnh (thư mục dist) và tự trả index.html cho mọi đường dẫn (SPA).
+  "name": "dao-bong-365",
+  "compatibility_date": "2026-01-01",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application"
+  }
+}

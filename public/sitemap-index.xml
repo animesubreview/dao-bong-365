@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+
+  <!-- Sitemap trang tĩnh -->
+  <sitemap>
+    <loc>https://daophim.online/sitemap.xml</loc>
+  </sitemap>
+
+  <!-- Sitemap động – toàn bộ phim từ API (tự cập nhật, cache 12h) -->
+  <sitemap>
+    <loc>https://daophim.online/sitemap-movies.xml</loc>
+  </sitemap>
+
+  <!-- Sitemap trang thể loại / quốc gia -->
+  <sitemap>
+    <loc>https://daophim.online/sitemap-categories.xml</loc>
+  </sitemap>
+
+  <!-- Sitemap ảnh phim (Google Image Search) -->
+  <sitemap>
+    <loc>https://daophim.online/sitemap-images.xml</loc>
+  </sitemap>
+
+</sitemapindex>
