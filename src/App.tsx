@@ -42,8 +42,6 @@ import AdBanner from './components/AdBanner';
 import { startPresence } from './lib/presence';
 import ChatTong from './components/ChatTong';
 
-import BarsLoader, { PageLoader } from './components/BarsLoader';
-
 function LoadingScreen({ fadeOut }: { fadeOut: boolean }) {
   return (
     <div
@@ -99,9 +97,6 @@ function LoadingScreen({ fadeOut }: { fadeOut: boolean }) {
           />
         </div>
       </div>
-
-      {/* Thanh sóng đang tải */}
-      <div style={{ marginTop: 36 }}><BarsLoader label="Đang tải Đảo Phim" /></div>
     </div>
   );
 }
@@ -196,7 +191,7 @@ function AppInner({ maintenance, maintenanceLoaded }: { maintenance: Maintenance
   // Header/Footer/MobileBottomNav/quảng cáo của website chính đè lên nữa.
   if (isAdminPage) {
     return (
-      <Suspense fallback={<PageLoader />}>
+      <Suspense fallback={<div className="min-h-[60vh]" />}>
 <Routes>
         <Route path="/daophim/admin" element={<Admin />} />
       </Routes>
@@ -211,7 +206,7 @@ function AppInner({ maintenance, maintenanceLoaded }: { maintenance: Maintenance
         <Header />
         <NotificationDisplay />
         <div className="flex-1 pb-20 md:pb-0" style={{ paddingTop: 'var(--app-header-h, 4rem)' }}>
-          <Suspense fallback={<PageLoader />}>
+          <Suspense fallback={<div className="min-h-[60vh]" />}>
 <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/phim/:slug" element={<MovieDetail />} />

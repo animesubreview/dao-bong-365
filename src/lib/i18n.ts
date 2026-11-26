@@ -1,5 +1,6 @@
 // Đa ngôn ngữ nhẹ: lưu lựa chọn trong localStorage, chia sẻ giữa mọi component. Mặc định Tiếng Việt.
 import { useEffect, useState } from 'react';
+import { setTranslateCookie } from './translate';
 
 export type Lang = 'vi' | 'en' | 'ko' | 'ja' | 'zh' | 'es';
 export const LANGS: { code: Lang; name: string; tag: string; short: string }[] = [
@@ -45,10 +46,14 @@ try { document.documentElement.lang = LANGS.find(l => l.code === current)!.tag; 
 
 export const getLang = () => current;
 export function setLang(l: Lang) {
+  if (l === current) return;
   current = l;
   try { localStorage.setItem(KEY, l); } catch {}
   try { document.documentElement.lang = LANGS.find(x => x.code === l)!.tag; } catch {}
   window.dispatchEvent(new Event('dp-lang'));
+  // Dịch cả trang: ghi cookie rồi tải lại (chờ chút để hiệu ứng nút chạy xong)
+  setTranslateCookie(l);
+  setTimeout(() => location.reload(), 450);
 }
 export const tr = (key: TKey, lang: Lang = current) => D[key]?.[lang] ?? D[key]?.vi ?? String(key);
 

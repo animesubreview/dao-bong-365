@@ -82,7 +82,7 @@ export default function LanguagePicker() {
   };
 
   return (
-    <div ref={root} className={`lp ${open ? 'open' : ''}`}>
+    <div ref={root} className={`lp notranslate ${open ? 'open' : ''}`} translate="no">
       <style>{CSS}</style>
       <button ref={btn} type="button" className="lp-b" aria-haspopup="listbox" aria-expanded={open} aria-controls={uid + 'p'}
         aria-label={`${t('lang_label')}: ${curL.name}`}
