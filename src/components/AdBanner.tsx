@@ -3,6 +3,7 @@ import { X, AlertCircle } from 'lucide-react';
 import { collection, doc, query, orderBy } from '../lib/firestore-compat';
 import { db } from '../lib/firebase';
 import { addDoc, updateDoc, deleteDoc } from '../lib/firestoreGuard';
+import { useVipStatus } from '../lib/vip';
 import { fetchCollectionCached, invalidateCache } from '../lib/publicCache';
 
 export interface AdBannerData {
@@ -56,6 +57,7 @@ interface AdBannerProps {
 }
 
 export default function AdBanner({ position, className = '' }: AdBannerProps) {
+  const { isVip, loading: vipLoading } = useVipStatus();
   const [banners, setBanners] = useState<AdBannerData[]>([]);
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
   const [error, setError] = useState(false);
@@ -76,6 +78,7 @@ export default function AdBanner({ position, className = '' }: AdBannerProps) {
   }, [position]);
 
   const visible = banners.filter(b => !dismissed.has(b.id));
+  if (isVip || vipLoading) return null; // VIP: ẩn toàn bộ banner quảng cáo
   if (!visible.length) return null;
 
   const dismiss = (id: string) => {

@@ -1,24 +1,15 @@
 // ─── ClickAd ──────────────────────────────────────────────────────────────────
 // Bỏ qua: admin + user đang có VIP còn hạn
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { useClickAdConfig } from '../lib/clickAd';
-import { onAuthChange, getUserProfile, UserProfile } from '../lib/auth';
-import { isVipActive } from '../lib/vip';
+import { isVipActive, useVipStatus } from '../lib/vip';
 
 const LAST_CLICK_KEY = 'click_ad_last_ts';       // mốc thời gian mở gần nhất của Link QC 1
 const LAST_CLICK_KEY_2 = 'click_ad_last_ts_2';   // mốc thời gian mở gần nhất của Link QC 2
 
 export default function ClickAd() {
   const cfg = useClickAdConfig();
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-
-  useEffect(() => {
-    const unsub = onAuthChange(async (user) => {
-      if (user) { const p = await getUserProfile(user.uid); setProfile(p); }
-      else setProfile(null);
-    });
-    return unsub;
-  }, []);
+  const { profile } = useVipStatus();
 
   useEffect(() => {
     if (!cfg.enabled || (!cfg.link && !cfg.link2)) return;

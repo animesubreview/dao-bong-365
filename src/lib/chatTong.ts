@@ -2,7 +2,7 @@
 // Dùng chung dữ liệu với trang /chat (community_chat/global/messages) nên tin nhắn hai nơi đồng bộ.
 // Thiết kế tiết kiệm Supabase: chỉ mở realtime khi khung chat đang mở, tin mới được GHÉP THẲNG từ
 // payload realtime (không tải lại cả danh sách), còn số online chỉ là truy vấn đếm rất nhẹ.
-import { collection, doc, getDocs, query, orderBy, limit, addDoc, deleteDoc } from './firestore-compat';
+import { collection, doc, getDocs, query, orderBy, limit, addDoc, deleteDoc, setDoc } from './firestore-compat';
 import { db } from './firebase';
 import { supabase } from './supabase';
 import { getCurrentUser, getUserProfile } from './auth';
@@ -21,7 +21,9 @@ export interface ChatTongMessage {
   text: string;
   isAdmin?: boolean;
   createdAt: number;
-  kind?: 'text' | 'activity';
+  kind?: 'text' | 'activity' | 'reaction';
+  targetId?: string; // kind='reaction': id tin được thả cảm xúc
+  emoji?: string;
   replyTo?: ChatReply;
   activity?: ChatActivity;
 }
@@ -33,6 +35,46 @@ export async function loadRecentMessages(): Promise<ChatTongMessage[]> {
   const snap = await getDocs(query(colRef(), orderBy('createdAt', 'desc'), limit(MAX_LOAD)));
   const list = snap.docs.map((d: any) => ({ id: d.id, ...d.data() } as ChatTongMessage));
   return list.reverse();
+}
+
+// ── Thả cảm xúc ───────────────────────────────────────────────────────────────
+// Mỗi cảm xúc là 1 tài liệu riêng (kind='reaction') nằm cùng collection tin nhắn → tới tay mọi người qua cùng kênh
+// realtime INSERT sẵn có (không tốn thêm kênh). Id cố định theo (tin, người, emoji) nên bấm lại = bỏ cảm xúc.
+const hex = (e: string) => Array.from(e).map(c => c.codePointAt(0)!.toString(16)).join('-');
+export const reactionDocId = (targetId: string, uid: string, emoji: string) => `rx_${targetId}_${uid}_${hex(emoji)}`;
+const msgDoc = (id: string) => doc(db, 'community_chat', 'global', 'messages', id);
+
+export async function addReaction(targetId: string, uid: string, emoji: string): Promise<void> {
+  await setDoc(msgDoc(reactionDocId(targetId, uid, emoji)), { kind: 'reaction', uid, username: '', avatar: '', text: '', createdAt: Date.now(), targetId, emoji });
+}
+export async function removeReaction(targetId: string, uid: string, emoji: string): Promise<void> {
+  await deleteDoc(msgDoc(reactionDocId(targetId, uid, emoji)));
+}
+
+export type ReactionMap = Record<string, Record<string, string[]>>; // targetId -> emoji -> [uid]
+export function addToReactionMap(map: ReactionMap, r: { targetId?: string; emoji?: string; uid: string }): ReactionMap {
+  if (!r.targetId || !r.emoji) return map;
+  const cur = map[r.targetId]?.[r.emoji] || [];
+  if (cur.includes(r.uid)) return map;
+  return { ...map, [r.targetId]: { ...(map[r.targetId] || {}), [r.emoji]: [...cur, r.uid] } };
+}
+export function removeFromReactionMap(map: ReactionMap, r: { targetId: string; emoji: string; uid: string }): ReactionMap {
+  const cur = map[r.targetId]?.[r.emoji];
+  if (!cur || !cur.includes(r.uid)) return map;
+  const next = cur.filter(u => u !== r.uid);
+  const em = { ...(map[r.targetId] || {}) };
+  if (next.length) em[r.emoji] = next; else delete em[r.emoji];
+  return { ...map, [r.targetId]: em };
+}
+
+/** Tải tin + cảm xúc gần nhất trong 1 truy vấn */
+export async function loadChat(): Promise<{ messages: ChatTongMessage[]; reactions: ReactionMap }> {
+  const snap = await getDocs(query(colRef(), orderBy('createdAt', 'desc'), limit(MAX_LOAD + 140)));
+  const all = snap.docs.map((d: any) => ({ id: d.id, ...d.data() } as ChatTongMessage));
+  const messages = all.filter(m => m.kind !== 'reaction').slice(0, MAX_LOAD).reverse();
+  let reactions: ReactionMap = {};
+  all.filter(m => m.kind === 'reaction').forEach(r => { reactions = addToReactionMap(reactions, r); });
+  return { messages, reactions };
 }
 
 /** Nghe tin mới — chỉ gọi khi khung chat đang mở.

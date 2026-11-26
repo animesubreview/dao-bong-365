@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { isLiteDevice } from '../lib/perf';
 import { AtSign, Calendar, Clock, Film, Flame, MessageSquare, Trophy, X } from 'lucide-react';
 import { getUserProfile, UserProfile } from '../lib/auth';
 import { getProfileExtras, getUserStats, levelOf, levelProgress, titleOf, ProfileExtras, UserStats } from '../lib/userStats';
@@ -9,14 +10,22 @@ interface Props { uid: string; fallbackName: string; fallbackAvatar: string; onC
 const fmtDate = (t: number) => { const d = new Date(t); return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`; };
 
 /** Số chạy tăng dần từ 0 */
+// Máy yếu: hiện thẳng giá trị cuối. Máy khỏe: chờ thẻ mở xong (400ms) rồi chạy ~20fps để không giật.
 function useCount(target: number, ms = 800) {
-  const [v, setV] = useState(0);
+  const lite = isLiteDevice();
+  const [v, setV] = useState(lite ? target : 0);
   useEffect(() => {
-    let raf = 0; const t0 = performance.now();
-    const step = (t: number) => { const k = Math.min(1, (t - t0) / ms); setV(target * (1 - Math.pow(1 - k, 3))); if (k < 1) raf = requestAnimationFrame(step); };
+    if (lite) { setV(target); return; }
+    let raf = 0, last = 0; const t0 = performance.now() + 400;
+    const step = (t: number) => {
+      if (t < t0) { raf = requestAnimationFrame(step); return; }
+      const k = Math.min(1, (t - t0) / ms);
+      if (k >= 1 || t - last > 50) { last = t; setV(target * (1 - Math.pow(1 - k, 3))); }
+      if (k < 1) raf = requestAnimationFrame(step);
+    };
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
-  }, [target, ms]);
+  }, [target, ms, lite]);
   return v;
 }
 
@@ -24,15 +33,16 @@ export default function ProfileCard({ uid, fallbackName, fallbackAvatar, onClose
   const [p, setP] = useState<UserProfile | null>(null);
   const [s, setS] = useState<UserStats | null>(null);
   const [x, setX] = useState<ProfileExtras | null>(null);
+  const lite = isLiteDevice();
 
   useEffect(() => {
     let alive = true;
-    (async () => {
+    const timer = setTimeout(async () => { // chờ hiệu ứng mở thẻ xong rồi mới tải dữ liệu → không giật
       const [pr, st] = await Promise.all([getUserProfile(uid), getUserStats(uid)]);
       if (!alive) return; setP(pr); setS(st);
       getProfileExtras(uid, st.exp).then(e => alive && setX(e));
-    })();
-    return () => { alive = false; };
+    }, 120);
+    return () => { alive = false; clearTimeout(timer); };
   }, [uid]);
 
   const isAdmin = p?.role === 'admin';
@@ -52,7 +62,7 @@ export default function ProfileCard({ uid, fallbackName, fallbackAvatar, onClose
     : 'conic-gradient(from 0deg,var(--primary-light),#fbbf24,#38bdf8,var(--primary-light))';
 
   return (
-    <div className="fixed inset-0 z-[9995] flex items-center justify-center p-4 bg-black/75 backdrop-blur-[3px] pc-fade" onClick={onClose}>
+    <div className="fixed inset-0 z-[9995] flex items-center justify-center p-4 bg-black/80 pc-fade" onClick={onClose}>
       <style>{`
         @keyframes pc-in { from { opacity:0; transform: translateY(24px) scale(.94) } to { opacity:1; transform:none } }
         @keyframes pc-fade { from { opacity:0 } to { opacity:1 } }
@@ -65,11 +75,14 @@ export default function ProfileCard({ uid, fallbackName, fallbackAvatar, onClose
         .pc-spin-slow { animation: pc-spin 9s linear infinite }
         .pc-shim { animation: pc-shim 2.4s ease-in-out infinite }
         .pc-glow { animation: pc-glow 2.4s ease-in-out infinite }
+        .pc-spin,.pc-spin-slow { will-change: transform }
+        .pc-lite .pc-spin,.pc-lite .pc-spin-slow,.pc-lite .pc-shim,.pc-lite .pc-glow { animation: none }
+        .pc-lite .pc-shim { display: none }
         @media (prefers-reduced-motion: reduce) { .pc-card,.pc-spin,.pc-spin-slow,.pc-shim,.pc-glow { animation: none } }
       `}</style>
 
       {/* Viền sáng xoay quanh thẻ */}
-      <div className="pc-card relative w-full max-w-[420px] rounded-[30px] p-[2px] overflow-hidden" onClick={e => e.stopPropagation()} role="dialog" aria-label={`Hồ sơ ${name}`}>
+      <div className={`pc-card ${lite ? 'pc-lite' : ''} relative w-full max-w-[420px] rounded-[30px] p-[2px] overflow-hidden`} onClick={e => e.stopPropagation()} role="dialog" aria-label={`Hồ sơ ${name}`}>
         <span aria-hidden className="pc-spin-slow absolute -inset-[70%]" style={{ background: isAdmin
           ? 'conic-gradient(from 0deg,transparent 0 55%,#f59e0b 72%,#fde68a 80%,#c084fc 90%,transparent 100%)'
           : 'conic-gradient(from 0deg,transparent 0 55%,var(--primary) 75%,#38bdf8 90%,transparent 100%)' }} />
@@ -78,10 +91,10 @@ export default function ProfileCard({ uid, fallbackName, fallbackAvatar, onClose
           <div className="relative h-[168px]">
             <ProfileBanner theme={p?.bannerTheme || (isAdmin ? 'cosmic' : 'aurora')} image={p?.banner} className="absolute inset-0" />
             <div className="absolute inset-x-0 top-0 flex items-start justify-between p-4">
-              <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-black/40 backdrop-blur px-3.5 py-1.5 text-sm font-bold text-white">
+              <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-black/60 px-3.5 py-1.5 text-sm font-bold text-white">
                 <i className={`w-2.5 h-2.5 rounded-full ${x?.online ? 'bg-emerald-400 pc-glow shadow-[0_0_8px_#34d399]' : 'bg-slate-400'}`} />{x?.online ? 'Đang hoạt động' : 'Ngoại tuyến'}
               </span>
-              <button onClick={onClose} aria-label="Đóng" className="w-10 h-10 rounded-full flex items-center justify-center bg-black/40 backdrop-blur text-white active:scale-90 transition"><X size={20} /></button>
+              <button onClick={onClose} aria-label="Đóng" className="w-10 h-10 rounded-full flex items-center justify-center bg-black/60 text-white active:scale-90 transition"><X size={20} /></button>
             </div>
             <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-[#0c0f1a] to-transparent" />
           </div>
@@ -90,7 +103,7 @@ export default function ProfileCard({ uid, fallbackName, fallbackAvatar, onClose
           <div className="relative px-5 -mt-[52px]">
             <div className="flex items-end gap-3">
               <span className="relative w-[96px] h-[96px] shrink-0">
-                <span className="pc-spin absolute -inset-[3px] rounded-full" style={{ background: ring, filter: 'blur(.3px)' }} />
+                <span className="pc-spin absolute -inset-[3px] rounded-full" style={{ background: ring }} />
                 <span className="absolute inset-0 rounded-full bg-[#0c0f1a]" />
                 <img src={p?.avatar || fallbackAvatar} alt="" className="absolute inset-[4px] w-[calc(100%-8px)] h-[calc(100%-8px)] rounded-full object-cover bg-slate-800" />
               </span>
@@ -113,7 +126,7 @@ export default function ProfileCard({ uid, fallbackName, fallbackAvatar, onClose
                 </div>
                 <div className="relative mt-2 h-2 rounded-full bg-white/10 overflow-hidden">
                   <div className="absolute inset-y-0 left-0 rounded-full overflow-hidden transition-[width] duration-1000" style={{ width: `${(prog.cur / prog.max) * 100}%`, background: 'linear-gradient(90deg,#d946ef,#38bdf8,#facc15)' }}>
-                    <i className="pc-shim absolute inset-y-0 w-1/3 bg-white/50 blur-[3px]" />
+                    <i className="pc-shim absolute inset-y-0 w-1/3 bg-gradient-to-r from-transparent via-white/60 to-transparent" />
                   </div>
                 </div>
               </div>
@@ -136,7 +149,7 @@ export default function ProfileCard({ uid, fallbackName, fallbackAvatar, onClose
             <button onClick={() => { onMention(name); onClose(); }}
               className="relative overflow-hidden mt-3.5 w-full flex items-center justify-center gap-2 rounded-2xl py-3.5 text-[17px] font-black text-slate-950 active:scale-[.98] transition"
               style={{ background: 'linear-gradient(135deg,var(--primary-light),var(--primary))', boxShadow: '0 8px 24px color-mix(in srgb, var(--primary) 35%, transparent)' }}>
-              <i className="pc-shim absolute inset-y-0 w-1/4 bg-white/40 blur-[6px] -skew-x-12" />
+              <i className="pc-shim absolute inset-y-0 w-1/4 bg-gradient-to-r from-transparent via-white/50 to-transparent -skew-x-12" />
               <AtSign size={19} className="relative" /><span className="relative">Nhắc tên / Phản hồi</span>
             </button>
           </div>

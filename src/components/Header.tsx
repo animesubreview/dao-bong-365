@@ -8,6 +8,8 @@ import {
 import { cn } from '../lib/utils';
 import { movieApi } from '../services/api';
 import { Movie } from '../types';
+import ThemeToggle from './ThemeToggle';
+import AccountMenu from './AccountMenu';
 import { logout, onAuthChange, getUserProfile, UserProfile } from '../lib/auth';
 import { createWatchRoom } from '../lib/watchRoom';
 import { useCommunityConfig } from '../lib/communityRoom';
@@ -428,6 +430,8 @@ export default function Header() {
             )}
           </div>
 
+          <ThemeToggle />
+
           {/* Chuông thông báo — thay cho icon tài khoản cũ trên mobile */}
           <Link
             to="/notifications"
@@ -444,36 +448,8 @@ export default function Header() {
 
           {/* User / Login — trên mobile đã có tab "Tài khoản" ở thanh dưới nên chỉ hiện từ md trở lên */}
           {session ? (
-            <div ref={userMenuRef} className="relative shrink-0 hidden md:block">
-              <button onClick={() => setShowUserMenu(v => !v)}
-                className="flex items-center gap-1.5 pl-1 pr-2 py-1 rounded-full bg-slate-800/80 border border-slate-700/50 hover:border-green-500/40 transition-all">
-                <img src={session.avatar} alt={session.username} className="w-7 h-7 rounded-full bg-slate-700" />
-                <ChevronDown size={12} className="text-slate-500" />
-              </button>
-              {showUserMenu && (
-                <div className="absolute top-full right-0 mt-2 w-44 bg-slate-900 border border-slate-700/60 rounded-2xl overflow-hidden shadow-2xl z-50">
-                  <div className="px-3 py-2.5 border-b border-slate-800">
-                    <p className="text-xs font-bold text-white truncate">{session.username}</p>
-                    <p className="text-[10px] text-slate-500 truncate">{session.email}</p>
-                  </div>
-                  <Link to="/profile" onClick={() => setShowUserMenu(false)}
-                    className="w-full flex items-center gap-2 px-3 py-2.5 text-xs text-slate-300 hover:bg-slate-800 transition-colors">
-                    <UserCog size={13} /> Hồ sơ
-                  </Link>
-                  <Link to="/history" onClick={() => setShowUserMenu(false)}
-                    className="w-full flex items-center gap-2 px-3 py-2.5 text-xs text-slate-300 hover:bg-slate-800 transition-colors">
-                    <History size={13} /> Lịch sử
-                  </Link>
-                  <Link to="/favorites" onClick={() => setShowUserMenu(false)}
-                    className="w-full flex items-center gap-2 px-3 py-2.5 text-xs text-slate-300 hover:bg-slate-800 transition-colors">
-                    <Heart size={13} /> Yêu thích
-                  </Link>
-                  <button onClick={async () => { await logout(); setShowUserMenu(false); }}
-                    className="w-full flex items-center gap-2 px-3 py-2.5 text-xs text-red-400 hover:bg-red-500/10 transition-colors border-t border-slate-800">
-                    <LogOut size={13} /> Đăng xuất
-                  </button>
-                </div>
-              )}
+            <div className="shrink-0 hidden md:block">
+              <AccountMenu username={session.username} email={session.email} avatar={session.avatar} onLogout={logout} />
             </div>
           ) : (
             <Link to="/auth"

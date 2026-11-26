@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import Pagination from '../components/Pagination';
 import {
   BookOpen, ChevronLeft, ChevronRight, Search,
   X, Loader2, ArrowLeft, ChevronDown, Layers,
@@ -693,37 +694,7 @@ export default function TruyenTranh() {
 
       {/* Pagination */}
       {!loading && totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2 mt-8">
-          <button disabled={page <= 1} onClick={() => setPage(p => p - 1)}
-            className="flex items-center gap-1.5 px-4 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-sm font-semibold text-slate-400 hover:text-white hover:border-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all">
-            <ChevronLeft size={15} /> Trước
-          </button>
-          <div className="flex items-center gap-1.5">
-            {page > 3 && totalPages > 7 && (
-              <>
-                <button onClick={() => setPage(1)} className="w-9 h-9 rounded-lg text-sm font-bold bg-slate-900 text-slate-400 hover:text-white border border-slate-800 hover:border-slate-700 transition-all">1</button>
-                <span className="text-slate-600 text-sm px-1">…</span>
-              </>
-            )}
-            {pageNums.map(p => (
-              <button key={p} onClick={() => setPage(p)}
-                className={cn('w-9 h-9 rounded-lg text-sm font-bold transition-all border',
-                  page === p ? 'bg-green-600 text-white border-transparent shadow-lg shadow-green-600/30' : 'bg-slate-900 text-slate-400 hover:text-white border-slate-800 hover:border-slate-700')}>
-                {p}
-              </button>
-            ))}
-            {page < totalPages - 2 && totalPages > 7 && (
-              <>
-                <span className="text-slate-600 text-sm px-1">…</span>
-                <button onClick={() => setPage(totalPages)} className="w-9 h-9 rounded-lg text-sm font-bold bg-slate-900 text-slate-400 hover:text-white border border-slate-800 hover:border-slate-700 transition-all">{totalPages}</button>
-              </>
-            )}
-          </div>
-          <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}
-            className="flex items-center gap-1.5 px-4 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-sm font-semibold text-slate-400 hover:text-white hover:border-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all">
-            Sau <ChevronRight size={15} />
-          </button>
-        </div>
+        <Pagination className="mt-8" page={page} totalPages={totalPages} onChange={setPage} />
       )}
     </div>
   );

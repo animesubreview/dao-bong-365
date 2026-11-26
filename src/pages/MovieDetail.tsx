@@ -6,6 +6,7 @@ import { Movie, Episode } from '../types';
 import { cn, withTimeout } from '../lib/utils';
 import PopupAd from '../components/PopupAd';
 import CommentSection from '../components/CommentSection';
+import MovieRating from '../components/MovieRating';
 import AdBanner from '../components/AdBanner';
 import MovieCard from '../components/MovieCard';
 import { getMovieOverride, mergeOverride, mergeCustomServers } from '../lib/movieOverrides';
@@ -382,7 +383,9 @@ export default function MovieDetail() {
             </div>
           </div>
 
-          <div id="comments" className="mt-10 scroll-mt-24">
+          <div className="mt-10"><MovieRating movieSlug={movie.slug} /></div>
+
+          <div id="comments" className="mt-8 scroll-mt-24">
             <CommentSection movieSlug={movie.slug} />
           </div>
           <div className="mt-6"><AdBanner position="bottom" /></div>

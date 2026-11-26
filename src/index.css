@@ -113,3 +113,42 @@
 
 /* Tin nhắn bay ngang màn hình trong phòng xem chung */
 @keyframes room-fly { from { transform: translateX(0); } to { transform: translateX(calc(-100vw - 110%)); } }
+
+/* ═══ CHẾ ĐỘ NGÀY (html[data-theme="light"]) ═══════════════════════════════
+   Đảo bảng màu slate/white của Tailwind: mọi class bg-slate-*, text-white, border-white/10...
+   tự đổi theo, không phải sửa từng component. */
+html[data-theme="light"] {
+  color-scheme: light;
+  --bg:#f4f2ee; --surface:#ffffff; --surface-2:#ece9e3; --text:#16151b; --text-muted:#57535f; --border:rgba(22,21,27,.12);
+  --color-white:#16151b;
+  --color-slate-50:#16151b; --color-slate-100:#1d1c24; --color-slate-200:#2a2932; --color-slate-300:#3d3b46;
+  --color-slate-400:#57535f; --color-slate-500:#7a7684; --color-slate-600:#bdb9c4; --color-slate-700:#dcd8d0;
+  --color-slate-800:#ece9e3; --color-slate-900:#ffffff; --color-slate-950:#f4f2ee;
+  --color-amber-300:#b45309; --color-amber-400:#d97706;
+  --color-green-300:#15803d; --color-green-400:#16a34a;
+  --color-red-300:#b91c1c; --color-red-400:#dc2626;
+  --color-blue-300:#1d4ed8; --color-blue-400:#2563eb;
+  --color-sky-300:#0369a1; --color-sky-400:#0284c7;
+  --color-yellow-300:#a16207; --color-yellow-400:#ca8a04;
+  --color-orange-300:#c2410c; --color-orange-400:#ea580c;
+  --color-emerald-300:#047857; --color-emerald-400:#059669;
+  --color-purple-300:#7e22ce; --color-purple-400:#9333ea;
+  --color-pink-300:#be185d; --color-pink-400:#db2777;
+  --color-rose-300:#be123c; --color-rose-400:#e11d48;
+  --color-indigo-300:#4338ca; --color-indigo-400:#4f46e5;
+  --color-teal-300:#0f766e; --color-teal-400:#0d9488;
+  --color-cyan-300:#0e7490; --color-cyan-400:#0891b2;
+  --color-violet-300:#6d28d9; --color-violet-400:#7c3aed;
+  --color-fuchsia-300:#a21caf; --color-fuchsia-400:#c026d3;
+}
+/* Nút/nhãn nền màu đậm: giữ chữ trắng */
+html[data-theme="light"] :is(.bg-green-500,.bg-green-600,.bg-primary,.bg-red-500,.bg-red-600,.bg-amber-500,.bg-orange-500,.bg-orange-600,.bg-blue-500,.bg-blue-600,.bg-purple-600,.bg-pink-600,.bg-rose-500,.bg-emerald-500,.bg-emerald-600,.btn-primary,[class*="from-amber-500"],[class*="from-green-500"],[class*="from-red-500"],[class*="from-purple-500"],[class*="from-pink-500"],[class*="from-blue-500"],[class*="from-orange-500"],[class*="from-emerald-500"],[class*="from-indigo-500"],[class*="from-violet-500"]) {
+  --color-white:#ffffff;
+}
+/* Nền hex cứng trong code → nền sáng */
+html[data-theme="light"] :is([class*="bg-[#0"],[class*="bg-[#1"]) { background-color: var(--surface-2); }
+/* Khu vực phát video & poster luôn tối */
+html[data-theme="light"] :is(video,.dp-player,.plyr,[data-keep-dark]) { color-scheme: dark; --color-white:#fff; }
+html[data-theme="light"] body {
+  background: radial-gradient(1200px 600px at 50% -10%, rgba(34,197,94,0.10), transparent 60%), var(--bg);
+}

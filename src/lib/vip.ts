@@ -98,23 +98,46 @@ export interface VipStatus {
   loading: boolean;
 }
 
+// Store dùng chung: chỉ 1 lần đăng ký auth + 1 lần đọc profile cho TOÀN BỘ web
+// (tránh mỗi banner/popup tự đọc lại hồ sơ → tốn egress).
+let vipState: { profile: UserProfile | null; loading: boolean } = { profile: null, loading: true };
+const vipListeners = new Set<() => void>();
+let vipInit = false;
+let vipUid: string | null = null;
+
+function emitVip() { vipListeners.forEach(fn => fn()); }
+
+function initVipStore() {
+  if (vipInit) return;
+  vipInit = true;
+  onAuthChange(async (user) => {
+    vipUid = user ? user.uid : null;
+    if (user) {
+      try { vipState = { profile: await getUserProfile(user.uid), loading: false }; }
+      catch { vipState = { profile: null, loading: false }; }
+    } else {
+      vipState = { profile: null, loading: false };
+    }
+    emitVip();
+  });
+}
+
+/** Gọi sau khi mua VIP / admin cộng VIP để cập nhật ngay (xoá QC không cần tải lại trang) */
+export async function refreshVipStatus() {
+  if (!vipUid) return;
+  try { vipState = { profile: await getUserProfile(vipUid), loading: false }; emitVip(); } catch {}
+}
+
 export function useVipStatus(): VipStatus {
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
-
+  const [, force] = useState(0);
   useEffect(() => {
-    const unsub = onAuthChange(async (user) => {
-      if (user) {
-        const p = await getUserProfile(user.uid);
-        setProfile(p);
-      } else {
-        setProfile(null);
-      }
-      setLoading(false);
-    });
-    return unsub;
+    initVipStore();
+    const fn = () => force(n => n + 1);
+    vipListeners.add(fn);
+    fn();
+    return () => { vipListeners.delete(fn); };
   }, []);
-
+  const { profile, loading } = vipState;
   const isVip = !loading && (profile?.role === 'admin' || isVipActive(profile?.vipExpiry));
   return { profile, isVip, loading };
 }
@@ -191,6 +214,7 @@ export async function purchaseVip(
       vipExpiry: newExpiry,
     });
 
+    refreshVipStatus();
     return { ok: true };
   } catch (err: any) {
     return { ok: false, error: 'Lỗi hệ thống: ' + (err.message || '') };

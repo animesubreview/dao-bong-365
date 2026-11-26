@@ -1,4 +1,5 @@
 import { useSEO } from '../hooks/useSEO';
+import Pagination from '../components/Pagination';
 import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { movieApi } from '../services/api';
@@ -182,28 +183,7 @@ export default function Search() {
               ))}
             </div>
             {pagination && pagination.totalPages > 1 && (
-              <div className="flex items-center justify-center gap-2 mt-10">
-                <button onClick={() => handlePageChange(page - 1)} disabled={page === 1}
-                  className="w-9 h-9 rounded-xl border border-white/10 flex items-center justify-center text-slate-400 disabled:opacity-30 hover:border-green-500/50 hover:text-green-400 transition-all">
-                  <ChevronLeft size={16} />
-                </button>
-                {[...Array(Math.min(5, pagination.totalPages))].map((_, idx) => {
-                  let p = page <= 3 ? idx + 1 : page >= pagination.totalPages - 2 ? pagination.totalPages - 4 + idx : page - 2 + idx;
-                  if (p <= 0 || p > pagination.totalPages) return null;
-                  return (
-                    <button key={p} onClick={() => handlePageChange(p)}
-                      className={cn('w-9 h-9 rounded-xl text-sm font-bold transition-all border',
-                        page === p ? 'bg-green-500 text-black border-green-500' : 'border-white/10 text-slate-400 hover:border-green-500/50 hover:text-green-400'
-                      )}>
-                      {p}
-                    </button>
-                  );
-                })}
-                <button onClick={() => handlePageChange(page + 1)} disabled={page === pagination.totalPages}
-                  className="w-9 h-9 rounded-xl border border-white/10 flex items-center justify-center text-slate-400 disabled:opacity-30 hover:border-green-500/50 hover:text-green-400 transition-all">
-                  <ChevronRight size={16} />
-                </button>
-              </div>
+              <Pagination className="mt-10" page={page} totalPages={pagination.totalPages} onChange={handlePageChange} />
             )}
           </>
         )}

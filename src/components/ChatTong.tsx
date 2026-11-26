@@ -1,12 +1,14 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Crown, Film, LogIn, Play, Send, Trash2, Volume2, VolumeX, X, CornerUpLeft } from 'lucide-react';
+import { AtSign, SmilePlus, Crown, Film, LogIn, Play, Send, Trash2, Volume2, VolumeX, X, CornerUpLeft } from 'lucide-react';
 import { getCurrentUser, getUserProfile, onAuthChange, UserProfile } from '../lib/auth';
 import ProfileCard from './ProfileCard';
+import EmojiPicker from './EmojiPicker';
+import { isLiteDevice } from '../lib/perf';
 import { useCommunityConfig } from '../lib/communityRoom';
 import {
-  ChatTongMessage, ChatReply, OnlineCounts, deleteChatMessage, fetchOnlineCounts, loadRecentMessages,
-  mergeMessage, sendChatMessage, subscribeLive,
+  ChatTongMessage, ChatReply, OnlineCounts, ReactionMap, addReaction, removeReaction, addToReactionMap, removeFromReactionMap,
+  deleteChatMessage, fetchOnlineCounts, loadChat, mergeMessage, sendChatMessage, subscribeLive,
 } from '../lib/chatTong';
 
 // Mở khung chat từ nơi khác (vd popup cộng đồng): window.dispatchEvent(new Event('open-chat-tong'))
@@ -26,6 +28,32 @@ function beep() {
   } catch {}
 }
 
+const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/** Hiển thị nội dung tin, tô màu các @tên thành viên */
+function MsgText({ text, names, mine }: { text: string; names: string[]; mine: boolean }) {
+  const parts = useMemo(() => {
+    if (!names.length || !text.includes('@')) return [text];
+    const re = new RegExp('@(' + [...names].sort((a, b) => b.length - a.length).map(esc).join('|') + ')(?![\\p{L}\\p{N}_])', 'gu');
+    const out: (string | { m: string })[] = [];
+    let last = 0, m: RegExpExecArray | null;
+    while ((m = re.exec(text))) {
+      if (m.index > last) out.push(text.slice(last, m.index));
+      out.push({ m: m[0] });
+      last = m.index + m[0].length;
+    }
+    if (last < text.length) out.push(text.slice(last));
+    return out;
+  }, [text, names]);
+  return (
+    <p className="text-[15px] leading-snug break-words whitespace-pre-wrap">
+      {parts.map((x, i) => typeof x === 'string' ? x : (
+        <span key={i} className={`rounded-md px-1 -mx-0.5 font-bold ${mine ? 'bg-black/15 text-slate-950' : 'bg-[color-mix(in_srgb,var(--primary)_22%,transparent)] text-[var(--primary-light)]'}`}>{x.m}</span>
+      ))}
+    </p>
+  );
+}
+
 export default function ChatTong() {
   const cfg = useCommunityConfig();
   const location = useLocation();
@@ -35,6 +63,12 @@ export default function ChatTong() {
   const [messages, setMessages] = useState<ChatTongMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const [text, setText] = useState('');
+  const lite = isLiteDevice();
+  const [reactions, setReactions] = useState<ReactionMap>({});
+  const [pickFor, setPickFor] = useState<string | null>(null);
+  const [mention, setMention] = useState<{ anchor: number; query: string } | null>(null);
+  const [mAct, setMAct] = useState(0);
+  const inputRef = useRef<HTMLInputElement>(null);
   const [replyTo, setReplyTo] = useState<ChatReply | null>(null);
   const [sending, setSending] = useState(false);
   const [err, setErr] = useState('');
@@ -69,8 +103,9 @@ export default function ChatTong() {
     if (!open) return;
     let alive = true;
     setLoading(true);
-    loadRecentMessages().then(l => { if (alive) setMessages(l); }).catch(() => setErr('Không tải được tin nhắn.')).finally(() => alive && setLoading(false));
+    loadChat().then(r => { if (alive) { setMessages(r.messages); setReactions(r.reactions); } }).catch(() => setErr('Không tải được tin nhắn.')).finally(() => alive && setLoading(false));
     const unsub = subscribeLive(m => {
+      if (m.kind === 'reaction') { setReactions(r => addToReactionMap(r, m as any)); return; }
       setMessages(l => mergeMessage(l, m));
       if (soundRef.current && m.uid !== uidRef.current && m.kind !== 'activity') beep();
     });
@@ -111,6 +146,65 @@ export default function ChatTong() {
     finally { setSending(false); }
   }, [text, user, profile, sending, replyTo]);
 
+  // Danh sách thành viên gợi ý @: lấy từ những người đã nhắn trong khung chat (không tốn thêm truy vấn)
+  const members = useMemo(() => {
+    const seen = new Map<string, { uid: string; name: string; avatar: string; isAdmin: boolean }>();
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const m = messages[i];
+      if (!m.username || seen.has(m.uid)) continue;
+      seen.set(m.uid, { uid: m.uid, name: m.username, avatar: m.avatar, isAdmin: !!m.isAdmin });
+    }
+    return [...seen.values()];
+  }, [messages]);
+  const memberNames = useMemo(() => members.map(x => x.name), [members]);
+  const suggestions = useMemo(() => {
+    if (!mention) return [];
+    const q = mention.query.toLowerCase();
+    return members
+      .filter(x => x.uid !== user?.uid && x.name.toLowerCase().includes(q))
+      .sort((a, b) => (a.name.toLowerCase().startsWith(q) ? 0 : 1) - (b.name.toLowerCase().startsWith(q) ? 0 : 1))
+      .slice(0, 6);
+  }, [mention, members, user?.uid]);
+
+  const detectMention = (value: string, caret: number) => {
+    const m = /(^|\s)@([^\s@]{0,16})$/.exec(value.slice(0, caret));
+    if (!m) { setMention(null); return; }
+    const anchor = caret - m[2].length - 1;
+    setMention(prev => { if (!prev || prev.anchor !== anchor) setMAct(0); return { anchor, query: m[2] }; });
+  };
+  const pickMention = (name: string) => {
+    if (!mention) return;
+    const el = inputRef.current;
+    const caret = el?.selectionStart ?? text.length;
+    const ins = '@' + name + ' ';
+    const next = (text.slice(0, mention.anchor) + ins + text.slice(caret)).slice(0, 300);
+    setText(next); setMention(null);
+    const pos = Math.min(next.length, mention.anchor + ins.length);
+    requestAnimationFrame(() => { el?.focus(); el?.setSelectionRange(pos, pos); });
+  };
+  const insertAt = () => {
+    const el = inputRef.current; if (!el) return;
+    const s0 = el.selectionStart ?? text.length, e0 = el.selectionEnd ?? s0;
+    const pre = text.slice(0, s0);
+    const ins = (pre && !/\s$/.test(pre) ? ' ' : '') + '@';
+    const next = (pre + ins + text.slice(e0)).slice(0, 300);
+    setText(next);
+    const pos = s0 + ins.length;
+    requestAnimationFrame(() => { el.focus(); el.setSelectionRange(pos, pos); detectMention(next, pos); });
+  };
+
+  const toggleReaction = async (msgId: string, emoji: string) => {
+    if (!user || !profile || profile.isBanned) return;
+    const uid = user.uid;
+    const has = !!reactions[msgId]?.[emoji]?.includes(uid);
+    setReactions(r => has ? removeFromReactionMap(r, { targetId: msgId, emoji, uid }) : addToReactionMap(r, { targetId: msgId, emoji, uid }));
+    try { if (has) await removeReaction(msgId, uid, emoji); else await addReaction(msgId, uid, emoji); }
+    catch {
+      setReactions(r => has ? addToReactionMap(r, { targetId: msgId, emoji, uid }) : removeFromReactionMap(r, { targetId: msgId, emoji, uid }));
+      setErr('Không thả được cảm xúc, thử lại sau.');
+    }
+  };
+
   const hidden = !cfg.chatEnabled || HIDE_ON.some(p => location.pathname.startsWith(p));
   if (hidden && !open) return null;
 
@@ -120,6 +214,13 @@ export default function ChatTong() {
   return (
     <>
       <style>{`
+        @keyframes ct-pop-in { from { opacity: 0; transform: translateY(6px) scale(.94) } }
+        .ct-pop { animation: ct-pop-in .28s cubic-bezier(.3,1.45,.5,1) both; transform-origin: 20px 100% }
+        .ct-soft { -webkit-mask-image: radial-gradient(closest-side,#000 0,rgba(0,0,0,.55) 45%,transparent 100%); mask-image: radial-gradient(closest-side,#000 0,rgba(0,0,0,.55) 45%,transparent 100%) }
+        ${lite ? '.ct-orb,.ct-ring,.ct-ring2,.ct-wave,.ct-blob1,.ct-blob2,.ct-gold,.ct-dot { animation: none !important }' : ''}
+        ${card ? '.ct-back *, .ct-orb, .ct-orb * { animation-play-state: paused !important }' : ''}
+        @keyframes ct-rx-pop { 0% { transform: scale(0) } 60% { transform: scale(1.18) } 100% { transform: none } }
+        .ct-rx { animation: ct-rx-pop .5s cubic-bezier(.34,1.9,.5,1) both }
         @keyframes ct-float { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-5px) } }
         @keyframes ct-spin { to { transform: rotate(360deg) } }
         @keyframes ct-spin-r { to { transform: rotate(-360deg) } }
@@ -158,20 +259,20 @@ export default function ChatTong() {
       )}
 
       {open && (
-        <div className="ct-back fixed inset-0 z-[9990] bg-black/65 backdrop-blur-[3px]" onClick={() => setOpen(false)}>
+        <div className="ct-back fixed inset-0 z-[9990] bg-black/65" onClick={() => setOpen(false)}>
           <div className="ct-sheet absolute inset-x-0 bottom-0 h-[84dvh] md:inset-x-auto md:right-6 md:bottom-6 md:w-[440px] md:h-[660px] md:max-h-[88dvh] flex flex-col rounded-t-[30px] md:rounded-[28px] bg-[#06070b] shadow-[0_-10px_60px_rgba(0,0,0,.7)] overflow-hidden isolate"
             style={{ border: '1px solid color-mix(in srgb, var(--primary) 35%, #1e293b)' }}
             onClick={e => e.stopPropagation()} role="dialog" aria-label="Kênh Chat Tổng">
             {/* Nền cực quang chuyển động */}
             <div aria-hidden className="absolute inset-0 -z-10 pointer-events-none overflow-hidden">
-              <div className="ct-blob1 absolute -top-24 -left-20 w-72 h-72 rounded-full blur-3xl opacity-40" style={{ background: 'var(--primary)' }} />
-              <div className="ct-blob2 absolute top-1/3 -right-24 w-72 h-72 rounded-full blur-3xl opacity-25" style={{ background: '#7c3aed' }} />
-              <div className="ct-blob1 absolute -bottom-28 left-10 w-72 h-72 rounded-full blur-3xl opacity-20" style={{ background: '#0ea5e9' }} />
+              <div className="ct-blob1 absolute -top-24 -left-20 w-72 h-72 rounded-full ct-soft opacity-40" style={{ background: 'var(--primary)' }} />
+              <div className="ct-blob2 absolute top-1/3 -right-24 w-72 h-72 rounded-full ct-soft opacity-25" style={{ background: '#7c3aed' }} />
+              <div className="ct-blob1 absolute -bottom-28 left-10 w-72 h-72 rounded-full ct-soft opacity-20" style={{ background: '#0ea5e9' }} />
             </div>
             <div className="md:hidden mx-auto mt-2.5 mb-1 h-1 w-12 rounded-full bg-white/20" />
 
             {/* Header */}
-            <div className="flex items-center gap-3 px-4 py-3 border-b border-white/10 bg-white/[0.03] backdrop-blur-md shrink-0">
+            <div className="flex items-center gap-3 px-4 py-3 border-b border-white/10 bg-white/[0.03] shrink-0">
               <span className="relative w-12 h-12 shrink-0 flex items-center justify-center">
                 <span className="absolute inset-0 rounded-full" style={{ background: 'radial-gradient(circle at 35% 30%, rgba(255,255,255,.6), var(--primary-light) 38%, #0b1020 80%)', boxShadow: '0 0 18px color-mix(in srgb, var(--primary) 60%, transparent)' }} />
                 <span className="ct-ring absolute -inset-1 rounded-full" style={{ background: 'conic-gradient(from 0deg, transparent 0 40%, rgba(255,255,255,.9) 62%, rgba(250,204,21,.85) 80%, transparent 100%)', WebkitMask: 'radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px))', mask: 'radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px))' }} />
@@ -228,19 +329,36 @@ export default function ChatTong() {
                         </Link>
                       ) : (
                         <div className={m.isAdmin ? 'rounded-[20px] p-[1.5px] ct-gold' : ''}>
-                          <div className={`px-3.5 py-2.5 ${mine ? 'rounded-[20px] rounded-br-md text-slate-950' : m.isAdmin ? 'rounded-[19px] bg-[#0d0f18] text-slate-100' : 'rounded-[20px] rounded-bl-md border border-white/10 bg-white/[0.06] backdrop-blur-sm text-slate-100'}`}
+                          <div className={`px-3.5 py-2.5 ${mine ? 'rounded-[20px] rounded-br-md text-slate-950' : m.isAdmin ? 'rounded-[19px] bg-[#0d0f18] text-slate-100' : 'rounded-[20px] rounded-bl-md border border-white/10 bg-white/[0.06] text-slate-100'}`}
                             style={mine ? { background: 'linear-gradient(135deg, var(--primary-light), var(--primary))', boxShadow: '0 4px 18px color-mix(in srgb, var(--primary) 35%, transparent)' } : undefined}>
                             {m.replyTo && (
                               <div className={`mb-1.5 rounded-full px-3 py-1 text-xs truncate ${mine ? 'bg-black/15 text-slate-900/80' : 'bg-black/30 text-slate-400'}`}>
                                 <span className={`font-bold ${mine ? 'text-slate-950' : 'text-teal-300'}`}>@{m.replyTo.username}: </span>{m.replyTo.text}
                               </div>
                             )}
-                            <p className="text-[15px] leading-snug break-words whitespace-pre-wrap">{m.text}</p>
+                            <MsgText text={m.text} names={memberNames} mine={mine} />
                           </div>
+                        </div>
+                      )}
+                      {reactions[m.id] && Object.keys(reactions[m.id]).length > 0 && (
+                        <div className={`flex flex-wrap gap-1 mt-1.5 ${mine ? 'justify-end' : ''}`}>
+                          {Object.entries(reactions[m.id]).map(([emoji, uids]) => {
+                            const me = !!user && uids.includes(user.uid);
+                            return (
+                              <button key={emoji} type="button" disabled={!canPost} onClick={() => toggleReaction(m.id, emoji)}
+                                aria-label={`${emoji} ${uids.length}${me ? ' (bạn đã thả)' : ''}`} aria-pressed={me}
+                                className={`ct-rx flex items-center gap-1 h-6 pl-1.5 pr-2 rounded-full text-[15px] leading-none transition active:scale-90 ${me ? 'bg-[color-mix(in_srgb,var(--primary)_22%,transparent)] ring-[1.5px] ring-[var(--primary)]' : 'bg-white/[0.07] ring-1 ring-white/10 hover:bg-white/10'}`}>
+                                <span>{emoji}</span><b className={`text-[11px] font-bold ${me ? 'text-[var(--primary-light)]' : 'text-slate-300'}`}>{uids.length}</b>
+                              </button>
+                            );
+                          })}
                         </div>
                       )}
                     </div>
                     <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 max-md:opacity-70 shrink-0 transition-opacity">
+                      {canPost && (
+                        <button onClick={() => setPickFor(m.id)} aria-label="Thả cảm xúc" className="p-1 text-slate-400 hover:text-white"><SmilePlus size={14} /></button>
+                      )}
                       {canPost && m.kind !== 'activity' && (
                         <button onClick={() => setReplyTo({ id: m.id, username: m.username, text: m.text.slice(0, 60) })} aria-label="Trả lời" className="p-1 text-slate-400 hover:text-white"><CornerUpLeft size={14} /></button>
                       )}
@@ -256,7 +374,7 @@ export default function ChatTong() {
             {err && <p className="px-4 pb-1 text-xs text-red-400 shrink-0">{err}</p>}
 
             {/* Ô nhập */}
-            <div className="shrink-0 border-t border-white/10 bg-black/30 backdrop-blur-md px-3 pt-2.5 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+            <div className="shrink-0 border-t border-white/10 bg-black/30 px-3 pt-2.5 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
               {replyTo && (
                 <div className="flex items-center gap-2 mb-2 rounded-xl bg-white/[0.07] px-3 py-1.5 text-xs text-slate-300">
                   <CornerUpLeft size={13} className="shrink-0 text-teal-300" />
@@ -274,16 +392,56 @@ export default function ChatTong() {
               ) : profile.isBanned ? (
                 <p className="text-center text-red-400 text-sm py-2">Tài khoản của bạn đã bị khóa chat.</p>
               ) : (
-                <div className="flex items-center gap-2">
-                  <input value={text} onChange={e => setText(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') send(); }}
-                    maxLength={300} placeholder="Nhắn gì đó..." enterKeyHint="send"
+                <div className="relative flex items-center gap-2">
+                  {mention && suggestions.length > 0 && (
+                    <div role="listbox" aria-label="Thành viên" className="ct-pop absolute bottom-full left-0 mb-2 w-[250px] max-w-full rounded-2xl border border-white/10 bg-[#0d1018]/95 p-1.5 shadow-2xl shadow-black/60 z-10"
+                      onMouseDown={e => e.preventDefault()}>
+                      {suggestions.map((x, i) => (
+                        <button key={x.uid} type="button" role="option" aria-selected={i === mAct}
+                          onMouseEnter={() => setMAct(i)} onClick={() => pickMention(x.name)}
+                          className={`w-full flex items-center gap-2.5 h-10 px-2 rounded-xl text-left transition-colors ${i === mAct ? 'bg-white/10' : ''}`}>
+                          {x.avatar
+                            ? <img src={x.avatar} alt="" className="w-7 h-7 rounded-full object-cover shrink-0" />
+                            : <span className="w-7 h-7 rounded-full shrink-0 flex items-center justify-center text-[11px] font-bold text-white" style={{ background: 'linear-gradient(145deg,#7CCBFF,#3B6CF0)' }}>{x.name.charAt(0).toUpperCase()}</span>}
+                          <span className={`flex-1 truncate text-[13.5px] ${i === mAct ? 'font-bold text-white' : 'font-medium text-slate-300'}`}>{x.name}</span>
+                          {x.isAdmin && <span className="text-[10px] font-black text-amber-300">ADMIN</span>}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  <input ref={inputRef} value={text}
+                    onChange={e => { setText(e.target.value); detectMention(e.target.value, e.target.selectionStart ?? e.target.value.length); }}
+                    onClick={e => detectMention(text, (e.target as HTMLInputElement).selectionStart ?? text.length)}
+                    onBlur={() => setMention(null)}
+                    onKeyDown={e => {
+                      if (mention && suggestions.length > 0) {
+                        if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+                          e.preventDefault();
+                          setMAct(a => (a + (e.key === 'ArrowDown' ? 1 : -1) + suggestions.length) % suggestions.length);
+                          return;
+                        }
+                        if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); pickMention(suggestions[Math.min(mAct, suggestions.length - 1)].name); return; }
+                        if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); setMention(null); return; }
+                      }
+                      if (e.key === 'Enter') send();
+                    }}
+                    maxLength={300} placeholder="Nhắn gì đó... gõ @ để nhắc thành viên" enterKeyHint="send" autoComplete="off"
                     className="flex-1 min-w-0 bg-white/[0.06] border border-white/10 rounded-full px-4 py-3 text-[15px] text-white placeholder:text-slate-500 outline-none transition focus:border-[var(--primary)] focus:shadow-[0_0_0_3px_color-mix(in_srgb,var(--primary)_25%,transparent)]" />
+                  <button type="button" onMouseDown={e => e.preventDefault()} onClick={insertAt} aria-label="Nhắc thành viên"
+                    className="w-10 h-10 shrink-0 rounded-full flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 active:scale-90 transition"><AtSign size={19} /></button>
                   <button onClick={send} disabled={sending || !text.trim()} aria-label="Gửi"
                     className="w-12 h-12 shrink-0 rounded-full disabled:opacity-40 flex items-center justify-center text-slate-950 active:scale-90 transition"
                     style={{ background: 'linear-gradient(135deg, var(--primary-light), var(--primary))', boxShadow: '0 4px 16px color-mix(in srgb, var(--primary) 45%, transparent)' }}><Send size={19} /></button>
                 </div>
               )}
             </div>
+          </div>
+        </div>
+      )}
+      {open && pickFor && (
+        <div className="fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+88px)] z-[10010] flex justify-center px-3 pointer-events-none">
+          <div className="pointer-events-auto">
+            <EmojiPicker onPick={e => toggleReaction(pickFor, e)} onClose={() => setPickFor(null)} />
           </div>
         </div>
       )}

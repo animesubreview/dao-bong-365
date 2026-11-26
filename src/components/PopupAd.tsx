@@ -3,6 +3,7 @@ import { X } from 'lucide-react';
 import { collection, doc, query, orderBy } from '../lib/firestore-compat';
 import { db } from '../lib/firebase';
 import { addDoc, updateDoc, deleteDoc } from '../lib/firestoreGuard';
+import { useVipStatus } from '../lib/vip';
 import { fetchCollectionCached, invalidateCache } from '../lib/publicCache';
 
 export interface PopupAdData {
@@ -90,7 +91,9 @@ export function usePopupAd(movieKey: string) {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 export default function PopupAd({ movieKey }: { movieKey: string }) {
-  const { show, ad, idx, close, closeAll } = usePopupAd(movieKey);
+  const { show: rawShow, ad, idx, close, closeAll } = usePopupAd(movieKey);
+  const { isVip, loading: vipLoading } = useVipStatus();
+  const show = rawShow && !isVip && !vipLoading; // VIP: không hiện popup QC
   const [countdown, setCountdown] = useState(5);
 
   useEffect(() => {

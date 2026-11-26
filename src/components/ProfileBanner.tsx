@@ -1,4 +1,5 @@
 import React from 'react';
+import { isLiteDevice } from '../lib/perf';
 
 export type BannerTheme = 'cosmic' | 'aurora' | 'sunset' | 'sakura' | 'matrix';
 export const BANNER_THEMES: { id: BannerTheme; name: string }[] = [
@@ -24,9 +25,15 @@ const BG: Record<BannerTheme, string> = {
 /** Banner động cho thẻ hồ sơ: ảnh/GIF do người dùng tải lên hoặc hiệu ứng CSS theo chủ đề. */
 export default function ProfileBanner({ theme = 'aurora', image, className = '' }: { theme?: string; image?: string; className?: string }) {
   const t = (BG as any)[theme] ? (theme as BannerTheme) : 'aurora';
+  const lite = isLiteDevice();
+  const stars = lite ? STARS.slice(0, 10) : STARS;
+  const petals = lite ? PETALS.slice(0, 6) : PETALS;
+  const rain = lite ? RAIN.slice(0, 8) : RAIN;
   return (
-    <div className={`relative overflow-hidden ${className}`} style={{ background: BG[t] }} aria-hidden>
+    <div className={`relative overflow-hidden ${lite ? 'pb-lite' : ''} ${className}`} style={{ background: BG[t] }} aria-hidden>
       <style>{`
+        .pb-blob { -webkit-mask-image: radial-gradient(closest-side,#000 0,rgba(0,0,0,.55) 45%,transparent 100%); mask-image: radial-gradient(closest-side,#000 0,rgba(0,0,0,.55) 45%,transparent 100%); will-change: transform }
+        .pb-lite .pb-a { animation: none !important }
         @keyframes pb-tw { 0%,100% { opacity:.15; transform:scale(.8) } 50% { opacity:1; transform:scale(1.3) } }
         @keyframes pb-shoot { 0% { transform: translate(0,0) rotate(-28deg); opacity:0 } 6% { opacity:1 } 30% { transform: translate(-340px,190px) rotate(-28deg); opacity:0 } 100% { opacity:0 } }
         @keyframes pb-planet { 0%,100% { transform: translateY(0) rotate(-12deg) } 50% { transform: translateY(-9px) rotate(-12deg) } }
@@ -44,7 +51,7 @@ export default function ProfileBanner({ theme = 'aurora', image, className = '' 
       ) : (
         <>
           {t === 'cosmic' && (<>
-            {STARS.map((s, i) => <i key={i} className="pb-a absolute rounded-full bg-white" style={{ left: `${s.x}%`, top: `${s.y}%`, width: s.s, height: s.s, animation: `pb-tw ${s.t}s ${s.d}s ease-in-out infinite` }} />)}
+            {stars.map((s, i) => <i key={i} className="pb-a absolute rounded-full bg-white" style={{ left: `${s.x}%`, top: `${s.y}%`, width: s.s, height: s.s, animation: `pb-tw ${s.t}s ${s.d}s ease-in-out infinite` }} />)}
             <i className="pb-a absolute h-[2px] w-24 rounded-full" style={{ right: '12%', top: '12%', background: 'linear-gradient(90deg,transparent,#fff,#fbbf24)', animation: 'pb-shoot 5.5s 1s ease-in infinite' }} />
             <i className="pb-a absolute h-[2px] w-16 rounded-full" style={{ right: '45%', top: '4%', background: 'linear-gradient(90deg,transparent,#fff,#38bdf8)', animation: 'pb-shoot 7s 3.4s ease-in infinite' }} />
             <span className="pb-a absolute right-[7%] top-[18%] w-[74px] h-[74px] rounded-full" style={{ background: 'radial-gradient(circle at 32% 28%,#f5d0fe,#a855f7 45%,#3b0f77 90%)', boxShadow: '0 0 30px rgba(168,85,247,.55)', animation: 'pb-planet 6s ease-in-out infinite' }}>
@@ -52,22 +59,22 @@ export default function ProfileBanner({ theme = 'aurora', image, className = '' 
             </span>
           </>)}
           {t === 'aurora' && (<>
-            <i className="pb-a absolute -top-10 left-[5%] w-56 h-40 rounded-full blur-3xl opacity-70" style={{ background: '#22c55e', animation: 'pb-b1 9s ease-in-out infinite' }} />
-            <i className="pb-a absolute top-0 left-[40%] w-56 h-44 rounded-full blur-3xl opacity-60" style={{ background: '#06b6d4', animation: 'pb-b2 11s ease-in-out infinite' }} />
-            <i className="pb-a absolute -top-6 right-[2%] w-52 h-40 rounded-full blur-3xl opacity-55" style={{ background: '#a855f7', animation: 'pb-b1 13s ease-in-out infinite' }} />
-            {STARS.slice(0, 16).map((s, i) => <i key={i} className="pb-a absolute rounded-full bg-white" style={{ left: `${s.x}%`, top: `${s.y}%`, width: 2, height: 2, animation: `pb-tw ${s.t}s ${s.d}s ease-in-out infinite` }} />)}
+            <i className="pb-a absolute -top-10 left-[5%] w-56 h-40 rounded-full pb-blob opacity-70" style={{ background: '#22c55e', animation: 'pb-b1 9s ease-in-out infinite' }} />
+            <i className="pb-a absolute top-0 left-[40%] w-56 h-44 rounded-full pb-blob opacity-60" style={{ background: '#06b6d4', animation: 'pb-b2 11s ease-in-out infinite' }} />
+            <i className="pb-a absolute -top-6 right-[2%] w-52 h-40 rounded-full pb-blob opacity-55" style={{ background: '#a855f7', animation: 'pb-b1 13s ease-in-out infinite' }} />
+            {stars.slice(0, 16).map((s, i) => <i key={i} className="pb-a absolute rounded-full bg-white" style={{ left: `${s.x}%`, top: `${s.y}%`, width: 2, height: 2, animation: `pb-tw ${s.t}s ${s.d}s ease-in-out infinite` }} />)}
           </>)}
           {t === 'sunset' && (<>
             <i className="pb-a absolute left-1/2 -bottom-10 w-44 h-44 -ml-[88px] rounded-full" style={{ background: 'radial-gradient(circle,#fff3b0,#fbbf24 45%,#f97316 75%)', boxShadow: '0 0 60px 20px rgba(251,146,60,.55)', animation: 'pb-sun 6s ease-in-out infinite' }} />
-            <i className="pb-a absolute -top-8 left-[8%] w-52 h-32 rounded-full blur-3xl opacity-50 bg-fuchsia-400" style={{ animation: 'pb-b1 10s ease-in-out infinite' }} />
-            <i className="pb-a absolute top-2 right-[6%] w-44 h-28 rounded-full blur-3xl opacity-45 bg-sky-300" style={{ animation: 'pb-b2 12s ease-in-out infinite' }} />
+            <i className="pb-a absolute -top-8 left-[8%] w-52 h-32 rounded-full pb-blob opacity-50 bg-fuchsia-400" style={{ animation: 'pb-b1 10s ease-in-out infinite' }} />
+            <i className="pb-a absolute top-2 right-[6%] w-44 h-28 rounded-full pb-blob opacity-45 bg-sky-300" style={{ animation: 'pb-b2 12s ease-in-out infinite' }} />
           </>)}
           {t === 'sakura' && (<>
-            <i className="pb-a absolute -top-8 right-[10%] w-52 h-36 rounded-full blur-3xl opacity-50 bg-pink-300" style={{ animation: 'pb-b2 11s ease-in-out infinite' }} />
-            {PETALS.map((p, i) => <i key={i} className="pb-a absolute top-0 rounded-[60%_0_60%_0] bg-pink-200/90" style={{ left: `${p.x}%`, width: p.s, height: p.s * 0.7, animation: `pb-fall ${p.t}s ${p.d}s linear infinite` }} />)}
+            <i className="pb-a absolute -top-8 right-[10%] w-52 h-36 rounded-full pb-blob opacity-50 bg-pink-300" style={{ animation: 'pb-b2 11s ease-in-out infinite' }} />
+            {petals.map((p, i) => <i key={i} className="pb-a absolute top-0 rounded-[60%_0_60%_0] bg-pink-200/90" style={{ left: `${p.x}%`, width: p.s, height: p.s * 0.7, animation: `pb-fall ${p.t}s ${p.d}s linear infinite` }} />)}
           </>)}
           {t === 'matrix' && (<>
-            {RAIN.map((r, i) => <i key={i} className="pb-a absolute top-0 w-[2px] rounded-full" style={{ left: `${r.x}%`, height: r.h, background: 'linear-gradient(180deg,transparent,#4ade80)', animation: `pb-rain ${r.t}s ${r.d}s linear infinite` }} />)}
+            {rain.map((r, i) => <i key={i} className="pb-a absolute top-0 w-[2px] rounded-full" style={{ left: `${r.x}%`, height: r.h, background: 'linear-gradient(180deg,transparent,#4ade80)', animation: `pb-rain ${r.t}s ${r.d}s linear infinite` }} />)}
           </>)}
         </>
       )}

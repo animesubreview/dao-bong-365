@@ -7,6 +7,7 @@ import {
 import { subscribePlayerConfig, PlayerConfig, DEFAULT_CONFIG } from '../lib/playerConfig';
 import { subscribeSiteSettings } from '../lib/siteSettings';
 import VideoAdOverlay from './VideoAdOverlay';
+import { useVipStatus } from '../lib/vip';
 import { API_BASE } from '../lib/apiBase';
 
 interface DaoPhimPlayerProps {
@@ -102,7 +103,9 @@ export default function DaoPhimPlayer({ src, m3u8, title, className = '', onEnde
     return unsub;
   }, []);
   const adKey = resumeKey || title || 'default';
-  const showAd = adSettings.enabled && adShownFor !== adKey;
+  const { isVip: vipNoAds, loading: vipAdLoading } = useVipStatus();
+  // VIP: bỏ video QC; chờ xác định VIP xong mới hiện QC để khỏi nháy
+  const showAd = adSettings.enabled && adShownFor !== adKey && !vipNoAds && !vipAdLoading;
 
   useEffect(() => {
     if (showAd && videoRef.current) {
