@@ -10,6 +10,8 @@ import { movieApi } from '../services/api';
 import { Movie } from '../types';
 import ThemeToggle from './ThemeToggle';
 import AccountMenu from './AccountMenu';
+import LanguagePicker from './LanguagePicker';
+import { useLang } from '../lib/i18n';
 import { logout, onAuthChange, getUserProfile, UserProfile } from '../lib/auth';
 import { createWatchRoom } from '../lib/watchRoom';
 import { useCommunityConfig } from '../lib/communityRoom';
@@ -81,6 +83,7 @@ export default function Header() {
   const [modalStep, setModalStep] = useState<'search' | 'confirm' | 'done'>('search');
   // ── Dropdown "Thể Loại / Quốc Gia / Thêm" trên nav desktop ──
   const [openNavMenu, setOpenNavMenu] = useState<'genre' | 'country' | 'more' | null>(null);
+  const { t } = useLang();
   const navMenuRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const h = (e: MouseEvent) => {
@@ -284,12 +287,12 @@ export default function Header() {
           {/* Desktop nav links */}
           <nav ref={navMenuRef} className="hidden lg:flex items-center gap-1 ml-8 shrink-0">
             {[
-              { to: '/', label: 'Trang chủ' },
-              { to: '/type/phim-bo', label: 'Phim Bộ' },
-              { to: '/type/phim-le', label: 'Phim Lẻ' },
-              { to: '/type/hoat-hinh', label: 'Hoạt Hình' },
-              { to: '/type/phim-chieu-rap', label: 'Chiếu Rạp' },
-              { to: '/tv-truc-tuyen', label: 'TV Trực Tuyến' },
+              { to: '/', label: t('home') },
+              { to: '/type/phim-bo', label: t('series') },
+              { to: '/type/phim-le', label: t('movies') },
+              { to: '/type/hoat-hinh', label: t('anime') },
+              { to: '/type/phim-chieu-rap', label: t('cinema') },
+              { to: '/tv-truc-tuyen', label: t('tv') },
             ].map(l => (
               <Link key={l.to} to={l.to}
                 className={cn('px-3 py-1.5 text-[15px] font-bold transition-colors whitespace-nowrap drop-shadow-[0_1px_4px_rgba(0,0,0,.7)]',
@@ -308,7 +311,7 @@ export default function Header() {
                 <div className="absolute top-full left-0 mt-2 w-[440px] bg-slate-900 border border-slate-700/60 rounded-2xl shadow-2xl z-50 p-3 max-h-[70vh] overflow-y-auto">
                   <div className="flex flex-wrap gap-1 pb-2 mb-2 border-b border-slate-800">
                     {[
-                      { to: '/type/song-ngu', label: 'Song Ngữ' },
+                      { to: '/type/song-ngu', label: t('bilingual') },
                       { to: '/chat', label: 'Chat Cộng Đồng' },
                       { to: '/lich-chieu', label: 'Lịch Chiếu' },
                       { to: '/truyen-tranh', label: 'Truyện Tranh' },
@@ -319,14 +322,14 @@ export default function Header() {
                     <button onClick={() => { setOpenNavMenu(null); openWatchRoomModal(); }}
                       className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">Xem Chung</button>
                   </div>
-                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-wider px-1 mb-1">Thể loại</p>
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-wider px-1 mb-1">{t('genres')}</p>
                   <div className="grid grid-cols-3 gap-1 mb-3">
                     {GENRES.map(g => (
                       <Link key={g} to={`/type/${g}`} onClick={() => setOpenNavMenu(null)}
                         className="px-2.5 py-1.5 rounded-lg text-xs text-slate-300 hover:bg-slate-800 hover:text-white transition-colors truncate">{g}</Link>
                     ))}
                   </div>
-                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-wider px-1 mb-1">Quốc gia</p>
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-wider px-1 mb-1">{t('countries')}</p>
                   <div className="grid grid-cols-3 gap-1">
                     {COUNTRIES.map(c => (
                       <Link key={c.slug} to={`/quoc-gia/${c.slug}`} onClick={() => setOpenNavMenu(null)}
@@ -372,7 +375,7 @@ export default function Header() {
                     value={desktopQuery}
                     onChange={e => setDesktopQuery(e.target.value)}
                     onKeyDown={e => { if (e.key === 'Enter') goToDesktopSearchResults(); }}
-                    placeholder="Tìm phim, diễn viên..."
+                    placeholder={t('searchPh')}
                     className="flex-1 bg-transparent text-sm text-white placeholder:text-slate-500 py-2 px-1.5 focus:outline-none min-w-0"
                   />
                   {desktopQuery && (
@@ -430,6 +433,7 @@ export default function Header() {
             )}
           </div>
 
+          <LanguagePicker />
           <ThemeToggle />
 
           {/* Chuông thông báo — thay cho icon tài khoản cũ trên mobile */}

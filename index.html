@@ -39,6 +39,12 @@
         min-height: 100%;
       }
       #root { min-height: 100vh; background-color: #0a0a0f; }
+      #initial-loader { position: fixed; inset: 0; z-index: 9998; background: #0a0a0f; display: flex; align-items: center; justify-content: center; }
+      .il-loader { display: flex; align-items: center; }
+      .il-bar { display: inline-block; width: 3px; height: 20px; background-color: rgba(255,255,255,.5); border-radius: 10px; animation: il-scale-up4 1s linear infinite; }
+      .il-bar:nth-child(2) { height: 35px; margin: 0 5px; animation-delay: .25s; }
+      .il-bar:nth-child(3) { animation-delay: .5s; }
+      @keyframes il-scale-up4 { 20% { background-color: #fff; transform: scaleY(1.5); } 40% { transform: scaleY(1); } }
     </style>
 
     <!-- ═══ PRIMARY SEO ═══════════════════════════════════════════════════ -->
@@ -133,7 +139,10 @@
   </head>
   <body>
     <!-- Loader trống hiện trước khi React kịp mount (thường chỉ vài trăm ms) -->
-    <div id="initial-loader"></div>
+    <!-- Loader hiện ngay từ lúc tải HTML (trước khi JS chạy). Kiểu: Uiverse.io by aryamitra06 - https://uiverse.io/aryamitra06/silent-lion-21 (MIT) -->
+    <div id="initial-loader" role="status" aria-label="Đang tải">
+      <div class="il-loader"><span class="il-bar"></span><span class="il-bar"></span><span class="il-bar"></span></div>
+    </div>
 
     <div id="root"></div>
     <!-- ─── TẠM THỜI: hiện lỗi JS thật ra màn hình thay vì trắng/đen im lặng (để debug lỗi

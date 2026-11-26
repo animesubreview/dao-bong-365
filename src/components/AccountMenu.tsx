@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useLang } from '../lib/i18n';
 
 // Menu tài khoản (mẫu #408): bung từ avatar, từng mục trượt vào lần lượt, điều hướng được bằng bàn phím.
 const CSS = `
@@ -44,6 +45,7 @@ const Ico = ({ d }: { d: keyof typeof ICONS }) => <svg viewBox="0 0 18 18" aria-
 export default function AccountMenu({ username, email, avatar, onLogout }: {
   username: string; email?: string; avatar: string; onLogout: () => void | Promise<void>;
 }) {
+  const { t } = useLang();
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   const btn = useRef<HTMLButtonElement>(null);
@@ -86,23 +88,23 @@ export default function AccountMenu({ username, email, avatar, onLogout }: {
   return (
     <div ref={root} className={`am ${open ? 'open' : ''}`}>
       <style>{CSS}</style>
-      <button ref={btn} type="button" className="am-av" aria-label="Mở menu tài khoản" aria-haspopup="menu" aria-expanded={open}
+      <button ref={btn} type="button" className="am-av" aria-label={t('acc_open')} aria-haspopup="menu" aria-expanded={open}
         onClick={() => (open ? close() : setOpen(true))} onKeyDown={onBtnKey}>
         <img src={avatar} alt={username} />
       </button>
       <span className="am-dot" aria-hidden="true" />
       <div ref={menu} className="am-m" role="menu" aria-label="Menu tài khoản" onKeyDown={onMenuKey}>
         <div className="am-hd" style={{ ['--i' as any]: 0 }}><b>{username}</b>{email && <span>{email}</span>}</div>
-        {link('/profile', 'user', 'Hồ sơ', 1)}
-        {link('/profile/edit', 'edit', 'Chỉnh sửa hồ sơ', 2)}
-        {link('/history', 'history', 'Lịch sử xem', 3)}
-        {link('/favorites', 'heart', 'Yêu thích', 4)}
-        {link('/nap-tien', 'wallet', 'Nạp tiền', 5)}
-        {link('/mua-vip', 'crown', 'Mua VIP', 6, 'vip')}
+        {link('/profile', 'user', t('acc_profile'), 1)}
+        {link('/profile/edit', 'edit', t('acc_edit'), 2)}
+        {link('/history', 'history', t('acc_history'), 3)}
+        {link('/favorites', 'heart', t('acc_fav'), 4)}
+        {link('/nap-tien', 'wallet', t('acc_topup'), 5)}
+        {link('/mua-vip', 'crown', t('acc_vip'), 6, 'vip')}
         <div className="am-hr" role="separator" style={{ ['--i' as any]: 7 }} />
         <button type="button" role="menuitem" tabIndex={-1} className="am-it out" style={{ ['--i' as any]: 8 }}
           onClick={async () => { close(); await onLogout(); }}>
-          <Ico d="out" /><span>Đăng xuất</span>
+          <Ico d="out" /><span>{t('acc_logout')}</span>
         </button>
       </div>
     </div>

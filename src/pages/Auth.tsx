@@ -1,46 +1,11 @@
 import { useSEO } from '../hooks/useSEO';
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { User, Mail, Lock, Eye, EyeOff, LogIn, UserPlus, Clapperboard, AlertCircle, Check, ArrowLeft } from 'lucide-react';
+import { LogIn, UserPlus, Clapperboard, AlertCircle, Check, ArrowLeft } from 'lucide-react';
+import { AuthStyles, FloatField, MorphButton } from '../components/AuthFields';
 import { register, login, onAuthChange, getUserProfile } from '../lib/auth';
 
 type Tab = 'login' | 'register';
-
-function InputField({
-  icon: Icon,
-  type = 'text',
-  placeholder,
-  value,
-  onChange,
-  rightSlot,
-}: {
-  icon: React.ElementType;
-  type?: string;
-  placeholder: string;
-  value: string;
-  onChange: (v: string) => void;
-  rightSlot?: React.ReactNode;
-}) {
-  return (
-    <div className="relative">
-      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500">
-        <Icon size={17} />
-      </div>
-      <input
-        type={type}
-        placeholder={placeholder}
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        className="w-full bg-slate-800/80 border border-slate-700/60 rounded-xl py-3.5 pl-11 pr-11 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500/40 transition-all"
-      />
-      {rightSlot && (
-        <div className="absolute right-3 top-1/2 -translate-y-1/2">
-          {rightSlot}
-        </div>
-      )}
-    </div>
-  );
-}
 
 export default function AuthPage() {
   useSEO({ noIndex: true });
@@ -52,18 +17,19 @@ export default function AuthPage() {
   // Login state
   const [loginId, setLoginId] = useState('');
   const [loginPass, setLoginPass] = useState('');
-  const [showLoginPass, setShowLoginPass] = useState(false);
 
   // Register state
   const [regUsername, setRegUsername] = useState('');
   const [regEmail, setRegEmail] = useState('');
   const [regPass, setRegPass] = useState('');
   const [regPassConfirm, setRegPassConfirm] = useState('');
-  const [showRegPass, setShowRegPass] = useState(false);
 
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [btn, setBtn] = useState<'idle' | 'busy' | 'ok'>('idle');
+  const [fe, setFe] = useState<Record<string, string>>({}); // lỗi theo từng ô
+  const [shake, setShake] = useState(0);
+  const flagErr = (errs: Record<string, string>) => { setFe(errs); setShake(n => n + 1); };
 
   useEffect(() => {
     const unsub = onAuthChange(async user => {
@@ -75,36 +41,48 @@ export default function AuthPage() {
   }, []);
 
   useEffect(() => {
-    setError('');
-    setSuccess('');
+    setError(''); setSuccess(''); setFe({}); setBtn('idle');
   }, [tab]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    if (!loginId || !loginPass) { setError('Vui lòng nhập đầy đủ thông tin'); return; }
-    setLoading(true);
+    if (btn !== 'idle') return;
+    setError(''); setFe({});
+    const errs: Record<string, string> = {};
+    if (!loginId.trim()) errs.id = 'Nhập tên tài khoản hoặc email';
+    if (!loginPass) errs.pass = 'Nhập mật khẩu';
+    if (Object.keys(errs).length) { flagErr(errs); return; }
+    setBtn('busy');
     const result = await login(loginId.trim(), loginPass);
-    setLoading(false);
     if (result.ok) {
+      setBtn('ok');
       const from = (location.state as any)?.from || '/';
-      navigate(from, { replace: true });
+      setTimeout(() => navigate(from, { replace: true }), 700);
     } else {
+      setBtn('idle');
       setError(result.error || 'Đăng nhập thất bại');
+      flagErr({ pass: ' ' }); // rung ô mật khẩu
     }
   };
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    if (regPass !== regPassConfirm) { setError('Mật khẩu xác nhận không khớp'); return; }
-    setLoading(true);
+    if (btn !== 'idle') return;
+    setError(''); setFe({});
+    const errs: Record<string, string> = {};
+    if (regUsername.trim().length < 3) errs.user = 'Tên tài khoản tối thiểu 3 ký tự';
+    if (!/\S+@\S+\.\S+/.test(regEmail.trim())) errs.email = 'Email chưa đúng định dạng';
+    if (regPass.length < 6) errs.pass = 'Mật khẩu tối thiểu 6 ký tự';
+    if (regPass !== regPassConfirm) errs.confirm = 'Mật khẩu xác nhận không khớp';
+    if (Object.keys(errs).length) { flagErr(errs); return; }
+    setBtn('busy');
     const result = await register(regUsername.trim(), regEmail.trim(), regPass);
-    setLoading(false);
     if (result.ok) {
+      setBtn('ok');
       setSuccess('Đăng ký thành công! Chào mừng ' + regUsername + ' 🎉');
-      setTimeout(() => navigate('/'), 1200);
+      setTimeout(() => navigate('/'), 1400);
     } else {
+      setBtn('idle');
       setError(result.error || 'Đăng ký thất bại');
     }
   };
@@ -123,6 +101,7 @@ export default function AuthPage() {
           <ArrowLeft size={16} /> Về trang chủ
         </Link>
 
+        <AuthStyles />
         {/* Card */}
         <div className="bg-slate-900/90 border border-slate-800/80 rounded-3xl p-8 shadow-2xl backdrop-blur-xl">
           {/* Logo */}
@@ -166,37 +145,11 @@ export default function AuthPage() {
 
           {/* Login Form */}
           {tab === 'login' && (
-            <form onSubmit={handleLogin} className="flex flex-col gap-4">
-              <InputField
-                icon={User}
-                placeholder="Tên tài khoản hoặc Email"
-                value={loginId}
-                onChange={setLoginId}
-              />
-              <InputField
-                icon={Lock}
-                type={showLoginPass ? 'text' : 'password'}
-                placeholder="Mật khẩu"
-                value={loginPass}
-                onChange={setLoginPass}
-                rightSlot={
-                  <button
-                    type="button"
-                    onClick={() => setShowLoginPass(v => !v)}
-                    className="text-slate-500 hover:text-slate-300 p-1"
-                  >
-                    {showLoginPass ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </button>
-                }
-              />
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-green-500 hover:bg-green-400 text-slate-950 font-black py-3.5 rounded-xl transition-all shadow-lg shadow-green-500/20 disabled:opacity-60 text-sm mt-1"
-              >
-                {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
-              </button>
-              <p className="text-center text-slate-500 text-sm">
+            <form onSubmit={handleLogin} noValidate className="flex flex-col gap-1">
+              <FloatField label="Tên tài khoản hoặc Email" value={loginId} onChange={setLoginId} autoComplete="username" error={fe.id} shake={shake} />
+              <FloatField label="Mật khẩu" type="password" value={loginPass} onChange={setLoginPass} autoComplete="current-password" error={fe.pass} shake={shake} />
+              <MorphButton state={btn}>Đăng nhập</MorphButton>
+              <p className="text-center text-slate-500 text-sm mt-3">
                 Chưa có tài khoản?{' '}
                 <button type="button" onClick={() => setTab('register')} className="text-green-400 font-bold hover:underline">
                   Đăng ký ngay
@@ -207,51 +160,13 @@ export default function AuthPage() {
 
           {/* Register Form */}
           {tab === 'register' && (
-            <form onSubmit={handleRegister} className="flex flex-col gap-4">
-              <InputField
-                icon={User}
-                placeholder="Tên tài khoản (tối thiểu 3 ký tự)"
-                value={regUsername}
-                onChange={setRegUsername}
-              />
-              <InputField
-                icon={Mail}
-                type="email"
-                placeholder="Địa chỉ Email"
-                value={regEmail}
-                onChange={setRegEmail}
-              />
-              <InputField
-                icon={Lock}
-                type={showRegPass ? 'text' : 'password'}
-                placeholder="Mật khẩu (tối thiểu 6 ký tự)"
-                value={regPass}
-                onChange={setRegPass}
-                rightSlot={
-                  <button
-                    type="button"
-                    onClick={() => setShowRegPass(v => !v)}
-                    className="text-slate-500 hover:text-slate-300 p-1"
-                  >
-                    {showRegPass ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </button>
-                }
-              />
-              <InputField
-                icon={Lock}
-                type="password"
-                placeholder="Xác nhận mật khẩu"
-                value={regPassConfirm}
-                onChange={setRegPassConfirm}
-              />
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-green-500 hover:bg-green-400 text-slate-950 font-black py-3.5 rounded-xl transition-all shadow-lg shadow-green-500/20 disabled:opacity-60 text-sm mt-1"
-              >
-                {loading ? 'Đang tạo tài khoản...' : 'Tạo tài khoản'}
-              </button>
-              <p className="text-center text-slate-500 text-sm">
+            <form onSubmit={handleRegister} noValidate className="flex flex-col gap-1">
+              <FloatField label="Tên tài khoản (tối thiểu 3 ký tự)" value={regUsername} onChange={setRegUsername} autoComplete="username" maxLength={30} error={fe.user} shake={shake} />
+              <FloatField label="Địa chỉ Email" type="email" value={regEmail} onChange={setRegEmail} autoComplete="email" error={fe.email} shake={shake} />
+              <FloatField label="Mật khẩu (tối thiểu 6 ký tự)" type="password" value={regPass} onChange={setRegPass} autoComplete="new-password" error={fe.pass} shake={shake} />
+              <FloatField label="Xác nhận mật khẩu" type="password" value={regPassConfirm} onChange={setRegPassConfirm} autoComplete="new-password" error={fe.confirm} shake={shake} />
+              <MorphButton state={btn}>Tạo tài khoản</MorphButton>
+              <p className="text-center text-slate-500 text-sm mt-3">
                 Đã có tài khoản?{' '}
                 <button type="button" onClick={() => setTab('login')} className="text-green-400 font-bold hover:underline">
                   Đăng nhập
