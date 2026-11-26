@@ -156,6 +156,29 @@
           p.textContent = msg;
           el.appendChild(p);
         }
+        // Tự phục hồi khi file JS/CSS của web không tải được (thường do trình duyệt/CDN còn giữ bản cũ sau khi deploy):
+        // xóa cache + tải lại, tối đa 3 lần/phiên. Trả về true nếu đã bắt đầu tải lại.
+        var CHUNK_RE = /dynamically imported module|importing a module script failed|unable to preload|failed to load module script|error loading dynamically/i;
+        function recover(u) {
+          var tries = 0;
+          try { tries = Number(sessionStorage.getItem('__asset_reload') || 0); } catch (_) {}
+          if (tries >= 3) { try { console.error('Không tải được file:', u); } catch (_) {} return false; }
+          try { sessionStorage.setItem('__asset_reload', String(tries + 1)); } catch (_) {}
+          var go = function () {
+            var q = location.search.replace(/([?&])_v=\d+&?/, '$1').replace(/[?&]$/, '');
+            location.replace(location.pathname + q + (q ? '&' : '?') + '_v=' + Date.now() + location.hash);
+          };
+          try {
+            var jobs = [];
+            if (window.caches && caches.keys) jobs.push(caches.keys().then(function (ks) { return Promise.all(ks.map(function (k) { return caches.delete(k); })); }));
+            if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) jobs.push(navigator.serviceWorker.getRegistrations().then(function (rs) { return Promise.all(rs.map(function (r) { return r.unregister(); })); }));
+            Promise.all(jobs).then(go, go);
+            setTimeout(go, 1500);
+          } catch (_) { go(); }
+          return true;
+        }
+        // Vite báo khi một trang con (lazy chunk) không tải được
+        window.addEventListener('vite:preloadError', function (e) { if (recover('chunk')) { try { e.preventDefault(); } catch (_) {} } });
         // useCapture=true để bắt được cả lỗi tải file (script/link 404, mất mạng...),
         // vì lỗi loại này KHÔNG nổi bọt lên window ở bubble phase như lỗi chạy code thường.
         window.addEventListener('error', function (e) {
@@ -178,22 +201,9 @@
             if (!sameOrigin || u.indexOf('/assets/') === -1) return;
             // Bundle không tải được thường do trình duyệt/CDN còn giữ index.html CŨ trỏ tới file đã bị xóa sau khi deploy
             // → âm thầm xóa cache + tải lại để lấy bản mới (tối đa 3 lần/phiên). Không hiện bảng thông báo nào.
-            var tries = 0;
-            try { tries = Number(sessionStorage.getItem('__asset_reload') || 0); } catch (_) {}
-            if (tries >= 3) { try { console.error('Không tải được file:', u); } catch (_) {} return; }
-            try { sessionStorage.setItem('__asset_reload', String(tries + 1)); } catch (_) {}
-            var go = function () {
-              var q = location.search.replace(/([?&])_v=\d+&?/, '$1').replace(/[?&]$/, '');
-              location.replace(location.pathname + q + (q ? '&' : '?') + '_v=' + Date.now() + location.hash);
-            };
-            try {
-              var jobs = [];
-              if (window.caches && caches.keys) jobs.push(caches.keys().then(function (ks) { return Promise.all(ks.map(function (k) { return caches.delete(k); })); }));
-              if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) jobs.push(navigator.serviceWorker.getRegistrations().then(function (rs) { return Promise.all(rs.map(function (r) { return r.unregister(); })); }));
-              Promise.all(jobs).then(go, go);
-              setTimeout(go, 1500);
-            } catch (_) { go(); }
+            recover(u);
           } else {
+            if (CHUNK_RE.test(String(e.message || '')) && recover(e.message)) return;
             showErr('LỖI JS: ' + (e.message || '') + '\n' + (e.filename || '') + ':' + (e.lineno || '') + ':' + (e.colno || '') + '\n' + (e.error && e.error.stack || ''));
           }
         }, true);
@@ -201,6 +211,7 @@
           var r = e.reason;
           // Hủy chia sẻ / hủy thao tác (AbortError, NotAllowedError) là hành vi bình thường của người dùng, không phải lỗi.
           if (r && (r.name === 'AbortError' || r.name === 'NotAllowedError' || /canceled|cancelled/i.test(String(r.message || r)))) return;
+          if (CHUNK_RE.test(String(r && (r.message || r) || '')) && recover(String(r && r.message || r))) return;
           // Lỗi mạng thoáng qua (đứt mạng, API chập chờn) không phải lỗi app — đừng phủ màn hình đỏ lên trang.
           if (r && r.name === 'TypeError' && /failed to fetch|networkerror|load failed/i.test(String(r.message || ''))) { try { console.warn('Network error:', r); } catch (_) {} return; }
           showErr('LỖI PROMISE: ' + (r && (r.message || r.toString()) || String(r)) + '\n' + (r && r.stack || ''));
