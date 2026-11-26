@@ -14,6 +14,12 @@
   # Đường dẫn cũ /movie/xxx -> /phim/xxx
   RewriteRule ^movie/(.*)$ /phim/$1 [R=301,L]
 
+  # File trong /assets/ không tồn tại (vd. chunk cũ sau khi deploy) → trả 404 thật.
+  # KHÔNG trả index.html, nếu không trình duyệt nhận HTML thay vì JS và báo
+  # "Failed to fetch dynamically imported module".
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteRule ^assets/ - [R=404,L]
+
   # File/thư mục có thật thì phục vụ bình thường, còn lại trả index.html
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d

@@ -159,11 +159,8 @@
         // Tự phục hồi khi file JS/CSS của web không tải được (thường do trình duyệt/CDN còn giữ bản cũ sau khi deploy):
         // xóa cache + tải lại, tối đa 3 lần/phiên. Trả về true nếu đã bắt đầu tải lại.
         var CHUNK_RE = /dynamically imported module|importing a module script failed|unable to preload|failed to load module script|error loading dynamically/i;
-        function recover(u) {
-          var tries = 0;
-          try { tries = Number(sessionStorage.getItem('__asset_reload') || 0); } catch (_) {}
-          if (tries >= 3) { try { console.error('Không tải được file:', u); } catch (_) {} return false; }
-          try { sessionStorage.setItem('__asset_reload', String(tries + 1)); } catch (_) {}
+        // Tải lại sạch: xóa cache + hủy service worker + thêm _v để buộc lấy index.html mới nhất.
+        function hardReload() {
           var go = function () {
             var q = location.search.replace(/([?&])_v=\d+&?/, '$1').replace(/[?&]$/, '');
             location.replace(location.pathname + q + (q ? '&' : '?') + '_v=' + Date.now() + location.hash);
@@ -175,6 +172,30 @@
             Promise.all(jobs).then(go, go);
             setTimeout(go, 1500);
           } catch (_) { go(); }
+        }
+        // Đã tự tải lại 3 lần mà vẫn thiếu file → hiện thông báo thân thiện thay vì bảng lỗi đỏ.
+        function showUpdate() {
+          if (document.getElementById('__update_box__')) return;
+          var box = document.createElement('div');
+          box.id = '__update_box__';
+          box.style.cssText = 'position:fixed;left:12px;right:12px;bottom:16px;z-index:2147483646;max-width:420px;margin:0 auto;' +
+            'background:#111827;color:#f3f4f6;border:1px solid #374151;border-radius:14px;padding:14px 16px;' +
+            'font:14px/1.45 system-ui,sans-serif;box-shadow:0 10px 30px rgba(0,0,0,.5);';
+          box.innerHTML = '<div style="font-weight:600;margin-bottom:4px">Web vừa được cập nhật</div>' +
+            '<div style="opacity:.8;margin-bottom:10px">Trang này chưa tải được dữ liệu mới. Bấm nút bên dưới để tải lại bản mới nhất.</div>';
+          var b = document.createElement('button');
+          b.textContent = 'Tải lại trang';
+          b.style.cssText = 'background:#22c55e;color:#06220f;font-weight:600;border:0;border-radius:10px;padding:9px 16px;cursor:pointer';
+          b.onclick = function () { try { sessionStorage.removeItem('__asset_reload'); } catch (_) {} hardReload(); };
+          box.appendChild(b);
+          document.documentElement.appendChild(box);
+        }
+        function recover(u) {
+          var tries = 0;
+          try { tries = Number(sessionStorage.getItem('__asset_reload') || 0); } catch (_) {}
+          if (tries >= 3) { try { console.error('Không tải được file:', u); } catch (_) {} showUpdate(); return true; }
+          try { sessionStorage.setItem('__asset_reload', String(tries + 1)); } catch (_) {}
+          hardReload();
           return true;
         }
         // Vite báo khi một trang con (lazy chunk) không tải được
