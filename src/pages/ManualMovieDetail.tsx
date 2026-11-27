@@ -103,7 +103,7 @@ export default function ManualMovieDetail() {
   const badge = 'text-[11px] font-bold px-2.5 py-1 rounded-md border border-slate-600 text-slate-300';
 
   return (
-    <div className="min-h-screen bg-slate-950 pb-20">
+    <div className="min-h-screen bg-slate-950 pb-20 overflow-x-clip">
 
       {/* Banner QC trên cùng — giống trang phim API */}
       <div className="max-w-[1400px] mx-auto px-4 md:px-8">
@@ -132,8 +132,8 @@ export default function ManualMovieDetail() {
               onError={(e) => { if (!e.currentTarget.src.endsWith(LOGO)) e.currentTarget.src = LOGO; }} />
           </div>
 
-          <div className="mt-4 md:mt-24 flex-1 min-w-0 flex flex-col items-center text-center md:items-start md:text-left">
-            <h1 className="text-2xl md:text-3xl lg:text-4xl font-black text-white leading-tight">{movie.name}</h1>
+          <div className="mt-4 md:mt-24 flex-1 w-full max-w-full min-w-0 flex flex-col items-center text-center md:items-start md:text-left">
+            <h1 className="text-2xl md:text-3xl lg:text-4xl font-black text-white leading-tight break-words max-w-full">{movie.name}</h1>
             {movie.originName && movie.originName !== movie.name && (
               <p className="text-slate-400 text-sm md:text-base font-semibold mt-1">{movie.originName}</p>
             )}

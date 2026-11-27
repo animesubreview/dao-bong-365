@@ -26,7 +26,7 @@ export default function DiscordBanner({ className = '' }: { className?: string }
       href={discordUrl}
       target="_blank"
       rel="noopener"
-      className={`block w-full rounded-xl overflow-hidden group ${className}`}
+      className={`block w-full max-w-full min-w-0 rounded-xl overflow-hidden group ${className}`}
     >
       {bannerImage ? (
         <img src={bannerImage} alt="Tham gia Discord" className="w-full h-auto object-cover" />
@@ -35,7 +35,7 @@ export default function DiscordBanner({ className = '' }: { className?: string }
           <div className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-white/15 flex items-center justify-center shrink-0">
             <MessageCircle size={19} className="text-white" />
           </div>
-          <span className="flex-1 min-w-0 text-white font-black text-[12px] md:text-sm tracking-wide truncate">
+          <span className="flex-1 w-0 min-w-0 text-white font-black text-[12px] md:text-sm tracking-wide truncate">
             {text}
           </span>
           <div className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-white/15 flex items-center justify-center shrink-0">
