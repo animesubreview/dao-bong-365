@@ -52,20 +52,33 @@ export function subscribeGeoblockConfig(cb: (cfg: GeoblockConfig) => void): () =
 }
 
 // ── Đọc 1 lần (dùng trong App.tsx) ───────────────────────────────────────────
-export async function getGeoblockEnabled(): Promise<boolean> {
-  // Kiểm tra localStorage cache trước
+// Giới hạn thời gian chờ: nếu Supabase phản hồi chậm/treo thì dùng giá trị dự phòng
+// thay vì để cả web quay vòng mãi ở màn hình chờ.
+function withTimeout<T>(p: Promise<T>, ms: number, fallback: T): Promise<T> {
+  return new Promise<T>(function (resolve) {
+    var done = false;
+    var t = setTimeout(function () { if (!done) { done = true; resolve(fallback); } }, ms);
+    p.then(
+      function (v) { if (!done) { done = true; clearTimeout(t); resolve(v); } },
+      function () { if (!done) { done = true; clearTimeout(t); resolve(fallback); } }
+    );
+  });
+}
+
+function readCachedEnabled(): { enabled: boolean; fresh: boolean } | null {
   try {
     const v = localStorage.getItem('geoblock_config');
     if (v) {
       const cfg = JSON.parse(v) as GeoblockConfig;
-      // Cache dưới 5 phút thì dùng luôn
-      if (cfg.updatedAt && Date.now() - cfg.updatedAt < 5 * 60 * 1000) {
-        return cfg.enabled;
-      }
+      // Cache dưới 5 phút thì coi là còn mới
+      const fresh = !!cfg.updatedAt && Date.now() - cfg.updatedAt < 5 * 60 * 1000;
+      return { enabled: cfg.enabled, fresh };
     }
   } catch {}
+  return null;
+}
 
-  // Fetch Firestore
+async function fetchGeoblockEnabled(): Promise<boolean> {
   try {
     const { getDoc } = await import('./firestore-compat');
     const snap = await getDoc(doc(db, 'config', 'geoblock'));
@@ -77,8 +90,15 @@ export async function getGeoblockEnabled(): Promise<boolean> {
   } catch (err) {
     console.warn('getGeoblockEnabled error:', err);
   }
-
   return DEFAULT_GEOBLOCK.enabled;
+}
+
+export async function getGeoblockEnabled(): Promise<boolean> {
+  const cached = readCachedEnabled();
+  if (cached && cached.fresh) return cached.enabled;
+  // Tối đa 4 giây; quá hạn thì dùng cache cũ (nếu có) hoặc mặc định
+  const fallback = cached ? cached.enabled : DEFAULT_GEOBLOCK.enabled;
+  return withTimeout(fetchGeoblockEnabled(), 4000, fallback);
 }
 
 // ── Các hàm detect IP (giữ nguyên) ───────────────────────────────────────────

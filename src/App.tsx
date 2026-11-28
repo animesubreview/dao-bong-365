@@ -136,6 +136,13 @@ export default function App() {
     });
   }, []);
 
+  // Chốt chặn cuối: nếu sau 15 giây vẫn chưa có kết quả kiểm tra IP (mạng/Supabase treo)
+  // thì cho vào web luôn, không để người dùng nhìn spinner mãi.
+  useEffect(() => {
+    const t = setTimeout(() => setGeoResult(prev => (prev === 'loading' ? 'error' : prev)), 15000);
+    return () => clearTimeout(t);
+  }, []);
+
   // Theo doi presence realtime
   useEffect(() => {
     const stop = startPresence();

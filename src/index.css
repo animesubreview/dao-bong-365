@@ -152,3 +152,7 @@ html[data-theme="light"] :is(video,.dp-player,.plyr,[data-keep-dark]) { color-sc
 html[data-theme="light"] body {
   background: radial-gradient(1200px 600px at 50% -10%, rgba(34,197,94,0.10), transparent 60%), var(--bg);
 }
+
+/* Navbar Liquid Glass trên điện thoại: dãn vừa chiều ngang màn hình, 5 mục chia đều */
+.nimbus-nav.dp-nav-fit { width: min(calc(100% - 24px), 440px); }
+.nimbus-nav.dp-nav-fit .nimbus-item { flex: 1 1 0; justify-content: center; min-width: 0; padding-left: 0; padding-right: 0; }

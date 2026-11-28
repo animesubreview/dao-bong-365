@@ -334,7 +334,7 @@ export default function WatchRoomPage() {
   const canSync = !!room.m3u8Url;
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] flex flex-col overflow-x-hidden">
+    <div className="min-h-screen bg-[#0a0a0a] flex flex-col overflow-x-hidden pb-24 md:pb-0">
 
       {/* ── Top bar ───────────────────────────────────────────────────────────── */}
       <div className="sticky top-0 z-30 bg-[#0a0a0a]/95 backdrop-blur border-b border-white/5">
